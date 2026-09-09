@@ -9,8 +9,10 @@ from copy import deepcopy
 from typing import Any, Protocol
 
 if __package__:
+    from .datong_answer_bindings import SOURCE_PART_LABELS
     from .supplemental_answers import ANSWER_LABEL, validate_supplemental_answer
 else:
+    from datong_answer_bindings import SOURCE_PART_LABELS
     from supplemental_answers import ANSWER_LABEL, validate_supplemental_answer
 
 PAPER_FORMAT_SCHEMA_VERSION = "shchem.paper-format-contract.v1"
@@ -600,12 +602,13 @@ def _normalize_student_version(value: Any) -> dict[str, Any]:
         code="preset_student_version_invalid",
         message_zh="学生版预设字段不完整。",
     )
-    if student.get("identity_fields_zh") != ["姓名", "班级"] or any(
-        student.get(key) is not True
-        for key in ("show_duration", "show_total_score", "show_item_scores")
+    if (
+        student.get("identity_fields_zh") != ["姓名", "班级"]
+        or student.get("show_duration") is not True
+        or any(type(student.get(key)) is not bool for key in ("show_total_score", "show_item_scores"))
     ):
         raise PaperFormatContractError(
-            "preset_student_version_invalid", "学生版必须保留姓名/班级、时间、总分和分题分值。"
+            "preset_student_version_invalid", "学生版须保留姓名/班级和时间，分数显示选项须为布尔值。"
         )
     answer_space = _require_mapping(
         student.get("answer_space"),
@@ -2053,6 +2056,8 @@ def build_document_plans(
                     if len(atomic_parts) == 1
                     else f"（{atomic_index}）"
                 )
+                if reference["atomic_part_id"] in SOURCE_PART_LABELS:
+                    part_label = SOURCE_PART_LABELS[reference["atomic_part_id"]]
                 answer_anchor = (
                     f"A{theme_number:02d}-{question_number:02d}"
                     if len(atomic_parts) == 1

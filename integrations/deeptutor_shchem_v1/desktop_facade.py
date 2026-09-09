@@ -4103,6 +4103,34 @@ class DesktopWorkbenchFacade:
             raise DesktopFacadeError(
                 "paper_export_not_ready", "当前预览缺少可导出的整卷内容。"
             )
+        model_has_score_visibility = "show_question_scores" in model
+        payload_has_score_visibility = "show_question_scores" in payload
+        model_score_visibility = model.get("show_question_scores", False)
+        payload_score_visibility = payload.get("show_question_scores", False)
+        if model_has_score_visibility and type(model_score_visibility) is not bool:
+            raise DesktopFacadeError(
+                "paper_show_question_scores_invalid",
+                "预览中的题面显示分数设置必须是布尔值，请重新预览。",
+            )
+        if payload_has_score_visibility and type(payload_score_visibility) is not bool:
+            raise DesktopFacadeError(
+                "paper_show_question_scores_invalid",
+                "草稿中的题面显示分数设置必须是布尔值，请重新预览。",
+            )
+        if (
+            model_has_score_visibility
+            and payload_has_score_visibility
+            and model_score_visibility != payload_score_visibility
+        ):
+            raise DesktopFacadeError(
+                "paper_show_question_scores_mismatch",
+                "预览与草稿的题面显示分数设置不一致，请重新预览。",
+            )
+        show_question_scores = (
+            model_score_visibility
+            if model_has_score_visibility
+            else payload_score_visibility
+        )
         score_values: set[int] = set()
         answer_lines: list[int] = []
         atomic_settings: dict[str, dict[str, int]] = {}
@@ -4184,6 +4212,7 @@ class DesktopWorkbenchFacade:
             else None,
             "duration_minutes": duration,
             "numbering_mode": "continuous_across_paper",
+            "show_question_scores": show_question_scores,
             "score_per_atomic": 1 if atomic_settings else next(iter(score_values), 1),
             "answer_space_lines": max(answer_lines, default=3),
             "selections": selections,
@@ -4218,6 +4247,13 @@ class DesktopWorkbenchFacade:
         title = str(payload.get("title") or "").strip()
         if not title:
             raise DesktopFacadeError("paper_title_required", "请填写试卷或练习名称。")
+        payload_has_score_visibility = "show_question_scores" in payload
+        show_question_scores = payload.get("show_question_scores", False)
+        if payload_has_score_visibility and type(show_question_scores) is not bool:
+            raise DesktopFacadeError(
+                "paper_show_question_scores_invalid",
+                "题面显示分数设置必须是布尔值。",
+            )
         state_snapshot = self._state.snapshot()
         basket = [
             json.loads(json.dumps(item, ensure_ascii=False))
@@ -4236,6 +4272,23 @@ class DesktopWorkbenchFacade:
             isinstance(assembly.get("themes"), list)
             or isinstance(assembly.get("theme_groups"), list)
         ):
+            assembly_has_score_visibility = "show_question_scores" in assembly
+            assembly_score_visibility = assembly.get("show_question_scores", False)
+            if assembly_has_score_visibility and type(assembly_score_visibility) is not bool:
+                raise DesktopFacadeError(
+                    "paper_show_question_scores_invalid",
+                    "预览中的题面显示分数设置必须是布尔值。",
+                )
+            if not payload_has_score_visibility and assembly_has_score_visibility:
+                show_question_scores = assembly_score_visibility
+            elif (
+                assembly_has_score_visibility
+                and assembly_score_visibility != show_question_scores
+            ):
+                raise DesktopFacadeError(
+                    "paper_show_question_scores_mismatch",
+                    "预览与组卷设置的题面显示分数不一致，请重新预览。",
+                )
             preview_model = json.loads(json.dumps(assembly, ensure_ascii=False))
         else:
             try:
@@ -4247,6 +4300,7 @@ class DesktopWorkbenchFacade:
                     title=title,
                     keywords=str(payload.get("keywords") or ""),
                     hot_topic=payload.get("hot_topic") is True,
+                    show_question_scores=show_question_scores,
                 )
                 preview_model = composer.make_preview()
             except ImportError:
@@ -4257,6 +4311,7 @@ class DesktopWorkbenchFacade:
                     "mode": mode,
                     "mode_label": "模拟考试" if mode == "mock_exam" else "平时练习",
                     "title": title,
+                    "show_question_scores": show_question_scores,
                     "themes": [],
                     "stats": {"theme_count": len(basket)},
                 }
@@ -4267,6 +4322,7 @@ class DesktopWorkbenchFacade:
                 ) from exc
         preview_model["title"] = title
         preview_model["mode"] = mode
+        preview_model["show_question_scores"] = show_question_scores
         if isinstance(payload.get("subtitle"), str):
             preview_model["subtitle"] = payload["subtitle"].strip()
         if isinstance(payload.get("duration_minutes"), int):
@@ -4292,6 +4348,7 @@ class DesktopWorkbenchFacade:
             "title": title,
             "keywords": str(payload.get("keywords") or "").strip(),
             "hot_topic": payload.get("hot_topic") is True,
+            "show_question_scores": show_question_scores,
             "basket": basket,
             "assembly": preview_model,
         }

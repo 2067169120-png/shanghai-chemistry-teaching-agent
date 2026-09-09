@@ -11,6 +11,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
+from .datong_crop_revision import visible_evidence
 from .paper_export_alias_projection import project_direct_unit_scan
 from .question_search_workbench import VALUE_LABELS_ZH
 from .supplemental_answers import validate_supplemental_answer
@@ -135,7 +136,7 @@ def image_descriptors(
 ) -> tuple[LibraryImage, ...]:
     """Whitelist the existing evidence roles; never follow image endpoints."""
     images = []
-    for item in scan.get("evidence_descriptors", []):
+    for item in visible_evidence(scan.get("evidence_descriptors", [])):
         if not isinstance(item, Mapping):
             continue
         role = item.get("evidence_role")

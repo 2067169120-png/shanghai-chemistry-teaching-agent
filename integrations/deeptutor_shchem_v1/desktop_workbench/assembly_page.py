@@ -16,8 +16,8 @@ from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QAction, QKeyEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
-    QButtonGroup,
     QBoxLayout,
+    QButtonGroup,
     QCheckBox,
     QComboBox,
     QDialog,
@@ -123,6 +123,11 @@ def normalize_preview_projection(value: Mapping[str, Any] | None) -> dict[str, A
         result["title"] = cover.get("title_zh") or "整卷预览"
     if not result.get("mode_label"):
         result["mode_label"] = "模拟考试" if value.get("mode") == "mock_exam" else "平时练习"
+    result["show_question_scores"] = (
+        value.get("show_question_scores")
+        if type(value.get("show_question_scores")) is bool
+        else False
+    )
     raw_group_count = len(value.get("theme_groups", [])) if isinstance(value.get("theme_groups"), list) else 0
     result["stats"] = {
         "theme_count": stats.get("theme_count") or info.get("theme_count") or raw_group_count,
@@ -1235,14 +1240,7 @@ class PaperPreviewDialog(QDialog):
         self._data = data
         title = _label(str(data.get("title") or data.get("title_zh") or "整卷预览"), "PageTitle")
         root.addWidget(title)
-        stats = data.get("stats") if isinstance(data.get("stats"), Mapping) else {}
-        mode = str(data.get("mode_label") or data.get("mode_zh") or "组卷")
-        self.meta = _label(
-            f"{mode} · {_metric(stats.get('theme_count', data.get('theme_count')), ' 道大题')} · "
-            f"{_metric(stats.get('question_count'), ' 个小问')} · {_metric(stats.get('total_score'), ' 分')} · "
-            f"预计 {_metric(stats.get('total_time_minutes'), ' 分钟')}",
-            "MutedLabel",
-        )
+        self.meta = _label("", "MutedLabel")
         root.addWidget(self.meta)
         exam_info = data.get("exam_information")
         pagination = data.get("pagination")
@@ -1348,6 +1346,7 @@ class PaperPreviewDialog(QDialog):
                 "title": preview.title_zh,
                 "mode_label": preview.mode_zh,
                 "theme_count": preview.theme_count,
+                "show_question_scores": False,
                 "themes": themes,
                 "stats": {"theme_count": preview.theme_count},
             }
@@ -1370,6 +1369,19 @@ class PaperPreviewDialog(QDialog):
         if not isinstance(themes, list):
             themes = []
         teacher = self.teacher_button.isChecked()
+        show_scores = teacher or self._data.get("show_question_scores") is True
+        stats = self._data.get("stats") if isinstance(self._data.get("stats"), Mapping) else {}
+        mode = str(self._data.get("mode_label") or self._data.get("mode_zh") or "组卷")
+        score_suffix = (
+            f" · {_metric(stats.get('total_score'), ' 分')}"
+            if show_scores
+            else ""
+        )
+        self.meta.setText(
+            f"{mode} · {_metric(stats.get('theme_count', self._data.get('theme_count')), ' 道大题')} · "
+            f"{_metric(stats.get('question_count'), ' 个小问')}"
+            f"{score_suffix} · 预计 {_metric(stats.get('total_time_minutes'), ' 分钟')}"
+        )
         for index, raw in enumerate(themes, start=1):
             if not isinstance(raw, Mapping):
                 continue
@@ -1381,7 +1393,12 @@ class PaperPreviewDialog(QDialog):
             layout.addWidget(
                 _label(
                     f"来源：{raw.get('source', '来源待确认')} · 教材章节：{raw.get('chapter', '教材章节待确认')}\n"
-                    f"总分：{_metric(raw.get('score'), ' 分')} · 用时：{_metric(raw.get('time_minutes'), ' 分钟')} · "
+                    + (
+                        f"总分：{_metric(raw.get('score'), ' 分')} · "
+                        if show_scores
+                        else ""
+                    )
+                    + f"用时：{_metric(raw.get('time_minutes'), ' 分钟')} · "
                     f"难度：{raw.get('difficulty', '难度待确认')} · 小问：{_metric(raw.get('question_count'), ' 个')}"
                 )
             )
@@ -1436,7 +1453,12 @@ class PaperPreviewDialog(QDialog):
                     row_layout.addWidget(
                         _label(
                             f"{question.get('display_number', '第?问')}　{question.get('response_type', '题型待确认')}　"
-                            f"{_metric(question.get('score'), ' 分')} · {question.get('section', '教材章节待确认')} · "
+                            + (
+                                f"{_metric(question.get('score'), ' 分')} · "
+                                if show_scores
+                                else ""
+                            )
+                            + f"{question.get('section', '教材章节待确认')} · "
                             f"{question.get('difficulty', '难度待确认')}",
                             "QuestionMeta",
                         )
@@ -1599,6 +1621,16 @@ class PaperPage(QWidget):
         self.keywords.setText(self.model.keywords)
         self.duration.setValue(max(1, min(300, int(self.model.duration_minutes or 60))))
         self.hot_topic.setChecked(self.model.hot_topic)
+        score_row = QHBoxLayout()
+        self.show_question_scores = QCheckBox("题面显示分数")
+        self.show_question_scores.setObjectName("ShowQuestionScores")
+        self.show_question_scores.setToolTip(
+            "默认不显示；教师版评分答案始终保留分值。原图自带的分数不会被涂改。"
+        )
+        self.show_question_scores.setChecked(self.model.show_question_scores)
+        score_row.addWidget(self.show_question_scores)
+        score_row.addStretch(1)
+        controls_layout.addLayout(score_row)
         root.addWidget(controls)
 
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -1703,6 +1735,7 @@ class PaperPage(QWidget):
         self.keywords.editingFinished.connect(self._settings_changed)
         self.duration.valueChanged.connect(lambda _value: self._settings_changed())
         self.hot_topic.toggled.connect(lambda _checked: self._settings_changed())
+        self.show_question_scores.toggled.connect(self._score_visibility_changed)
         self.directory.theme_selected.connect(self._select_theme)
         self.directory.order_changed.connect(self._order_changed)
         self.continuous_preview.theme_selected.connect(self._select_theme)
@@ -1769,6 +1802,7 @@ class PaperPage(QWidget):
             title=self.model.title,
             keywords=self.model.keywords,
             hot_topic=self.model.hot_topic,
+            show_question_scores=self.model.show_question_scores,
         )
         rebuilt.subtitle = self.model.subtitle
         rebuilt.duration_minutes = self.model.duration_minutes
@@ -1899,6 +1933,11 @@ class PaperPage(QWidget):
         self.model.hot_topic = self.hot_topic.isChecked()
         self.model.duration_minutes = max(1, min(300, int(self.duration.value())))
         self._mark_dirty()
+
+    def _score_visibility_changed(self, checked: bool) -> None:
+        self.model.set_show_question_scores(checked)
+        self._mark_dirty()
+        self._render_all()
 
     def _mark_dirty(self) -> None:
         self.model.invalidate_preview()
@@ -2138,6 +2177,7 @@ class PaperPage(QWidget):
             title=self.model.title,
             keywords=self.model.keywords,
             hot_topic=self.model.hot_topic,
+            show_question_scores=self.model.show_question_scores,
         )
         self.model.subtitle = self.subtitle.text().strip()
         self.model.duration_minutes = int(self.duration.value())
@@ -2153,6 +2193,7 @@ class PaperPage(QWidget):
             "subtitle": self.subtitle.text().strip(),
             "keywords": self.keywords.text().strip(),
             "hot_topic": self.hot_topic.isChecked(),
+            "show_question_scores": self.model.show_question_scores,
             "duration_minutes": int(self.duration.value()),
             # Send the exact frozen projection (including its snapshot hash)
             # to the facade; rebuilding a second projection here would make
@@ -2310,6 +2351,7 @@ class PaperPage(QWidget):
                     title=self.model.title,
                     keywords=self.model.keywords,
                     hot_topic=self.model.hot_topic,
+                    show_question_scores=self.model.show_question_scores,
                 )
                 self.model.subtitle = self.subtitle.text().strip()
                 self.model.duration_minutes = int(self.duration.value())
@@ -2324,6 +2366,7 @@ class PaperPage(QWidget):
                 title=self.model.title,
                 keywords=self.model.keywords,
                 hot_topic=self.model.hot_topic,
+                show_question_scores=self.model.show_question_scores,
             )
             self.model.subtitle = self.subtitle.text().strip()
             self.model.duration_minutes = int(self.duration.value())

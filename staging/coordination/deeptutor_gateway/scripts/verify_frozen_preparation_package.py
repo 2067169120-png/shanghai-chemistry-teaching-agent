@@ -51,7 +51,7 @@ def verify_frozen_note_prompt(pyz) -> bool:
     """Execute only the frozen pure prompt formatter, never the provider."""
     code = pyz.extract("integrations.deeptutor_shchem_v1.desktop_preparation_provider")
     constants = strings(code)
-    revision = "20260909-classroom-projection-v21"
+    revision = "20260909-classroom-projection-v22"
     checks = [
         value for value in constants if value.startswith("\n授课与笔记最终检查（")
     ]
@@ -74,6 +74,10 @@ def verify_frozen_note_prompt(pyz) -> bool:
     )
     if any(text not in checklist for text in required):
         raise RuntimeError("Frozen classroom note contract incomplete")
+    source_rules = next(
+        value for value in strings(pyz.extract("integrations.deeptutor_shchem_v1.desktop_chemistry_prompt_rules"))
+        if value.startswith("教师资料与选题完整性规则（teacher-source-closure-v1）")
+    )
     prompt_code = next(
         item
         for item in code.co_consts
@@ -86,6 +90,7 @@ def verify_frozen_note_prompt(pyz) -> bool:
             "json": json,
             "PREPARATION_PROMPT_REVISION": revision,
             "CLASSROOM_NOTE_FINAL_CHECK": checklist,
+            "TEACHING_SOURCE_RULES": source_rules,
             "course_composition_contract": frozen_course_namespace(pyz)[
                 "course_composition_contract"
             ],
@@ -101,6 +106,8 @@ def verify_frozen_note_prompt(pyz) -> bool:
         raise RuntimeError("Frozen prompt changed source or omitted final check")
     if "G 课堂投影：默认服务约40人班级" not in rendered:
         raise RuntimeError("Frozen prompt omitted classroom course contract")
+    if source_rules not in rendered:
+        raise RuntimeError("Frozen prompt omitted teacher source closure contract")
     return True
 
 
@@ -309,7 +316,7 @@ def main() -> int:
     expected = {
         "desktop_version": [args.version],
         "desktop_preparation_provider": [
-            "20260909-classroom-projection-v21",
+            "20260909-classroom-projection-v22",
             "20260909-deepseek-v4-output-budget-v12",
             "provider_response_empty",
         ],
@@ -397,7 +404,8 @@ def main() -> int:
         "desktop_paper_preparation": [],
         "desktop_paper_preparation_sources": [],
         "desktop_workbench.paper_preparation_dialog": ["将当前组卷带入备课"],
-        "desktop_workbench.assembly_page": ["将当前组卷带入备课…"],
+        "desktop_workbench.assembly_page": ["将当前组卷带入备课…", "题面显示分数"],
+        "intake_imports": ["20260909-complete-source-boundaries-v2"],
         "desktop_workbench.preparation_review_dialog": [
             "资料与课件对照",
             "在原备课资料与学生可见正文中对照检索",

@@ -9,14 +9,14 @@ projection free of Qt makes numbering, preview invalidation and narrow-window
 tests deterministic and reusable by other desktop surfaces.
 """
 
-from dataclasses import asdict, dataclass, field
 import hashlib
 import json
 from copy import deepcopy
+from dataclasses import asdict, dataclass, field
 from typing import Any, Iterable, Mapping, Sequence
 
+from ..datong_answer_bindings import EXISTING_ANSWER_AREA_NODE_IDS
 from ..paper_export_alias_projection import project_explicit_alias_units
-
 
 ANSWER_STATUS_LABELS: dict[str, tuple[str, str]] = {
     "available": ("参考答案可用", "good"),
@@ -262,11 +262,12 @@ class ComposerQuestion:
         if explicit_lines is None:
             explicit_lines = atomic.get("answer_space")
         lines_value = _positive_int(explicit_lines, 0)
-        lines = (
-            int(lines_value or 0)
-            if explicit_lines is not None
-            else None
-        )
+        if explicit_lines is not None:
+            lines = int(lines_value or 0)
+        elif _text(atomic.get("atomic_part_id"), "") in EXISTING_ANSWER_AREA_NODE_IDS:
+            lines = 0
+        else:
+            lines = None
         crop_available = bool(
             atomic.get("content_loaded") is True
             or atomic.get("evidence_descriptors")
@@ -707,6 +708,7 @@ class PaperComposerModel:
     subtitle: str = ""
     keywords: str = ""
     hot_topic: bool = False
+    show_question_scores: bool = False
     duration_minutes: int = 60
     themes: list[ComposerTheme] = field(default_factory=list)
     revision: int = 0
@@ -729,7 +731,10 @@ class PaperComposerModel:
         title: str = "",
         keywords: str = "",
         hot_topic: bool = False,
+        show_question_scores: bool = False,
     ) -> "PaperComposerModel":
+        if type(show_question_scores) is not bool:
+            raise ValueError("show_question_scores must be a bool")
         themes = build_themes_from_basket(basket, catalog)
         selected = themes[0].key if themes else None
         return cls(
@@ -737,6 +742,7 @@ class PaperComposerModel:
             title=title,
             keywords=keywords,
             hot_topic=hot_topic,
+            show_question_scores=show_question_scores,
             themes=themes,
             selected_theme_key=selected,
             basket_signature_value=cls.basket_signature(basket),
@@ -784,6 +790,9 @@ class PaperComposerModel:
         saved_signature = payload.get("basket_signature")
         if isinstance(saved_signature, list) and [str(item) for item in saved_signature] != current_signature:
             return None
+        show_question_scores = payload.get("show_question_scores", False)
+        if type(show_question_scores) is not bool:
+            return None
         mode = payload.get("mode")
         if mode not in {"mock_exam", "daily_practice"}:
             mode = "mock_exam"
@@ -794,6 +803,7 @@ class PaperComposerModel:
             title=_text(payload.get("title"), ""),
             keywords=_text(payload.get("keywords"), ""),
             hot_topic=payload.get("hot_topic") is True,
+            show_question_scores=show_question_scores,
         )
         model.subtitle = _text(payload.get("subtitle"), "")
         model.basket_signature_value = current_signature
@@ -969,6 +979,14 @@ class PaperComposerModel:
         self.mode = mode
         self.invalidate_preview()
 
+    def set_show_question_scores(self, value: bool) -> None:
+        if type(value) is not bool:
+            raise TypeError("show_question_scores must be a bool")
+        if value == self.show_question_scores:
+            return
+        self.show_question_scores = value
+        self.invalidate_preview()
+
     def select_theme(self, key: str) -> None:
         if any(theme.key == key for theme in self.themes):
             self.selected_theme_key = key
@@ -1103,6 +1121,7 @@ class PaperComposerModel:
             "subtitle": self.subtitle.strip(),
             "keywords": self.keywords.strip(),
             "hot_topic": self.hot_topic,
+            "show_question_scores": self.show_question_scores,
             "stats": {
                 "theme_count": len(self.themes),
                 "question_count": self.total_questions,
@@ -1165,6 +1184,7 @@ class PaperComposerModel:
             "subtitle": self.subtitle.strip(),
             "keywords": self.keywords.strip(),
             "hot_topic": self.hot_topic,
+            "show_question_scores": self.show_question_scores,
             "duration_minutes": self.duration_minutes,
             "basket_signature": list(self.basket_signature_value)
             or [theme.source_identity_sha256 or theme.key for theme in self.themes],

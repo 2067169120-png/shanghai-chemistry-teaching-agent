@@ -8,7 +8,7 @@ root = fs.GetParentFolderName(WScript.ScriptFullName)
 scriptPath = root & "\runtime\deeptutor_shchem\desktop_teacher_workbench.pyw"
 appName = ChrW(&H6CAA) & ChrW(&H4E0A) & ChrW(&H5316) & ChrW(&H5B66) & ChrW(&H667A) & ChrW(&H7814) & ChrW(&H53F0)
 exePath = ""
-For Each packageName In Array("desktop_package_0.1.46", "desktop_package_0.1.45", "desktop_package_0.1.44")
+For Each packageName In Array("desktop_package_0.1.47", "desktop_package_0.1.46", "desktop_package_0.1.45")
   exePath = fs.BuildPath(fs.BuildPath(root & "\runtime\deeptutor_shchem\" & packageName, appName), appName & ".exe")
   If fs.FileExists(exePath) Then Exit For
 Next

@@ -624,9 +624,10 @@ def _add_title_block(
     info = doc.add_paragraph(style="ShChemPaperMeta")
     info.alignment = WD_ALIGN_PARAGRAPH.CENTER
     info.paragraph_format.keep_with_next = True
-    info.add_run(
-        f"建议时间：{exam['duration_minutes']} 分钟　　建议满分：{_format_score(exam['total_score'])} 分"
-    )
+    info_text = f"建议时间：{exam['duration_minutes']} 分钟"
+    if audience == "teacher" or preset["student_version"]["show_total_score"]:
+        info_text += f"　　建议满分：{_format_score(exam['total_score'])} 分"
+    info.add_run(info_text)
 
     if audience == "student":
         identity = doc.add_paragraph(style="ShChemPaperMeta")
@@ -1278,6 +1279,7 @@ def _add_teacher_notes(
     *,
     content_width_dxa: int,
     include_source_label: bool,
+    scoring_label_zh: str | None = None,
 ) -> None:
     table = doc.add_table(rows=1, cols=1)
     _set_repeat_table_width(table, content_width_dxa)
@@ -1291,6 +1293,11 @@ def _add_teacher_notes(
     paragraph.style = doc.styles["ShChemTeacherNote"]
     paragraph.paragraph_format.space_after = Pt(1)
     note_size_pt = doc.styles["ShChemTeacherNote"].font.size.pt
+    if scoring_label_zh:
+        scoring = paragraph.add_run(scoring_label_zh)
+        _set_run_font(scoring, cjk="SimHei", latin="Times New Roman", size_pt=note_size_pt, bold=True)
+        paragraph = cell.add_paragraph(style="ShChemTeacherNote")
+        paragraph.paragraph_format.space_after = Pt(1)
     label = paragraph.add_run(f"{notes['answer_label_zh']}：")
     _set_run_font(
         label,
@@ -1305,9 +1312,14 @@ def _add_teacher_notes(
     _add_answer_text(paragraph, answer_text)
     if supplement.get("diagram_key"):
         picture = cell.add_paragraph(style="ShChemTeacherNote")
+        diagram_width = (
+            (content_width_dxa - 240) / 20
+            if supplement["diagram_key"] == "ferrate_single_electron_bridge"
+            else min(130 if supplement["diagram_key"].endswith("atom_shells") else 160, (content_width_dxa - 240) / 20)
+        )
         shape = picture.add_run().add_picture(
             io.BytesIO(answer_diagram_png(supplement["diagram_key"])),
-            width=Pt(min(210, (content_width_dxa - 240) / 20)),
+            width=Pt(diagram_width),
         )
         shape._inline.docPr.set("descr", supplement["text_zh"])
 
@@ -1444,6 +1456,17 @@ def _printed_question_blocks(
     return projected, suppressed
 
 
+def _teacher_scoring_label(printed: Mapping[str, Any], atomic_index: int) -> str:
+    parts = printed["atomic_parts"]
+    atomic = parts[atomic_index]
+    prefix = f"第{printed['question_number']}题"
+    if len(parts) > 1:
+        if atomic_index == 0:
+            prefix += f"（本题共 {_format_score(sum(part['score'] for part in parts))} 分）"
+        prefix += f"{atomic.get('part_label_zh') or f'（{atomic_index + 1}）'}"
+    return prefix + f"评分（{_format_score(atomic['score'])} 分）"
+
+
 def _add_theme_sections(
     doc: DocumentType,
     visible: Mapping[str, Any],
@@ -1454,6 +1477,7 @@ def _add_theme_sections(
     body_size_pt: float,
     blueprint: Mapping[str, Any] | None = None,
     suppressed_shared_keys: set[str] | frozenset[str] = frozenset(),
+    show_question_scores: bool = True,
 ) -> None:
     seen_materials: set[str] = set()
     blueprint_sections = _blueprint_theme_sections(visible, blueprint)
@@ -1462,13 +1486,16 @@ def _add_theme_sections(
         item_types = iter(_item_types_for_theme(section, blueprint_section))
         seen_teacher_sources: set[tuple[str, str]] = set()
         heading = doc.add_paragraph(style="ShChemThemeHeading")
-        heading.add_run(
-            f"{section['heading_zh']}　（共 {_format_score(section['theme_score'])} 分）"
+        heading.add_run(section['heading_zh'] + (f"　（共 {_format_score(section['theme_score'])} 分）" if show_question_scores else ""))
+        summary = str(section.get("context_summary_zh") or "")
+        internal_placeholder = (
+            summary.startswith("以卷面主题")
+            and summary.endswith(("具体化学语义标签仍待入库。", "具体化学语义标签仍待人审。"))
         )
-        if section.get("context_summary_zh"):
+        if summary and not internal_placeholder:
             context = doc.add_paragraph(style="ShChemQuiet")
             context.paragraph_format.keep_with_next = True
-            context.add_run("主题情境：" + section["context_summary_zh"])
+            context.add_run("主题情境：" + summary)
         for material in _ordered_shared_materials(section, blueprint_section):
             key = material["render_once_key"]
             if key in suppressed_shared_keys:
@@ -1488,10 +1515,26 @@ def _add_theme_sections(
             )
         for printed in section["printed_questions"]:
             atomic_parts = printed["atomic_parts"]
-            printed_blocks, shared_question_image = _printed_question_blocks(atomic_parts)
+            printed_blocks, _shared_question_image = _printed_question_blocks(atomic_parts)
+            compact_source_scores = (
+                show_question_scores
+                and audience == "student"
+                and len(atomic_parts) > 1
+                and all(
+                    _is_source_image_question(part)
+                    and part["answer_space"]["lines"] == 0
+                    for part in atomic_parts
+                )
+            )
             for atomic_index, atomic in enumerate(atomic_parts):
                 question_blocks = printed_blocks[atomic_index]
                 item_type = next(item_types)
+                if compact_source_scores and atomic_index > 0:
+                    # The original image contains the answer positions. Keep all
+                    # scores together above it, not orphan labels on later pages.
+                    # Distinct continuation images remain in their source order.
+                    _add_content_blocks(doc, question_blocks, asset_root=asset_root)
+                    continue
                 answer_lines = (
                     atomic["answer_space"]["lines"]
                     if atomic["answer_space"]["mode"] == "ruled_lines_exact"
@@ -1501,48 +1544,31 @@ def _add_theme_sections(
                 )
                 rendered_answer_lines = answer_lines if audience == "student" else 0
                 source_image_question = _is_source_image_question(atomic)
-                question = doc.add_paragraph(
-                    style="ShChemQuiet" if source_image_question else "ShChemQuestion"
-                )
-                question.paragraph_format.space_before = Pt(
-                    1 if source_image_question else 3
-                )
-                question.paragraph_format.space_after = Pt(0)
-                question.paragraph_format.keep_with_next = True
-                if source_image_question:
-                    question.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-                    prefix = (
-                        f"作答单元{atomic_index + 1} " if shared_question_image else ""
-                    )
-                    prefix += f"（{_format_score(atomic['score'])} 分）"
-                else:
-                    prefix = (
-                        f"{printed['question_number']}. "
-                        if atomic_index == 0
-                        else ""
-                    )
-                    if atomic.get("part_label_zh"):
-                        prefix += atomic["part_label_zh"] + " "
-                    prefix += f"（{_format_score(atomic['score'])} 分）"
-                prefix_run = question.add_run(prefix)
-                _set_run_font(
-                    prefix_run,
-                    cjk="SimSun" if source_image_question else "SimHei",
-                    latin="Times New Roman",
-                    size_pt=(
-                        max(8.0, body_size_pt - 1.5)
-                        if source_image_question
-                        else body_size_pt
-                    ),
-                    bold=not source_image_question,
-                    color=(
-                        RGBColor(89, 89, 89)
-                        if source_image_question
-                        else None
-                    ),
-                )
-                if question_blocks:
-                    question.add_run(" ")
+                question = None
+                if show_question_scores or not source_image_question:
+                    question = doc.add_paragraph(style="ShChemQuiet" if source_image_question else "ShChemQuestion")
+                    question.paragraph_format.space_before = Pt(1 if source_image_question else 3)
+                    question.paragraph_format.space_after = Pt(0)
+                    question.paragraph_format.keep_with_next = True
+                    if compact_source_scores:
+                        question.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                        prefix = f"第{printed['question_number']}题（共 {_format_score(sum(part['score'] for part in atomic_parts))} 分）"
+                    elif source_image_question:
+                        question.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+                        prefix = (
+                            f"第{printed['question_number']}题{atomic.get('part_label_zh') or f'（{atomic_index + 1}）'}"
+                            if len(atomic_parts) > 1 else ""
+                        ) + f"（{_format_score(atomic['score'])} 分）"
+                    else:
+                        prefix = f"{printed['question_number']}. " if atomic_index == 0 else ""
+                        if atomic.get("part_label_zh"):
+                            prefix += atomic["part_label_zh"] + " "
+                        if show_question_scores:
+                            prefix += f"（{_format_score(atomic['score'])} 分）"
+                    prefix_run = question.add_run(prefix)
+                    _set_run_font(prefix_run, cjk="SimSun" if source_image_question else "SimHei", latin="Times New Roman", size_pt=max(8.0, body_size_pt - 1.5) if source_image_question else body_size_pt, bold=not source_image_question, color=RGBColor(89, 89, 89) if source_image_question else None)
+                    if question_blocks:
+                        question.add_run(" ")
                 _add_content_blocks(
                     doc,
                     question_blocks,
@@ -1574,6 +1600,7 @@ def _add_theme_sections(
                         atomic["teacher_notes"],
                         content_width_dxa=content_width_dxa,
                         include_source_label=include_source_label,
+                        scoring_label_zh=_teacher_scoring_label(printed, atomic_index),
                     )
 
 
@@ -1609,6 +1636,7 @@ def build_docx_from_plan(
         body_size_pt=float(preset["page_layout"]["body"]["size_pt"]),
         blueprint=blueprint,
         suppressed_shared_keys=suppressed_shared_keys,
+        show_question_scores=preset["student_version"]["show_item_scores"],
     )
 
     is_local_basket_export = "题目来源见教师版" in str(
@@ -1763,6 +1791,28 @@ def _teacher_answer_boundaries_present(text: str, plan: Mapping[str, Any]) -> bo
     )
 
 
+def _score_labels_present(text: str, plan: Mapping[str, Any], show_question_scores: bool) -> bool:
+    """Check requested score labels; teacher answers always retain every score."""
+    audience = plan["audience"]
+    if audience == "student" and not show_question_scores:
+        return True  # No score label is requested in student question content.
+    expected: dict[str, int] = {}
+    for theme in plan["visible"]["theme_sections"]:
+        for printed in theme["printed_questions"]:
+            parts = printed["atomic_parts"]
+            if audience == "teacher":
+                labels = [_teacher_scoring_label(printed, index) for index in range(len(parts))]
+            elif len(parts) > 1 and all(_is_source_image_question(part) and part["answer_space"]["lines"] == 0 for part in parts):
+                labels = [f"（共 {_format_score(sum(part['score'] for part in parts))} 分）"]
+            else:
+                labels = [f"（{_format_score(part['score'])} 分）" for part in parts]
+            for label in labels:
+                normalized_label = _normalize_text(label)
+                expected[normalized_label] = expected.get(normalized_label, 0) + 1
+    normalized = _normalize_text(text)
+    return bool(expected) and all(normalized.count(label) >= count for label, count in expected.items())
+
+
 def _teacher_source_and_pitfalls_present(text: str, plan: Mapping[str, Any]) -> bool:
     """Require recorded pitfalls, not invented notes for an empty source field."""
     normalized = _normalize_text(text)
@@ -1792,6 +1842,7 @@ def audit_docx(
     preset: Mapping[str, Any],
 ) -> dict[str, Any]:
     audience = plan["audience"]
+    show_scores = preset["student_version"]["show_item_scores"]
     doc = Document(path)
     section = doc.sections[0]
     body_text = _docx_body_text(path)
@@ -1853,7 +1904,7 @@ def audit_docx(
             normalized.count(_normalize_text(text)) == 1 for text in materials
         ),
         "question_numbers_present": all(
-            f"{number}.（" in normalized for number in text_question_numbers
+            (f"{number}.（" if show_scores else f"{number}.") in normalized for number in text_question_numbers
         )
         and all(
             any(f"第{number}题题图：" in alt for alt in image_alt_texts)
@@ -1862,12 +1913,7 @@ def audit_docx(
         "source_image_numbers_not_repeated_as_text_headings": all(
             f"{number}.（" not in normalized for number in source_image_numbers
         ),
-        "scores_present": all(
-            f"（{_format_score(atomic['score'])}分）" in normalized
-            for theme in plan["visible"]["theme_sections"]
-            for printed in theme["printed_questions"]
-            for atomic in printed["atomic_parts"]
-        ),
+        "scores_present": _score_labels_present(body_text, plan, show_scores),
         "identity_scope_correct": (
             "姓名：" in body_text and "班级：" in body_text
             if audience == "student"
@@ -2154,8 +2200,9 @@ def _pdf_page_count(path: Path) -> int:
     return len(PdfReader(path).pages)
 
 
-def _pdf_text_audit(path: Path, *, plan: Mapping[str, Any]) -> dict[str, Any]:
+def _pdf_text_audit(path: Path, *, plan: Mapping[str, Any], preset: Mapping[str, Any] | None = None) -> dict[str, Any]:
     audience = plan["audience"]
+    show_scores = preset["student_version"]["show_item_scores"] if preset else True
     text = _pdf_text(path)
     normalized = _normalize_text(text)
     materials = _expected_material_texts(plan)
@@ -2172,17 +2219,12 @@ def _pdf_text_audit(path: Path, *, plan: Mapping[str, Any]) -> dict[str, Any]:
             normalized.count(_normalize_text(material)) == 1 for material in materials
         ),
         "question_numbers_present": all(
-            f"{number}.（" in normalized for number in text_question_numbers
+            (f"{number}.（" if show_scores else f"{number}.") in normalized for number in text_question_numbers
         ),
         "source_image_numbers_not_repeated_as_text_headings": all(
             f"{number}.（" not in normalized for number in source_image_numbers
         ),
-        "scores_present": all(
-            f"（{_format_score(atomic['score'])}分）" in normalized
-            for theme in plan["visible"]["theme_sections"]
-            for printed in theme["printed_questions"]
-            for atomic in printed["atomic_parts"]
-        ),
+        "scores_present": _score_labels_present(text, plan, show_scores),
         "identity_scope_correct": (
             "姓名：" in text and "班级：" in text
             if audience == "student"
@@ -2325,7 +2367,7 @@ def render_export_bundle(
             toolchain=toolchain,
         )
         pdf_count = _pdf_page_count(pdf_path)
-        pdf_audit = _pdf_text_audit(pdf_path, plan=plan)
+        pdf_audit = _pdf_text_audit(pdf_path, plan=plan, preset=frozen["preset"])
         docx_page_records = _image_records(docx_pages, output_root)
         pdf_page_records = _image_records(pdf_pages, output_root)
         page_dimensions_match = [

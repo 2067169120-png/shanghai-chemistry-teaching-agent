@@ -2,7 +2,11 @@ from copy import deepcopy
 
 import pytest
 
+from integrations.deeptutor_shchem_v1.datong_answer_bindings import (
+    EXISTING_ANSWER_AREA_NODE_IDS,
+)
 from integrations.deeptutor_shchem_v1.desktop_workbench.paper_composer import (
+    ComposerQuestion,
     PaperComposerModel,
     _theme_from_group,
 )
@@ -57,3 +61,72 @@ def test_plain_theme_keeps_existing_unknown_metadata_behavior():
     theme = _theme_from_group(group, "fallback", scope="master")
     assert len(theme.questions) == 1
     assert theme.questions[0].key == "MASTER-A"
+
+
+def test_question_score_visibility_defaults_hidden_invalidates_preview_and_restores():
+    group = catalog([parent()])["papers"][0]["theme_groups"][0]
+    theme = _theme_from_group(group, "fallback", scope="master")
+    model = PaperComposerModel(themes=[theme])
+
+    assert model.show_question_scores is False
+    hidden = model.make_preview()
+    assert hidden["show_question_scores"] is False
+    assert hidden["themes"][0]["score"] == theme.score
+    first_hash = model.preview_hash
+
+    model.set_show_question_scores(True)
+    assert model.show_question_scores is True
+    assert model.preview is None
+    assert model.preview_hash is None
+
+    shown = model.make_preview()
+    assert shown["show_question_scores"] is True
+    assert model.preview_hash != first_hash
+
+    payload = model.draft_payload()
+    assert payload["show_question_scores"] is True
+    restored = PaperComposerModel.from_draft_payload(
+        payload,
+        [
+            {
+                "key": theme.source_identity_sha256 or theme.key,
+                "title_zh": theme.title,
+                "atomic_total": theme.question_count,
+            }
+        ],
+    )
+    assert restored is not None
+    assert restored.show_question_scores is True
+
+
+def test_question_score_visibility_rejects_non_boolean_draft_values():
+    group = catalog([parent()])["papers"][0]["theme_groups"][0]
+    theme = _theme_from_group(group, "fallback", scope="master")
+    model = PaperComposerModel(themes=[theme])
+    payload = model.draft_payload()
+    payload["show_question_scores"] = "false"
+
+    assert PaperComposerModel.from_draft_payload(payload, []) is None
+    with pytest.raises((TypeError, ValueError)):
+        model.set_show_question_scores("false")  # type: ignore[arg-type]
+
+
+def test_known_datong_answer_area_defaults_to_zero_without_overriding_explicit_space():
+    known_id = "W1-DT2025-H1-MID-AP-DT2025-H1-Q01-P01"
+    assert known_id in EXISTING_ANSWER_AREA_NODE_IDS
+
+    base = {
+        "atomic_part_id": known_id,
+        "item_type": "fill_blank",
+        "response_requirement_zh": "填写答案",
+    }
+    assert ComposerQuestion.from_atomic(base, 0).answer_space == 0
+
+    unknown = dict(base, atomic_part_id="not-a-verified-answer-area")
+    assert ComposerQuestion.from_atomic(unknown, 0).answer_space is None
+
+    explicit_lines = dict(base, answer_space_lines=3)
+    assert ComposerQuestion.from_atomic(explicit_lines, 0).answer_space == 3
+
+    explicit_alias = dict(base, answer_space=4)
+    assert ComposerQuestion.from_atomic(explicit_alias, 0).answer_space == 4

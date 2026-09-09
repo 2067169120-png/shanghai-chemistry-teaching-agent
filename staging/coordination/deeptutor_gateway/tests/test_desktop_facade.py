@@ -313,6 +313,57 @@ def _create_export_preview(
     )
 
 
+def test_paper_export_request_carries_strict_question_score_visibility() -> None:
+    frozen = {
+        "preview_model": {
+            "title": "阶段练习",
+            "subtitle": "本机教师工作台",
+            "duration_minutes": 20,
+            "show_question_scores": True,
+            "themes": [
+                {
+                    "questions": [
+                        {
+                            "key": "A1",
+                            "score": 2,
+                            "answer_space": 3,
+                        }
+                    ]
+                }
+            ],
+        },
+        "payload": {"show_question_scores": True},
+    }
+    request = DesktopWorkbenchFacade._paper_export_request(frozen, [])
+    assert request["show_question_scores"] is True
+
+    malformed = {
+        "preview_model": {
+            **frozen["preview_model"],
+            "show_question_scores": "false",
+        },
+        "payload": {},
+    }
+    with pytest.raises(DesktopFacadeError) as error:
+        DesktopWorkbenchFacade._paper_export_request(malformed, [])
+    assert error.value.code == "paper_show_question_scores_invalid"
+
+
+def test_create_paper_preview_rejects_non_boolean_question_score_visibility(
+    desktop_paths: DesktopPaths,
+) -> None:
+    facade = build_facade(desktop_paths)
+    with pytest.raises(DesktopFacadeError) as error:
+        facade.create_paper_preview(
+            {
+                "mode": "daily_practice",
+                "title": "阶段练习",
+                "show_question_scores": "false",
+            }
+        )
+    assert error.value.code == "paper_show_question_scores_invalid"
+
+
 def test_direct_registry_projection_uses_real_reader_contract_without_gui(
     desktop_paths: DesktopPaths,
 ) -> None:

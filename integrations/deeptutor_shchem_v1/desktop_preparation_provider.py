@@ -16,6 +16,7 @@ from collections.abc import Callable, Mapping
 from copy import deepcopy
 from typing import Any
 
+from .desktop_chemistry_prompt_rules import TEACHING_SOURCE_RULES
 from .desktop_preparation import preparation_candidate_schema
 from .desktop_preparation_images import normalize_image_assets
 from .desktop_preparation_pedagogy import course_composition_contract
@@ -31,7 +32,7 @@ from .visual_provider_runtime import (
 # Pedagogy synthesis and source limits are documented in
 # staging/coordination/deeptutor_gateway/teacher_preparation_research_20260909/README.md.
 # This is a design revision, not a claim of award-winning or reviewed output.
-PREPARATION_PROMPT_REVISION = "20260909-classroom-projection-v21"
+PREPARATION_PROMPT_REVISION = "20260909-classroom-projection-v22"
 PREPARATION_REQUEST_POLICY_REVISION = "20260909-deepseek-v4-output-budget-v12"
 
 # Distilled from the inspected v15 live lesson, not additional source facts.
@@ -164,6 +165,8 @@ def _prompt(payload: Mapping[str, Any]) -> str:
         + focus
         + "\n"
         + course_composition_contract(str(payload.get("lesson_route", "")))
+        + "\n"
+        + TEACHING_SOURCE_RULES
         + "\n内容、呈现及输出约束：\n"
         "0a. 对应Word讲义与教材蒸馏知识点是内容主线。先从资料中确定本课章节层级、核心概念、"
         "前置知识、概念之间的关系和适合本课的例题，再按学生理解所需的顺序编排。"

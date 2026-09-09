@@ -10,12 +10,14 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import unquote
 
+from .datong_crop_revision import project_datong_descriptor
 from .public_kb import ReadOnlyDataError, _checked_exact_path
 from .reference_answer import (
     project_reference_answer,
     reference_answer_catalog_metadata,
 )
 from .security import SecurityError, validate_identifier
+from .source_crop_revision import SourceCropRevisionError
 from .supplemental_answers import answer_for_scan
 
 SCOPE = "candidate_only_read_only_question_visual_scan"
@@ -2803,6 +2805,13 @@ class _BatchQuestionVisualScanReader:
             raise QuestionVisualScanError("supplemental_answer_source_drift", str(exc)) from exc
         if supplement is not None:
             response["supplemental_answer"] = supplement
+        try:
+            response["evidence_descriptors"] = [
+                project_datong_descriptor(self.shchem_root, item)
+                for item in response["evidence_descriptors"]
+            ]
+        except SourceCropRevisionError as exc:
+            raise QuestionVisualScanError("question_visual_scan_presentation_invalid", str(exc)) from exc
         _reject_unsafe_projection(response)
         return response
 

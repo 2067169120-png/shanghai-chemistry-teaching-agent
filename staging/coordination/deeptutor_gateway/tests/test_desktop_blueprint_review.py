@@ -25,6 +25,7 @@ from integrations.deeptutor_shchem_v1.desktop_blueprint_review import (
 )
 from integrations.deeptutor_shchem_v1.desktop_chemistry_prompt_rules import (
     CHEMISTRY_CONSISTENCY_RULES,
+    TEACHING_SOURCE_RULES,
 )
 from integrations.deeptutor_shchem_v1.desktop_facade import DesktopFacadeError
 
@@ -80,6 +81,7 @@ def test_review_receives_original_evidence_and_never_implies_approval():
             "\\n", "\n"
         )
         assert CHEMISTRY_CONSISTENCY_RULES in text
+        assert TEACHING_SOURCE_RULES in text
     assert json.loads(transport.requests[0].body)["max_output_tokens"] == 24000
     assert json.loads(transport.requests[1].body)["max_output_tokens"] == 32000
     assert (

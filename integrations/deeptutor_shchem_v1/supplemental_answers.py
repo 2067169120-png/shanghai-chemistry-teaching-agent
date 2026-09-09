@@ -10,6 +10,15 @@ from collections.abc import Mapping
 from copy import deepcopy
 from typing import Any
 
+if __package__:
+    from .datong_answer_bindings import QUESTION_BINDINGS, SHARED_CONTEXT_BINDINGS
+    from .datong_remaining_solutions import REVISION_ID as EXTENDED_REVISION_ID
+    from .datong_remaining_solutions import SOLUTIONS as EXTENDED_SOLUTIONS
+else:  # The renderer also supports a dependency-light direct CLI entry point.
+    from datong_answer_bindings import QUESTION_BINDINGS, SHARED_CONTEXT_BINDINGS
+    from datong_remaining_solutions import REVISION_ID as EXTENDED_REVISION_ID
+    from datong_remaining_solutions import SOLUTIONS as EXTENDED_SOLUTIONS
+
 REVISION_ID = "datong-h1-chlorine-solutions-20260909-r1"
 ANSWER_LABEL = "补充解答（AI，非官方）"
 SOURCE_LABEL = "依据已核对题面与上海高中化学知识补写；原归档未附答案。"
@@ -110,18 +119,30 @@ _SOLUTIONS = {
     ),
 }
 
+# Preserve the first batch's IDs and revision so its frozen exports stay valid.
+_ORIGINAL_SUFFIXES = frozenset(_SOLUTIONS)
+_SOLUTIONS.update(EXTENDED_SOLUTIONS)
+
+
+def _question_bindings(suffix: str) -> tuple[tuple[str, str], ...]:
+    if suffix not in _ORIGINAL_SUFFIXES:
+        return QUESTION_BINDINGS[_PREFIX + suffix]
+    question = suffix.split("-", 1)[0]
+    return ((f"DT2025-H1-{question}-E1", _QUESTION_HASHES[question]),)
+
 
 def _payload(suffix: str) -> dict[str, Any]:
     text, explanation, diagram = _SOLUTIONS[suffix]
-    question = suffix.split("-", 1)[0]
     return {
-        "answer_id": f"DT-H1-CL-{suffix}-20260909",
+        "answer_id": f"DT-H1-{'CL' if suffix in _ORIGINAL_SUFFIXES else 'MID'}-{suffix}-20260909",
         "node_id": _PREFIX + suffix,
-        "revision_id": REVISION_ID,
+        "revision_id": REVISION_ID
+        if suffix in _ORIGINAL_SUFFIXES
+        else EXTENDED_REVISION_ID,
         "source_kind": "assistant_supplement",
         "label_zh": ANSWER_LABEL,
         "source_label_zh": SOURCE_LABEL,
-        "source_question_sha256": _QUESTION_HASHES[question],
+        "source_question_sha256": _question_bindings(suffix)[0][1],
         "text_zh": text,
         "explanation_zh": explanation,
         "pitfalls_zh": {
@@ -158,13 +179,23 @@ def answer_for_scan(scan: Mapping[str, Any]) -> dict[str, Any] | None:
     source_answer = scan.get("reference_answer", {})
     if source_answer.get("availability") != "absent":
         return None  # Never replace an existing source answer.
-    question = suffix.split("-", 1)[0]
-    expected = (f"DT2025-H1-{question}-E1", _QUESTION_HASHES[question])
+    expected = set(_question_bindings(suffix))
     actual = {
         (row.get("crop_id"), row.get("sha256"))
         for row in scan.get("evidence_descriptors", [])
         if isinstance(row, Mapping) and row.get("evidence_role") == "question"
     }
-    if scan.get("paper_id") != "W1-DT2025-H1-MID" or actual != {expected}:
+    if scan.get("paper_id") != "W1-DT2025-H1-MID" or actual != expected:
         raise SupplementalAnswerError("补充解答对应的题图版本不一致，请重新核对。")
+    if node in SHARED_CONTEXT_BINDINGS:
+        actual_context = {
+            (row.get("crop_id"), row.get("sha256"))
+            for row in scan.get("evidence_descriptors", [])
+            if isinstance(row, Mapping)
+            and row.get("evidence_role") == "shared_material"
+        }
+        if actual_context != set(SHARED_CONTEXT_BINDINGS[node]):
+            raise SupplementalAnswerError(
+                "补充解答对应的共享材料版本不一致，请重新核对。"
+            )
     return _payload(suffix)

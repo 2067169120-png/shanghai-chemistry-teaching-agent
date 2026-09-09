@@ -9,6 +9,9 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 from urllib.parse import quote
 
+from .datong_crop_revision import project_datong_descriptor, recrop_datong_view
+from .source_crop_revision import SourceCropRevisionError
+
 SOURCE_NAMESPACE = "candidate_review_only"
 BATCH_ID = "WAVE1-FORMALIZATION-2026-08-04"
 BATCH_RELATIVE = Path(
@@ -791,7 +794,10 @@ class Wave1CandidateReviewReader:
                     f"atomic_part/{quote(node_id, safe='')}/question-crops/"
                     f"{quote(binding['crop_id'], safe='')}"
                 )
-            items.append(item)
+            try:
+                items.append(project_datong_descriptor(self.shchem_root, item))
+            except SourceCropRevisionError as exc:
+                raise CandidateReviewError("candidate_review_presentation_invalid", str(exc), 409) from exc
         items.sort(
             key=lambda item: (
                 0 if item["evidence_role"] == "question" else 1,
@@ -1408,7 +1414,11 @@ class Wave1CandidateReviewReader:
                 "Wave1 crop bytes no longer match the exact evidence binding",
                 409,
             )
-        return CandidateCropPayload(data=data, sha256=expected_sha256)
+        try:
+            data = recrop_datong_view(self.shchem_root, safe_crop_id, data)
+        except SourceCropRevisionError as exc:
+            raise CandidateReviewError("candidate_review_presentation_invalid", str(exc), 409) from exc
+        return CandidateCropPayload(data=data, sha256=_sha256(data))
 
 
 __all__ = [

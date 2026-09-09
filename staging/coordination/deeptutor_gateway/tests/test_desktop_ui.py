@@ -244,6 +244,97 @@ def _wait_until(app: object, predicate, timeout: float = 2.0) -> bool:
     return bool(predicate())
 
 
+def test_paper_preview_hides_student_scores_but_teacher_keeps_them(qt_app) -> None:
+    from PySide6.QtWidgets import QLabel
+
+    from integrations.deeptutor_shchem_v1.desktop_workbench.assembly_page import (
+        PaperPreviewDialog,
+    )
+
+    preview = {
+        "schema_version": "shchem.desktop-paper-preview.v1",
+        "mode": "daily_practice",
+        "mode_label": "平时练习",
+        "title": "分数显示测试",
+        "show_question_scores": False,
+        "stats": {
+            "theme_count": 1,
+            "question_count": 1,
+            "total_score": 4,
+            "total_time_minutes": 10,
+        },
+        "themes": [
+            {
+                "display_number": "第1题",
+                "title": "氧化还原",
+                "source": "本地测试来源",
+                "chapter": "氧化还原反应",
+                "score": 4,
+                "time_minutes": 10,
+                "difficulty": "中档",
+                "question_count": 1,
+                "shared_materials": [],
+                "questions": [
+                    {
+                        "display_number": "第1题·第1问",
+                        "response_type": "填空",
+                        "score": 4,
+                        "section": "氧化还原反应",
+                        "difficulty": "中档",
+                        "answer_space": 0,
+                        "stem": "填写答案。",
+                        "answer": "参考答案",
+                        "answer_label": "参考答案可用",
+                    }
+                ],
+            }
+        ],
+        "blockers": [],
+    }
+    dialog = PaperPreviewDialog(preview)
+    try:
+        student_text = dialog.meta.text() + "\n" + "\n".join(
+            label.text() for label in dialog.paper_body.findChildren(QLabel)
+        )
+        assert "4 分" not in student_text
+        assert "总分" not in student_text
+
+        dialog.teacher_button.setChecked(True)
+        teacher_text = dialog.meta.text() + "\n" + "\n".join(
+            label.text() for label in dialog.paper_body.findChildren(QLabel)
+        )
+        assert "4 分" in teacher_text
+        assert "参考答案" in teacher_text
+    finally:
+        dialog.close()
+
+
+def test_paper_page_score_checkbox_is_independent_and_invalidates_preview(qt_app) -> None:
+    from integrations.deeptutor_shchem_v1.desktop_workbench.assembly_page import (
+        PaperPage,
+    )
+    from integrations.deeptutor_shchem_v1.desktop_workbench.tasks import (
+        DesktopTaskBridge,
+    )
+
+    bridge = DesktopTaskBridge()
+    page = PaperPage(_Facade(), bridge)
+    try:
+        assert page.show_question_scores.text() == "题面显示分数"
+        assert page.show_question_scores.isChecked() is False
+        assert (
+            page.show_question_scores.toolTip()
+            == "默认不显示；教师版评分答案始终保留分值。原图自带的分数不会被涂改。"
+        )
+
+        page.show_question_scores.setChecked(True)
+        assert page.model.show_question_scores is True
+        assert page.model.preview is None
+    finally:
+        page.close()
+        bridge.shutdown(1000)
+
+
 class _PreparationFacade(_Facade):
     def __init__(self, artifact_root: Path) -> None:
         super().__init__()

@@ -19,7 +19,10 @@ from .desktop_blueprint_generation import (
     run_blueprint_request,
     validate_blueprint,
 )
-from .desktop_chemistry_prompt_rules import CHEMISTRY_CONSISTENCY_RULES
+from .desktop_chemistry_prompt_rules import (
+    CHEMISTRY_CONSISTENCY_RULES,
+    TEACHING_SOURCE_RULES,
+)
 
 REVIEW_KIND = "textbook_blueprint_review"
 
@@ -110,6 +113,8 @@ def review_prompt(
         CHECKLIST
         + "\n"
         + CHEMISTRY_CONSISTENCY_RULES
+        + "\n"
+        + TEACHING_SOURCE_RULES
         + (
             "\n本次仅完成第一步诊断：只返回summary和issues，不输出修订蓝图；下一步会单独完成修订。逐项核对原蓝图的实质问题，合并相同根因，避免重复意见。\n"
             if diagnosis is None

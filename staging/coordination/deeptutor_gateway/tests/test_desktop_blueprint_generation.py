@@ -16,6 +16,7 @@ from integrations.deeptutor_shchem_v1.desktop_blueprint_generation import (
 )
 from integrations.deeptutor_shchem_v1.desktop_chemistry_prompt_rules import (
     CHEMISTRY_CONSISTENCY_RULES,
+    TEACHING_SOURCE_RULES,
 )
 from integrations.deeptutor_shchem_v1.desktop_facade import DesktopFacadeError
 from integrations.deeptutor_shchem_v1.intake_imports import PinnedVisualTransport
@@ -88,6 +89,7 @@ def test_exact_compiled_evidence_reaches_text_only_request(style):
     text = json.dumps(body, ensure_ascii=False)
     assert "系统提示" in text and "电子转移" in text and "E1" in text
     assert CHEMISTRY_CONSISTENCY_RULES in text.replace("\\n", "\n")
+    assert TEACHING_SOURCE_RULES in text.replace("\\n", "\n")
     assert "fixture-secret" not in text and "source_path" not in text
     assert "image_url" not in text and "input_image" not in text
 

@@ -15,6 +15,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .datong_answer_bindings import EXISTING_ANSWER_AREA_NODE_IDS
+from .datong_crop_revision import visible_evidence
 from .paper_export_alias_projection import (
     AliasContentBinding,
     PaperExportAliasProjection,
@@ -119,6 +121,7 @@ def _validated_request(payload: Mapping[str, Any]) -> dict[str, Any]:
         "numbering_mode",
         "score_per_atomic",
         "answer_space_lines",
+        "show_question_scores",
         "atomic_settings",
         "selections",
     }
@@ -151,6 +154,11 @@ def _validated_request(payload: Mapping[str, Any]) -> dict[str, Any]:
             "paper_export_request_invalid", "默认作答行数须为 0—20 的整数。"
         )
     raw_atomic_settings = payload.get("atomic_settings")
+    show_question_scores = payload.get("show_question_scores", False)
+    if type(show_question_scores) is not bool:
+        raise PaperExportWorkbenchError(
+            "paper_export_request_invalid", "题面分数显示选项必须为开启或关闭。"
+        )
     atomic_settings: dict[str, dict[str, int]] | None = None
     if raw_atomic_settings is not None:
         if not isinstance(raw_atomic_settings, Mapping):
@@ -258,6 +266,7 @@ def _validated_request(payload: Mapping[str, Any]) -> dict[str, Any]:
         "numbering_mode": numbering,
         "score_per_atomic": float(score),
         "answer_space_lines": answer_lines,
+        "show_question_scores": show_question_scores,
         "atomic_settings": atomic_settings,
         "selections": selections,
         "scope": next(iter(scopes)),
@@ -311,6 +320,9 @@ def _preset_for_request(
     request: Mapping[str, Any], *, theme_count: int, total_score: float
 ) -> dict[str, Any]:
     preset = default_shanghai_theme_preset()
+    show_scores = request.get("show_question_scores", False)
+    preset["student_version"]["show_item_scores"] = show_scores
+    preset["student_version"]["show_total_score"] = show_scores
     _set_template_value(
         preset["structure"]["subquestion_numbering"],
         request["numbering_mode"],
@@ -335,8 +347,11 @@ def _preset_for_request(
         preset["per_paper"]["scoring_rules"],
         {
             "selection_rule_zh": "选择小问嵌入主题大题，按题面要求作答。",
-            "partial_credit_rule_zh": "本地备课练习按每个作答单元的设置分值计分。",
-            "other_rule_zh": "参考答案来自题库已对齐的非官方答案；教师版明确标注来源边界。",
+            "partial_credit_rule_zh": (
+                "各题分值见题旁标注，多空题按标注的小项计分。"
+                if show_scores else "评分分值见教师版答案。"
+            ),
+            "other_rule_zh": "计算题写出必要步骤，化学方程式注明条件。",
         },
         "本地备课导出规则；不冒充来源卷官方评分细则。",
     )
@@ -607,7 +622,7 @@ def _descriptor_rows(detail: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     rows = record.get("evidence_descriptors")
     if not isinstance(rows, list):
         rows = detail.get("evidence_descriptors")
-    return [row for row in rows or [] if isinstance(row, Mapping)]
+    return visible_evidence(rows)
 
 
 def _bind_blueprint_shared_materials_to_selected_details(
@@ -858,13 +873,14 @@ class _WorkbenchContentResolver:
                 "题目缺少可导出的精确题面裁片。",
                 409,
             )
-        summary = str(record.get("visible_summary_zh") or "化学题面")
         question_blocks = [
             self._asset_block(
                 node_id=node_id,
                 crop_id=str(descriptor["crop_id"]),
                 block_type="image",
-                alt_text_zh=summary,
+                # Candidate summaries may already contain the solution. Both
+                # copies use neutral alternative text; answers stay teacher-only.
+                alt_text_zh="原卷题面；按图中题干、条件和小题要求作答。",
             )
             for descriptor in descriptors
         ]
@@ -960,7 +976,8 @@ class _WorkbenchContentResolver:
         )
         if setting is None:
             score = self.score_per_atomic
-            answer_lines = _compact_answer_space_lines(
+            answer_lines = _source_aware_answer_space_lines(
+                node_id=node_id,
                 item_type=item_type,
                 requested_lines=self.default_answer_lines,
             )
@@ -995,6 +1012,12 @@ class _WorkbenchContentResolver:
         if setting is not None:
             content["answer_space_explicit"] = True
         return content
+
+
+def _source_aware_answer_space_lines(*, node_id: str, item_type: str, requested_lines: int) -> int:
+    if node_id in EXISTING_ANSWER_AREA_NODE_IDS:
+        return 0  # Preserve source answer areas; explicit teacher overrides still win.
+    return _compact_answer_space_lines(item_type=item_type, requested_lines=requested_lines)
 
 
 def _compact_answer_space_lines(*, item_type: str, requested_lines: int) -> int:

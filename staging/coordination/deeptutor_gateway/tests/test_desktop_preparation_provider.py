@@ -383,6 +383,9 @@ def test_learning_sequence_contract_reaches_actual_request_without_mutating_brie
 ):
     from copy import deepcopy
 
+    from integrations.deeptutor_shchem_v1.desktop_chemistry_prompt_rules import (
+        TEACHING_SOURCE_RULES,
+    )
     from integrations.deeptutor_shchem_v1.desktop_preparation_provider import (
         CLASSROOM_NOTE_FINAL_CHECK,
         PREPARATION_PROMPT_REVISION,
@@ -405,7 +408,8 @@ def test_learning_sequence_contract_reaches_actual_request_without_mutating_brie
         else body["messages"][1]["content"]
     )
     assert PREPARATION_PROMPT_REVISION in prompt
-    assert PREPARATION_PROMPT_REVISION == "20260909-classroom-projection-v21"
+    assert TEACHING_SOURCE_RULES in prompt
+    assert PREPARATION_PROMPT_REVISION == "20260909-classroom-projection-v22"
     assert prompt.endswith(CLASSROOM_NOTE_FINAL_CHECK)
     for rule in (
         "核心原句放在正文或完整知识表中",

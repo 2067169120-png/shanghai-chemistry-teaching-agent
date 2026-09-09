@@ -15,7 +15,10 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 
-from .desktop_chemistry_prompt_rules import CHEMISTRY_CONSISTENCY_RULES
+from .desktop_chemistry_prompt_rules import (
+    CHEMISTRY_CONSISTENCY_RULES,
+    TEACHING_SOURCE_RULES,
+)
 from .desktop_preparation_provider import _CancellationView
 from .intake_imports import PinnedVisualTransport
 from .visual_provider_runtime import (
@@ -161,6 +164,8 @@ def blueprint_prompt(preview: Mapping[str, Any]) -> str:
         "每个操作都要交代必要前提；无法确定时明确留待核验，不把缺前提的操作写成答案。\n"
         "如需写方程式，同时给出物质名称或文字标签，保留条件、物态、电荷和单位。\n"
         + CHEMISTRY_CONSISTENCY_RULES
+        + "\n"
+        + TEACHING_SOURCE_RULES
         + "\n可引用的本地摘要编号：\n"
         + json.dumps(indexed, ensure_ascii=False)
     )

@@ -107,8 +107,8 @@ def _patch_page_tools(monkeypatch: pytest.MonkeyPatch) -> None:
             "dpi": 300,
         }
 
-    def fake_pdf_audit(path, *, plan):
-        del path, plan
+    def fake_pdf_audit(path, *, plan, preset=None):
+        del path, plan, preset
         return {
             "status": "pass",
             "checks": {
@@ -326,6 +326,41 @@ def test_source_numbered_images_keep_one_visible_number_and_compact_line_caps(
     audit = renderer.audit_docx(output, plan=plan, preset=bundle["preset"])
     assert audit["status"] == "pass"
     assert audit["checks"]["source_image_numbers_not_repeated_as_text_headings"]
+
+
+@pytest.mark.parametrize("summary,shown", [
+    ("以卷面主题‘氯气’为共同语境；具体化学语义标签仍待人审。", False),
+    ("以卷面主题‘氯气’为共同语境；具体化学语义标签仍待入库。", False),
+    ("观察氯水的颜色变化，并解释消毒作用。", True),
+])
+def test_classroom_copy_keeps_real_context_but_not_internal_placeholders(tmp_path, summary, shown):
+    bundle = renderer.build_synthetic_demo_bundle()
+    plan = deepcopy(bundle["student_plan"])
+    plan["visible"]["theme_sections"][0]["context_summary_zh"] = summary
+    output = tmp_path / "student.docx"
+    renderer.build_docx_from_plan(plan, preset=bundle["preset"], output_path=output)
+    assert (summary in _all_docx_text(output)) is shown
+
+
+def test_shared_question_answer_slots_keep_question_number_at_page_boundaries(tmp_path):
+    bundle = renderer.build_synthetic_demo_bundle()
+    plan = deepcopy(bundle["student_plan"])
+    printed = plan["visible"]["theme_sections"][0]["printed_questions"][0]
+    image_dir = tmp_path / "images"
+    image_dir.mkdir()
+    Image.new("RGB", (830, 287), "white").save(image_dir / "whole-question.png")
+    atomic = printed["atomic_parts"][0]
+    atomic["question_blocks"] = [{
+        "block_type": "image", "text_zh": None,
+        "asset_ref": "images/whole-question.png", "alt_text_zh": "整题与共同条件",
+    }]
+    printed["atomic_parts"].append(deepcopy(atomic))
+    output = tmp_path / "student.docx"
+    renderer.build_docx_from_plan(plan, preset=bundle["preset"], output_path=output, asset_root=tmp_path)
+    text = _all_docx_text(output)
+    assert "第1题（1）" in text and "第1题（2）" in text
+    assert "作答单元" not in text
+    assert len(Document(output).inline_shapes) == 1
 
 
 def test_shared_image_order_padding_and_edge_warning_are_nonblocking(tmp_path: Path):
