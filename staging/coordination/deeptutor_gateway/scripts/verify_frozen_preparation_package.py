@@ -420,7 +420,7 @@ def frozen_course_namespace(pyz):
     exec(code, namespace)  # noqa: S102 - our pure frozen module, import allowlist
     if (
         namespace.get("COURSE_DESIGN_REVISION")
-        != "20260910-editable-courseware-reference-v3"
+        != "20260910-course-package-alignment-v4"
     ):
         raise RuntimeError("Frozen classroom course revision missing")
     contract = namespace["course_composition_contract"]("review")
@@ -430,6 +430,8 @@ def frozen_course_namespace(pyz):
         "G 课堂投影：默认服务约40人班级",
         "普通正文及题干建议28—32pt、标题36—44pt",
         "静态导出采用题目页与解答页分开",
+        "现成Word教案是内容来源，不是等待重写的提纲",
+        "只收到选段就只使用选段，不声称已读整份",
     ):
         if required not in contract:
             raise RuntimeError("Frozen classroom course contract incomplete")
@@ -763,7 +765,7 @@ def main() -> int:
             "按当前课题与课型填入建议结构",
         ],
         "desktop_workbench.preparation_design_widget": [],
-        "desktop_preparation_pedagogy": ["20260910-editable-courseware-reference-v3"],
+        "desktop_preparation_pedagogy": ["20260910-course-package-alignment-v4"],
         "desktop_preparation_classroom_layout": ["classroom-v2"],
         "desktop_workbench.library_detail": [
             "将这张原图用于备课…",
