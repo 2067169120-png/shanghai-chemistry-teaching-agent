@@ -1,7 +1,7 @@
 """Qt-free, read-only teacher projections for native question browsing.
 
 Source identifiers are opaque action bindings, never inferred from filenames.
-Only question/shared-material image descriptors belong in this projection.
+Question/shared descriptors and teacher answer descriptors have separate routes.
 """
 
 from __future__ import annotations
@@ -92,6 +92,7 @@ class LibraryPartDetail:
     supplemental_diagram_key: str | None = None
     quality_notes_zh: tuple[str, ...] = ()
     availability_zh: str = ""
+    answer_images: tuple[LibraryImage, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -172,6 +173,46 @@ def image_descriptors(
                 view_id=view_id,
             )
         )
+    return tuple(images)
+
+
+def answer_image_descriptors(
+    scope: str, node_id: str, scan: Mapping[str, Any], *, view_id: str = ""
+) -> tuple[LibraryImage, ...]:
+    """Keep explicitly aligned answer images out of all question-image lists."""
+    answer = _object(scan.get("reference_answer"))
+    if (
+        answer.get("availability") != "present_part_aligned"
+        or answer.get("source_authority") != "nonofficial_reference"
+    ):
+        return ()
+    rows = scan.get("reference_answer_images", [])
+    if not isinstance(rows, list):
+        return ()
+    images = []
+    for item in rows:
+        if not isinstance(item, Mapping):
+            continue
+        digest, crop_id = item.get("sha256"), item.get("crop_id")
+        if (
+            item.get("evidence_role") != "answer"
+            or item.get("access") != "teacher_reference_answer_only"
+            or item.get("display_mode") not in {"inline_required", "preview_only"}
+            or not isinstance(crop_id, str)
+            or not crop_id
+            or not isinstance(digest, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", digest)
+            or not isinstance(item.get("source_sha256"), str)
+            or not re.fullmatch(r"[0-9a-f]{64}", item["source_sha256"])
+        ):
+            continue
+        images.append(LibraryImage(
+            scope=scope, node_id=node_id, crop_id=crop_id, sha256=digest,
+            role="answer", caption_zh=_text(item.get("caption_zh"), "非官方参考答案原图"),
+            width=item.get("width") if type(item.get("width")) is int else 0,
+            height=item.get("height") if type(item.get("height")) is int else 0,
+            view_id=view_id,
+        ))
     return tuple(images)
 
 
@@ -361,6 +402,9 @@ def build_theme_detail(
                 supplemental_diagram_key=supplement.get("diagram_key"),
                 quality_notes_zh=tuple(dict.fromkeys(notes)),
                 availability_zh=availability,
+                answer_images=answer_image_descriptors(
+                    image_scope, image_node, scan, view_id=view_id
+                ),
             )
         )
     metadata = _object(paper.get("source_metadata"))

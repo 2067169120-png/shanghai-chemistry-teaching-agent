@@ -25,6 +25,7 @@ from .curriculum_workbench import CurriculumWorkbenchReader
 from .desktop_library import (
     LibraryImage,
     LibraryThemeDetail,
+    answer_image_descriptors,
     build_theme_detail,
     image_descriptors,
 )
@@ -67,6 +68,7 @@ from .reader_cancellation import (
     check_read_cancelled,
     read_cancel_scope,
 )
+from .reference_answer_images import answer_presentation_fingerprint
 from .student_visual_analysis import (
     StudentVisualAnalysisError,
     StudentVisualAnalysisManager,
@@ -695,12 +697,14 @@ class DesktopWorkbenchFacade:
         source_catalog = dict(catalog)
         source_catalog.pop("data_snapshot_id", None)
         fingerprint = presentation_fingerprint(source_catalog)
-        if fingerprint is None:
+        answer_fingerprint = answer_presentation_fingerprint(source_catalog)
+        if fingerprint is None and answer_fingerprint is None:
             return catalog
         source_catalog["data_snapshot_id"] = _canonical_digest(
             {
                 "catalog": source_catalog,
                 "presentation_fingerprint": fingerprint,
+                **({"answer_presentation_fingerprint": answer_fingerprint} if answer_fingerprint else {}),
             }
         )
         return source_catalog
@@ -1401,6 +1405,35 @@ class DesktopWorkbenchFacade:
                 "library_image_unavailable",
                 "这张题图暂时无法读取；未使用其他图片替代。",
             ) from exc
+
+    def library_answer_image(self, image: LibraryImage) -> bytes:
+        """Read an explicitly aligned teacher answer, never via the question route."""
+        if not isinstance(image, LibraryImage) or image.role != "answer":
+            raise DesktopFacadeError("library_answer_image_role_denied", "此入口只显示对应的参考答案原图。")
+        try:
+            with self._library_view_lock:
+                readers = self._library_views.get(image.view_id)
+            if readers is None:
+                raise DesktopFacadeError("library_view_expired", "阅读会话已结束，请重新打开主题。")
+            scope, node_id, scan = self._library_scan(image.scope, image.node_id, readers)
+            valid = answer_image_descriptors(scope, node_id, scan)
+            if not any(row.crop_id == image.crop_id and row.sha256 == image.sha256 for row in valid):
+                raise DesktopFacadeError("library_answer_image_stale", "答案图已变化或不属于本题，请重新打开主题。")
+            if scope != "master":
+                raise DesktopFacadeError("library_answer_image_unavailable", "此来源尚未接通答案原图。")
+            payload = readers[5].teacher_answer_crop(node_id, image.crop_id)
+            if (
+                not isinstance(payload.data, bytes)
+                or payload.content_type != "image/png"
+                or payload.sha256 != image.sha256
+                or hashlib.sha256(payload.data).hexdigest() != image.sha256
+            ):
+                raise DesktopFacadeError("library_answer_image_integrity_failed", "答案图校验失败，请重新读取来源资料。")
+            return payload.data
+        except DesktopFacadeError:
+            raise
+        except Exception as exc:
+            raise DesktopFacadeError("library_answer_image_unavailable", "这张答案图暂时无法读取，未使用其他图片替代。") from exc
 
     def add_theme_to_basket(self, card: ThemeCard) -> int:
         # Persist only opaque identity material.  Raw paper/theme IDs remain in
@@ -4899,12 +4932,27 @@ class DesktopWorkbenchFacade:
                     exc, "题面裁片暂时无法读取，导出已停止。"
                 ) from exc
 
+        def answer_crop_loader(source_scope: str, node_id: str, crop_id: str) -> Any:
+            try:
+                if source_scope != "master" or node_id in master_crop_bindings:
+                    raise PaperExportWorkbenchError(
+                        "paper_export_answer_image_unavailable", "此来源尚无独立的教师答案图通路。"
+                    )
+                return master_direct.teacher_answer_crop(node_id, crop_id)
+            except PaperExportWorkbenchError:
+                raise
+            except Exception as exc:
+                raise self._paper_export_error(
+                    exc, "必需的答案结构图无法读取，导出已停止。"
+                ) from exc
+
         try:
             job = self._paper_export_jobs.start(
                 request,
                 theme_catalog_loader=lambda source_scope: catalog,
                 detail_loader=detail_loader,
                 crop_loader=crop_loader,
+                answer_crop_loader=answer_crop_loader,
             )
         except PaperExportWorkbenchError as exc:
             raise DesktopFacadeError(exc.code, str(exc)) from exc

@@ -47,11 +47,12 @@ from integrations.deeptutor_shchem_v1.desktop_paths import DesktopPaths
 from integrations.deeptutor_shchem_v1.desktop_workbench.paper_composer import (
     PaperComposerModel,
 )
+from integrations.deeptutor_shchem_v1.reference_answer_images import INLINE_ANSWERS
 
 BUNDLED_PYTHON = Path(
     "C:/Users/20671/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe"
 )
-OUTPUT_RELATIVE = "runtime/deeptutor_shchem/qa_0.1.56_repairs_export_20260910_r1"
+OUTPUT_RELATIVE = "runtime/deeptutor_shchem/qa_0.1.57_answers_export_20260910_r1"
 REPAIRS_RELATIVE = (
     "runtime/deeptutor_shchem/crop_repairs_0.1.55_r1/crop_repair_manifest.json"
 )
@@ -200,6 +201,13 @@ def verify_bundle(bundle, assets: Path, expected, repairs) -> dict:
                     answer["independently_verified"] is False,
                     "answer approval elevated",
                 )
+                required_answer_hashes = (
+                    [INLINE_ANSWERS[node]["sha256"]] if node in INLINE_ANSWERS else []
+                )
+                require(
+                    block_hashes(answer.get("content_blocks", [])) == required_answer_hashes,
+                    "teacher answer structure missing, duplicated or linked to another question",
+                )
             else:
                 require(
                     "teacher_notes" not in atom, "teacher answer entered student plan"
@@ -232,6 +240,7 @@ def verify_bundle(bundle, assets: Path, expected, repairs) -> dict:
         "old_repair_hashes_excluded": sorted(old_hashes),
         "answers_match_source": True,
         "student_answers_excluded": True,
+        "required_teacher_answer_images": {node: row["sha256"] for node, row in INLINE_ANSWERS.items()},
     }
 
 
@@ -459,6 +468,10 @@ def main() -> int:
                     part.reference_answer_zh == answer, "native answer crossed source"
                 )
                 require(part.question_images, "atomic has no native question image")
+                for answer_image in part.answer_images:
+                    raw = facade.library_answer_image(answer_image)
+                    require(sha(raw) == answer_image.sha256, "native answer preview hash mismatch")
+                    report.setdefault("native_answer_image_sha256", {})[part.key] = answer_image.sha256
                 question_hashes = []
                 for image in part.question_images:
                     raw = facade.library_image(image)
@@ -607,6 +620,13 @@ def main() -> int:
                     new_hashes <= media_hashes and not old_hashes & media_hashes,
                     "DOCX does not embed all nine repaired images or includes excluded images",
                 )
+                required_answers = {row["sha256"] for row in INLINE_ANSWERS.values()}
+                if artifact["artifact_id"] == "student_docx":
+                    require(not required_answers & media_hashes, "student DOCX contains an answer image")
+                elif artifact["artifact_id"] == "teacher_docx":
+                    require(required_answers <= media_hashes, "teacher DOCX is missing required answer structures")
+                else:
+                    raise AssertionError("unexpected DOCX audience")
                 report.setdefault("docx_media_sha256", {})[artifact["artifact_id"]] = (
                     sorted(media_hashes)
                 )

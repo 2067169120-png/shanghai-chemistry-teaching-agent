@@ -702,7 +702,8 @@ class LibraryPage(QWidget):
             except RuntimeError:
                 self._detail_dialog = None
         dialog = LibraryDetailDialog(
-            detail, self.tasks, image_loader, parent=self.window()
+            detail, self.tasks, image_loader, parent=self.window(),
+            answer_image_loader=getattr(self.facade, "library_answer_image", None),
         )
         self._detail_dialog = dialog
         dialog.preparation_image_requested.connect(self.preparation_image_requested)

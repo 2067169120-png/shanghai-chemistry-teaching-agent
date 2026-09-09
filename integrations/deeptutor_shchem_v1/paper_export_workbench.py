@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import os
 import re
@@ -14,6 +15,8 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from PIL import Image
 
 from .datong_answer_bindings import EXISTING_ANSWER_AREA_NODE_IDS
 from .datong_crop_revision import visible_evidence
@@ -719,11 +722,13 @@ class _WorkbenchContentResolver:
         score_per_atomic: float,
         default_answer_lines: int,
         atomic_settings: Mapping[str, Mapping[str, int]] | None = None,
+        answer_crop_loader: Callable[[str, str], Any] | None = None,
     ) -> None:
         self.scope = scope
         self.rows = {str(row.get("atomic_part_id")): row for row in rows}
         self.details = details
         self.crop_loader = crop_loader
+        self.answer_crop_loader = answer_crop_loader
         self.asset_root = asset_root
         self.score_per_atomic = score_per_atomic
         self.default_answer_lines = default_answer_lines
@@ -825,6 +830,105 @@ class _WorkbenchContentResolver:
         if source_bits and fallback.startswith("题库来源卷："):
             fallback += "；" + " / ".join(dict.fromkeys(source_bits))
         return str(boundary or paper_face or fallback)[:1000]
+
+    def _reference_answer_blocks(
+        self, node_id: str, detail: Mapping[str, Any], *, answer_status: str
+    ) -> list[dict[str, Any]]:
+        if "reference_answer_images" not in detail:
+            return []
+        descriptors = detail["reference_answer_images"]
+        if not isinstance(descriptors, list):
+            raise PaperExportWorkbenchError(
+                "paper_export_answer_image_invalid", "来源答案图列表格式不正确。", 409
+            )
+        if not descriptors:
+            return []
+        source_node = self.rows.get(node_id, {}).get("_export_content_node_id", node_id)
+        if detail.get("master_node_id") != source_node:
+            raise PaperExportWorkbenchError(
+                "paper_export_answer_image_binding_invalid", "来源答案图与当前题目身份不一致。", 409
+            )
+        result: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for descriptor in descriptors:
+            if not isinstance(descriptor, Mapping):
+                raise PaperExportWorkbenchError(
+                    "paper_export_answer_image_invalid", "来源答案图描述格式不正确。", 409
+                )
+            crop_id = descriptor.get("crop_id")
+            mode = descriptor.get("display_mode")
+            if (
+                not isinstance(crop_id, str) or not crop_id.strip() or crop_id in seen
+                or descriptor.get("evidence_role") != "answer"
+                or descriptor.get("access") != "teacher_reference_answer_only"
+                or mode not in {"inline_required", "preview_only"}
+                or any(
+                    not isinstance(descriptor.get(key), str)
+                    or not _SHA256.fullmatch(descriptor[key])
+                    for key in ("sha256", "source_sha256")
+                )
+                or any(
+                    type(descriptor.get(key)) is not int or descriptor[key] <= 0
+                    for key in ("source_page", "bytes", "width", "height")
+                )
+                or any(
+                    not isinstance(descriptor.get(key), str) or not descriptor[key].strip()
+                    for key in ("presentation_revision_id", "caption_zh")
+                )
+            ):
+                raise PaperExportWorkbenchError(
+                    "paper_export_answer_image_invalid", "来源答案图角色、模式或来源绑定不完整。", 409
+                )
+            seen.add(crop_id)
+            if mode == "preview_only":
+                continue
+            if answer_status != "aligned":
+                raise PaperExportWorkbenchError(
+                    "paper_export_answer_image_invalid", "未对齐或缺失答案不能嵌入来源答案图。", 409
+                )
+            if self.answer_crop_loader is None:
+                raise PaperExportWorkbenchError(
+                    "paper_export_answer_image_loader_missing", "本题必须包含来源答案图，但专用读取接口不可用。", 409
+                )
+            # The dedicated loader verifies the node/crop relation against the
+            # source snapshot. Never fall back to the student question route.
+            payload = self.answer_crop_loader(node_id, crop_id)
+            data = getattr(payload, "data", None)
+            expected_sha = descriptor["sha256"]
+            if (
+                not isinstance(data, bytes)
+                or getattr(payload, "sha256", None) != expected_sha
+                or _sha256_bytes(data) != expected_sha
+                or len(data) != descriptor["bytes"]
+                or getattr(payload, "content_type", None) != "image/png"
+            ):
+                raise PaperExportWorkbenchError(
+                    "paper_export_answer_image_mismatch", "来源答案图字节与本题冻结描述不一致。", 409
+                )
+            try:
+                with Image.open(io.BytesIO(data)) as image:
+                    if image.format != "PNG" or image.size != (descriptor["width"], descriptor["height"]):
+                        raise ValueError("answer_image_dimensions_mismatch")
+                    image.verify()
+            except (OSError, ValueError) as exc:
+                raise PaperExportWorkbenchError(
+                    "paper_export_answer_image_mismatch", "来源答案图格式或尺寸校验失败。", 409
+                ) from exc
+            relative = Path("images") / f"{expected_sha}.png"
+            target = self.asset_root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if target.exists() and _sha256_bytes(target.read_bytes()) != expected_sha:
+                raise PaperExportWorkbenchError(
+                    "paper_export_answer_image_mismatch", "任务内的来源答案图已发生变化。", 409
+                )
+            if not target.exists():
+                target.write_bytes(data)
+            result.append({
+                "block_type": "image", "text_zh": None,
+                "asset_ref": relative.as_posix(),
+                "alt_text_zh": descriptor["caption_zh"][:1000],
+            })
+        return result
 
     def resolve_shared_material(
         self, reference: Mapping[str, Any]
@@ -964,6 +1068,11 @@ class _WorkbenchContentResolver:
                 409,
                 details={"atomic_part_id": node_id, "availability": availability},
             )
+        answer_blocks = self._reference_answer_blocks(
+            node_id, detail, answer_status=reference_answer["status"]
+        )
+        if answer_blocks:
+            reference_answer["content_blocks"] = answer_blocks
         analysis = record.get("candidate_analysis")
         if not isinstance(analysis, Mapping):
             analysis = record.get("model_candidate_analysis")
@@ -1186,6 +1295,7 @@ class PaperExportJobManager:
         theme_catalog_loader: Callable[[str], Mapping[str, Any]],
         detail_loader: Callable[[str, str], Mapping[str, Any]],
         crop_loader: Callable[[str, str, str], Any],
+        answer_crop_loader: Callable[[str, str, str], Any] | None = None,
     ) -> dict[str, Any]:
         request = _validated_request(payload)
         _enforce_prequeue_expanded_limits(
@@ -1227,6 +1337,7 @@ class PaperExportJobManager:
                 theme_catalog_loader,
                 detail_loader,
                 crop_loader,
+                answer_crop_loader,
             )
         return self._public_job(job)
 
@@ -1245,6 +1356,7 @@ class PaperExportJobManager:
         theme_catalog_loader: Callable[[str], Mapping[str, Any]],
         detail_loader: Callable[[str, str], Mapping[str, Any]],
         crop_loader: Callable[[str, str, str], Any],
+        answer_crop_loader: Callable[[str, str, str], Any] | None = None,
     ) -> None:
         try:
             job = self._read_job(job_id)
@@ -1424,6 +1536,17 @@ class PaperExportJobManager:
                     )
                 return crop_loader(source_scope, source_node_id, crop_id)
 
+            def routed_answer_crop_loader(node_id: str, crop_id: str) -> Any:
+                row = rows_by_id.get(node_id, {})
+                source_scope = row.get("_export_content_scope", request["scope"])
+                source_node_id = row.get("_export_content_node_id", node_id)
+                if not isinstance(source_scope, str) or not isinstance(source_node_id, str):
+                    raise PaperExportWorkbenchError(
+                        "paper_export_alias_binding_invalid", "来源答案图读取绑定不完整。", 409
+                    )
+                assert answer_crop_loader is not None
+                return answer_crop_loader(source_scope, source_node_id, crop_id)
+
             resolver = _WorkbenchContentResolver(
                 scope=request["scope"],
                 rows=all_theme_rows,
@@ -1433,6 +1556,7 @@ class PaperExportJobManager:
                 score_per_atomic=float(request["score_per_atomic"]),
                 default_answer_lines=request["answer_space_lines"],
                 atomic_settings=atomic_settings,
+                answer_crop_loader=routed_answer_crop_loader if answer_crop_loader is not None else None,
             )
             plans = build_document_plans(
                 blueprint,

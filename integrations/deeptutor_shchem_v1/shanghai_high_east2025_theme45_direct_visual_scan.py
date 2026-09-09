@@ -38,6 +38,7 @@ from .reference_answer import (
     project_reference_answer,
     reference_answer_catalog_metadata,
 )
+from .reference_answer_images import project_answer_image
 from .security import SecurityError, validate_identifier
 
 PRODUCT_ID = "FORMAL-PENDING-V2-2025-SH-EAST-G2-M05-B-T4-T5-A"
@@ -840,10 +841,46 @@ class ShanghaiHighEast2025Theme45DirectVisualScanReader(
                 }
                 for item in record["answer"]["visual_alignment_evidence"]
             ],
+            "reference_answer_images": [
+                project_answer_image(
+                    master_node_id,
+                    item,
+                    snapshot.crop_by_id[item["crop_id"]]["source_sha256"],
+                )
+                for item in record["answer"]["visual_alignment_evidence"]
+            ],
             "reference_answer": answer,
             "authority": dict(AUTHORITY),
             "integrity": self._integrity(snapshot),
         }
+
+    def teacher_answer_crop(self, master_node_id: str, crop_id: str) -> CandidateCropPayload:
+        """Read a bound answer through a separate teacher-only in-process route."""
+        self._identifier(master_node_id, "master_node_id")
+        self._identifier(crop_id, "crop_id")
+        snapshot = self._snapshot()
+        record = snapshot.by_master_id.get(master_node_id)
+        if record is None:
+            _fail("master_direct_scan_node_not_found", "answer node not found", 404)
+        crop = snapshot.crop_by_id.get(crop_id)
+        descriptor = next(
+            (item for item in record["answer"]["visual_alignment_evidence"] if item["crop_id"] == crop_id),
+            None,
+        )
+        if crop is None or descriptor is None or crop["role"] != "answer":
+            _fail("teacher_answer_crop_not_found", "answer crop does not belong to this node", 404)
+        project_answer_image(master_node_id, descriptor, crop["source_sha256"])
+        raw = snapshot.output_bytes[crop["output_path"]]
+        if (
+            descriptor["evidence_role"] != "answer"
+            or _sha256(raw) != descriptor["sha256"]
+            or descriptor["sha256"] != crop["sha256"]
+            or len(raw) != descriptor["bytes"]
+            or len(raw) != crop["bytes"]
+            or self._png_dimensions(raw) != (descriptor["width"], descriptor["height"])
+        ):
+            _fail("teacher_answer_crop_binding_mismatch", "answer crop no longer matches its source")
+        return CandidateCropPayload(data=raw, sha256=_sha256(raw))
 
     def question_crop(self, master_node_id: str, crop_id: str) -> CandidateCropPayload:
         self._identifier(master_node_id, "master_node_id")

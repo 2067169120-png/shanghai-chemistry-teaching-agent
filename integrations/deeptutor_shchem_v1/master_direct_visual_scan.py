@@ -1514,6 +1514,15 @@ class MasterDirectVisualScanReader:
     def detail(self, master_node_id: str) -> dict[str, Any]:
         return self._reader_for_node(master_node_id).detail(master_node_id)
 
+    def teacher_answer_crop(self, master_node_id: str, crop_id: str) -> CandidateCropPayload:
+        reader = self._reader_for_node(master_node_id)
+        method = getattr(reader, "teacher_answer_crop", None)
+        if not callable(method):
+            raise MasterDirectVisualScanError(
+                "teacher_answer_image_unavailable", "reader has no teacher answer image route", 404
+            )
+        return method(master_node_id, crop_id)
+
     def question_crop(
         self, master_node_id: str, crop_id: str
     ) -> CandidateCropPayload:

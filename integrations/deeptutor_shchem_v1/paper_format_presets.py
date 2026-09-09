@@ -1694,7 +1694,8 @@ def _normalize_reference_answer(value: Any) -> dict[str, Any]:
     )
     _require_exact_keys(
         answer,
-        {"status", "text_zh", "authority_label", "independently_verified", "source_label_zh"},
+        {"status", "text_zh", "authority_label", "independently_verified", "source_label_zh"}
+        | ({"content_blocks"} if "content_blocks" in answer else set()),
         code="reference_answer_invalid",
         message_zh="来源参考答案字段不完整。",
     )
@@ -1716,13 +1717,31 @@ def _normalize_reference_answer(value: Any) -> dict[str, Any]:
             raise PaperFormatContractError(
                 "reference_answer_invalid", "未对齐或缺失答案不能携带答案正文。"
             )
-    return {
+    result = {
         "status": status,
         "text_zh": text_zh.strip() if isinstance(text_zh, str) else None,
         "authority_label": label,
         "independently_verified": answer["independently_verified"],
         "source_label_zh": source.strip() if isinstance(source, str) else None,
     }
+    if "content_blocks" in answer:
+        if status != "aligned":
+            raise PaperFormatContractError(
+                "reference_answer_invalid", "未对齐或缺失答案不能携带答案图。"
+            )
+        blocks = _normalize_blocks(answer["content_blocks"])
+        if any(
+            block["block_type"] not in {"image", "apparatus"}
+            or block["asset_ref"] is None
+            or block["text_zh"] is not None
+            or block["alt_text_zh"] is None
+            for block in blocks
+        ):
+            raise PaperFormatContractError(
+                "reference_answer_invalid", "来源答案图必须是有资源引用及说明的非空图块。"
+            )
+        result["content_blocks"] = blocks
+    return result
 
 
 def _normalize_atomic_content(value: Any, fallback_lines: int) -> dict[str, Any]:

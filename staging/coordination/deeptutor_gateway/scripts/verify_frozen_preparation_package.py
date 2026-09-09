@@ -484,7 +484,7 @@ def main() -> int:
         "desktop_workbench.preparation_design_widget": [],
         "desktop_preparation_pedagogy": ["20260910-editable-courseware-reference-v3"],
         "desktop_preparation_classroom_layout": ["classroom-v2"],
-        "desktop_workbench.library_detail": ["将这张原图用于备课…"],
+        "desktop_workbench.library_detail": ["将这张原图用于备课…", "LibraryShowAnswerImage"],
         "desktop_workbench.library_page": ["选为备课参考…"],
         "desktop_library_preparation": [
             "【题库备课参考：当前阅读快照，不是原题全文或已核定答案】"
@@ -492,7 +492,7 @@ def main() -> int:
         "desktop_workbench.library_preparation_dialog": ["将题库选题带入备课"],
         "desktop_workbench.main_window": [],
         "desktop_facade": ["题库图片无法保存到本地备课素材库。"],
-        "desktop_library": ["知识点候选（主辅待核对）"],
+        "desktop_library": ["知识点候选（主辅待核对）", "reference_answer_images"],
         "desktop_library_session": ["visual_scan_identity_index"],
         "question_search_workbench": ["complete_themes_only", "pending_parentage"],
         "theme_workbench": ["partial_source_candidate"],
@@ -500,7 +500,9 @@ def main() -> int:
         "songjiang2025_theme2_direct_visual_scan": [],
         "shanghai_high_east2025_theme45_direct_visual_scan": [],
         "archived_wechat_crop_revision": ["archived-wechat-source-recrop-20260910-r3"],
-        "paper_export_workbench": ["used_by_atomic_ids"],
+        "reference_answer_images": ["sheast-source-answer-images-20260910-r1", "inline_required", "preview_only"],
+        "paper_export_workbench": ["used_by_atomic_ids", "paper_export_answer_image_loader_missing"],
+        "paper_format_presets": ["reference_answer_invalid", "content_blocks"],
         "paper_export_renderer": [
             "used_by_atomic_ids",
             "shared_material_membership_invalid",

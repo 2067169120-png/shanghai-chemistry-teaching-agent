@@ -1286,12 +1286,18 @@ def _add_teacher_notes(
     content_width_dxa: int,
     include_source_label: bool,
     scoring_label_zh: str | None = None,
+    asset_root: Path | None = None,
 ) -> None:
+    reference = notes["source_reference_answer"]
+    answer_blocks = reference.get("content_blocks") or []
     table = doc.add_table(rows=1, cols=1)
     _set_repeat_table_width(table, content_width_dxa)
-    row_pr = table.rows[0]._tr.get_or_add_trPr()
-    cannot_split = OxmlElement("w:cantSplit")
-    row_pr.append(cannot_split)
+    # Source routes may be tall. Permit the note row to flow across pages;
+    # each inline image remains whole instead of shrinking the entire answer.
+    if not answer_blocks:
+        row_pr = table.rows[0]._tr.get_or_add_trPr()
+        cannot_split = OxmlElement("w:cantSplit")
+        row_pr.append(cannot_split)
     cell = table.cell(0, 0)
     _set_cell_shading(cell, "FFF8E8")
     _set_cell_margins(cell, top=60, start=100, bottom=60, end=100)
@@ -1300,6 +1306,10 @@ def _add_teacher_notes(
     paragraph.paragraph_format.space_after = Pt(1)
     note_size_pt = doc.styles["ShChemTeacherNote"].font.size.pt
     if scoring_label_zh:
+        # Plain answers already have a non-splitting row. Adding keepNext to
+        # its first cell paragraph makes Word chain following table rows and
+        # can push the first theme off the title page.
+        paragraph.paragraph_format.keep_with_next = bool(answer_blocks)
         scoring = paragraph.add_run(scoring_label_zh)
         _set_run_font(scoring, cjk="SimHei", latin="Times New Roman", size_pt=note_size_pt, bold=True)
         paragraph = cell.add_paragraph(style="ShChemTeacherNote")
@@ -1312,10 +1322,17 @@ def _add_teacher_notes(
         size_pt=note_size_pt,
         bold=True,
     )
-    reference = notes["source_reference_answer"]
     supplement = notes.get("supplemental_answer") or {}
     answer_text = supplement.get("text_zh") or reference.get("text_zh") or "本题暂无已对齐参考答案。"
     _add_answer_text(paragraph, answer_text)
+    if answer_blocks:
+        paragraph.paragraph_format.keep_with_next = True
+        for block in answer_blocks:
+            _add_asset_block(
+                cell, block, asset_root=asset_root,
+                max_width_mm=min(162.0, (content_width_dxa - 240) * 25.4 / 1440.0),
+                alt_prefix_zh=None if str(block.get("alt_text_zh", "")).startswith("非官方参考答案图") else "非官方参考答案图：",
+            )
     if supplement.get("diagram_key"):
         picture = cell.add_paragraph(style="ShChemTeacherNote")
         diagram_width = (
@@ -1716,6 +1733,7 @@ def _add_theme_sections(
                         atomic["teacher_notes"],
                         content_width_dxa=content_width_dxa,
                         include_source_label=include_source_label,
+                        asset_root=asset_root,
                         scoring_label_zh=_teacher_scoring_label(
                             printed, atomic_index, source_number=source_number
                         ),

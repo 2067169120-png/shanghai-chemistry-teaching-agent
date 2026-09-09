@@ -249,6 +249,8 @@ class LibraryDetailDialog(QDialog):
         tasks: DesktopTaskBridge,
         image_loader: Callable[[LibraryImage], bytes],
         parent: QWidget | None = None,
+        *,
+        answer_image_loader: Callable[[LibraryImage], bytes] | None = None,
     ) -> None:
         super().__init__(parent)
         self.detail = detail
@@ -277,7 +279,7 @@ class LibraryDetailDialog(QDialog):
         self.tabs.setObjectName("LibraryDetailTabs")
         self.tabs.setAccessibleName("大题题面答案与来源")
         self.tabs.addTab(self._question_tab(detail, tasks, image_loader), "题面")
-        self.tabs.addTab(self._answer_tab(detail), "答案与分析")
+        self.tabs.addTab(self._answer_tab(detail, tasks, answer_image_loader), "答案与分析")
         self.tabs.addTab(self._source_tab(detail), "来源")
         root.addWidget(self.tabs, 1)
         close_button = QPushButton("关闭")
@@ -427,8 +429,12 @@ class LibraryDetailDialog(QDialog):
             )
         return card
 
-    @staticmethod
-    def _answer_tab(detail: LibraryThemeDetail) -> QScrollArea:
+    def _answer_tab(
+        self,
+        detail: LibraryThemeDetail,
+        tasks: DesktopTaskBridge,
+        answer_image_loader: Callable[[LibraryImage], bytes] | None,
+    ) -> QScrollArea:
         content = QWidget()
         content.setObjectName("LibraryAnswerContent")
         layout = QVBoxLayout(content)
@@ -460,6 +466,8 @@ class LibraryDetailDialog(QDialog):
                 card_layout.addWidget(
                     _text_label("本单元不展示参考答案正文。", "MutedLabel")
                 )
+            if part.answer_images:
+                card_layout.addWidget(self._answer_image_preview(part, tasks, answer_image_loader))
             if part.supplemental_answer_zh:
                 card_layout.addWidget(_text_label(ANSWER_LABEL, "CardTitle"))
                 answer = _text_label(part.supplemental_answer_zh)
@@ -491,6 +499,47 @@ class LibraryDetailDialog(QDialog):
             )
         layout.addStretch(1)
         return page_scroll(content)
+
+    def _answer_image_preview(
+        self,
+        part: LibraryPartDetail,
+        tasks: DesktopTaskBridge,
+        loader: Callable[[LibraryImage], bytes] | None,
+    ) -> QWidget:
+        container = QWidget()
+        container.setObjectName("LibraryAnswerImagePreview")
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        button = QPushButton("查看非官方答案原图")
+        button.setObjectName("LibraryShowAnswerImage")
+        button.setAccessibleName(f"查看{part.label_zh}的非官方答案原图")
+        layout.addWidget(button)
+        images = QWidget()
+        images.setObjectName("LibraryAnswerImages")
+        images_layout = QVBoxLayout(images)
+        images_layout.setContentsMargins(0, 0, 0, 0)
+        images.setVisible(False)
+        layout.addWidget(images)
+        loaded = False
+
+        def toggle() -> None:
+            nonlocal loaded
+            if not loaded:
+                if not callable(loader):
+                    images_layout.addWidget(_text_label("答案原图读取接口暂不可用，请重新打开主题。", "StatusAttention"))
+                else:
+                    for descriptor in part.answer_images:
+                        widget = FitWidthImage(descriptor, tasks, loader)
+                        widget.setObjectName("LibraryReferenceAnswerImage")
+                        self._image_widgets.append(widget)
+                        images_layout.addWidget(widget)
+                loaded = True
+            visible = images.isHidden()
+            images.setVisible(visible)
+            button.setText("收起答案原图" if visible else "查看非官方答案原图")
+
+        button.clicked.connect(toggle)
+        return container
 
     @staticmethod
     def _source_tab(detail: LibraryThemeDetail) -> QScrollArea:
