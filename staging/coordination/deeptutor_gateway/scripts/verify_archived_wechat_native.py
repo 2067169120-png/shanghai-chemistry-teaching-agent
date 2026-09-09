@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import sys
 import tempfile
@@ -30,6 +31,10 @@ from integrations.deeptutor_shchem_v1 import (
 )
 from integrations.deeptutor_shchem_v1 import (
     songjiang2025_theme2_direct_visual_scan as songjiang,
+)
+from integrations.deeptutor_shchem_v1.archived_wechat_crop_revision import (
+    RECIPES,
+    REVISION_ID,
 )
 from integrations.deeptutor_shchem_v1.desktop_facade import (
     DesktopWorkbenchFacade,
@@ -183,7 +188,7 @@ def audit_archived(
         output_dir.mkdir(parents=True, exist_ok=True)
         (output_dir / "images").mkdir(exist_ok=True)
     report = {
-        "schema_version": "private-archived-wechat-native-qa-v1",
+        "schema_version": "private-archived-wechat-native-qa-v2",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "notice_zh": NOTICE,
         "model_calls": 0,
@@ -322,6 +327,7 @@ def audit_archived(
         }
         selected_cards = []
         all_image_occurrences = []
+        repaired_crop_ids = set()
         for theme_number, (theme_id, (paper_id, count)) in enumerate(
             EXPECTED_THEMES.items(), 1
         ):
@@ -414,8 +420,46 @@ def audit_archived(
                         and _sha(raw)
                         == image.sha256
                         == expected[image.crop_id]["sha256"],
-                        "native pixels do not match this atomic's original crop",
+                        "native pixels do not match this atomic's current presentation",
                     )
+                    descriptor = expected[image.crop_id]
+                    archived = next(
+                        row
+                        for row in _record["viewed_evidence"]
+                        if row["crop_id"] == image.crop_id
+                    )
+                    _check(
+                        archived["sha256"]
+                        == descriptor.get("archived_crop_sha256", image.sha256),
+                        "presentation lost its original archived crop binding",
+                    )
+                    if image.crop_id in RECIPES:
+                        recipe = RECIPES[image.crop_id]
+                        _check(
+                            descriptor.get("presentation_revision_id") == REVISION_ID
+                            and descriptor["source_asset"] == recipe.source_asset
+                            and descriptor["source_sha256"] == recipe.source_sha256
+                            and tuple(descriptor["source_crop_box"]) == recipe.box,
+                            "presentation recipe identity changed",
+                        )
+                        page_path = _inside(evidence, recipe.source_asset)
+                        _check(
+                            _sha(page_path.read_bytes()) == recipe.source_sha256,
+                            "repaired presentation source page changed",
+                        )
+                        with (
+                            Image.open(page_path) as page,
+                            Image.open(io.BytesIO(raw)) as shown,
+                        ):
+                            x, y, width, height = recipe.box
+                            region = page.crop((x, y, x + width, y + height))
+                            _check(
+                                shown.size == region.size
+                                and shown.mode == region.mode
+                                and shown.tobytes() == region.tobytes(),
+                                "repaired presentation pixels differ from source rectangle",
+                            )
+                        repaired_crop_ids.add(image.crop_id)
                     theme_pictures.append(
                         {
                             "node_id": node_id,
@@ -423,6 +467,10 @@ def audit_archived(
                             "role": image.role,
                             "sha256": image.sha256,
                             "bytes": len(raw),
+                            "archived_crop_sha256": archived["sha256"],
+                            "presentation_revision_id": descriptor.get(
+                                "presentation_revision_id"
+                            ),
                             "raw": raw,
                         }
                     )
@@ -517,7 +565,8 @@ def audit_archived(
             pending_search_zero_cards=True,
             pending_parts=43,
             wave1_themes=25,
-            original_prompt_answer_and_pixels_equal=True,
+            original_prompt_answer_equal=True,
+            pixels_match_bound_presentation=True,
             unknown_labels_preserved=True,
         )
         for card in selected_cards:
@@ -582,7 +631,13 @@ def audit_archived(
                 p["role"] == "shared_material" for p in all_image_occurrences
             ),
             distinct_display_images=len({p["sha256"] for p in all_image_occurrences}),
+            presentation_repaired_images=len(repaired_crop_ids),
         )
+        _check(
+            repaired_crop_ids == set(RECIPES),
+            "not all five display repairs were exercised",
+        )
+        report["checks"]["presentation_repairs_verified"] = True
         report["status"] = "source_display_checks_passed_not_teaching_approval"
         report["elapsed_seconds"] = round(time.monotonic() - started, 3)
         return report

@@ -81,7 +81,7 @@ def verify_frozen_note_prompt(pyz) -> bool:
                 "integrations.deeptutor_shchem_v1.desktop_chemistry_prompt_rules"
             )
         )
-        if value.startswith("教师资料与选题完整性规则（teacher-source-closure-v1）")
+        if value.startswith("教师资料与选题完整性规则（teacher-source-closure-v2）")
     )
     prompt_code = next(
         item
@@ -489,6 +489,7 @@ def main() -> int:
         "master_direct_visual_scan": [],
         "songjiang2025_theme2_direct_visual_scan": [],
         "shanghai_high_east2025_theme45_direct_visual_scan": [],
+        "archived_wechat_crop_revision": ["archived-wechat-source-recrop-20260910-r1"],
         "desktop_preparation_review": ["teacher_review_required"],
         "desktop_preparation_source_compare": [],
         "desktop_preparation_revision": ["内容没有变化，无需另存修订版。"],
@@ -590,7 +591,7 @@ def main() -> int:
         "desktop_paper_preparation_sources": [],
         "desktop_workbench.paper_preparation_dialog": ["将当前组卷带入备课"],
         "desktop_workbench.assembly_page": ["将当前组卷带入备课…", "题面显示分数"],
-        "intake_imports": ["20260909-complete-source-boundaries-v2"],
+        "intake_imports": ["20260910-source-edge-recheck-v3"],
         "desktop_workbench.preparation_review_dialog": [
             "资料与课件对照",
             "在原备课资料与学生可见正文中对照检索",

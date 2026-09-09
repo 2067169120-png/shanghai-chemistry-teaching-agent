@@ -13,6 +13,18 @@
   "scope_evidence": "公开UI筛选与课程面包屑显示高中、化学、沪科技版、选择性必修1化学反应原理；三份封面显示高二和上海学校。",
   "access_method": "独立隔离浏览器会话，公开页面点击、快照和视觉阅读；未登录、未读取凭据、未调用隐藏资源接口。",
   "download_status": "公开匿名详情及全屏授课下拉未见原文件下载按钮；未将截图或规范PDF计为原课件下载。",
+  "latest_package_ui_check": {
+    "checked_at": "2026-09-10T05:00:12+08:00",
+    "course_package_id": "f010e1bf-b56c-de08-fa41-adc255b3b572",
+    "action": "实际打开对应课程包并点击课件",
+    "visible_preview_page_count": 20,
+    "other_visible_resources": ["教学设计", "学习任务单", "作业练习"],
+    "session_state": "未登录",
+    "original_presentation_file_in_observed_page_assets": false,
+    "original_files_downloaded": 0,
+    "new_pages_added_to_review_counts": 0,
+    "boundary": "确认包内有课件且预览可读；当前页面未发现原PPT下载控件或公开加载的原PPT文件，不推断登录后权限。"
+  },
   "download_recheck": {
     "checked_at": "2026-09-10T03:19:04+08:00",
     "course_packages_checked": 2,

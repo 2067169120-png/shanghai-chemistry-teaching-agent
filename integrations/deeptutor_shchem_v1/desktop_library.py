@@ -151,6 +151,14 @@ def image_descriptors(
         page = item.get("source_page")
         label = "题面" if role == "question" else "共同材料"
         caption = f"{label} · 第 {page} 页" if type(page) is int else label
+        if (
+            isinstance(item.get("presentation_revision_id"), str)
+            and item["presentation_revision_id"]
+            and isinstance(item.get("archived_crop_sha256"), str)
+            and re.fullmatch(r"[0-9a-f]{64}", item["archived_crop_sha256"])
+            and item["archived_crop_sha256"] != digest
+        ):
+            caption += " · 裁图已修订"
         images.append(
             LibraryImage(
                 scope=scope,

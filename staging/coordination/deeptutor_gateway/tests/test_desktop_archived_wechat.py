@@ -37,7 +37,10 @@ def test_three_native_themes_open_with_original_text_answers_and_all_images(audi
     assert [theme["atomic_parts"] for theme in audited["themes"]] == [9, 6, 5]
     assert audited["counts"]["question_image_occurrences"] == 20
     assert audited["counts"]["shared_image_occurrences"] > 0
-    assert audited["checks"]["original_prompt_answer_and_pixels_equal"]
+    assert audited["checks"]["original_prompt_answer_equal"]
+    assert audited["checks"]["pixels_match_bound_presentation"]
+    assert audited["checks"]["presentation_repairs_verified"]
+    assert audited["counts"]["presentation_repaired_images"] == 5
     assert all(theme["shared_material_count"] for theme in audited["themes"])
 
 

@@ -14,6 +14,10 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 
+from .archived_wechat_crop_revision import (
+    project_archived_wechat_descriptor,
+    recrop_archived_wechat_view,
+)
 from .candidate_review import CandidateCropPayload
 from .master_direct_visual_scan import MasterDirectVisualScanError
 from .master_wave1_workbench import (
@@ -753,7 +757,9 @@ class ShanghaiHighEast2025Theme45DirectVisualScanReader(
             "cognitive_difficulty": deepcopy(record["difficulty"]),
             "evidence_descriptors": [
                 {
-                    **deepcopy(item),
+                    **project_archived_wechat_descriptor(
+                        self.shchem_root, master_node_id, item
+                    ),
                     "content_type": "image/png",
                     "access": "teacher_loopback_read_only",
                 }
@@ -818,7 +824,10 @@ class ShanghaiHighEast2025Theme45DirectVisualScanReader(
                 "master_direct_scan_binding_mismatch",
                 "question preview no longer matches the verified crop",
             )
-        return CandidateCropPayload(data=raw, sha256=descriptor["sha256"])
+        data = recrop_archived_wechat_view(
+            self.shchem_root, master_node_id, crop_id, raw
+        )
+        return CandidateCropPayload(data=data, sha256=_sha256(data))
 
 
 __all__ = [

@@ -32,6 +32,10 @@ PACKAGE = DB / module.PRODUCT_RELATIVE
 MANIFEST = (module.PRODUCT_RELATIVE / "candidate_manifest.json").as_posix()
 CANDIDATES = (module.PRODUCT_RELATIVE / "question_candidates.jsonl").as_posix()
 EVIDENCE = (module.PRODUCT_RELATIVE / "evidence_map.json").as_posix()
+pytestmark = pytest.mark.skipif(
+    not (PACKAGE / "candidate_manifest.json").is_file(),
+    reason="requires local Shanghai High East archived candidate package and source pages",
+)
 
 
 @pytest.fixture(scope="module")
@@ -251,20 +255,38 @@ def test_only_explicit_stimulus_edge_is_shared_not_unrelated_context(reader):
 def test_all_13_allowed_crop_routes_return_bound_pixels(reader, monkeypatch):
     snapshot = reader._snapshot()
     monkeypatch.setattr(reader, "_snapshot", lambda: snapshot)
-    seen = set()
+    seen, revised = set(), set()
     for record in snapshot.records:
-        for descriptor in record["viewed_evidence"]:
-            payload = reader.question_crop(
-                record["hierarchy"]["atomic_part_id"], descriptor["crop_id"]
-            )
+        node_id = record["hierarchy"]["atomic_part_id"]
+        public = {
+            row["crop_id"]: row
+            for row in reader.detail(node_id)["evidence_descriptors"]
+        }
+        for archived in record["viewed_evidence"]:
+            crop_id = archived["crop_id"]
+            descriptor = public[crop_id]
+            payload = reader.question_crop(node_id, crop_id)
             assert (
                 payload.sha256
                 == hashlib.sha256(payload.data).hexdigest()
                 == descriptor["sha256"]
             )
             assert len(payload.data) == descriptor["bytes"]
-            seen.add(descriptor["crop_id"])
+            crop = snapshot.crop_by_id[crop_id]
+            original = snapshot.output_bytes[crop["output_path"]]
+            assert hashlib.sha256(original).hexdigest() == archived["sha256"]
+            if "presentation_revision_id" in descriptor:
+                assert descriptor["archived_crop_sha256"] == archived["sha256"]
+                assert descriptor["archived_source_crop_box"] == crop["crop_box"]
+                assert descriptor["evidence_role"] == "question"
+                assert payload.data != original
+                revised.add(node_id)
+            else:
+                assert payload.data == original
+                assert descriptor["sha256"] == archived["sha256"]
+            seen.add(crop_id)
     assert len(seen) == 13
+    assert revised == {f"SHEAST2025-M05-B-T5-Q{number}-P1" for number in range(1, 5)}
 
 
 def test_answer_boundary_and_other_node_images_are_denied(reader, monkeypatch):

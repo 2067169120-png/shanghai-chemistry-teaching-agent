@@ -12,6 +12,10 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
+from .archived_wechat_crop_revision import (
+    project_archived_wechat_descriptor,
+    recrop_archived_wechat_view,
+)
 from .candidate_review import CandidateCropPayload
 from .master_direct_visual_scan import MasterDirectVisualScanError
 from .master_wave1_workbench import (
@@ -712,7 +716,9 @@ class Songjiang2025Theme2DirectVisualScanReader(
             "cognitive_difficulty": deepcopy(record["difficulty"]),
             "evidence_descriptors": [
                 {
-                    **deepcopy(row),
+                    **project_archived_wechat_descriptor(
+                        self.shchem_root, master_node_id, row
+                    ),
                     "content_type": "image/png",
                     "access": "teacher_loopback_read_only",
                 }
@@ -767,7 +773,10 @@ class Songjiang2025Theme2DirectVisualScanReader(
             "songjiang_crop_invalid",
             "served crop binding changed",
         )
-        return CandidateCropPayload(data=raw, sha256=descriptor["sha256"])
+        data = recrop_archived_wechat_view(
+            self.shchem_root, master_node_id, crop_id, raw
+        )
+        return CandidateCropPayload(data=data, sha256=_sha256(data))
 
 
 __all__ = [

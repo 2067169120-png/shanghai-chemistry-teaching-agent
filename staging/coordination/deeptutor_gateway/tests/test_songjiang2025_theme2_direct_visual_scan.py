@@ -28,6 +28,10 @@ PACKAGE = DB / module.PRODUCT_RELATIVE
 MANIFEST = (module.PRODUCT_RELATIVE / "candidate_manifest.json").as_posix()
 CANDIDATES = (module.PRODUCT_RELATIVE / "question_candidates.jsonl").as_posix()
 EVIDENCE = (module.PRODUCT_RELATIVE / "evidence_map.json").as_posix()
+pytestmark = pytest.mark.skipif(
+    not (PACKAGE / "candidate_manifest.json").is_file(),
+    reason="requires local Songjiang archived candidate package and source pages",
+)
 
 
 @pytest.fixture(scope="module")
@@ -248,13 +252,36 @@ def test_q6_source_conflict_stays_visible_without_hiding_original_answer(reader)
     assert detail["authority"]["lineage_gate_complete"] is False
 
 
-def test_question_and_shared_crop_routes_return_exact_bound_pixels(reader):
-    detail = reader.detail(module.EXPECTED_ATOMIC_IDS[3])
-    for descriptor in detail["evidence_descriptors"]:
-        result = reader.question_crop(detail["master_node_id"], descriptor["crop_id"])
-        assert result.sha256 == descriptor["sha256"]
-        assert hashlib.sha256(result.data).hexdigest() == result.sha256
-        assert len(result.data) == descriptor["bytes"]
+def test_question_and_shared_crop_routes_return_exact_bound_pixels(reader, monkeypatch):
+    snapshot = reader._snapshot()
+    monkeypatch.setattr(reader, "_snapshot", lambda: snapshot)
+    seen, revised = set(), set()
+    for record in snapshot.records:
+        node_id = record["hierarchy"]["atomic_part_id"]
+        detail = reader.detail(node_id)
+        public = {row["crop_id"]: row for row in detail["evidence_descriptors"]}
+        for archived in record["viewed_evidence"]:
+            crop_id = archived["crop_id"]
+            descriptor = public[crop_id]
+            result = reader.question_crop(node_id, crop_id)
+            assert result.sha256 == descriptor["sha256"]
+            assert hashlib.sha256(result.data).hexdigest() == result.sha256
+            assert len(result.data) == descriptor["bytes"]
+            crop = snapshot.crop_by_id[crop_id]
+            original = snapshot.output_bytes[crop["output_path"]]
+            assert hashlib.sha256(original).hexdigest() == archived["sha256"]
+            if "presentation_revision_id" in descriptor:
+                assert descriptor["archived_crop_sha256"] == archived["sha256"]
+                assert descriptor["archived_source_crop_box"] == crop["crop_box"]
+                assert descriptor["evidence_role"] == "question"
+                assert result.data != original
+                revised.add(node_id)
+            else:
+                assert result.data == original
+                assert descriptor["sha256"] == archived["sha256"]
+            seen.add(crop_id)
+    assert len(seen) == 14
+    assert revised == {"SJ2025-EM-S2-Q8-P1"}
 
 
 def test_answer_unknown_and_cross_question_crops_are_not_routable(reader):

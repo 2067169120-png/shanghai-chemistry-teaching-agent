@@ -19,6 +19,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Literal, Protocol
 
+from .archived_wechat_crop_revision import presentation_fingerprint
 from .candidate_review import Wave1CandidateReviewReader
 from .curriculum_workbench import CurriculumWorkbenchReader
 from .desktop_library import (
@@ -683,16 +684,37 @@ class DesktopWorkbenchFacade:
         self._library_views: dict[str, tuple[Any, ...]] = {}
         self._library_view_lock = threading.RLock()
 
+    @staticmethod
+    def _with_presentation_snapshot(catalog: dict[str, Any]) -> dict[str, Any]:
+        """Bind native display recipes without altering the source catalog.
+
+        The existing snapshot field is accepted by both the native basket and
+        the export workbench. Strip that field before hashing so a catalog that
+        already passed this helper is not wrapped in a second snapshot hash.
+        """
+        source_catalog = dict(catalog)
+        source_catalog.pop("data_snapshot_id", None)
+        fingerprint = presentation_fingerprint(source_catalog)
+        if fingerprint is None:
+            return catalog
+        source_catalog["data_snapshot_id"] = _canonical_digest(
+            {
+                "catalog": source_catalog,
+                "presentation_fingerprint": fingerprint,
+            }
+        )
+        return source_catalog
+
     def _load_theme_scope(self, scope: str) -> dict[str, Any]:
         # One catalog operation shares validated dependency snapshots just as
         # a detail view does. Never patch the app readers or cache across calls:
         # a later search must revalidate and observe changed source inputs.
         if scope == "supplemental":
             (reader,) = snapshot_reader_graph((self._supplemental,))
-            return reader.theme_groups()
+            return self._with_presentation_snapshot(reader.theme_groups())
         if scope in {"master", "wave1"}:
             (reader,) = snapshot_reader_graph((self._themes,))
-            return reader.groups(scope)
+            return self._with_presentation_snapshot(reader.groups(scope))
         raise DesktopFacadeError("scope_invalid", "题库范围不正确。")
 
     @staticmethod
@@ -1274,7 +1296,7 @@ class DesktopWorkbenchFacade:
                 (self._themes, self._supplemental, *self._paper_export_readers())
             )
             themes, supplemental, *_ = readers
-            catalog = (
+            catalog = self._with_presentation_snapshot(
                 supplemental.theme_groups()
                 if card.scope == "supplemental"
                 else themes.groups(card.scope)
@@ -4795,7 +4817,7 @@ class DesktopWorkbenchFacade:
         )
 
         def theme_loader(scope: str) -> dict[str, Any]:
-            return (
+            return self._with_presentation_snapshot(
                 supplemental.theme_groups()
                 if scope == "supplemental"
                 else themes.groups(scope)

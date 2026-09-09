@@ -13,7 +13,10 @@ from integrations.deeptutor_shchem_v1.desktop_facade import (
     DesktopFacadeError,
     DesktopWorkbenchFacade,
 )
-from integrations.deeptutor_shchem_v1.desktop_library import LibraryImage
+from integrations.deeptutor_shchem_v1.desktop_library import (
+    LibraryImage,
+    image_descriptors,
+)
 from integrations.deeptutor_shchem_v1.desktop_paths import DesktopPaths
 
 RAW = b"fixture png bytes, not a real chemical image"
@@ -143,6 +146,91 @@ def scan(node):
             },
         ],
     }
+
+
+@pytest.mark.parametrize(
+    "role,label", [("question", "题面"), ("shared_material", "共同材料")]
+)
+def test_revised_crop_caption_requires_different_valid_archived_sha(role, label):
+    descriptor = {
+        "crop_id": "ORIGINAL-CROP-HANDLE",
+        "evidence_role": role,
+        "sha256": DIGEST,
+        "source_page": 5,
+        "width": 1080,
+        "height": 60,
+        "presentation_revision_id": "0.1.55-r1",
+        "archived_crop_sha256": "0" * 64,
+    }
+    original = deepcopy(descriptor)
+    images = image_descriptors(
+        "master", "A1", {"evidence_descriptors": [descriptor]}, view_id="VIEW-1"
+    )
+    assert len(images) == 1
+    assert images[0].caption_zh == f"{label} · 第 5 页 · 裁图已修订"
+    assert images[0].crop_id == "ORIGINAL-CROP-HANDLE"
+    assert images[0].sha256 == DIGEST
+    assert images[0].view_id == "VIEW-1"
+    assert (images[0].width, images[0].height) == (1080, 60)
+    assert descriptor == original
+
+
+@pytest.mark.parametrize(
+    "revision_fields",
+    [
+        pytest.param(
+            {"presentation_revision_id": "0.1.55-r1", "archived_crop_sha256": DIGEST},
+            id="same-sha",
+        ),
+        pytest.param({"presentation_revision_id": "0.1.55-r1"}, id="missing-old-sha"),
+        *[
+            pytest.param(
+                {
+                    "presentation_revision_id": "0.1.55-r1",
+                    "archived_crop_sha256": value,
+                },
+                id=name,
+            )
+            for name, value in (
+                ("null-old-sha", None),
+                ("empty-old-sha", ""),
+                ("short-old-sha", "0" * 63),
+                ("long-old-sha", "0" * 65),
+                ("nonhex-old-sha", "g" * 64),
+                ("uppercase-old-sha", "A" * 64),
+                ("integer-old-sha", 123),
+                ("list-old-sha", ["0" * 64]),
+            )
+        ],
+        pytest.param({"archived_crop_sha256": "0" * 64}, id="missing-revision"),
+        *[
+            pytest.param(
+                {"presentation_revision_id": value, "archived_crop_sha256": "0" * 64},
+                id=name,
+            )
+            for name, value in (
+                ("empty-revision", ""),
+                ("null-revision", None),
+                ("integer-revision", 123),
+            )
+        ],
+    ],
+)
+def test_incomplete_or_unchanged_crop_revision_keeps_plain_caption(revision_fields):
+    descriptor = {
+        "crop_id": "ORIGINAL-CROP-HANDLE",
+        "evidence_role": "question",
+        "sha256": DIGEST,
+        "source_page": 1,
+        **revision_fields,
+    }
+    original = deepcopy(descriptor)
+    images = image_descriptors("master", "A1", {"evidence_descriptors": [descriptor]})
+    assert len(images) == 1
+    assert images[0].caption_zh == "题面 · 第 1 页"
+    assert images[0].sha256 == DIGEST
+    assert images[0].crop_id == "ORIGINAL-CROP-HANDLE"
+    assert descriptor == original
 
 
 class Reader:
@@ -303,7 +391,10 @@ def test_exact_target_failure_does_not_borrow_another_image(fixture):
     facade, reader, wave = fixture
     reader.fail = wave.fail = True
     detail = facade.library_theme_detail(selected(facade))
-    assert all(not part.question_images and not part.reference_answer_zh for part in detail.parts)
+    assert all(
+        not part.question_images and not part.reference_answer_zh
+        for part in detail.parts
+    )
     assert "详情暂不可读" in detail.parts[0].availability_zh
 
 
