@@ -181,6 +181,32 @@ def _visible_text(widget) -> str:
     return "\n".join(label.text() for label in widget.findChildren(QLabel))
 
 
+def test_pending_parentage_notice_does_not_create_broken_cards(qt_app):
+    from dataclasses import replace
+
+    from integrations.deeptutor_shchem_v1.desktop_workbench.library_page import (
+        LibraryPage,
+    )
+
+    bridge = _ManualBridge()
+    page = LibraryPage(_Facade(), bridge)
+    page._apply_results(replace(
+        _search_result(), pending_atomic_parts=43, pending_matched_atomic_parts=2
+    ))
+    assert page.results.count() == 0
+    assert not page.detail_view_button.isEnabled()
+    assert not page.add_button.isEnabled()
+    assert not bridge.pending
+    assert "找到 0 道大题" in page.result_summary.text()
+    assert "43 个作答单元" in page.result_summary.text()
+    assert "本次匹配 2 个" in page.result_summary.text()
+    assert "未计入" in page.result_summary.text()
+    page._apply_results(_search_result(_card("A", "可读主题")))
+    assert page.results.count() == 1
+    assert "待补大题归属" not in page.result_summary.text()
+    page.close()
+
+
 def _png_bytes() -> bytes:
     from PySide6.QtCore import QBuffer, QIODevice
     from PySide6.QtGui import QColor, QImage

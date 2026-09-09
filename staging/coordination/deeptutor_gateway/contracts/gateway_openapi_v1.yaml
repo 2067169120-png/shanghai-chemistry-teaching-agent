@@ -5727,6 +5727,7 @@ components:
         source: { type: string, enum: [model_visual_scan_candidate, supplemental_visual_scan, master_candidate, none] }
         primary_K: { type: [string, "null"], pattern: '^K[0-9]{2}$' }
         supporting_K: { type: array, uniqueItems: true, items: { type: string, pattern: '^K[0-9]{2}$' } }
+        knowledge_candidates_K: { type: array, uniqueItems: true, items: { type: string, pattern: '^K[0-9]{2}$' } }
         A: { type: array, uniqueItems: true, items: { type: string, pattern: '^A[0-9]{2}$' } }
         C: { type: array, uniqueItems: true, items: { type: string, pattern: '^C[0-9]{2}$' } }
         R: { type: array, uniqueItems: true, items: { type: string, pattern: '^R[0-9]{2}$' } }

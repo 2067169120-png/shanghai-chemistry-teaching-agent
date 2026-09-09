@@ -277,6 +277,8 @@ class ThemeSearchResult:
     matched_atomic_parts: int
     cards: tuple[ThemeCard, ...]
     has_more: bool
+    pending_atomic_parts: int = 0
+    pending_matched_atomic_parts: int = 0
 
 
 @dataclass(frozen=True)
@@ -596,7 +598,21 @@ class DesktopWorkbenchFacade:
         self.paths = paths
         self.paths.validate_read_roots()
         self.paths.ensure_mutable_roots()
-        self._themes = theme_reader or ThemeWorkbenchReader(paths.shchem_root)
+        if theme_reader is None:
+            native_master = master_workbench_reader or MasterWave1WorkbenchReader(
+                paths.shchem_root
+            )
+            native_direct = master_direct_reader or MasterDirectVisualScanReader(
+                paths.shchem_root,
+                master_workbench=native_master,
+                include_archived_candidates=True,
+            )
+            theme_reader = ThemeWorkbenchReader(
+                paths.shchem_root,
+                master_workbench=native_master,
+                direct_scans=native_direct,
+            )
+        self._themes = theme_reader
         self._supplemental = supplemental_reader or SupplementalVisualScanReader(
             paths.shchem_root
         )
@@ -992,7 +1008,10 @@ class DesktopWorkbenchFacade:
             source_snapshots[source_scope] = self._paper_catalog_snapshot_id(catalog)
             return catalog
 
-        search_kwargs: dict[str, Any] = {"theme_loader": load_search_scope}
+        search_kwargs: dict[str, Any] = {
+            "theme_loader": load_search_scope,
+            "complete_themes_only": True,
+        }
         if selector:
             search_kwargs["curriculum_loader"] = self._curriculum_search
         value = self._search.search(payload, **search_kwargs)
@@ -1002,6 +1021,11 @@ class DesktopWorkbenchFacade:
         for item in value.get("items", []):
             if not isinstance(item, dict):
                 continue
+            if item.get("group_kind", "theme") != "theme":
+                raise DesktopFacadeError(
+                    "theme_search_projection_invalid",
+                    "题库搜索视图不兼容，请刷新后重试。",
+                )
             paper = item.get("paper") if isinstance(item.get("paper"), dict) else {}
             theme = item.get("theme") if isinstance(item.get("theme"), dict) else {}
             counts = item.get("counts") if isinstance(item.get("counts"), dict) else {}
@@ -1049,6 +1073,8 @@ class DesktopWorkbenchFacade:
             )
         page = value.get("page") if isinstance(value.get("page"), dict) else {}
         counts = value.get("counts") if isinstance(value.get("counts"), dict) else {}
+        pending = value.get("pending_parentage")
+        pending = pending if isinstance(pending, dict) else {}
         return ThemeSearchResult(
             scope=scope,
             query=normalized_query,
@@ -1056,6 +1082,9 @@ class DesktopWorkbenchFacade:
             matched_atomic_parts=_safe_int(counts.get("atomic_parts_matched")) or 0,
             cards=tuple(cards),
             has_more=page.get("has_more") is True,
+            pending_atomic_parts=_safe_int(pending.get("atomic_parts_in_scope")) or 0,
+            pending_matched_atomic_parts=_safe_int(pending.get("atomic_parts_matched"))
+            or 0,
         )
 
     def curriculum_catalog(self, *, force_refresh: bool = False) -> dict[str, Any]:
@@ -1225,21 +1254,14 @@ class DesktopWorkbenchFacade:
         except Exception as exc:
             if getattr(exc, "status", None) != 404:
                 raise
-        detail = master_workbench.atomic_detail(node_id)
-        node = detail.get("node")
-        summary = node.get("crosswalk_summary") if isinstance(node, Mapping) else None
-        ids = summary.get("wave1_node_ids") if isinstance(summary, Mapping) else None
-        if (
-            isinstance(summary, Mapping)
-            and summary.get("state") == "exact"
-            and isinstance(ids, list)
-            and len(ids) == 1
-            and isinstance(ids[0], str)
-        ):
-            return "wave1", ids[0], wave_visual.detail(ids[0])
+        identity = master_workbench.visual_scan_identity_index()
+        exact = identity.get("exact_master_to_wave1")
+        wave_id = exact.get(node_id) if isinstance(exact, Mapping) else None
+        if isinstance(wave_id, str) and wave_id:
+            return "wave1", wave_id, wave_visual.detail(wave_id)
         # Unmapped/split/anchor entries retain their own source-answer boundary
         # and metadata; they never borrow another node's image or answer.
-        return scope, node_id, detail
+        return scope, node_id, master_workbench.atomic_detail(node_id)
 
     def library_theme_detail(self, card: ThemeCard) -> LibraryThemeDetail:
         """Read a complete selected theme for the native teacher viewer."""
@@ -4489,6 +4511,7 @@ class DesktopWorkbenchFacade:
             self._master_direct = MasterDirectVisualScanReader(
                 self.paths.shchem_root,
                 master_workbench=self._master_workbench,
+                include_archived_candidates=True,
             )
         return (
             self._wave_visual,

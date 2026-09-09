@@ -1193,6 +1193,8 @@ class MasterDirectVisualScanReader:
         self,
         shchem_root: Path,
         master_workbench: MasterWave1WorkbenchReader | None = None,
+        *,
+        include_archived_candidates: bool = False,
     ):
         self.shchem_root = shchem_root.resolve()
         self.master_workbench = master_workbench or MasterWave1WorkbenchReader(
@@ -1274,6 +1276,29 @@ class MasterDirectVisualScanReader:
             _DirectReaderRegistration("hongkou2026_second_mock_theme4", 9),
             _DirectReaderRegistration("fengxian2025_theme2", 10),
         )
+        # Native previews can read explicitly bound older candidate packages.
+        # The frozen ten-product HTTP projection stays unchanged by default;
+        # these adapters do not manufacture new formal scan manifests.
+        if include_archived_candidates:
+            from .shanghai_high_east2025_theme45_direct_visual_scan import (
+                ShanghaiHighEast2025Theme45DirectVisualScanReader,
+            )
+            from .songjiang2025_theme2_direct_visual_scan import (
+                Songjiang2025Theme2DirectVisualScanReader,
+            )
+
+            self.songjiang2025_theme2 = Songjiang2025Theme2DirectVisualScanReader(
+                self.shchem_root, master_workbench=self.master_workbench
+            )
+            self.shanghai_high_east2025_theme45 = (
+                ShanghaiHighEast2025Theme45DirectVisualScanReader(
+                    self.shchem_root, master_workbench=self.master_workbench
+                )
+            )
+            self._reader_registrations += (
+                _DirectReaderRegistration("songjiang2025_theme2", 9),
+                _DirectReaderRegistration("shanghai_high_east2025_theme45", 11),
+            )
 
     @staticmethod
     def _coverage(direct_record_count: int) -> dict[str, int]:

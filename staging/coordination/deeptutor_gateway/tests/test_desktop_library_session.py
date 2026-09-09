@@ -20,6 +20,9 @@ class FixtureReader:
             raise RuntimeError("validation failed")
         return {"version": self.calls}
 
+    def visual_scan_identity_index(self):
+        return self._snapshot()
+
 
 FixtureReader.__module__ = "integrations.deeptutor_shchem_v1.fixture_for_test"
 
@@ -58,6 +61,20 @@ def test_failed_validation_not_cached_as_success():
     reader.fail = False
     assert reader._snapshot() == {"version": 2}
     assert reader.calls == 2
+
+
+def test_identity_index_is_frozen_only_for_one_view():
+    original = FixtureReader()
+    (first,) = snapshot_reader_graph((original,))
+    assert first.visual_scan_identity_index() is first.visual_scan_identity_index()
+    assert first.calls == 1
+    original.fail = True
+    (second,) = snapshot_reader_graph((original,))
+    with pytest.raises(RuntimeError):
+        second.visual_scan_identity_index()
+    second.fail = False
+    assert second.visual_scan_identity_index() == {"version": 2}
+    assert original.calls == 0
 
 
 def test_parallel_reads_share_one_successful_validation():

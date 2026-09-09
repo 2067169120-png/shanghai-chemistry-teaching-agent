@@ -337,12 +337,15 @@ def _scan_labels(record: dict[str, Any]) -> dict[str, Any]:
         axes[axis] = list(values)
     item_type = classification.get("item_type")
     prelabel = difficulty.get("cognitive_prelabel")
-    if not isinstance(item_type, str) or not isinstance(prelabel, str):
+    partial = classification.get("label_status") == "partial_source_candidate"
+    if not isinstance(item_type, str) or not (
+        isinstance(prelabel, str) or (partial and prelabel is None)
+    ):
         raise ThemeWorkbenchError(
             "theme_workbench_label_invalid", "scan item type or D label is invalid"
         )
-    return {
-        "status": "complete",
+    result = {
+        "status": "pending" if partial else "complete",
         "source": "model_visual_scan_candidate",
         "primary_K": primary,
         "supporting_K": axes["supporting_K"],
@@ -352,6 +355,18 @@ def _scan_labels(record: dict[str, Any]) -> dict[str, Any]:
         "RP": axes["RP"],
         "cognitive_prelabel": prelabel,
     }
+    if partial:
+        candidates = classification.get("knowledge_candidates_K")
+        if (
+            not isinstance(candidates, list)
+            or any(not isinstance(value, str) or not re.fullmatch(r"K\d{2}", value) for value in candidates)
+            or len(candidates) != len(set(candidates))
+        ):
+            raise ThemeWorkbenchError(
+                "theme_workbench_label_invalid", "source knowledge candidates are invalid"
+            )
+        result["knowledge_candidates_K"] = list(candidates)
+    return result
 
 
 def _blocked_labels(status: str) -> dict[str, Any]:
@@ -479,6 +494,13 @@ def _scan_dependency(
                 "theme_workbench_dependency_invalid",
                 "a prior atomic dependency is cross-theme or not earlier",
             )
+    if dependency.get("status") == "unknown_prior_dependency_not_recorded":
+        return {
+            "kind": "blocked_pending_review",
+            "prior_atomic_part_ids": projected,
+            "explicit_prior_edge_count": len(projected),
+            "status": "blocked_unknown_not_inferred",
+        }
     return {
         "kind": _dependency_kind(len(projected), len(shared)),
         "prior_atomic_part_ids": projected,

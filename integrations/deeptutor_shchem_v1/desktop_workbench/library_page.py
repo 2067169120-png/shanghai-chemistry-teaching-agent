@@ -524,6 +524,13 @@ class LibraryPage(QWidget):
         self.result_summary.setText(
             f"找到 {result.total_themes} 道大题，当前显示 {len(result.cards)} 道{suffix}"
         )
+        if result.pending_atomic_parts:
+            self.result_summary.setText(
+                self.result_summary.text()
+                + f"\n本题库另有 {result.pending_atomic_parts} 个作答单元待补大题归属"
+                + f"（本次匹配 {result.pending_matched_atomic_parts} 个），未计入上方大题。"
+                + "原资料保留，需补齐完整材料后选用。"
+            )
         if self._cards:
             self.results.setCurrentRow(0)
         else:

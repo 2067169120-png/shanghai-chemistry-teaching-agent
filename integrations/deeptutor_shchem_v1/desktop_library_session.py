@@ -48,6 +48,7 @@ def snapshot_reader_graph(readers: tuple[Any, ...]) -> tuple[Any, ...]:
             "_validated_catalog",
             "_catalogs",
             "_registry_snapshot",
+            "visual_scan_identity_index",
         ):
             method = getattr(result, name, None)
             if callable(method):

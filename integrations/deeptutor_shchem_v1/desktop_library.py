@@ -282,6 +282,7 @@ def build_theme_detail(
         for axis, label in (
             ("primary_K", "主知识"),
             ("supporting_K", "辅助知识"),
+            ("knowledge_candidates_K", "知识点候选（主辅待核对）"),
             ("A", "能力"),
             ("C", "情境"),
             ("R", "作答方式"),

@@ -302,6 +302,7 @@ def _atomic_values(
         if isinstance(primary, str) and primary:
             values["K"].add(primary)
         values["K"].update(_string_values(label.get("supporting_K")))
+        values["K"].update(_string_values(label.get("knowledge_candidates_K")))
         for axis in ("A", "C", "R", "RP"):
             values[axis].update(_string_values(label.get(axis)))
         difficulty = label.get("cognitive_prelabel")
@@ -791,7 +792,16 @@ class QuestionSearchWorkbench:
         theme_loader: Callable[[str], dict[str, Any]],
         curriculum_loader: Callable[[dict[str, str]], dict[str, Any]] | None = None,
         snapshot_id: str | None = None,
+        complete_themes_only: bool = False,
     ) -> dict[str, Any]:
+        # Native teachers can open complete themes, not orphan atomic cards.
+        # Keep the default diagnostic/HTTP projection unchanged. This internal
+        # option is applied after the full curriculum join and before totals,
+        # facets and pagination; it never modifies the source parent graph.
+        if type(complete_themes_only) is not bool:
+            raise QuestionSearchError(
+                "question_search_view_invalid", "theme view selector must be boolean"
+            )
         request = _parse_request(payload)
         curriculum_allowed: dict[str, frozenset[str]] | None = None
         curriculum_resolved_query: dict[str, Any] | None = None
@@ -853,6 +863,8 @@ class QuestionSearchWorkbench:
         terms = tuple(normalized_query.split()) if normalized_query else ()
         requested = {key: frozenset(values) for key, values in request.filters.items()}
         matched_cards: list[dict[str, Any]] = []
+        pending_atomic_parts = 0
+        pending_matched_atomic_parts = 0
         facet_counts = {key: Counter() for key in FILTER_KEYS}
         scope_counts = {
             scope: {
@@ -865,9 +877,13 @@ class QuestionSearchWorkbench:
         }
 
         for card in cards:
+            pending = complete_themes_only and card.group_kind != "theme"
             scope_count = scope_counts[card.scope]
-            scope_count["theme_cards_scanned"] += 1
-            scope_count["atomic_parts_scanned"] += len(card.atomic_chain)
+            if pending:
+                pending_atomic_parts += len(card.atomic_chain)
+            else:
+                scope_count["theme_cards_scanned"] += 1
+                scope_count["atomic_parts_scanned"] += len(card.atomic_chain)
             details: list[dict[str, Any]] = []
             for prepared in card.atomic_chain:
                 atomic_id = prepared.source["atomic_part_id"]
@@ -889,23 +905,29 @@ class QuestionSearchWorkbench:
                     theme_match = all(
                         term in card.normalized_theme_text for term in terms
                     )
-                    atomic_match = all(term in prepared.normalized_text for term in terms)
+                    atomic_match = all(
+                        term in prepared.normalized_text for term in terms
+                    )
                     reasons.append(
                         "keyword_theme"
                         if theme_match
-                        else "keyword_atomic" if atomic_match else "keyword_combined"
+                        else "keyword_atomic"
+                        if atomic_match
+                        else "keyword_combined"
                     )
                 reasons.extend(f"filter_{key}" for key in requested)
                 if curriculum_allowed is not None:
                     reasons.append(CURRICULUM_REASON_CODE)
                 if not reasons:
                     reasons.append("scope_default")
-                details.append(
-                    {"atomic_part_id": atomic_id, "reason_codes": reasons}
-                )
-                for key in FILTER_KEYS:
-                    facet_counts[key].update(prepared.values[key])
+                details.append({"atomic_part_id": atomic_id, "reason_codes": reasons})
+                if not pending:
+                    for key in FILTER_KEYS:
+                        facet_counts[key].update(prepared.values[key])
 
+            if pending:
+                pending_matched_atomic_parts += len(details)
+                continue
             if not details:
                 continue
             scope_count["theme_cards_matched"] += 1
@@ -938,16 +960,17 @@ class QuestionSearchWorkbench:
                 }
             )
 
-        signature = _canonical_sha256(
-            {
-                "scope": request.scope,
-                "q": normalized_query or None,
-                "filters": {key: list(value) for key, value in request.filters.items()},
-                "curriculum": request.curriculum,
-                "curriculum_projection_sha256": curriculum_projection_sha256,
-                "snapshot_id": effective_snapshot_id,
-            }
-        )
+        signature_source = {
+            "scope": request.scope,
+            "q": normalized_query or None,
+            "filters": {key: list(value) for key, value in request.filters.items()},
+            "curriculum": request.curriculum,
+            "curriculum_projection_sha256": curriculum_projection_sha256,
+            "snapshot_id": effective_snapshot_id,
+        }
+        if complete_themes_only:
+            signature_source["complete_themes_only"] = True
+        signature = _canonical_sha256(signature_source)
         offset = self._cursor_offset(request.cursor, signature)
         page_items = matched_cards[offset : offset + request.limit]
         next_offset = offset + len(page_items)
@@ -1012,6 +1035,12 @@ class QuestionSearchWorkbench:
                 "frozen_release_live_fallback_allowed": False,
             },
         }
+        if complete_themes_only:
+            response["pending_parentage"] = {
+                "atomic_parts_in_scope": pending_atomic_parts,
+                "atomic_parts_matched": pending_matched_atomic_parts,
+                "included_in_theme_totals": False,
+            }
         if request.curriculum is not None:
             assert curriculum_allowed is not None
             assert curriculum_resolved_query is not None

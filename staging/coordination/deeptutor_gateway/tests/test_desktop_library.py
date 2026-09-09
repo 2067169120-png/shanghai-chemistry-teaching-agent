@@ -184,6 +184,13 @@ class Reader:
             }
         }
 
+    def visual_scan_identity_index(self):
+        return {
+            "exact_master_to_wave1": (
+                {"A1": "W1", "A2": "W1"} if self.crosswalk_state == "exact" else {}
+            )
+        }
+
     def question_crop(self, node, crop):
         self.crop_calls.append((node, crop))
         return CandidateCropPayload(b"wrong" if self.bad_bytes else RAW, DIGEST)
@@ -278,6 +285,26 @@ def test_master_exact_keeps_parent_labels_but_images_use_explicit_wave_binding(f
     assert facade.library_image(image) == RAW
     assert wave.crop_calls == [("W1", "W1-Q")]
     assert not reader.crop_calls
+
+
+def test_exact_image_lookup_never_loads_all_reference_answers(fixture, monkeypatch):
+    facade, reader, _ = fixture
+    reader.fail = True
+
+    def forbidden(_node):
+        raise AssertionError("exact preview must not rebuild all Wave answers")
+
+    monkeypatch.setattr(reader, "atomic_detail", forbidden)
+    detail = facade.library_theme_detail(selected(facade))
+    assert facade.library_image(detail.parts[0].question_images[0]) == RAW
+
+
+def test_exact_target_failure_does_not_borrow_another_image(fixture):
+    facade, reader, wave = fixture
+    reader.fail = wave.fail = True
+    detail = facade.library_theme_detail(selected(facade))
+    assert all(not part.question_images and not part.reference_answer_zh for part in detail.parts)
+    assert "详情暂不可读" in detail.parts[0].availability_zh
 
 
 @pytest.mark.parametrize("state", ["split", "anchor", "unmapped"])
