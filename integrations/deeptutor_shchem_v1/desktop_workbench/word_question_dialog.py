@@ -33,6 +33,7 @@ from PySide6.QtWidgets import (
 from ..desktop_preparation_images import MAX_IMAGES
 from ..desktop_word_metafile_preview import can_attempt_metafile
 from ..desktop_word_question_attributes import EXAM_TYPE_LABELS, validate_attributes
+from ..desktop_word_question_recommendations import lesson_knowledge_suggestions
 from .components import page_scroll, section_title, set_status
 from .tasks import DesktopTaskBridge
 from .word_question_attributes_dialog import WordQuestionAttributesDialog
@@ -342,6 +343,7 @@ class WordQuestionDialog(QDialog):
         *,
         initial_source_id: str | None = None,
         batch_id: str | None = None,
+        lesson_topic: str = "",
     ):
         super().__init__(parent)
         self.facade = facade
@@ -350,6 +352,8 @@ class WordQuestionDialog(QDialog):
         self.preparation_reference: dict | None = None
         self._initial_source_id = initial_source_id
         self._initial_batch_id = batch_id
+        self._lesson_topic = _text(lesson_topic).strip()
+        self._lesson_suggestions: list[dict] = []
         self._closed = False
         self._jobs: dict[int, str | None] = {}
         self._job_serial = 0
@@ -407,6 +411,44 @@ class WordQuestionDialog(QDialog):
         left.setMinimumWidth(0)
         left_layout = QVBoxLayout(left)
         left_layout.setContentsMargins(0, 0, 0, 0)
+        self.lesson_suggestion_panel = QWidget()
+        lesson_layout = QVBoxLayout(self.lesson_suggestion_panel)
+        lesson_layout.setContentsMargins(0, 0, 0, 6)
+        lesson_layout.setSpacing(6)
+        self.lesson_topic_label = _label("本课：" + self._lesson_topic)
+        self.lesson_topic_label.setObjectName("CardTitle")
+        self.lesson_topic_label.setAccessibleName("本次备课课题")
+        lesson_layout.addWidget(self.lesson_topic_label)
+        self.lesson_suggestion_note = _label(
+            "正在与已保存的主辅知识点标签比较；不会自动筛选或勾选。", muted=True
+        )
+        self.lesson_suggestion_note.setAccessibleName(
+            "本课知识点建议的匹配依据与标签状态"
+        )
+        lesson_layout.addWidget(self.lesson_suggestion_note)
+        self.lesson_suggestion_combo = QComboBox()
+        self.lesson_suggestion_combo.setAccessibleName("选择本课知识点建议，不自动应用")
+        self.lesson_suggestion_combo.setMinimumContentsLength(8)
+        self.lesson_suggestion_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
+        self.lesson_suggestion_combo.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
+        )
+        self.lesson_suggestion_combo.currentIndexChanged.connect(
+            self._show_lesson_suggestion
+        )
+        lesson_layout.addWidget(self.lesson_suggestion_combo)
+        self.lesson_suggestion_button = QPushButton("应用此知识点筛选")
+        self.lesson_suggestion_button.setObjectName("QuietButton")
+        self.lesson_suggestion_button.setAccessibleName(
+            "确认应用本课知识点建议，保留其他筛选及勾选"
+        )
+        self.lesson_suggestion_button.clicked.connect(self._apply_lesson_suggestion)
+        self.lesson_suggestion_button.setEnabled(False)
+        lesson_layout.addWidget(self.lesson_suggestion_button)
+        self.lesson_suggestion_panel.setVisible(bool(self._lesson_topic))
+        left_layout.addWidget(self.lesson_suggestion_panel)
         self.source_combo = QComboBox()
         self.source_combo.setAccessibleName("按 Word 来源筛选题目")
         self.source_combo.setMinimumContentsLength(10)
@@ -858,6 +900,89 @@ class WordQuestionDialog(QDialog):
                 widget.addItem(label, current)
             widget.setCurrentIndex(max(0, widget.findData(current)))
             widget.blockSignals(False)
+        self._refresh_lesson_suggestions()
+
+    def _refresh_lesson_suggestions(self) -> None:
+        if not self._lesson_topic:
+            return
+        current = self.lesson_suggestion_combo.currentData()
+        self._lesson_suggestions = lesson_knowledge_suggestions(
+            self._lesson_topic, self._items.values()
+        )
+        self.lesson_suggestion_combo.blockSignals(True)
+        self.lesson_suggestion_combo.clear()
+        for suggestion in self._lesson_suggestions:
+            self.lesson_suggestion_combo.addItem(
+                f"{suggestion['knowledge_id']} · {suggestion['label']}",
+                suggestion["knowledge_id"],
+            )
+        self.lesson_suggestion_combo.setCurrentIndex(
+            max(0, self.lesson_suggestion_combo.findData(current))
+        )
+        self.lesson_suggestion_combo.blockSignals(False)
+        self.lesson_suggestion_combo.setVisible(bool(self._lesson_suggestions))
+        self.lesson_suggestion_button.setVisible(bool(self._lesson_suggestions))
+        self._show_lesson_suggestion()
+
+    def _show_lesson_suggestion(self, *_args) -> None:
+        suggestion = next(
+            (
+                row
+                for row in self._lesson_suggestions
+                if row["knowledge_id"] == self.lesson_suggestion_combo.currentData()
+            ),
+            None,
+        )
+        if suggestion is None:
+            self.lesson_suggestion_note.setText(
+                "未找到课题与现有标签名称的明确词面匹配。可用下面的知识点、年级、考试筛选或搜索；"
+                "知识点待映射的题目仍可查看。本次没有调用 AI，也没有自动筛选。"
+            )
+        else:
+            states = suggestion["status_counts"]
+            state_text = "\n".join(
+                f"{label} {states[name]} 条"
+                for name, label in (
+                    ("auto_suggested", "标签自动建议、待教师确认"),
+                    ("teacher_confirmed", "标签经教师确认"),
+                    ("unknown", "标签状态待确认"),
+                )
+                if states.get(name)
+            )
+            match_text = (
+                "标签完整匹配：“" + suggestion["label"] + "”"
+                if suggestion["exact_label_match"]
+                else "词项匹配：“" + "、".join(suggestion["matched_terms"]) + "”"
+            )
+            self.lesson_suggestion_note.setText(
+                "\n".join(
+                    (
+                        match_text,
+                        f"主标签命中 {suggestion['primary_count']} 条 · 辅标签命中 {suggestion['supporting_count']} 条",
+                        f"完整题目/主题 {suggestion['question_count']} 个 · 当前可勾选 {suggestion['selectable_count']} 个",
+                        state_text,
+                        "本机文字匹配，不是 AI 判断。",
+                        "确认应用后才筛选；不会自动勾选或修改标签。",
+                    )
+                )
+            )
+        self._update_actions()
+
+    def _apply_lesson_suggestion(self) -> None:
+        if not self.lesson_suggestion_button.isEnabled():
+            return
+        knowledge_id = self.lesson_suggestion_combo.currentData()
+        index = self.knowledge_filter.findData(knowledge_id)
+        if index < 0:
+            return
+        self.knowledge_filter.setCurrentIndex(index)
+        self._filter_items()
+        set_status(
+            self.status,
+            "info",
+            "已按确认的知识点筛选；来源、年级、考试、搜索条件及原有勾选均保留。"
+            "请完整预览后自行勾选；若结果为空，可调整其他筛选。尚未调用模型。",
+        )
 
     def _matches_attribute_filters(self, value):
         attributes = value.get("attributes") or {}
@@ -1646,6 +1771,14 @@ class WordQuestionDialog(QDialog):
 
     def _update_actions(self) -> None:
         count = len(self._selected)
+        self.lesson_suggestion_button.setEnabled(
+            bool(self._lesson_suggestions)
+            and not self._catalog_busy
+            and not self._reference_busy
+            and not self._export_busy
+            and not self._range_busy
+            and not self._attributes_busy
+        )
         self.selection_count.setText(f"已选 {count} 题；筛选或切换来源会保留勾选。")
         self.question_list.setEnabled(not self._catalog_busy)
         self.reload_button.setEnabled(not self._catalog_busy and not self._export_busy)

@@ -7,6 +7,7 @@ from typing import Any
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QDialog,
     QFormLayout,
@@ -104,10 +105,12 @@ class _WordImageDialog(QDialog):
 class ImportWordDialog(QDialog):
     """Inspect saved Word blocks and hand a freshly checked selection to preparation."""
 
-    def __init__(self, facade: Any, batch_id: str, parent: QWidget | None = None):
+    def __init__(self, facade: Any, batch_id: str, parent: QWidget | None = None, *, initial_source_id: str | None = None):
         super().__init__(parent)
         self.facade = facade
         self._batch_id = batch_id
+        self._initial_source_id = initial_source_id
+        self._image_reference_supported = callable(getattr(facade, "imported_word_image_reference", None))
         self.reference: dict[str, Any] | None = None
         self._preview_reference: dict[str, Any] | None = None
         self._preview_key: tuple | None = None
@@ -197,11 +200,16 @@ class ImportWordDialog(QDialog):
         layout.addWidget(self.zoom_image_button)
         self.image_note = QLabel(
             "这是原 Word 中的图片，不是重绘图。可放大核对；"
-            "下方追加到备课的文字参考不会自动带入这些图片像素。"
+            + ("勾选带入图片后，所选区块的可用图片将与文字一起追加。" if self._image_reference_supported else "下方追加到备课的文字参考不会自动带入这些图片像素。")
         )
         self.image_note.setWordWrap(True)
         self.image_note.hide()
         layout.addWidget(self.image_note)
+        self.include_images = QCheckBox("同时带入所选区块的原图（默认；无法处理时会提示）")
+        self.include_images.setChecked(self._image_reference_supported)
+        self.include_images.setVisible(self._image_reference_supported)
+        self.include_images.toggled.connect(self._selection_changed)
+        layout.addWidget(self.include_images)
         self.preview_button = QPushButton("预览将带入的内容")
         self.preview_button.clicked.connect(self._compile_preview)
         layout.addWidget(self.preview_button)
@@ -267,6 +275,12 @@ class ImportWordDialog(QDialog):
                 name = name.replace("\\", "/").rsplit("/", 1)[-1]
                 role = roles.get(source.get("role"), "资料")
                 self.source_combo.addItem(f"{name} · {role}", source["source_id"])
+            if self._initial_source_id is not None:
+                position = self.source_combo.findData(self._initial_source_id)
+                if position < 0:
+                    self.source_combo.clear()
+                    raise ValueError("selected source disappeared")
+                self.source_combo.setCurrentIndex(position)
             if not self.source_combo.count():
                 set_status(
                     self.status,
@@ -412,6 +426,7 @@ class ImportWordDialog(QDialog):
             source.get("revision"),
             self.block_start.value(),
             self.block_end.value(),
+            self.include_images.isChecked(),
         )
 
     def _valid_range(self) -> bool:
@@ -531,10 +546,16 @@ class ImportWordDialog(QDialog):
     def _compile_reference(self) -> dict[str, Any]:
         if not self._source or not self._valid_range():
             raise ValueError("invalid selection")
-        source_id, sha256, revision, start, end = self._selection_key()
-        value = self.facade.imported_word_reference(
-            self._batch_id, source_id, sha256, start, end, expected_revision=revision
-        )
+        source_id, sha256, revision, start, end, include_images = self._selection_key()
+        if self._image_reference_supported:
+            value = self.facade.imported_word_image_reference(
+                self._batch_id, source_id, sha256, start, end,
+                expected_revision=revision, include_images=include_images,
+            )
+        else:
+            value = self.facade.imported_word_reference(
+                self._batch_id, source_id, sha256, start, end, expected_revision=revision
+            )
         if (
             not isinstance(value, dict)
             or not isinstance(value.get("materials"), str)
@@ -558,11 +579,19 @@ class ImportWordDialog(QDialog):
         self._preview_reference = reference
         self._preview_key = self._selection_key()
         self._show_reference(reference)
-        self.import_button.setEnabled(True)
+        issues = reference.get("image_issues", [])
+        reference_issues = reference.get("reference_issues", [])
+        self.import_button.setEnabled(not issues and not reference_issues)
         notes = _warnings(reference.get("warnings", ()))
         message = "请核对完整参考。确认时会再次核对来源及内容，然后追加到备课资料。"
         if notes:
             message += f" 含 {len(notes)} 条原文缺口/待核对提醒。"
+        if issues:
+            message += " 图片存在待处理项，不能完整追加；请缩小区块范围，或明确取消带图并重新预览。"
+        if reference_issues:
+            message += " 所选内容有待处理事项，暂不能追加；详见下方预览。"
+        elif self._image_reference_supported:
+            message += f" 本次带入 {len(reference['image_assets'])} 张图片。"
         set_status(self.status, "attention" if notes else "success", message)
 
     def _show_reference(self, reference: dict[str, Any]) -> None:
@@ -574,6 +603,10 @@ class ImportWordDialog(QDialog):
         ]
         if missing:
             materials += "\n\n原文缺口 / 待核对提醒：\n" + "\n".join(missing)
+        if reference.get("image_issues"):
+            materials += "\n\n图片待处理项：\n" + "\n".join(reference["image_issues"])
+        if reference.get("reference_issues"):
+            materials += "\n\n参考待处理项：\n" + "\n".join(reference["reference_issues"])
         self.preview.setPlainText(materials)
         self.preview_body_button.setEnabled(
             not self.preview.document().find(self._body_marker()).isNull()
@@ -614,6 +647,10 @@ class ImportWordDialog(QDialog):
             set_status(
                 self.status, "attention", "参考内容已变化，请重新生成预览并核对后确认。"
             )
+            return
+        if current.get("image_issues") or current.get("reference_issues"):
+            self._invalidate_preview(clear=False)
+            set_status(self.status, "attention", "所选参考尚未就绪，请先处理预览中的待核对项，再重新预览。")
             return
         self.reference = current
         self.accept()
@@ -659,9 +696,10 @@ class ImportWordDialog(QDialog):
             self._image_pixmap = pixmap
             self._image_is_derived = result.get("derived_preview") is True
             self.image_note.setText(
-                "由原 Word 矢量图在本机转换的预览，原件保留；不是公式文字识别结果。"
-                if self._image_is_derived else
-                "这是原 Word 中的图片，可放大核对；追加文字参考不会自动带入图片像素。"
+                ("由原 Word 矢量图在本机转换的预览，原件保留；不是公式文字识别结果。"
+                 if self._image_is_derived else "这是原 Word 中的图片，可放大核对。")
+                + (" 带图选项仅带入所选区块的图片；预览时会列明具体范围。"
+                   if self._image_reference_supported else " 追加文字参考不会自动带入图片像素。")
             )
             self.image_label.show()
             self.image_note.show()

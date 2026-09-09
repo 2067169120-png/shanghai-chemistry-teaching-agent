@@ -224,6 +224,168 @@ def test_three_attribute_filters_compose_and_do_not_split_theme_or_lose_basket(q
     tasks.flush()
 
 
+def _known_lesson_attributes(item):
+    attributes = _attribute_options(item)["attributes"]
+    # Basic electrolyte text alone intentionally has no canonical mapping in
+    # production. This fixture represents a separately established K10 label.
+    attributes["primary_knowledge"].update(id="K10", label="电解质与电离")
+    return attributes
+
+
+def test_lesson_suggestion_is_visible_but_never_filters_or_selects_on_open(qt_app):
+    facade, tasks = _Facade(), _Tasks()
+    first, second, _ = facade.catalog["items"]
+    first["attributes"] = _known_lesson_attributes(first)
+    second["attributes"] = _attribute_options(second)["attributes"]
+    before = deepcopy(facade.catalog)
+    dialog = WordQuestionDialog(facade, tasks, lesson_topic="电离平衡常数")
+    tasks.flush()
+    assert dialog.lesson_topic_label.text() == "本课：电离平衡常数"
+    assert not dialog.lesson_suggestion_panel.isHidden()
+    assert dialog.lesson_suggestion_combo.currentData() == "K10"
+    note = dialog.lesson_suggestion_note.text()
+    assert "电离" in note and "主标签命中 1 条" in note
+    assert note.splitlines()[0] == "词项匹配：“电离”"
+    assert "标签自动建议、待教师确认 1 条" in note
+    assert "本机文字匹配，不是 AI 判断" in note
+    assert dialog.knowledge_filter.currentData() is None
+    assert dialog.question_list.count() == 3
+    assert dialog.selections == []
+    assert dialog.preparation_reference is None
+    assert not [
+        call
+        for call in facade.calls
+        if call[0] in {"save", "reference", "attribute_save"}
+    ]
+    assert facade.catalog == before
+    dialog.reject()
+
+
+def test_exact_lesson_label_is_shown_once_with_counts_and_status_on_short_lines(qt_app):
+    facade, tasks = _Facade(), _Tasks()
+    item = facade.catalog["items"][0]
+    label = "化学研究方法、物质分类与计量"
+    item["attributes"] = _known_lesson_attributes(item)
+    item["attributes"]["primary_knowledge"].update(id="K01", label=label)
+    dialog = WordQuestionDialog(facade, tasks, lesson_topic=label)
+    tasks.flush()
+    suggestion = dialog._lesson_suggestions[0]
+    assert suggestion["exact_label_match"] is True
+    assert len(suggestion["matched_terms"]) > 1  # Full pure-function evidence remains.
+    note = dialog.lesson_suggestion_note.text()
+    lines = note.splitlines()
+    assert lines[0] == f"标签完整匹配：“{label}”"
+    assert note.count(label) == 1
+    assert note.count("化学研究方法") == 1
+    assert note.count("物质分类") == 1
+    assert lines[1] == "主标签命中 1 条 · 辅标签命中 0 条"
+    assert lines[2] == "完整题目/主题 1 个 · 当前可勾选 1 个"
+    assert lines[3] == "标签自动建议、待教师确认 1 条"
+    assert lines[-2:] == [
+        "本机文字匹配，不是 AI 判断。",
+        "确认应用后才筛选；不会自动勾选或修改标签。",
+    ]
+    assert dialog.knowledge_filter.currentData() is None
+    assert dialog.selections == []
+    dialog.reject()
+
+
+def test_applying_lesson_suggestion_preserves_filters_basket_and_whole_theme(qt_app):
+    facade, tasks = _Facade(), _Tasks()
+    first = facade.catalog["items"][0]
+    first["attributes"] = _known_lesson_attributes(first)
+    first.update(selection_unit="theme_big_question", printed_subpart_starts=[2, 3])
+    dialog = WordQuestionDialog(facade, tasks, lesson_topic="电离平衡常数")
+    tasks.flush()
+    dialog.question_list.item(1).setCheckState(Qt.CheckState.Checked)
+    selections = deepcopy(dialog.selections)
+    original = deepcopy(dialog._items["Q1"])
+    dialog.source_combo.setCurrentIndex(dialog.source_combo.findData("A"))
+    dialog.grade_filter.setCurrentIndex(dialog.grade_filter.findData("grade_12"))
+    dialog.exam_filter.setCurrentIndex(dialog.exam_filter.findData("unknown"))
+    dialog.search.setText("电解质")
+    dialog.lesson_suggestion_button.click()
+    assert dialog.knowledge_filter.currentData() == "K10"
+    assert dialog.source_combo.currentData() == "A"
+    assert dialog.grade_filter.currentData() == "grade_12"
+    assert dialog.exam_filter.currentData() == "unknown"
+    assert dialog.search.text() == "电解质"
+    assert dialog.question_list.count() == 1
+    assert dialog.selections == selections
+    assert dialog._items["Q1"] == original
+    assert "其他筛选" in dialog.status.text()
+    assert not dialog.import_button.isEnabled()
+    tasks.flush()
+    dialog.reject()
+    tasks.flush()
+
+
+def test_no_lesson_match_keeps_unknown_items_and_manual_filters_available(qt_app):
+    facade, tasks = _Facade(), _Tasks()
+    dialog = WordQuestionDialog(facade, tasks, lesson_topic="烯烃")
+    tasks.flush()
+    assert "未找到" in dialog.lesson_suggestion_note.text()
+    assert "可用下面" in dialog.lesson_suggestion_note.text()
+    assert "知识点待映射的题目仍可查看" in dialog.lesson_suggestion_note.text()
+    assert dialog.lesson_suggestion_combo.isHidden()
+    assert not dialog.lesson_suggestion_button.isEnabled()
+    assert dialog.question_list.count() == 3
+    dialog.knowledge_filter.setCurrentIndex(dialog.knowledge_filter.findData("unknown"))
+    assert dialog.question_list.count() == 3
+    dialog.reject()
+
+
+def test_lesson_suggestions_recalculate_after_same_catalog_revision_label_change(
+    qt_app,
+):
+    facade, tasks = _Facade(), _Tasks()
+    item = facade.catalog["items"][0]
+    item["attributes"] = _known_lesson_attributes(item)
+    dialog = WordQuestionDialog(facade, tasks, lesson_topic="电离平衡常数")
+    tasks.flush()
+    assert dialog.lesson_suggestion_combo.currentData() == "K10"
+    old_catalog_revision = dialog._catalog_revision
+    item["attributes"]["primary_knowledge"].update(
+        id="K11", label="电离", status="teacher_confirmed"
+    )
+    dialog._load_catalog()
+    tasks.flush()
+    assert dialog._catalog_revision == old_catalog_revision
+    assert dialog.lesson_suggestion_combo.currentData() == "K11"
+    assert "标签经教师确认 1 条" in dialog.lesson_suggestion_note.text()
+    assert dialog.knowledge_filter.currentData() is None
+    assert dialog.question_list.count() == 3
+    dialog.reject()
+
+
+def test_empty_lesson_topic_leaves_existing_dialog_unchanged(qt_app):
+    facade, tasks = _Facade(), _Tasks()
+    dialog = WordQuestionDialog(facade, tasks)
+    tasks.flush()
+    assert dialog.lesson_suggestion_panel.isHidden()
+    assert dialog._lesson_suggestions == []
+    assert dialog.question_list.count() == 3
+    dialog.reject()
+
+
+@pytest.mark.parametrize("width", [400, 700])
+def test_lesson_suggestion_panel_wraps_without_horizontal_overflow(qt_app, width):
+    facade, tasks = _Facade(), _Tasks()
+    item = facade.catalog["items"][0]
+    item["attributes"] = _known_lesson_attributes(item)
+    dialog = WordQuestionDialog(
+        facade, tasks, lesson_topic="<b>电离平衡常数</b>" + "两课时复习" * 20
+    )
+    tasks.flush()
+    dialog.resize(width, 800)
+    dialog.show()
+    qt_app.processEvents()
+    assert dialog.lesson_topic_label.textFormat() == Qt.TextFormat.PlainText
+    assert dialog.width() == width
+    assert dialog.body_scroll.horizontalScrollBar().maximum() == 0
+    dialog.reject()
+
+
 @pytest.fixture
 def qt_app():
     app = QApplication.instance() or QApplication([])

@@ -218,6 +218,14 @@ class PreparationPage(QWidget):
         # form as a small native view-model.
         self.preparation_sources_import_button = self.source_import_button
         form.addWidget(self.source_import_button)
+        self.lecture_library_button = QPushButton("查找已导入的原教案（知识、例题与原图）…")
+        self.lecture_library_button.setObjectName("QuietButton")
+        self.lecture_library_button.clicked.connect(self._import_lecture)
+        form.addWidget(self.lecture_library_button)
+        self.word_questions_button = QPushButton("按本课知识点选题（完整题面与答案）…")
+        self.word_questions_button.setObjectName("QuietButton")
+        self.word_questions_button.clicked.connect(self._import_word_questions)
+        form.addWidget(self.word_questions_button)
         self.image_assets_widget = PreparationImagesWidget(self.facade, form_card)
         # Short alias retained for callers that treat the page as a form model.
         self.image_assets = self.image_assets_widget
@@ -521,6 +529,20 @@ class PreparationPage(QWidget):
             "蓝图参考已追加，其他填写内容未变；请核对课题、对象和目标后保存或生成。尚未调用模型。",
         )
 
+    def _import_lecture(self) -> None:
+        from .lecture_library_dialog import LectureLibraryDialog
+
+        dialog = LectureLibraryDialog(self.facade, self.tasks, self, lesson_topic=self.topic.text())
+        if dialog.exec() == dialog.DialogCode.Accepted and dialog.reference is not None:
+            self.import_word_reference(dialog.reference)
+
+    def _import_word_questions(self) -> None:
+        from .word_question_dialog import WordQuestionDialog
+
+        dialog = WordQuestionDialog(self.facade, self.tasks, self, lesson_topic=self.topic.text())
+        if dialog.exec() == dialog.DialogCode.Accepted and dialog.preparation_reference is not None:
+            self.import_word_reference(dialog.preparation_reference)
+
     def _import_sources(self) -> None:
         from ..desktop_blueprint_drafts import BlueprintDraftError
         from ..desktop_blueprint_preparation import append_reference
@@ -591,7 +613,7 @@ class PreparationPage(QWidget):
             return False
         if any(
             key in reference
-            for key in ("selections", "include_images", "image_assets", "image_issues")
+            for key in ("selections", "source_selection", "include_images", "image_assets", "image_issues")
         ):
             return self._import_word_images(reference, combined)
         self.materials.setPlainText(combined)
@@ -619,22 +641,38 @@ class PreparationPage(QWidget):
         )
 
         try:
+            source_selection = reference.get("source_selection")
+            if "source_selection" in reference:
+                if reference.get("reference_issues"):
+                    raise PreparationImageError("原教案有待处理事项，请返回原文预览核对。")
+                if (
+                    "selections" in reference
+                    or not isinstance(source_selection, dict)
+                    or any(not isinstance(source_selection.get(key), str) or not source_selection[key]
+                           for key in ("batch_id", "source_id", "source_sha256", "revision"))
+                    or any(type(source_selection.get(key)) is not int for key in ("block_start", "block_end"))
+                    or not 1 <= source_selection["block_start"] <= source_selection["block_end"]
+                ):
+                    raise PreparationImageError("原教案区块定位不完整，请重新预览。")
+                import_method = getattr(self.facade, "import_word_source_reference", None)
+            else:
+                if (
+                    not isinstance(reference.get("selections"), list)
+                    or not reference["selections"]
+                    or any(
+                        not isinstance(item, dict)
+                        or not isinstance(item.get("key"), str) or not item["key"]
+                        or not isinstance(item.get("revision"), str) or not item["revision"]
+                        or type(item.get("points")) not in (int, float)
+                        or not 0 < item["points"] <= 100 or not isfinite(item["points"])
+                        for item in reference["selections"]
+                    )
+                ):
+                    raise PreparationImageError("Word 选题定位不完整，请重新预览。")
+                import_method = getattr(self.facade, "import_word_question_reference", None)
             if (
                 type(reference.get("include_images")) is not bool
                 or "warnings" not in reference
-                or not isinstance(reference.get("selections"), list)
-                or not reference["selections"]
-                or any(
-                    not isinstance(item, dict)
-                    or not isinstance(item.get("key"), str)
-                    or not item["key"]
-                    or not isinstance(item.get("revision"), str)
-                    or not item["revision"]
-                    or type(item.get("points")) not in (int, float)
-                    or not 0 < item["points"] <= 100
-                    or not isfinite(item["points"])
-                    for item in reference["selections"]
-                )
                 or not isinstance(reference.get("image_issues"), list)
                 or any(not isinstance(item, str) for item in reference["image_issues"])
                 or "image_assets" not in reference
@@ -662,9 +700,7 @@ class PreparationPage(QWidget):
                     f"超过 {self.image_assets_widget.MAX_ASSETS} 张上限。未追加文字或图片；请调整选题或已有图片后重试。"
                 )
             merged = normalize_image_assets(merged)
-            if not callable(
-                getattr(self.facade, "import_word_question_reference", None)
-            ):
+            if not callable(import_method):
                 raise PreparationImageError(
                     "当前应用尚不能接收这份图文参考，请更新后重试。"
                 )
@@ -748,7 +784,7 @@ class PreparationPage(QWidget):
         try:
             self._library_image_task_id = self.tasks.submit(
                 "导入 Word 选题图文",
-                lambda: self.facade.import_word_question_reference(
+                lambda: import_method(
                     frozen_reference, existing
                 ),
                 on_success=ready,

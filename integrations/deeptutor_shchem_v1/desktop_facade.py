@@ -2070,6 +2070,7 @@ class DesktopWorkbenchFacade:
             {
                 "source_id": str(source["source_file_id"]),
                 "source_name": str(source["filename"]),
+                "source_sha256": str(source["source_sha256"]),
                 "role": str(source["role"]),
                 "import_state": states.get((str(source["role"]), int(source["order_index"]), str(source["filename"])), "pending"),
             }
@@ -2146,6 +2147,29 @@ class DesktopWorkbenchFacade:
             self._visual_import_root / "sources" / f"{source.source_sha256}.docx",
             source_sha256, block_start, block_end, [], word_source_name=source.filename,
         )
+
+    def imported_word_image_reference(
+        self, batch_id: str, source_id: str, source_sha256: str,
+        block_start: int, block_end: int, expected_revision: str,
+        *, include_images: bool = True,
+    ) -> dict[str, Any]:
+        """Read the selected original blocks and pixels without saving or a model."""
+        from .desktop_word_source_reference import WordSourceReferenceService
+
+        return WordSourceReferenceService(self).reference(
+            {
+                "batch_id": batch_id, "source_id": source_id,
+                "source_sha256": source_sha256, "revision": expected_revision,
+                "block_start": block_start, "block_end": block_end,
+            },
+            include_images=include_images,
+        )
+
+    def import_word_source_reference(self, reference, existing_assets):
+        """Revalidate all selected original content, then commit its local images."""
+        from .desktop_word_source_reference import WordSourceReferenceService
+
+        return WordSourceReferenceService(self).prepare_reference(reference, existing_assets)
 
     def _word_questions(self):
         from .desktop_word_questions import WordQuestionService

@@ -476,8 +476,21 @@ class PreparationImagesWidget(QWidget):
     def set_assets_strict(self, values: object) -> None:
         """Validate a complete batch before replacing anything; never drop rows."""
         cleaned = normalize_image_assets(values)
+        previous = self._assets
         self._assets = cleaned
-        self._render_assets()
+        try:
+            self._render_assets()
+        except (RuntimeError, TypeError, ValueError):
+            # Rendering can fail after the in-memory list changed. A failed
+            # Word handoff must not leave new assets paired with the old text.
+            self._assets = previous
+            try:
+                self._render_assets()
+            except (RuntimeError, TypeError, ValueError):
+                # Even if the view itself needs reopening, the authoritative
+                # form data stays old and no successful change is emitted.
+                pass
+            raise
         self.assets_changed.emit(self.assets())
 
     def append_asset(self, value: object) -> bool:
