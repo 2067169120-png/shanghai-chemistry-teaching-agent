@@ -6,6 +6,12 @@
 !/requirements-dev.txt
 !/CHANGELOG.md
 !/AGENTS.md
+!/docs/
+/docs/*
+!/docs/screenshots/
+/docs/screenshots/*
+!/docs/screenshots/word-questions.png
+!/docs/screenshots/word-answers.png
 !/integrations/
 !/staging/
 /staging/*

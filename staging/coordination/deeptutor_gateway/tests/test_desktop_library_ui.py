@@ -238,7 +238,7 @@ def test_library_card_displays_expanded_answer_units_without_rewriting_inventory
     page.close()
 
 
-def test_personal_handout_keeps_basket_but_disables_unavailable_detail(qt_app) -> None:
+def test_legacy_handout_routes_to_per_question_entry_instead_of_metadata_basket(qt_app) -> None:
     from integrations.deeptutor_shchem_v1.desktop_facade import PERSONAL_HANDOUT_SCOPE
     from integrations.deeptutor_shchem_v1.desktop_workbench.library_page import (
         LibraryPage,
@@ -252,9 +252,11 @@ def test_personal_handout_keeps_basket_but_disables_unavailable_detail(qt_app) -
     assert not bridge.pending
     assert not page.detail_view_button.isEnabled()
     assert "讲义详情暂未接入" in page.detail_view_button.text()
-    assert page.add_button.isEnabled()
+    assert not page.add_button.isEnabled()
+    assert "逐题预览" in page.add_button.text()
+    assert page.word_questions_button.isEnabled()
     page.add_button.click()
-    assert facade.added == ["H"]
+    assert facade.added == []
     page.close()
 
 

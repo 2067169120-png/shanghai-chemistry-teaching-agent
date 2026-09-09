@@ -186,3 +186,20 @@ def test_total_material_limit_preserves_existing_form(app, monkeypatch):
     assert page._payload() == before
     window.close()
     window.tasks.shutdown()
+
+
+def test_word_question_reference_signal_appends_without_resetting_lesson(app):
+    window = TeacherWorkbenchWindow(_Facade())
+    page = window.preparation_page
+    page._availability_timer.stop()
+    _fill_preparation_page(page)
+    before = page._payload()
+    reference = {"materials": "教师选题：写出水的化学式。原文答案：H2O。", "warnings": []}
+    window.library_page.word_reference_requested.emit(reference)
+    after = page._payload()
+    assert after["materials"].startswith(before["materials"])
+    assert reference["materials"] in after["materials"]
+    assert {k: v for k, v in before.items() if k != "materials"} == {k: v for k, v in after.items() if k != "materials"}
+    assert window.stack.currentWidget() is page
+    window.close()
+    window.tasks.shutdown()

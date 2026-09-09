@@ -48,6 +48,7 @@ class LibraryPage(QWidget):
     basket_changed = Signal(int)
     preparation_image_requested = Signal(dict)
     preparation_reference_requested = Signal(object)
+    word_reference_requested = Signal(dict)
 
     def __init__(
         self,
@@ -172,6 +173,10 @@ class LibraryPage(QWidget):
         self.search_row = search_row
         filter_form.addLayout(search_row)
         root.addWidget(filters)
+        self.word_questions_button = QPushButton("已导入 Word · 逐题预览与挑选")
+        self.word_questions_button.setObjectName("PrimaryButton")
+        self.word_questions_button.clicked.connect(self._open_word_questions)
+        root.addWidget(self.word_questions_button)
         self.handout_candidates_button = QPushButton("已整理讲义 · 查看题面与配对答案")
         self.handout_candidates_button.setObjectName("QuietButton")
         self.handout_candidates_button.clicked.connect(self._open_handout_candidates)
@@ -568,8 +573,10 @@ class LibraryPage(QWidget):
             self.detail_view_button.setEnabled(False)
             self.detail_context.setText(
                 f"共同材料：{card.shared_context_zh}\n"
-                "个人讲义目前保留原有题篮流程，暂不提供题图详情入口。"
+                "这是旧版讲义汇总。新导入的 Word 请点上方“逐题预览与挑选”；已整理讲义请进入对应题面与答案入口。"
             )
+            self.add_button.setEnabled(False)
+            self.add_button.setText("请在逐题预览中选题")
             return
         detail_loader = getattr(self.facade, "library_theme_detail", None)
         if not callable(detail_loader):
@@ -694,6 +701,14 @@ class LibraryPage(QWidget):
         dialog.preparation_image_requested.connect(self.preparation_image_requested)
         dialog.destroyed.connect(lambda: setattr(self, "_detail_dialog", None))
         dialog.show()
+
+    def _open_word_questions(self) -> None:
+        from .word_question_dialog import WordQuestionDialog
+
+        dialog = WordQuestionDialog(self.facade, self.tasks, self.window())
+        if dialog.exec() == dialog.DialogCode.Accepted and dialog.preparation_reference is not None:
+            self.word_reference_requested.emit(dialog.preparation_reference)
+        dialog.deleteLater()
 
     def _open_handout_candidates(self) -> None:
         from .handout_candidate_dialog import HandoutCandidateDialog

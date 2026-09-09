@@ -210,6 +210,10 @@ class ImportDialog(QDialog):
             QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
         )
         word_history_layout.addWidget(self.word_batch_combo)
+        self.word_questions_button = QPushButton("逐题预览与挑选…")
+        self.word_questions_button.setObjectName("PrimaryButton")
+        self.word_questions_button.clicked.connect(self._open_word_questions)
+        word_history_layout.addWidget(self.word_questions_button)
         self.word_reference_button = QPushButton("查看 Word 内容并带入备课…")
         self.word_reference_button.setAccessibleName("查看已保存的 Word 内容并带入备课")
         self.word_reference_button.clicked.connect(self._open_word_reference)
@@ -460,6 +464,17 @@ class ImportDialog(QDialog):
         dialog = ImportWordDialog(self.facade, batch_id, self)
         if dialog.exec() == dialog.DialogCode.Accepted and dialog.reference is not None:
             self.preparation_reference = dialog.reference
+            self.accept()
+        dialog.deleteLater()
+
+    def _open_word_questions(self) -> None:
+        from .word_question_dialog import WordQuestionDialog
+
+        if self._active_task_id:
+            return
+        dialog = WordQuestionDialog(self.facade, self.tasks, self, batch_id=self.word_batch_combo.currentData())
+        if dialog.exec() == dialog.DialogCode.Accepted and dialog.preparation_reference is not None:
+            self.preparation_reference = dialog.preparation_reference
             self.accept()
         dialog.deleteLater()
 

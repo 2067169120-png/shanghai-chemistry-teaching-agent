@@ -2045,6 +2045,37 @@ class DesktopWorkbenchFacade:
             source_sha256, block_start, block_end, [], word_source_name=source.filename,
         )
 
+    def _word_questions(self):
+        from .desktop_word_questions import WordQuestionService
+
+        if not hasattr(self, "_word_question_service"):
+            self._word_question_service = WordQuestionService(self)
+        return self._word_question_service
+
+    def word_question_catalog(self):
+        return self._word_questions().catalog()
+
+    def word_question_source(self, key, revision):
+        return self._word_questions().source(key, revision)
+
+    def word_question_image(self, key, revision, asset_id):
+        return self._word_questions().image(key, revision, asset_id)
+
+    def word_question_update_range(self, key, revision, **boundaries):
+        return self._word_questions().update_range(key, revision, **boundaries)
+
+    def word_question_reference(self, selections):
+        return self._word_questions().reference(selections)
+
+    def word_question_save_selection(self, selections):
+        return self._word_questions().save_selection(selections)
+
+    def word_question_saved_selection(self):
+        return self._word_questions().saved_selection()
+
+    def word_question_export(self, title, selections, *, show_student_scores=False):
+        return self._word_questions().export(title, selections, show_student_scores=show_student_scores)
+
     def _visual_import_profile(
         self, profile_id: str, expected_revision: str
     ) -> Mapping[str, Any]:

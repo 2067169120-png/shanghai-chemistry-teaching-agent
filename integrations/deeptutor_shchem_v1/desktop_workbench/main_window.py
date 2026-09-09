@@ -295,6 +295,7 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.library_page.preparation_reference_requested.connect(
             self._library_reference_to_preparation
         )
+        self.library_page.word_reference_requested.connect(self._word_to_preparation)
         self._paper_reference_loading = False
         self.paper_page.preparation_requested.connect(self._paper_to_preparation)
         self.tasks.task_started.connect(self._task_started)
@@ -332,6 +333,10 @@ class TeacherWorkbenchWindow(QMainWindow):
             self.paper_page.update_basket_count()
         if route == "library" and self.library_page.results.count() == 0:
             self.library_page.search()
+
+    def _word_to_preparation(self, reference: dict) -> None:
+        if self.preparation_page.import_word_reference(reference):
+            self.navigate("preparation")
 
     def _library_image_to_preparation(self, selection: dict) -> None:
         if self.preparation_page.import_library_image(selection):
