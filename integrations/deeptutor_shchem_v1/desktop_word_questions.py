@@ -23,7 +23,12 @@ from .desktop_preparation_sources import (
 )
 from .desktop_source_quality import apply_source_quality, source_quality_notes
 from .desktop_word_preview_cache import WordPreviewCache
-from .desktop_word_question_attributes import WordQuestionAttributeStore
+from .desktop_word_question_attributes import (
+    WordQuestionAttributeError,
+    WordQuestionAttributeStore,
+    load_attribute_catalog,
+    suggest_attributes,
+)
 from .desktop_word_question_index import apply_question_range, index_word_questions
 
 SELECTION_DRAFT = "native-word-question-selection-v1"
@@ -62,21 +67,32 @@ class WordQuestionService:
         self.facade = facade
         self.state = facade.state_store
         self.reader = PreparationSourcesService(facade.paths.workspace_root)
-        self.preview_cache = WordPreviewCache(facade.paths.state_root / "word-question-previews")
+        self.preview_cache = WordPreviewCache(
+            facade.paths.state_root / "word-question-previews"
+        )
         self.attribute_store = WordQuestionAttributeStore(facade.paths.state_root)
         self._cache = {}
+        self._locations = {}
         self._lock = threading.RLock()
 
-    def _inventory(self):
+    def _inventory(self, locations=None):
         """Revalidate archive bytes each time; never cache authority by filename."""
         from .desktop_facade import DesktopFacadeError
 
         found = {}
         warnings = []
         for batch in self.facade.list_imported_word_batches():
+            if locations is not None and batch.batch_id not in locations:
+                continue
             try:
                 descriptor = self.facade._saved_visual_import_batch(batch.batch_id)
-                sources = self.facade._restore_visual_import_sources(descriptor)
+                sources = (
+                    self.facade._restore_visual_import_sources(
+                        descriptor, source_ids=locations[batch.batch_id]
+                    )
+                    if locations is not None
+                    else self.facade._restore_visual_import_sources(descriptor)
+                )
             except (DesktopFacadeError, OSError, ValueError, TypeError):
                 warnings.append(
                     "一批已导入资料的原文件缺失或发生变化，请到导入历史重新核对。"
@@ -92,10 +108,16 @@ class WordQuestionService:
                 with self._lock:
                     if token not in self._cache:
                         try:
-                            preview = self.preview_cache.load(source.content, source.filename)
+                            preview = self.preview_cache.load(
+                                source.content, source.filename
+                            )
                             if preview is None:
-                                preview = self.reader.word_preview_bytes(source.content, source.filename)
-                                self.preview_cache.save(source.content, source.filename, preview)
+                                preview = self.reader.word_preview_bytes(
+                                    source.content, source.filename
+                                )
+                                self.preview_cache.save(
+                                    source.content, source.filename, preview
+                                )
                             indexed = index_word_questions(preview)
                         except (PreparationSourceError, ValueError, TypeError):
                             warnings.append(
@@ -107,12 +129,14 @@ class WordQuestionService:
                 found[source.source_sha256] = (source, batch.batch_id, preview, items)
         return found, warnings
 
-    def _catalog(self):
-        inventory, warnings = self._inventory()
+    def _catalog(self, locations=None):
+        inventory, warnings = self._inventory(locations)
         try:
             quality = source_quality_notes(self.facade.paths.workspace_root)
         except (OSError, ValueError, TypeError, KeyError) as exc:
-            raise WordQuestionError("来源修订记录无法读取，未继续选题；请检查资料完整性。") from exc
+            raise WordQuestionError(
+                "来源修订记录无法读取，未继续选题；请检查资料完整性。"
+            ) from exc
         overrides = (
             self.state.snapshot()
             .get("drafts", {})
@@ -156,8 +180,28 @@ class WordQuestionService:
         attributes = self.attribute_store.get_many([row["key"] for row in result])
         for row in result:
             saved = attributes.get(row["key"])
-            if saved and saved["source_sha256"] == row["source_sha256"] and saved["question_revision"] == row["revision"]:
+            if (
+                saved
+                and saved["source_sha256"] == row["source_sha256"]
+                and saved["question_revision"] == row["revision"]
+            ):
                 row["attributes"] = saved
+            elif saved and saved["annotation_source"] == "teacher_modified":
+                row["attribute_warning"] = (
+                    "题目范围已变化，原教师标签保存在历史中，请重新核对后保存。"
+                )
+                warnings.append(row["attribute_warning"])
+        # These are lookup locations, not trusted source contents. Every later
+        # operation still verifies the saved descriptor and selected DOCX bytes.
+        with self._lock:
+            if locations is None:
+                self._locations.clear()
+            self._locations.update(
+                {
+                    row["key"]: (row["batch_id"], row["archive_source_id"])
+                    for row in result
+                }
+            )
         revision = _digest([(row["key"], row["revision"]) for row in result])
         return {
             "revision": revision,
@@ -179,7 +223,16 @@ class WordQuestionService:
         choices = [_selection(value) for value in selections]
         if len({v["key"] for v in choices}) != len(choices):
             raise WordQuestionError("同一道题不能重复选择。")
-        catalog, inventory = self._catalog()
+        if not choices:
+            return [], {}
+        locations = None
+        with self._lock:
+            if all(value["key"] in self._locations for value in choices):
+                locations = {}
+                for value in choices:
+                    batch_id, source_id = self._locations[value["key"]]
+                    locations.setdefault(batch_id, set()).add(source_id)
+        catalog, inventory = self._catalog(locations)
         rows = {row["key"]: row for row in catalog["items"]}
         result = []
         for chosen in choices:
@@ -197,11 +250,113 @@ class WordQuestionService:
         rows, inventory = self._resolve([{"key": key, "revision": revision}])
         return deepcopy(inventory[rows[0]["source_id"]][2])
 
+    def attribute_options(self, key, revision):
+        """Read current, source-bound labels without creating personal state."""
+        rows, _ = self._resolve([{"key": key, "revision": revision}])
+        row = rows[0]
+        try:
+            catalog = load_attribute_catalog(self.facade.paths.workspace_root)
+            stored = self.attribute_store.get(key)
+            if stored and stored["source_sha256"] != row["source_sha256"]:
+                raise WordQuestionAttributeError(
+                    "题目属性与当前来源不一致，请核对原文件。"
+                )
+            bound = bool(stored and stored["question_revision"] == row["revision"])
+            attributes = (
+                stored
+                if bound
+                else suggest_attributes(
+                    row,
+                    stored["source"] if stored else {"source_name": row["source_name"]},
+                    catalog,
+                )
+            )
+            return {
+                "attributes": attributes,
+                "catalog": catalog,
+                "history": self.attribute_store.history(key),
+                "stored_revision": stored["revision"] if stored else None,
+                "warning": (
+                    "题目范围已变化；下面是当前题目的新建议。原教师修改仍保存在历史中，请重新核对。"
+                    if stored and not bound
+                    else ""
+                ),
+            }
+        except (
+            WordQuestionAttributeError,
+            OSError,
+            KeyError,
+            ValueError,
+            TypeError,
+        ) as exc:
+            raise WordQuestionError(
+                getattr(
+                    exc,
+                    "message_zh",
+                    "题目标签目录暂时无法读取，请检查本地资料完整性。",
+                )
+            ) from exc
+
+    def save_attributes(
+        self,
+        key,
+        revision,
+        updates,
+        *,
+        expected_attribute_revision,
+        expected_stored_revision=None,
+    ):
+        # The UI shares one service across its task workers. Range changes and
+        # label saves must not interleave between source resolution and commit.
+        with self._lock:
+            return self._save_attributes(
+                key,
+                revision,
+                updates,
+                expected_attribute_revision=expected_attribute_revision,
+                expected_stored_revision=expected_stored_revision,
+            )
+
+    def _save_attributes(
+        self,
+        key,
+        revision,
+        updates,
+        *,
+        expected_attribute_revision,
+        expected_stored_revision=None,
+    ):
+        # Fresh source resolution precedes both comparison and atomic store CAS.
+        options = self.attribute_options(key, revision)
+        attributes = options["attributes"]
+        if attributes["revision"] != expected_attribute_revision or (
+            options["stored_revision"] != expected_stored_revision
+        ):
+            raise WordQuestionError("题目标签已有新版本，请刷新后修改。")
+        stored_revision = options["stored_revision"]
+        initial = attributes if stored_revision is None else None
+        replacement = (
+            attributes
+            if stored_revision and stored_revision != attributes["revision"]
+            else None
+        )
+        try:
+            return self.attribute_store.save_teacher_edit(
+                key,
+                updates,
+                expected_revision=stored_revision or expected_attribute_revision,
+                curriculum_entries=options["catalog"],
+                initial_attributes=initial,
+                replacement_attributes=replacement,
+            )
+        except WordQuestionAttributeError as exc:
+            raise WordQuestionError(exc.message_zh) from exc
+
     def image(self, key, revision, asset_id):
         rows, inventory = self._resolve([{"key": key, "revision": revision}])
         row = rows[0]
         allowed = {
-            asset["asset_id"]
+            asset["asset_id"]: asset
             for group in ("question_blocks", "answer_blocks", "context_blocks")
             for block in row[group]
             for asset in block.get("assets", [])
@@ -209,16 +364,25 @@ class WordQuestionService:
         if asset_id not in allowed:
             raise WordQuestionError("这幅图不属于当前题目，请重新选择。")
         return self.reader.word_asset_bytes(
-            inventory[row["source_id"]][0].content, asset_id
+            inventory[row["source_id"]][0].content,
+            asset_id,
+            render_metafiles=True,
+            expected_sha256=allowed[asset_id]["sha256"],
         )
 
     def update_range(self, key, revision, **boundaries):
+        with self._lock:
+            return self._update_range(key, revision, **boundaries)
+
+    def _update_range(self, key, revision, **boundaries):
         rows, inventory = self._resolve([{"key": key, "revision": revision}])
         row = rows[0]
         preview = inventory[row["source_id"]][2]
         # Rebuild the complete new range from the verified source index, not
         # catalog annotations (attributes/quality warnings are not source bytes).
-        indexed = next(item for item in inventory[row["source_id"]][3] if item["key"] == key)
+        indexed = next(
+            item for item in inventory[row["source_id"]][3] if item["key"] == key
+        )
         updated = apply_question_range(preview, indexed, **boundaries)
         with self._lock:
             overrides = (
@@ -244,7 +408,9 @@ class WordQuestionService:
                 )
             }
         )
-        return apply_source_quality(updated, source_quality_notes(self.facade.paths.workspace_root))
+        return apply_source_quality(
+            updated, source_quality_notes(self.facade.paths.workspace_root)
+        )
 
     def saved_selection(self):
         values = (
@@ -359,11 +525,23 @@ class WordQuestionService:
                                                 "原Word内容已经变化，请重新选题。"
                                             )
                                         verified_sources.add(row["source_sha256"])
-                                    raw = self.reader.word_asset_bytes(
-                                        source, original["asset_id"]
-                                    )["bytes"]
+                                    payload = self.reader.word_asset_bytes(
+                                        source,
+                                        original["asset_id"],
+                                        render_metafiles=True,
+                                        expected_sha256=original["sha256"],
+                                    )
+                                    raw = payload["bytes"]
                                     digest = hashlib.sha256(raw).hexdigest()
-                                    if digest != original["sha256"]:
+                                    derived = payload.get("derived_preview") is True
+                                    if (
+                                        derived
+                                        and (
+                                            payload.get("original_sha256")
+                                            != original["sha256"]
+                                            or payload.get("preview_sha256") != digest
+                                        )
+                                    ) or (not derived and digest != original["sha256"]):
                                         raise PreparationImageError(
                                             "原图内容与已确认的来源记录不一致。"
                                         )
@@ -372,6 +550,7 @@ class WordQuestionService:
                                         digest,
                                         image_info(raw),
                                         None,
+                                        derived,
                                     )
                                 except (
                                     PreparationSourceError,
@@ -386,8 +565,14 @@ class WordQuestionService:
                                         "message_zh",
                                         "原图缺失或无法完整读取，请核对原Word。",
                                     )
-                                    extracted[token] = (None, None, None, message)
-                            raw, digest, info, error = extracted[token]
+                                    extracted[token] = (
+                                        None,
+                                        None,
+                                        None,
+                                        message,
+                                        False,
+                                    )
+                            raw, digest, info, error, derived = extracted[token]
                             if error:
                                 issue = label + "：" + error
                                 issues.append(issue)
@@ -398,7 +583,7 @@ class WordQuestionService:
                                 images[digest] = {
                                     "asset_id": asset_id,
                                     "sha256": digest,
-                                    "caption": f"Word原图 · 第{number}题 · {title} · 区块{block['index']}图{position}",
+                                    "caption": f"Word{'矢量图本地转换预览' if derived else '原图'} · 第{number}题 · {title} · 区块{block['index']}图{position}",
                                     "source": f"教师导入Word：{row['source_name']}；原文件摘要及各处位置见备课参考材料。",
                                     "purpose": "按备课参考材料中的题号、角色与区块使用；不能仅凭图注补写图中条件。",
                                     **info,
@@ -411,6 +596,12 @@ class WordQuestionService:
                                 else "按本题此区块的原图使用"
                             )
                             lines.append(label + f" → {asset_id}（{usage}）")
+                            if derived:
+                                lines.append(
+                                    "此图由原Word矢量图片在本机转换为PNG预览；"
+                                    f"原图SHA-256：{original['sha256']}；预览SHA-256：{digest}。"
+                                    "原件不改写，转换不等于已识别公式或图中条件。"
+                                )
             if not row["answer_blocks"]:
                 lines.append(
                     "当前选定范围尚未识别到答案；请先核对原教案及题答边界，不能据此判断原文没有答案。"
@@ -425,7 +616,9 @@ class WordQuestionService:
                     "具体题号与区块见备课参考材料，不能臆补图中条件。"
                 )
             elif len(roles) > 1:
-                images[digest]["caption"] = f"Word复用原图{image_number} · 具体题号与角色见参考"
+                images[digest]["caption"] = (
+                    f"Word复用原图{image_number} · 具体题号与角色见参考"
+                )
                 images[digest]["purpose"] = (
                     "此图兼有"
                     + "、".join(

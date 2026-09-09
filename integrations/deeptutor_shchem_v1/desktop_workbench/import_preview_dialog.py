@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..desktop_word_metafile_preview import can_attempt_metafile
 from .components import page_scroll, section_title, set_status
 
 
@@ -57,6 +58,7 @@ class ImportPreviewDialog(QDialog):
         self._assets = [[], [], []]
         self._image_epochs = [0, 0, 0]
         self._pixmaps = [None, None, None]
+        self._image_conversion_notes = ["", "", ""]
         self._pdf_buffer = None
         self._pdf_bytes = None
         self.setWindowTitle("导入前预览与文件选择")
@@ -121,7 +123,7 @@ class ImportPreviewDialog(QDialog):
         right_layout.addWidget(self.question_combo)
         self.tabs = QTabWidget()
         self.texts, self.asset_combos, self.image_labels = [], [], []
-        self.zoom_buttons = []
+        self.zoom_buttons, self.image_notes = [], []
         for title in ("原文（含知识正文）", "题面与公共材料", "答案与解析"):
             panel = QWidget()
             layout = QVBoxLayout(panel)
@@ -147,6 +149,10 @@ class ImportPreviewDialog(QDialog):
             )
             picture.hide()
             layout.addWidget(picture)
+            image_note = _label()
+            image_note.hide()
+            layout.addWidget(image_note)
+            self.image_notes.append(image_note)
             zoom = QPushButton("放大查看原图")
             zoom.setObjectName("QuietButton")
             zoom.hide()
@@ -277,6 +283,7 @@ class ImportPreviewDialog(QDialog):
     def _clear_content(self):
         self._source_value = None
         self._pixmaps = [None, None, None]
+        self._image_conversion_notes = ["", "", ""]
         self.question_combo.blockSignals(True)
         self.question_combo.clear()
         self.question_combo.blockSignals(False)
@@ -290,6 +297,8 @@ class ImportPreviewDialog(QDialog):
             self.texts[i].clear()
             self.image_labels[i].clear()
             self.image_labels[i].hide()
+            self.image_notes[i].clear()
+            self.image_notes[i].hide()
             self.zoom_buttons[i].hide()
             self.asset_combos[i].blockSignals(True)
             self.asset_combos[i].clear()
@@ -443,6 +452,8 @@ class ImportPreviewDialog(QDialog):
     def _set_assets(self, index, values):
         self._image_epochs[index] += 1
         self._pixmaps[index] = None
+        self._image_conversion_notes[index] = ""
+        self.image_notes[index].hide()
         self.image_labels[index].clear()
         self.image_labels[index].hide()
         self.zoom_buttons[index].hide()
@@ -475,7 +486,7 @@ class ImportPreviewDialog(QDialog):
             label.hide()
             return
         label.show()
-        if asset.get("preview_supported") is not True:
+        if asset.get("preview_supported") is not True and not can_attempt_metafile(asset):
             label.setText(
                 "此原图或对象格式暂不能显示，请核对原 Word；不会默认为已核验。"
             )
@@ -500,6 +511,11 @@ class ImportPreviewDialog(QDialog):
                 failed(None)
                 return
             self._display_image(index, pixmap)
+            if value.get("derived_preview") is True:
+                note = "原 Word 矢量图的本地转换预览；原件保留，未进行文字或公式识别。"
+                self._image_conversion_notes[index] = note
+                self.image_notes[index].setText(note)
+                self.image_notes[index].show()
 
         try:
             self._submit(
@@ -541,8 +557,10 @@ class ImportPreviewDialog(QDialog):
         dialog.resize(900, 720)
         dialog.setMinimumSize(360, 400)
         layout = QVBoxLayout(dialog)
+        if self._image_conversion_notes[index]:
+            layout.addWidget(_label(self._image_conversion_notes[index]))
         mode = QComboBox()
-        mode.addItems(["适合窗口宽度", "100% 原始尺寸", "150%", "200%"])
+        mode.addItems(["适合窗口宽度", "100% 显示像素", "150%", "200%"])
         mode.setAccessibleName("原图缩放")
         layout.addWidget(mode)
         scroll = QScrollArea()

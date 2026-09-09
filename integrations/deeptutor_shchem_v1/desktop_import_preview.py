@@ -320,8 +320,16 @@ class ImportPreviewService:
             raise ImportPreviewError(
                 "import_preview_asset_invalid", "这幅原图不属于当前Word预览。"
             )
-        result = self.reader.word_asset_bytes(self._bytes(source, private), asset_id)
-        if hashlib.sha256(result["bytes"]).hexdigest() != asset["sha256"]:
+        result = self.reader.word_asset_bytes(
+            self._bytes(source, private), asset_id,
+            render_metafiles=True, expected_sha256=asset["sha256"],
+        )
+        digest = hashlib.sha256(result["bytes"]).hexdigest()
+        derived = result.get("derived_preview") is True
+        if (
+            (derived and (result.get("original_sha256") != asset["sha256"] or result.get("preview_sha256") != digest))
+            or (not derived and digest != asset["sha256"])
+        ):
             raise ImportPreviewError(
                 "import_preview_changed", "原图内容发生变化，请重新预览。"
             )

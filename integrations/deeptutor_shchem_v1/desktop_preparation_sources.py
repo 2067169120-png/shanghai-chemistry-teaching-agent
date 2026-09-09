@@ -351,7 +351,7 @@ class PreparationSourcesService:
                 "Word读取失败；请检查文件是否完整、可访问且不是加密文档。"
             ) from exc
 
-    def word_asset_bytes(self, data, asset_id):
+    def word_asset_bytes(self, data, asset_id, *, render_metafiles=False, expected_sha256=None):
         # The caller verifies the archived source identity before passing bytes.
         # Validate the package without re-extracting every paragraph and formula
         # for each image selection in a large chemistry handout.
@@ -363,7 +363,24 @@ class PreparationSourcesService:
         elements = list(_body_blocks(document._element.body))
         for asset in _word_images(elements, document, include_bytes=True):
             if asset["asset_id"] == asset_id:
+                if expected_sha256 is not None and asset["sha256"] != expected_sha256:
+                    raise PreparationSourceError("原图内容与当前来源记录不一致，请重新预览。")
                 if not asset["preview_supported"]:
+                    if render_metafiles:
+                        from .desktop_word_metafile_preview import (
+                            WordMetafilePreviewError,
+                            can_attempt_metafile,
+                            render_word_metafile,
+                        )
+
+                        if can_attempt_metafile(asset):
+                            try:
+                                result = render_word_metafile(
+                                    asset["bytes"], mime_type=asset["mime_type"]
+                                )
+                            except WordMetafilePreviewError as exc:
+                                raise PreparationSourceError(exc.message_zh) from exc
+                            return {**result, "label": asset["label"]}
                     raise PreparationSourceError("这幅原图格式暂不能直接预览，请在原Word中查看；原图已保留。")
                 from PIL import Image
 

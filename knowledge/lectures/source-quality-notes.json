@@ -45,6 +45,25 @@
           "status": "ai_verified_source_inconsistency_pending_teacher_review"
         }
       ]
+    },
+    {
+      "package_id": "PKG-086",
+      "source_name": "第10讲 有机综合考查（解析版）.docx",
+      "source_sha256": "aa2b018bd1f7109729b766ac43897e4a8951be34e6543fe0d6e9d4b89837826e",
+      "source_revision": "28b63304eddf0d5ccd63e017609cfa81741d008247a6e0917cd35f42f7b6ffa9",
+      "rendered_pages": null,
+      "ai_viewed_pages": [],
+      "coverage_caveat": "核对原生区块188—197及区块189原始路线图，不代表整份教案已逐页审校；题面三问但原参考答案与详解仅提供第(1)问。原图SHA为287231cc807cde0608ac6ceaca0ff5a0b6dfa7f0d188d1c1f54d12214f0fc856。",
+      "issues": [
+        {
+          "id": "PKG086-ORGANIC-ROUTE-PARTIAL-ANSWER",
+          "block_indices": [188, 189, 190, 191, 192, 193, 194, 195, 196, 197],
+          "pages": [],
+          "summary": "苯甲醛与丙酮合成苯丁二烯的变式题，原题列有第(1)(2)(3)问，但原答案与详解只给出第(1)问；有答案区块不代表各小问已答全。",
+          "suggested_correction": "保留原第(1)问答案，另列AI补充：第(2)问D。A为C₆H₅—CH=CH—CO—CH₃，可发生氧化、还原及取代，按高中常见反应范围不能发生所列消去反应。第(3)问依次为2、10。反应③的产物C₆H₅—CH(Cl)—CH₂—CH(OH)—CH₃中，带Cl与带OH的两个碳各连接四种不同基团，故有2个手性碳；苯丁二烯的苯环和共轭双键结构通过单键转动可使全部10个碳共平面。评分建议（非原卷/官方配分）：这三个新增作答空各1分，共3分；教师可随本次练习总分调整，不据此虚构原题总分。此补充尚未作为原始答案回写或正式审核结论。",
+          "status": "ai_supplemental_answer_pending_teacher_review"
+        }
+      ]
     }
   ]
 }

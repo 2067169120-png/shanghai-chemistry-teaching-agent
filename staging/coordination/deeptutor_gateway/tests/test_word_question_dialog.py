@@ -13,10 +13,14 @@ from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication, QDialog, QLabel
 
 from integrations.deeptutor_shchem_v1.desktop_word_question_attributes import (
+    WordQuestionAttributeStore,
     suggest_attributes,
 )
 from integrations.deeptutor_shchem_v1.desktop_workbench.main_window import (
     WORKBENCH_STYLE,
+)
+from integrations.deeptutor_shchem_v1.desktop_workbench.word_question_attributes_dialog import (
+    WordQuestionAttributesDialog,
 )
 from integrations.deeptutor_shchem_v1.desktop_workbench.word_question_dialog import (
     WordQuestionDialog,
@@ -64,6 +68,22 @@ def test_saved_attributes_visible_searchable_and_do_not_leak_to_next_question(qt
     dialog.reject()
 
 
+def test_stale_teacher_label_warning_is_visible_on_the_actual_question(qt_app):
+    facade, tasks = _Facade(), _Tasks()
+    facade.catalog["items"][0]["attribute_warning"] = (
+        "题目范围已变化，原教师标签保存在历史中，请重新核对后保存。"
+    )
+    dialog = WordQuestionDialog(facade, tasks)
+    tasks.flush()
+    assert "原教师标签" in dialog.attribute_note.text()
+    assert "重新核对" in dialog.attributes_preview.toPlainText()
+    assert "尚未保存" not in dialog.attributes_preview.toPlainText()
+    assert not dialog._items["Q1"].get("attributes")
+    dialog.question_list.setCurrentRow(1)
+    assert not dialog.attribute_note.text()
+    dialog.reject()
+
+
 @pytest.mark.parametrize("width", [400, 700])
 def test_attribute_view_is_bounded_at_supported_widths(qt_app, width):
     facade, tasks = _Facade(), _Tasks()
@@ -85,6 +105,123 @@ def test_attribute_view_is_bounded_at_supported_widths(qt_app, width):
     )
     assert dialog.body_scroll.horizontalScrollBar().maximum() == 0
     dialog.reject()
+
+
+def _teaching_catalog():
+    return {
+        "knowledge_points": [
+            {"id": "K01", "name": "物质分类"},
+            {"id": "K11", "name": "氧化还原"},
+            {"id": "K16", "name": "烃"},
+        ],
+        "nodes": [
+            {
+                "node_key": "TB-M1-C1:1.1",
+                "chapter_id": "TB-M1-C1",
+                "volume_id": "TB-M1",
+                "section_title": "物质的分类",
+            }
+        ],
+    }
+
+
+def _attribute_options(item):
+    item["source_sha256"] = "a" * 64
+    return {
+        "attributes": suggest_attributes(
+            item, {"usage_context": "高三一轮复习"}, _teaching_catalog()
+        ),
+        "catalog": _teaching_catalog(),
+        "history": [],
+    }
+
+
+def test_teacher_editor_comparison_cancel_then_explicit_confirm(qt_app):
+    item = _question("Q1", "A")
+    options = _attribute_options(item)
+    before = deepcopy(options)
+    dialog = WordQuestionAttributesDialog(item, options)
+    assert "自动建议（未教师确认）" in dialog.history_view.toPlainText()
+    dialog._confirm()
+    assert dialog.updates is None
+    dialog.primary_combo.setCurrentIndex(dialog.primary_combo.findData("K11"))
+    dialog.teacher_note.setPlainText("两课时复习的巩固题")
+    dialog._preview()
+    assert dialog.updates is None
+    assert dialog.pages.currentIndex() == 1
+    comparison = dialog.comparison.toPlainText()
+    assert "修改前：电解质与电离" in comparison
+    assert "修改后：氧化还原" in comparison
+    dialog.reject()
+    assert dialog.updates is None
+    assert options == before
+    confirmed = WordQuestionAttributesDialog(item, options)
+    confirmed.teacher_note.setPlainText("分层练习")
+    confirmed._preview()
+    confirmed._confirm()
+    assert confirmed.result() == QDialog.DialogCode.Accepted
+    assert confirmed.updates == {"teacher_note": "分层练习"}
+    assert options == before
+
+
+@pytest.mark.parametrize("width", [400, 700])
+def test_teacher_editor_scrolls_without_horizontal_overflow_and_preserves_hidden_checks(
+    qt_app, width
+):
+    item = _question("Q1", "A")
+    options = _attribute_options(item)
+    options["catalog"]["knowledge_points"][0]["name"] = "长知识点" * 40
+    options["catalog"]["nodes"][0]["section_title"] = "长教材节名称" * 40
+    dialog = WordQuestionAttributesDialog(item, options)
+    dialog.resize(width, 600)
+    dialog.show()
+    qt_app.processEvents()
+    assert dialog.width() == width
+    assert dialog.body_scroll.horizontalScrollBar().maximum() == 0
+    assert dialog.body_scroll.verticalScrollBar().maximum() > 0
+    dialog.curriculum_list.item(0).setCheckState(Qt.CheckState.Checked)
+    dialog.curriculum_search.setText("完全不匹配")
+    assert dialog.curriculum_list.item(0).isHidden()
+    dialog._preview()
+    assert dialog.pages.currentIndex() == 1
+    assert "TB-M1-C1:1.1" in dialog.comparison.toPlainText()
+    dialog._back()
+    assert dialog._proposal is None
+    dialog.reject()
+
+
+def test_three_attribute_filters_compose_and_do_not_split_theme_or_lose_basket(qt_app):
+    facade, tasks = _Facade(), _Tasks()
+    first, second, third = facade.catalog["items"]
+    first["attributes"] = _attribute_options(first)["attributes"]
+    second["question_blocks"][0]["text"] = "（2024·上海·二模）烷烃的氧化还原反应"
+    second["attributes"] = _attribute_options(second)["attributes"]
+    dialog = WordQuestionDialog(facade, tasks)
+    tasks.flush()
+    dialog.question_list.item(0).setCheckState(Qt.CheckState.Checked)
+    original_context = deepcopy(dialog._items["Q2"]["context_blocks"])
+    dialog.knowledge_filter.setCurrentIndex(dialog.knowledge_filter.findData("K16"))
+    assert dialog.question_list.count() == 1
+    assert dialog._current_key == "Q2"
+    dialog.grade_filter.setCurrentIndex(dialog.grade_filter.findData("grade_12"))
+    dialog.exam_filter.setCurrentIndex(dialog.exam_filter.findData("second_mock"))
+    assert dialog.question_list.count() == 1
+    dialog.question_list.item(0).setCheckState(Qt.CheckState.Checked)
+    assert {entry["key"] for entry in dialog.selections} == {"Q1", "Q2"}
+    assert dialog._items["Q2"]["context_blocks"] == original_context
+    dialog.exam_filter.setCurrentIndex(dialog.exam_filter.findData("unknown"))
+    assert dialog.question_list.count() == 0
+    assert len(dialog.selections) == 2
+    dialog.knowledge_filter.setCurrentIndex(0)
+    dialog.grade_filter.setCurrentIndex(0)
+    dialog.exam_filter.setCurrentIndex(0)
+    assert dialog.question_list.count() == 3
+    assert dialog.question_list.item(0).checkState() == Qt.CheckState.Checked
+    assert dialog.question_list.item(1).checkState() == Qt.CheckState.Checked
+    assert third["selection_ready"] is False
+    tasks.flush()
+    dialog.reject()
+    tasks.flush()
 
 
 @pytest.fixture
@@ -311,6 +448,168 @@ class _Facade:
         result.update(ranges)
         result["revision"] += "-edited"
         return result
+
+
+class _AttributeFacade(_Facade):
+    def __init__(self, root):
+        super().__init__()
+        self.store = WordQuestionAttributeStore(root)
+        for item in self.catalog["items"]:
+            item["source_sha256"] = "a" * 64
+
+    def word_question_catalog(self):
+        result = super().word_question_catalog()
+        for item in result["items"]:
+            row = self.store.get(item["key"], question_revision=item["revision"])
+            if row:
+                item["attributes"] = row
+        return result
+
+    def word_question_attribute_options(self, key, revision):
+        item = next(item for item in self.catalog["items"] if item["key"] == key)
+        assert item["revision"] == revision
+        self.calls.append(("attribute_options", key, revision))
+        saved = self.store.get(key)
+        return {
+            "attributes": saved or _attribute_options(item)["attributes"],
+            "stored_revision": saved["revision"] if saved else None,
+            "catalog": _teaching_catalog(),
+            "history": self.store.history(key),
+        }
+
+    def word_question_save_attributes(
+        self,
+        key,
+        revision,
+        updates,
+        *,
+        expected_attribute_revision,
+        expected_stored_revision,
+    ):
+        self.calls.append(("attribute_save", key, revision, deepcopy(updates)))
+        options = self.word_question_attribute_options(key, revision)
+        assert options["attributes"]["revision"] == expected_attribute_revision
+        assert options["stored_revision"] == expected_stored_revision
+        return self.store.save_teacher_edit(
+            key,
+            updates,
+            expected_revision=expected_attribute_revision,
+            curriculum_entries=_teaching_catalog(),
+            initial_attributes=options["attributes"]
+            if expected_stored_revision is None
+            else None,
+        )
+
+
+def test_attribute_editor_cancel_never_initializes_store(qt_app, tmp_path, monkeypatch):
+    facade, tasks = _AttributeFacade(tmp_path / "personal"), _Tasks()
+    dialog = WordQuestionDialog(facade, tasks)
+    tasks.flush()
+
+    def cancel(editor):
+        editor.teacher_note.setPlainText("预览后取消")
+        editor._preview()
+        editor.reject()
+        return editor.result()
+
+    monkeypatch.setattr(WordQuestionAttributesDialog, "exec", cancel)
+    dialog._edit_attributes()
+    tasks.flush()
+    assert not facade.store.path.exists()
+    assert not any(call[0] == "attribute_save" for call in facade.calls)
+    assert "已取消" in dialog.status.text()
+    dialog.reject()
+
+
+def test_attribute_edit_persists_reopens_filters_and_retains_selection(
+    qt_app, tmp_path, monkeypatch
+):
+    facade, tasks = _AttributeFacade(tmp_path), _Tasks()
+    dialog = WordQuestionDialog(facade, tasks)
+    tasks.flush()
+    dialog.question_list.item(0).setCheckState(Qt.CheckState.Checked)
+    selections = deepcopy(dialog.selections)
+
+    def accept(editor):
+        editor.primary_combo.setCurrentIndex(editor.primary_combo.findData("K11"))
+        editor.exam_combo.setCurrentIndex(editor.exam_combo.findData("second_mock"))
+        editor.grade_checks["grade_11"].setChecked(True)
+        editor.teacher_note.setPlainText("教师核对的课堂用途")
+        editor._preview()
+        assert editor.updates is None
+        editor._confirm()
+        return editor.result()
+
+    monkeypatch.setattr(WordQuestionAttributesDialog, "exec", accept)
+    dialog._edit_attributes()
+    tasks.flush()
+    assert dialog.selections == selections
+    assert "教师核对的课堂用途" in dialog.attributes_preview.toPlainText()
+    assert "教师确认" in dialog.attribute_note.text()
+    dialog.knowledge_filter.setCurrentIndex(dialog.knowledge_filter.findData("K11"))
+    assert dialog.question_list.count() == 1
+    assert dialog.question_list.item(0).checkState() == Qt.CheckState.Checked
+    dialog.reject()
+    tasks.flush()
+    reopened_tasks = _Tasks()
+    reopened = WordQuestionDialog(facade, reopened_tasks)
+    reopened_tasks.flush()
+    assert "教师核对的课堂用途" in reopened.attributes_preview.toPlainText()
+    assert len(facade.store.history("Q1")) == 2
+    reopened.exam_filter.setCurrentIndex(reopened.exam_filter.findData("second_mock"))
+    assert reopened.question_list.count() == 1
+    assert reopened.selections == selections
+    reopened.reject()
+
+
+def test_late_attribute_options_do_not_open_on_another_question(
+    qt_app, tmp_path, monkeypatch
+):
+    facade, tasks = _AttributeFacade(tmp_path), _Tasks()
+    dialog = WordQuestionDialog(facade, tasks)
+    tasks.flush()
+    opened = []
+    monkeypatch.setattr(
+        WordQuestionAttributesDialog, "exec", lambda _editor: opened.append(True)
+    )
+    dialog._edit_attributes()
+    dialog.question_list.setCurrentRow(1)
+    tasks.flush()
+    assert opened == []
+    assert dialog._current_key == "Q2"
+    assert not facade.store.path.exists()
+    assert not dialog._attributes_busy
+    dialog.reject()
+
+
+def test_metafile_conversion_is_captioned_cached_and_original_metadata_unchanged(
+    qt_app,
+):
+    facade, tasks = _Facade(), _Tasks()
+    source_asset = facade.catalog["items"][0]["question_blocks"][0]["assets"][0]
+    source_asset.update(mime_type="image/x-emf", preview_supported=False)
+    original = deepcopy(source_asset)
+    read = facade.word_question_image
+    facade.word_question_image = lambda *args: {**read(*args), "derived_preview": True}
+    dialog = WordQuestionDialog(facade, tasks)
+    tasks.flush()
+    labels = [label.text() for label in dialog._panels[0].findChildren(QLabel)]
+    assert any("原 Word 矢量图的本地转换预览" in text for text in labels)
+    assert len(dialog._image_targets) == 1
+    assert source_asset == original
+    image_calls = [
+        call for call in facade.calls if call[0] == "image" and call[1] == "Q1"
+    ]
+    dialog.question_list.setCurrentRow(1)
+    tasks.flush()
+    dialog.question_list.setCurrentRow(0)
+    tasks.flush()
+    assert [
+        call for call in facade.calls if call[0] == "image" and call[1] == "Q1"
+    ] == image_calls
+    labels = [label.text() for label in dialog._panels[0].findChildren(QLabel)]
+    assert any("原 Word 矢量图的本地转换预览" in text for text in labels)
+    dialog.reject()
 
 
 def _loaded(facade=None, **kwargs):

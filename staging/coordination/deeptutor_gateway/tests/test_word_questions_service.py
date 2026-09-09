@@ -113,6 +113,60 @@ def test_images_stay_bound_to_their_question_and_reference_warns(
     assert any("未把原图" in warning for warning in reference["warnings"])
 
 
+def test_known_question_reads_only_its_source_but_rechecks_bytes(
+    desktop_paths, tmp_path, monkeypatch
+):
+    facade, _, _ = _import(desktop_paths, tmp_path, image=True)
+    other = Document()
+    other.add_paragraph("【例1】请写出二氧化碳的化学式。")
+    other.add_paragraph("【答案】CO2")
+    other_path = tmp_path / "另一份教案.docx"
+    other.save(other_path)
+    facade.save_visual_import_batch(handout_files=(other_path,), source_type="教师讲义")
+    items = facade.word_question_catalog()["items"]
+    chosen = next(row for row in items if row["source_name"] == "演示讲义.docx")
+    unrelated = next(row for row in items if row["source_name"] == other_path.name)
+    calls = []
+    restore = facade._restore_visual_import_sources
+
+    def counted(descriptor, *, source_ids=None):
+        calls.append(source_ids)
+        return restore(descriptor, source_ids=source_ids)
+
+    monkeypatch.setattr(facade, "_restore_visual_import_sources", counted)
+    unrelated_archive = (
+        desktop_paths.state_root
+        / "visual-import-v2"
+        / "sources"
+        / f"{unrelated['source_sha256']}.docx"
+    )
+    unrelated_archive.write_bytes(b"unrelated damaged fixture")
+    preview = facade.word_question_source(chosen["key"], chosen["revision"])
+    assert preview["source_sha256"] == chosen["source_sha256"]
+    assert calls == [{chosen["archive_source_id"]}]
+    calls.clear()
+    source_archive = (
+        desktop_paths.state_root
+        / "visual-import-v2"
+        / "sources"
+        / f"{chosen['source_sha256']}.docx"
+    )
+    source_archive.write_bytes(b"selected source changed")
+    with pytest.raises(WordQuestionError, match="变化"):
+        facade.word_question_source(chosen["key"], chosen["revision"])
+    assert calls == [{chosen["archive_source_id"]}]
+
+
+def test_clear_selection_does_not_read_archives(desktop_paths, tmp_path, monkeypatch):
+    facade, _, _ = _import(desktop_paths, tmp_path)
+    monkeypatch.setattr(
+        facade,
+        "_restore_visual_import_sources",
+        lambda *args, **kwargs: pytest.fail("clearing choices must not read a DOCX"),
+    )
+    assert facade.word_question_save_selection([]) == []
+
+
 def test_selection_limits_empty_clear_and_no_truncation(desktop_paths, tmp_path):
     facade, _, _ = _import(desktop_paths, tmp_path, long=True)
     item = facade.word_question_catalog()["items"][0]

@@ -13,6 +13,15 @@
   "scope_evidence": "公开UI筛选与课程面包屑显示高中、化学、沪科技版、选择性必修1化学反应原理；三份封面显示高二和上海学校。",
   "access_method": "独立隔离浏览器会话，公开页面点击、快照和视觉阅读；未登录、未读取凭据、未调用隐藏资源接口。",
   "download_status": "公开匿名详情及全屏授课下拉未见原文件下载按钮；未将截图或规范PDF计为原课件下载。",
+  "download_recheck": {
+    "checked_at": "2026-09-10T03:19:04+08:00",
+    "course_packages_checked": 2,
+    "target_courseware_checked": 3,
+    "original_files_downloaded": 0,
+    "result": "再次从课程包进入三份课件，检查课件区、授课下拉及已记录的备课详情；匿名公开UI只见预览/全屏授课/H5播放器授课，未发现原文件下载控件。系统的内能详情虽显示.pptx文件名，点击仍为预览。",
+    "permission_boundary": "本轮未遇要求登录才能继续的下载对话框，不能断言登录后是否存在下载功能；未使用隐藏接口、猜测文件地址或读取凭据。",
+    "private_manifest_sha256": "82950598063498170a9ee7d07420b92d12e1163ea68c4e3cde038897bd67406c"
+  },
   "courseware": [
     {
       "id": "smartedu-system-energy-lesson1",

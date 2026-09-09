@@ -14,7 +14,7 @@ PATTERNS = {
     "literal_api_key": re.compile(r'''["'](?:api_key|apiKey)["']\s*:\s*["']([^"'\r\n]{24,})["']'''),
 }
 ALLOWED_SUFFIXES = {".py", ".pyw", ".json", ".yaml", ".yml", ".md", ".txt", ".mjs", ".cjs", ".ps1", ".vbs", ".gitignore", ".gitattributes"}
-PUBLIC_DEMO_IMAGES = {"docs/screenshots/word-questions.png", "docs/screenshots/word-answers.png", "docs/screenshots/import-preview.png"}
+PUBLIC_DEMO_IMAGES = {"docs/screenshots/word-questions.png", "docs/screenshots/word-answers.png", "docs/screenshots/import-preview.png", "docs/screenshots/word-attributes.png", "docs/screenshots/word-attribute-preview.png"}
 
 
 def main():

@@ -443,3 +443,129 @@ def test_synthetic_one_based_boundaries_match_real_layout_patterns():
         (97, 101, 102, 103),
         (106, 117, 118, 120),
     ]
+
+
+@pytest.mark.parametrize("heading", [
+    "1．判断实验误差模板", "2．结构特点：无论多少，均按连接关系分析。",
+    "3．实验的安全性原则", "4．分子的判断方法", "5．物理变化与化学变化的比较",
+    "6．实验装置的选择", "7．反应速率计算的万能方法——三段式法",
+    "8．电离平衡常数的应用", "9．简化电子排布式", "10．元素运动状态",
+])
+def test_numbered_instructional_titles_do_not_borrow_cues_from_knowledge(heading):
+    data = preview("知识点1 教学说明", heading, "（1）写出涉及的关系式。",
+                   "（2）概念：判断反应的可能性。", "得分速记",
+                   "考向1 计算与判断", "【例1】下列正确的是____。", "【答案】A")
+    items = index_word_questions(data)
+    assert [i["block_start"] for i in items] == [7]
+
+
+@pytest.mark.parametrize("decimal", ["0.1 mol/L 某盐溶液", "283.0 kJ·mol^{-1}"])
+def test_decimal_measurement_is_not_a_chapter_boundary(decimal):
+    data = preview("12．研究某物质，请回答下列问题。", "（1）选择所需试剂：",
+                   decimal, "【表格开始】原始实验记录【表格结束】",
+                   "（2）现象为____。", "【答案】（1）甲（2）乙", "13．下一题？", "【答案】B")
+    first, second = index_word_questions(data)
+    assert [b["index"] for b in first["question_blocks"]] == [1, 2, 3, 4, 5]
+    assert first["answer_start"] == 6 and second["block_start"] == 7
+
+
+@pytest.mark.parametrize("prefix", ["24．25", "24、25", "24. 25"])
+def test_numbered_temperature_stem_is_not_absorbed_into_previous_answer(prefix):
+    data = preview("【例1】第一题？", "【答案】A", "【解析】原始解释。",
+                   f"{prefix} ℃时，混合给定溶液，能否生成沉淀？", "【答案】生成沉淀。")
+    first, second = index_word_questions(data)
+    assert first["block_end"] == 3
+    assert second["block_start"] == 4 and second["answer_start"] == 5
+
+
+@pytest.mark.parametrize("marker", [
+    "【变式训练2变载体】", "【变式训练3·【待查看原文：图片或图形】】",
+    "【科学探究与创新意识】【变式训练3】", "例2",
+])
+def test_editorial_tags_and_standalone_labels_preserve_real_question_starts(marker):
+    data = preview("【例1】第一题？", "【答案】A", marker,
+                   "以下两种材料中哪项符合要求？", "A．甲 B．乙", "【答案】B")
+    first, second = index_word_questions(data)
+    assert first["block_end"] == 2
+    assert second["block_start"] == 3 and second["answer_start"] == 6
+    assert second["question_blocks"][0]["text"] == marker
+
+
+def test_missing_variant_bracket_is_a_separate_but_reviewable_question():
+    data = preview("【例1】第一题？", "【答案】A",
+                   "【变式训练3·变题型某装置见下图。", "（1）回答____。", "【答案】原答案")
+    first, second = index_word_questions(data)
+    assert first["block_end"] == 2 and second["block_start"] == 3
+    assert second["answer_blocks"][0]["text"] == "【答案】原答案"
+    assert not second["export_ready"]
+    assert any("缺少闭括号" in warning for warning in second["warnings"])
+
+
+def test_empty_editorial_example_label_does_not_become_an_extra_question():
+    data = preview("考向3 材料比较", "例3", "【变式3-1】下列哪项正确？", "【答案】A")
+    (item,) = index_word_questions(data)
+    assert item["block_start"] == 3
+    # An actual image after the label is content, not an empty placeholder.
+    image_example = preview("例3", "【待查看原文：图片或图形】", "【例4】下一题？", "【答案】B")
+    assert len(index_word_questions(image_example)) == 2
+
+
+def test_answer_tag_is_not_skipped_to_create_a_question_from_its_quotation():
+    data = preview("【例1】第一题？", "【答案】【变式2】在解析中引用。"); (item,) = index_word_questions(data)
+    assert item["block_start"] == 1 and item["answer_start"] == 2
+
+
+@pytest.mark.parametrize("parent,first_child", [(27, 1), (7, 10), (9, 4)])
+def test_numbered_internal_sections_and_combined_answers_keep_whole_parent(parent, first_child):
+    texts = [f"{parent}．某工艺的公共材料如下，需要用这些资料完成各部分任务。",
+             "【待查看原文：图片或图形】", f"{first_child}．工艺一的流程：",
+             "（1）条件为       。", f"{first_child + 1}．工艺二的流程：",
+             "（1）产物为       。", f"【答案】{first_child}．（1）甲",
+             f"{first_child + 1}．（1）乙", "【解析】原始说明。",
+             f"{parent + 1}．下一题？", "【答案】C"]
+    data = preview(*texts, assets=[{"asset_id": "shared-flow", "block_index": 2}])
+    original = deepcopy(data)
+    first, second = index_word_questions(data)
+    assert first["origin_block_start"] == 1
+    assert first["nested_section_starts"] == [3, 5]
+    assert first["shared_material_policy"] == "whole_numbered_parent_preserved"
+    assert [b["index"] for b in first["question_blocks"]] == [1, 2, 3, 4, 5, 6]
+    assert [b["index"] for b in first["answer_blocks"]] == [7, 8, 9]
+    assert first["question_blocks"][1]["assets"][0]["asset_id"] == "shared-flow"
+    assert second["block_start"] == 10
+    assert data == original
+
+
+def test_ordinary_next_question_is_not_absorbed_as_numbered_internal_section():
+    data = preview("7．一段独立的问题描述，请判断。", "8．下一道题的问题？",
+                   "9．再下一道题的问题？", "【答案】8．A 9．B")
+    assert [i["block_start"] for i in index_word_questions(data)] == [1, 2, 3]
+
+
+def test_bare_choice_and_repeated_numbered_explanation_are_reviewable_answer_candidates():
+    data = preview("1．某个性质最大的是       。", "A．甲 B．乙 C．丙",
+                   "(3)C", "(3)这是原文已经提供的说明文字，解释了选择这个选项的依据。")
+    (item,) = index_word_questions(data)
+    assert item["question_end"] == 2 and item["answer_start"] == 3
+    assert [b["text"] for b in item["answer_blocks"]] == [data["blocks"][2]["text"], data["blocks"][3]["text"]]
+    assert item["selection_ready"] and not item["export_ready"]
+    changed = apply_question_range(data, item, block_start=1, question_end=4, answer_start=None, block_end=4)
+    assert not changed["export_ready"]
+
+
+@pytest.mark.parametrize("tail", ["(4)这是另一个编号，不能假定属于上面的选项。", "(3)请判断这种说法是否正确？"])
+def test_ambiguous_bare_letter_is_not_silently_declared_an_answer(tail):
+    data = preview("【例1】比较下面的选项。", "A．甲 B．乙", "(3)C", tail)
+    (item,) = index_word_questions(data)
+    assert item["answer_start"] is None
+
+
+@pytest.mark.parametrize("stem", [
+    "1．(2025·某校)工业分离的实验方法：",
+    "2．某元素存在下列转化关系：",
+    "3．某转化需要比较不同的实验方案。",
+])
+def test_actual_scenario_and_subpart_blank_are_not_knowledge_headings(stem):
+    data = preview(stem, "【待查看原文：图片或图形】", "（1）该变化的数值为       kJ/mol。", "【答案】原结果")
+    (item,) = index_word_questions(data)
+    assert item["block_start"] == 1 and item["answer_start"] == 4

@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..desktop_word_metafile_preview import can_attempt_metafile
 from .components import page_scroll, section_title, set_status
 
 
@@ -44,7 +45,7 @@ def _warnings(value: Any) -> list[str]:
 class _WordImageDialog(QDialog):
     """Display the original pixels; zoom affects only the local viewer."""
 
-    def __init__(self, pixmap: QPixmap, title: str, parent: QWidget):
+    def __init__(self, pixmap: QPixmap, title: str, parent: QWidget, *, derived=False):
         super().__init__(parent)
         self._original = QPixmap(pixmap)
         self.setWindowTitle(title)
@@ -52,8 +53,8 @@ class _WordImageDialog(QDialog):
         self.resize(min(1000, max(400, parent.width())), 700)
         layout = QVBoxLayout(self)
         note = QLabel(
-            f"原图 {pixmap.width()} × {pixmap.height()} 像素；"
-            "100% 按原始像素显示，可滚动查看。缩放不修改原文件。"
+            f"{'本地转换预览' if derived else '原图'} {pixmap.width()} × {pixmap.height()} 像素；"
+            "100% 按显示像素查看，可滚动查看。缩放不修改原文件。"
         )
         note.setWordWrap(True)
         layout.addWidget(note)
@@ -113,6 +114,7 @@ class ImportWordDialog(QDialog):
         self._source: dict[str, Any] | None = None
         self._loading = False
         self._image_pixmap: QPixmap | None = None
+        self._image_is_derived = False
         self.setWindowTitle("完整教案原文与图片")
         self.resize(760, 800)
         self.setMinimumSize(400, 540)
@@ -368,7 +370,9 @@ class ImportWordDialog(QDialog):
                 if not isinstance(asset, dict) or not asset.get("asset_id"):
                     continue
                 label = str(asset.get("label") or "内嵌来源图片")
-                if not asset.get("preview_supported"):
+                if can_attempt_metafile(asset):
+                    label += "（本地转换预览）"
+                elif not asset.get("preview_supported"):
                     label += "（暂不能预览）"
                 self.asset_combo.addItem(label, deepcopy(asset))
             self.asset_combo.setVisible(self.asset_combo.count() > 1)
@@ -616,6 +620,7 @@ class ImportWordDialog(QDialog):
 
     def _asset_selected(self, *_args: Any) -> None:
         self._image_pixmap = None
+        self._image_is_derived = False
         self.image_label.clear()
         self.image_label.hide()
         self.image_note.hide()
@@ -623,7 +628,7 @@ class ImportWordDialog(QDialog):
         asset = self.asset_combo.currentData()
         if self._loading or not asset:
             return
-        if not asset.get("preview_supported"):
+        if not asset.get("preview_supported") and not can_attempt_metafile(asset):
             set_status(
                 self.status,
                 "attention",
@@ -652,6 +657,12 @@ class ImportWordDialog(QDialog):
             if not pixmap.loadFromData(result["bytes"]) or pixmap.isNull():
                 raise ValueError("unreadable source image")
             self._image_pixmap = pixmap
+            self._image_is_derived = result.get("derived_preview") is True
+            self.image_note.setText(
+                "由原 Word 矢量图在本机转换的预览，原件保留；不是公式文字识别结果。"
+                if self._image_is_derived else
+                "这是原 Word 中的图片，可放大核对；追加文字参考不会自动带入图片像素。"
+            )
             self.image_label.show()
             self.image_note.show()
             self.zoom_image_button.setEnabled(True)
@@ -668,7 +679,8 @@ class ImportWordDialog(QDialog):
             return
         asset = self.asset_combo.currentData() or {}
         dialog = _WordImageDialog(
-            self._image_pixmap, str(asset.get("label") or "教案原图"), self
+            self._image_pixmap, str(asset.get("label") or "教案原图"), self,
+            derived=self._image_is_derived,
         )
         dialog.exec()
         dialog.deleteLater()

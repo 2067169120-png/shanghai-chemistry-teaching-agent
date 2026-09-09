@@ -185,9 +185,9 @@ def test_repeated_common_material_still_has_each_question_image_reference(
     original_image = service.reader.word_asset_bytes
     calls = []
 
-    def image(data, asset_id):
+    def image(data, asset_id, **kwargs):
         calls.append(asset_id)
-        return original_image(data, asset_id)
+        return original_image(data, asset_id, **kwargs)
 
     monkeypatch.setattr(service.reader, "word_asset_bytes", image)
     ref = service.reference(choices)
@@ -246,7 +246,7 @@ def test_missing_image_is_reported_with_every_role(
 ):
     facade, choices, _ = _fixture(desktop_paths, tmp_path, answer_image=True)
 
-    def missing(*args):
+    def missing(*args, **kwargs):
         raise PreparationSourceError("未找到对应原图")
 
     monkeypatch.setattr(facade._word_questions().reader, "word_asset_bytes", missing)
@@ -435,9 +435,9 @@ def test_prepare_revalidates_inventory_once(desktop_paths, tmp_path, monkeypatch
     original_inventory = service._inventory
     calls = []
 
-    def inventory():
+    def inventory(locations=None):
         calls.append(True)
-        return original_inventory()
+        return original_inventory(locations)
 
     monkeypatch.setattr(service, "_inventory", inventory)
     facade.import_word_question_reference(ref, [])

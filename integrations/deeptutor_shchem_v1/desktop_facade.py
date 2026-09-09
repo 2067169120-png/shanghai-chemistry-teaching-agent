@@ -2115,7 +2115,9 @@ class DesktopWorkbenchFacade:
 
         source = self._imported_word_source(batch_id, source_id)
         try:
-            return PreparationSourcesService(self.paths.workspace_root).word_asset_bytes(source.content, asset_id)
+            return PreparationSourcesService(self.paths.workspace_root).word_asset_bytes(
+                source.content, asset_id, render_metafiles=True
+            )
         except PreparationSourceError:
             raise
         except (OSError, ValueError) as exc:
@@ -2160,6 +2162,19 @@ class DesktopWorkbenchFacade:
 
     def word_question_image(self, key, revision, asset_id):
         return self._word_questions().image(key, revision, asset_id)
+
+    def word_question_attribute_options(self, key, revision):
+        return self._word_questions().attribute_options(key, revision)
+
+    def word_question_save_attributes(
+        self, key, revision, updates, *, expected_attribute_revision,
+        expected_stored_revision=None,
+    ):
+        return self._word_questions().save_attributes(
+            key, revision, updates,
+            expected_attribute_revision=expected_attribute_revision,
+            expected_stored_revision=expected_stored_revision,
+        )
 
     def word_question_update_range(self, key, revision, **boundaries):
         return self._word_questions().update_range(key, revision, **boundaries)

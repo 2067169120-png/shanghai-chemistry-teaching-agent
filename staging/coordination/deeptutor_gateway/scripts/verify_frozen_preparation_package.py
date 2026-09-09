@@ -540,7 +540,8 @@ def main() -> int:
         "desktop_paper_preparation": [],
         "word_native_math": [],
         "word_native_text": ["20260909-editable-chemistry-v2"],
-        "desktop_word_question_index": ["20260910-word-theme-question-index-v3"],
+        "desktop_word_question_index": ["20260910-word-answer-boundary-index-v4"],
+        "desktop_word_metafile_preview": [],
         "desktop_import_preview": ["import_preview_changed"],
         "desktop_word_preview_cache": ["20260910-native-word-preview-cache-v1"],
         "desktop_word_question_attributes": ["word-attributes-20260910-v1"],
@@ -563,6 +564,10 @@ def main() -> int:
         "desktop_workbench.word_question_dialog": [
             "Word 逐题浏览与选题",
             "确认带入备课",
+        ],
+        "desktop_workbench.word_question_attributes_dialog": [
+            "修改教学标签",
+            "确认保存修改",
         ],
         "desktop_workbench.preparation_images_widget": ["PreparationImagesWidget"],
         "word_handout_import": ["1.2.1"],

@@ -87,7 +87,7 @@ class _Facade:
                     "asset_id": "internal-unsupported",
                     "label": "区块 2 · 旧式公式对象",
                     "block_index": 2,
-                    "mime_type": "image/x-emf",
+                    "mime_type": "image/x-wmf",
                     "preview_supported": False,
                 },
             ],
@@ -139,6 +139,25 @@ class _Facade:
 
     def list_resumable_visual_import_batches(self):
         return ()
+
+
+def test_metafile_preview_is_marked_derived_and_cleared_when_source_changes(qt_app):
+    class EmfFacade(_Facade):
+        def imported_word_preview(self, batch_id, source_id):
+            value = super().imported_word_preview(batch_id, source_id)
+            value["assets"][1]["mime_type"] = "image/emf"
+            return value
+
+        def imported_word_asset(self, batch_id, source_id, asset_id):
+            return {**super().imported_word_asset(batch_id, source_id, asset_id), "derived_preview": True}
+
+    dialog = ImportWordDialog(EmfFacade(), "internal-batch")
+    dialog.asset_combo.setCurrentIndex(2)
+    assert dialog._image_is_derived and dialog._image_pixmap is not None
+    assert "转换" in dialog.image_note.text()
+    dialog.source_combo.setCurrentIndex(1)
+    assert dialog._image_pixmap is None and not dialog.zoom_image_button.isEnabled()
+    dialog.close()
 
 
 def test_default_selection_and_source_choice_clear_previous_preview(qt_app):

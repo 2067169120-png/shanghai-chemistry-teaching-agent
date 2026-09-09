@@ -24,6 +24,18 @@ from .question_search_workbench import VALUE_LABELS_ZH
 SCHEMA_VERSION = "shchem.personal-word-question-attributes.v1"
 RULE_REVISION = "word-attributes-20260910-v1"
 UNKNOWN = "unknown"
+EXAM_TYPE_LABELS = {
+    "unknown": "原考试待确认",
+    "first_mock": "一模",
+    "second_mock": "二模",
+    "grade_exam": "等级考",
+    "school_exam": "校考",
+    "midterm": "期中",
+    "final": "期末",
+    "monthly": "月考",
+    "gaokao": "高考（不预设地区）",
+}
+GRADE_LABELS = {"grade_10": "高一", "grade_11": "高二", "grade_12": "高三"}
 _STATUSES = [
     "unknown",
     "auto_suggested",
@@ -702,6 +714,202 @@ def suggest_attributes(question, source_metadata, curriculum_entries=None):
     return validate_attributes(_seal(row))
 
 
+def build_teacher_updates(attributes, selections, curriculum_entries):
+    """Build only changed teaching fields from real catalogue selections.
+
+    This is a local edit proposal, not chemistry verification. No catalogue ID
+    or original exam attribution is inferred from user-entered prose.
+    """
+    row = validate_attributes(attributes)
+    expected = {
+        "primary_knowledge_id",
+        "supporting_knowledge_ids",
+        "applicable_grades",
+        "original_exam_type",
+        "curriculum_section_keys",
+        "teacher_note",
+    }
+    if not isinstance(selections, Mapping) or set(selections) != expected:
+        raise WordQuestionAttributeError("教学标签编辑字段不完整。")
+    nodes, taxonomy = _catalog_entries(curriculum_entries)
+    knowledge = {entry["id"]: entry for entry in taxonomy}
+    sections = {entry["node_key"]: entry for entry in nodes}
+    primary = selections["primary_knowledge_id"]
+    supporting = selections["supporting_knowledge_ids"]
+    grades = selections["applicable_grades"]
+    section_keys = selections["curriculum_section_keys"]
+    exam = selections["original_exam_type"]
+    note = selections["teacher_note"]
+    for values in (supporting, grades, section_keys):
+        if not isinstance(values, list) or not all(isinstance(v, str) for v in values):
+            raise WordQuestionAttributeError("教学标签选项格式不正确。")
+        if len(values) != len(set(values)):
+            raise WordQuestionAttributeError("教学标签选项不能重复。")
+    if not isinstance(primary, str) or primary not in {UNKNOWN, *knowledge}:
+        raise WordQuestionAttributeError("请从现有知识目录选择主知识点。")
+    if any(value not in knowledge for value in supporting) or primary in supporting:
+        raise WordQuestionAttributeError("辅助知识点须来自目录且不能重复主知识点。")
+    if any(value not in GRADE_LABELS for value in grades):
+        raise WordQuestionAttributeError("适用年级选项不正确。")
+    if any(value not in sections for value in section_keys):
+        raise WordQuestionAttributeError("请从现有教材目录选择节；不明确时保留待映射。")
+    if not isinstance(exam, str) or exam not in EXAM_TYPE_LABELS:
+        raise WordQuestionAttributeError("原考试类型选项不正确。")
+    if not isinstance(note, str) or len(note) > 2000:
+        raise WordQuestionAttributeError("教师备注最多 2000 字。")
+    evidence = [_evidence("teacher_note", note.strip() or "教师在本机修订教学标签。")]
+    updates = {}
+
+    def knowledge_row(identifier):
+        return {
+            "id": identifier,
+            "label": knowledge[identifier]["name"]
+            if identifier != UNKNOWN
+            else "知识主题待标记",
+            "status": "teacher_confirmed" if identifier != UNKNOWN else UNKNOWN,
+            "evidence": deepcopy(evidence),
+        }
+
+    if primary != row["primary_knowledge"]["id"]:
+        updates["primary_knowledge"] = knowledge_row(primary)
+    if set(supporting) != {item["id"] for item in row["supporting_knowledge"]}:
+        previous = {item["id"]: item for item in row["supporting_knowledge"]}
+        updates["supporting_knowledge"] = [
+            deepcopy(previous[value]) if value in previous else knowledge_row(value)
+            for value in supporting
+        ]
+    if set(grades) != set(row["applicable_grades"]["values"]):
+        updates["applicable_grades"] = {
+            "values": grades,
+            "basis": "教师按本次教学用途修订；不等于原题年级。"
+            if grades
+            else "适用年级待确认。",
+            "status": "teacher_confirmed" if grades else UNKNOWN,
+            "evidence": deepcopy(evidence),
+        }
+    if exam != row["original_source"]["exam_type"]["value"]:
+        original = deepcopy(row["original_source"])
+        original["exam_type"] = _fact(
+            exam,
+            deepcopy(evidence),
+            "teacher_confirmed" if exam != UNKNOWN else UNKNOWN,
+        )
+        original["display_label"] = _original_label(original)
+        updates["original_source"] = original
+    if set(section_keys) != {
+        item["section_key"] for item in row["curriculum_candidates"]
+    }:
+        updates["curriculum_candidates"] = [
+            {
+                "section_key": key,
+                "chapter_id": sections[key]["chapter_id"],
+                "volume_id": sections[key]["volume_id"],
+                "label": sections[key]["section_title"],
+                "status": "teacher_confirmed",
+                "evidence": deepcopy(evidence),
+            }
+            for key in section_keys
+        ]
+        updates["curriculum_status"] = (
+            "teacher_confirmed" if section_keys else "pending_mapping"
+        )
+    if note.strip() != row["teacher_note"]:
+        updates["teacher_note"] = note.strip()
+    if updates:
+        apply_teacher_edits(row, updates, curriculum_entries=curriculum_entries)
+    return updates
+
+
+def apply_teacher_edits(attributes, updates, *, curriculum_entries=None):
+    """Pure versioned edit, shared by comparison preview and atomic persistence."""
+    row = validate_attributes(attributes)
+    allowed = {
+        "primary_knowledge",
+        "supporting_knowledge",
+        "curriculum_candidates",
+        "curriculum_status",
+        "applicable_grades",
+        "original_source",
+        "response_forms",
+        "teacher_note",
+    }
+    if not isinstance(updates, Mapping) or not updates or set(updates) - allowed:
+        raise WordQuestionAttributeError("只能修改个人教学标签，不能改写题目来源。")
+    if "original_source" in updates and (
+        not isinstance(updates["original_source"], Mapping)
+        or updates["original_source"].get("citation_quotes")
+        != row["original_source"]["citation_quotes"]
+    ):
+        raise WordQuestionAttributeError("原题引文须保留，教师说明请填写备注。")
+
+    def confirmed(value, old=None):
+        if value == old:
+            return deepcopy(value)
+        if isinstance(value, dict):
+            result = {
+                name: confirmed(item, old.get(name) if isinstance(old, dict) else None)
+                for name, item in value.items()
+            }
+            if "status" in result:
+                unknown = result.get("value") == UNKNOWN or (
+                    result.get("id") == UNKNOWN and value.get("status") == UNKNOWN
+                )
+                unknown = unknown or ("values" in result and not result["values"])
+                result["status"] = UNKNOWN if unknown else "teacher_confirmed"
+            return result
+        if isinstance(value, list):
+            return [
+                confirmed(
+                    item,
+                    next((v for v in old if v == item), None)
+                    if isinstance(old, list)
+                    else None,
+                )
+                for item in value
+            ]
+        return deepcopy(value)
+
+    for name, value in updates.items():
+        row[name] = confirmed(value, row.get(name))
+    if "original_source" in updates:
+        row["original_source"]["display_label"] = _original_label(
+            row["original_source"]
+        )
+    row.update(
+        annotation_source="teacher_modified", edit_version=row["edit_version"] + 1
+    )
+    row = validate_attributes(_seal(row))
+    if curriculum_entries is not None:
+        nodes, taxonomy = _catalog_entries(curriculum_entries)
+        knowledge = {entry["id"]: entry["name"] for entry in taxonomy}
+        sections = {entry["node_key"]: entry for entry in nodes}
+        for field in ("primary_knowledge", "supporting_knowledge"):
+            if field not in updates:
+                continue
+            entries = [row[field]] if field == "primary_knowledge" else row[field]
+            for entry in entries:
+                if (
+                    entry["id"] != UNKNOWN
+                    and knowledge.get(entry["id"]) != entry["label"]
+                ):
+                    raise WordQuestionAttributeError(
+                        "知识标签必须与现有目录的编号和名称一致。"
+                    )
+        if "curriculum_candidates" in updates:
+            for entry in row["curriculum_candidates"]:
+                node = sections.get(entry["section_key"], {})
+                if any(
+                    entry[field] != node.get(source)
+                    for field, source in (
+                        ("label", "section_title"),
+                        ("chapter_id", "chapter_id"),
+                        ("volume_id", "volume_id"),
+                    )
+                ):
+                    raise WordQuestionAttributeError("教材节必须与现有目录一致。")
+    return row
+
+
 class WordQuestionAttributeStore:
     """Atomic local batches with revisioned edits; no source or central writes."""
 
@@ -813,14 +1021,18 @@ class WordQuestionAttributeStore:
                 existing = self._existing(connection, row["key"])
                 if existing and existing["source_sha256"] != row["source_sha256"]:
                     raise WordQuestionAttributeError("题目属性的原文件绑定不能改变。")
+                if existing and existing["annotation_source"] == "teacher_modified":
+                    # Re-segmentation does not silently rebind teacher labels to
+                    # different content. Callers surface the stale binding and
+                    # request an explicit edit against a fresh baseline.
+                    result.append(existing)
+                    continue
                 if (
                     existing
                     and existing["question_revision"] == row["question_revision"]
                 ):
                     comparable = {**row, "edit_version": existing["edit_version"]}
-                    if existing[
-                        "annotation_source"
-                    ] == "teacher_modified" or existing == _seal(comparable):
+                    if existing == _seal(comparable):
                         result.append(existing)
                         continue
                 row["edit_version"] = existing["edit_version"] + 1 if existing else 1
@@ -829,47 +1041,71 @@ class WordQuestionAttributeStore:
                 result.append(saved)
         return result
 
-    def save_teacher_edit(self, key, updates, *, expected_revision):
-        allowed = {
-            "primary_knowledge",
-            "supporting_knowledge",
-            "curriculum_candidates",
-            "curriculum_status",
-            "applicable_grades",
-            "original_source",
-            "response_forms",
-            "teacher_note",
-        }
-        if not isinstance(updates, Mapping) or not updates or set(updates) - allowed:
-            raise WordQuestionAttributeError("只能修改个人教学标签，不能改写题目来源。")
-
-        def confirmed(value):
-            if isinstance(value, dict):
-                return {
-                    name: "teacher_confirmed" if name == "status" else confirmed(item)
-                    for name, item in value.items()
-                }
-            if isinstance(value, list):
-                return [confirmed(item) for item in value]
-            return value
-
+    def save_teacher_edit(
+        self,
+        key,
+        updates,
+        *,
+        expected_revision,
+        curriculum_entries=None,
+        initial_attributes=None,
+        replacement_attributes=None,
+    ):
+        initial = (
+            validate_attributes(initial_attributes)
+            if initial_attributes is not None
+            else None
+        )
+        if initial is not None and (
+            initial["key"] != key or initial["revision"] != expected_revision
+        ):
+            raise WordQuestionAttributeError("初始题目属性与编辑版本不一致。")
+        replacement = (
+            validate_attributes(replacement_attributes)
+            if replacement_attributes is not None
+            else None
+        )
+        if initial is not None and replacement is not None:
+            raise WordQuestionAttributeError("初始标注与重新分题复核不能同时执行。")
         with self._lock, self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             row = self._existing(connection, key)
-            if row is None or row["revision"] != expected_revision:
-                raise WordQuestionAttributeError("题目标签已有新版本，请刷新后修改。")
-            row.update(confirmed(deepcopy(dict(updates))))
-            if "original_source" in updates:
-                row["original_source"]["display_label"] = _original_label(
-                    row["original_source"]
+            if row is None and initial is not None:
+                if initial["annotation_source"] != "auto_suggested":
+                    raise WordQuestionAttributeError(
+                        "初始题目属性必须保留自动建议来源。"
+                    )
+                row = _seal({**initial, "edit_version": 1})
+                # Validate the entire proposal before either history row is written.
+                edited = apply_teacher_edits(
+                    row, updates, curriculum_entries=curriculum_entries
                 )
-            row.update(
-                annotation_source="teacher_modified",
-                edit_version=row["edit_version"] + 1,
-            )
-            row = validate_attributes(_seal(row))
-            self._write(connection, row)
-        return row
+                self._write(connection, row)
+            elif row is None or row["revision"] != expected_revision:
+                raise WordQuestionAttributeError("题目标签已有新版本，请刷新后修改。")
+            elif replacement is not None:
+                if (
+                    replacement["key"] != row["key"]
+                    or replacement["source_sha256"] != row["source_sha256"]
+                    or replacement["question_revision"] == row["question_revision"]
+                    or replacement["annotation_source"] != "auto_suggested"
+                ):
+                    raise WordQuestionAttributeError(
+                        "重新分题复核必须绑定同一来源的新题目版本与自动建议。"
+                    )
+                baseline = _seal(
+                    {**replacement, "edit_version": row["edit_version"] + 1}
+                )
+                edited = apply_teacher_edits(
+                    baseline, updates, curriculum_entries=curriculum_entries
+                )
+                self._write(connection, baseline)
+            else:
+                edited = apply_teacher_edits(
+                    row, updates, curriculum_entries=curriculum_entries
+                )
+            self._write(connection, edited)
+        return edited
 
     def history(self, key):
         if not self.path.exists():
