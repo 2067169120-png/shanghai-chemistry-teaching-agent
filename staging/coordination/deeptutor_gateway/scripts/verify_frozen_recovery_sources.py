@@ -28,6 +28,7 @@ MODULES = (
     "desktop_word_questions",
     "desktop_word_question_export",
     "desktop_workbench.word_question_dialog",
+    "desktop_workbench.preparation_images_widget",
     "desktop_workbench.library_page",
     "desktop_facade",
     "desktop_workbench.dialogs",

@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..desktop_preparation_images import MAX_IMAGES
 from .components import page_scroll, section_title, set_status
 from .tasks import DesktopTaskBridge
 
@@ -335,6 +336,17 @@ class WordQuestionDialog(QDialog):
         root.addWidget(self.splitter, 1)
         self.selection_count = _label("已选 0 题；筛选或切换来源会保留勾选。")
         root.addWidget(self.selection_count)
+        self.include_images = QCheckBox("同时带入原图（用于本地课件排版）")
+        self.include_images.setChecked(True)
+        self.include_images.setAccessibleName("带入所选 Word 题目的原图")
+        self.include_images.toggled.connect(self._image_mode_changed)
+        root.addWidget(self.include_images)
+        self.image_mode_note = _label(
+            "原图随备课保存在本机，模型只收到图注、来源和用途，不会看到图片像素。"
+            "如仅需文字，可取消勾选后重新预览。",
+            muted=True,
+        )
+        root.addWidget(self.image_mode_note)
         self.action_layout = QBoxLayout(QBoxLayout.Direction.LeftToRight)
         self.preview_button = QPushButton("预览选题")
         self.import_button = QPushButton("确认带入备课")
@@ -354,7 +366,9 @@ class WordQuestionDialog(QDialog):
         root.addLayout(self.export_layout)
         self.show_student_scores = QCheckBox("题面显示分数")
         self.show_student_scores.setChecked(False)
-        self.show_student_scores.setToolTip("默认不在学生卷额外添加分数；教师答案始终保留各题分值。")
+        self.show_student_scores.setToolTip(
+            "默认不在学生卷额外添加分数；教师答案始终保留各题分值。"
+        )
         self.show_student_scores.toggled.connect(self._invalidate_preview)
         root.addWidget(self.show_student_scores)
         self.export_result_layout = QHBoxLayout()
@@ -994,14 +1008,51 @@ class WordQuestionDialog(QDialog):
         self.preview.clear()
         self.import_button.setEnabled(False)
 
+    def _image_mode_changed(self) -> None:
+        self._invalidate_preview()
+        self._update_actions()
+
     @staticmethod
     def _valid_reference(value: Any) -> bool:
-        return (
+        from ..desktop_preparation_images import (
+            PreparationImageError,
+            normalize_image_assets,
+        )
+
+        valid = (
             isinstance(value, dict)
             and isinstance(value.get("materials"), str)
             and bool(value["materials"].strip())
             and isinstance(value.get("warnings", []), (list, tuple))
             and all(isinstance(item, str) for item in value.get("warnings", []))
+            and type(value.get("include_images")) is bool
+            and isinstance(value.get("selections"), list)
+            and isinstance(value.get("image_assets"), list)
+            and isinstance(value.get("image_issues"), list)
+            and all(isinstance(item, str) for item in value.get("image_issues", []))
+        )
+        if not valid or (not value["include_images"] and value["image_assets"]):
+            return False
+        try:
+            # A large batch must remain visible in preview, not be truncated.
+            for asset in value["image_assets"]:
+                if normalize_image_assets([asset]) != [asset]:
+                    return False
+        except PreparationImageError:
+            return False
+        return True
+
+    def _reference_can_import(self) -> bool:
+        value = self._preview_reference
+        return bool(
+            value is not None
+            and (
+                not value["include_images"]
+                or (
+                    not value["image_issues"]
+                    and len(value["image_assets"]) <= MAX_IMAGES
+                )
+            )
         )
 
     def _preview_selected(self) -> None:
@@ -1018,6 +1069,7 @@ class WordQuestionDialog(QDialog):
         epoch = self._reference_epoch
         selection_key = self._selection_key()
         selections = self.selections
+        include_images = self.include_images.isChecked()
         facade = self.facade
         set_status(self.status, "info", "正在生成完整选题参考…")
         self._update_actions()
@@ -1026,7 +1078,11 @@ class WordQuestionDialog(QDialog):
             if epoch != self._reference_epoch or selection_key != self._selection_key():
                 return
             self._reference_busy = False
-            if not self._valid_reference(value):
+            if (
+                not self._valid_reference(value)
+                or value["include_images"] is not include_images
+                or value["selections"] != selections
+            ):
                 self._reference_failed(
                     epoch, "选题参考暂时无法生成，请重新核对所选题目。"
                 )
@@ -1041,18 +1097,31 @@ class WordQuestionDialog(QDialog):
             self.preview.setPlainText(
                 value["materials"]
                 + ("\n\n待核对提醒：\n" + "\n".join(missing) if missing else "")
+                + "\n\n带入方式："
+                + ("文字与原图" if include_images else "仅文字（不带原图）")
+                + f"\n将带入 {len(value['image_assets'])} 张原图；已有图片保留，备课最多 {MAX_IMAGES} 张。"
+                + "\n模型只收到图片说明，不会看到图片像素。"
+                + (
+                    "\n图片待处理：\n" + "\n".join(value["image_issues"])
+                    if value["image_issues"]
+                    else ""
+                )
             )
             self.tabs.setCurrentIndex(2)
             set_status(
                 self.status,
-                "success",
-                f"已生成 {len(selections)} 道题的完整参考。请核对后确认；确认时会重新读取并比较。",
+                "success" if self._reference_can_import() else "attention",
+                f"已生成 {len(selections)} 道题的完整参考。请核对后确认；确认时会重新读取并比较。"
+                if self._reference_can_import()
+                else "原图存在未解决项或数量超限，本次不能完整带入。请调整选题，或取消勾选原图后重新预览。",
             )
             self._update_actions()
 
         self._submit(
             "预览 Word 选题",
-            lambda: facade.word_question_reference(selections),
+            lambda: facade.word_question_reference(
+                selections, include_images=include_images
+            ),
             ready,
             lambda message: self._reference_failed(epoch, message),
         )
@@ -1069,6 +1138,7 @@ class WordQuestionDialog(QDialog):
     def _confirm(self) -> None:
         if (
             self._preview_reference is None
+            or not self._reference_can_import()
             or self._preview_selection != self._selection_key()
             or self._reference_busy
             or self._export_busy
@@ -1078,6 +1148,7 @@ class WordQuestionDialog(QDialog):
         epoch = self._reference_epoch
         previous = deepcopy(self._preview_reference)
         selections = self.selections
+        include_images = self.include_images.isChecked()
         selection_key = self._selection_key()
         facade = self.facade
         self._reference_busy = True
@@ -1103,7 +1174,9 @@ class WordQuestionDialog(QDialog):
 
         self._submit(
             "确认 Word 选题参考",
-            lambda: facade.word_question_reference(selections),
+            lambda: facade.word_question_reference(
+                selections, include_images=include_images
+            ),
             ready,
             lambda message: self._reference_failed(epoch, message),
         )
@@ -1158,7 +1231,9 @@ class WordQuestionDialog(QDialog):
 
         self._submit(
             "导出 Word 选题练习",
-            lambda: facade.word_question_export(title, selections, show_student_scores=show_scores),
+            lambda: facade.word_question_export(
+                title, selections, show_student_scores=show_scores
+            ),
             ready,
             failed,
         )
@@ -1195,6 +1270,7 @@ class WordQuestionDialog(QDialog):
         )
         self.import_button.setEnabled(
             self._preview_reference is not None
+            and self._reference_can_import()
             and self._preview_selection == self._selection_key()
             and not self._reference_busy
             and not self._catalog_busy

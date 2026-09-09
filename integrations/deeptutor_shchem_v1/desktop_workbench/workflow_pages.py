@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QTimer, QUrl
+from copy import deepcopy
+from math import isfinite
+
+from PySide6.QtCore import QSignalBlocker, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices, QResizeEvent
 from PySide6.QtWidgets import (
     QBoxLayout,
@@ -104,6 +107,8 @@ class PreparationPage(QWidget):
         self._compact = False
         self._save_task_id: str | None = None
         self._library_image_task_id: str | None = None
+        self._word_import_epoch = 0
+        self._word_import_in_flight = False
         self._context_task_id: str | None = None
         self._history_task_id: str | None = None
         self._generation_qt_task_id: str | None = None
@@ -584,6 +589,11 @@ class PreparationPage(QWidget):
         except BlueprintDraftError as exc:
             QMessageBox.information(self, "未追加 Word 资料", exc.message_zh)
             return False
+        if any(
+            key in reference
+            for key in ("selections", "include_images", "image_assets", "image_issues")
+        ):
+            return self._import_word_images(reference, combined)
         self.materials.setPlainText(combined)
         warning_note = (
             f" 包含 {len(warnings)} 条原文缺口/待核对提醒，请逐项核对。"
@@ -598,6 +608,170 @@ class PreparationPage(QWidget):
         )
         self.materials.setFocus()
         return True
+
+    def _import_word_images(self, reference: dict, combined: str) -> bool:
+        """Commit a confirmed text/image batch only after all local reads succeed."""
+        from shiboken6 import isValid
+
+        from ..desktop_preparation_images import (
+            PreparationImageError,
+            normalize_image_assets,
+        )
+
+        try:
+            if (
+                type(reference.get("include_images")) is not bool
+                or "warnings" not in reference
+                or not isinstance(reference.get("selections"), list)
+                or not reference["selections"]
+                or any(
+                    not isinstance(item, dict)
+                    or not isinstance(item.get("key"), str)
+                    or not item["key"]
+                    or not isinstance(item.get("revision"), str)
+                    or not item["revision"]
+                    or type(item.get("points")) not in (int, float)
+                    or not 0 < item["points"] <= 100
+                    or not isfinite(item["points"])
+                    for item in reference["selections"]
+                )
+                or not isinstance(reference.get("image_issues"), list)
+                or any(not isinstance(item, str) for item in reference["image_issues"])
+                or "image_assets" not in reference
+            ):
+                raise PreparationImageError("Word 图文参考不完整，请重新预览。")
+            incoming = normalize_image_assets(reference["image_assets"])
+            if incoming != reference["image_assets"]:
+                raise PreparationImageError("Word 图片说明已变化，请重新预览。")
+            if not reference["include_images"] and incoming:
+                raise PreparationImageError("仅文字参考不应携带图片，请重新预览。")
+            if reference["include_images"] and reference["image_issues"]:
+                raise PreparationImageError(
+                    "所选原图存在待处理项，未追加任何内容。请调整选题，或明确选择仅文字后重新预览。"
+                )
+            existing = normalize_image_assets(self.image_assets_widget.assets())
+            seen = {asset["sha256"] for asset in existing}
+            merged = deepcopy(existing)
+            for asset in incoming:
+                if asset["sha256"] not in seen:
+                    merged.append(asset)
+                    seen.add(asset["sha256"])
+            if len(merged) > self.image_assets_widget.MAX_ASSETS:
+                raise PreparationImageError(
+                    f"已有 {len(existing)} 张，本次待新增 {len(merged) - len(existing)} 张，"
+                    f"超过 {self.image_assets_widget.MAX_ASSETS} 张上限。未追加文字或图片；请调整选题或已有图片后重试。"
+                )
+            merged = normalize_image_assets(merged)
+            if not callable(
+                getattr(self.facade, "import_word_question_reference", None)
+            ):
+                raise PreparationImageError(
+                    "当前应用尚不能接收这份图文参考，请更新后重试。"
+                )
+        except PreparationImageError as exc:
+            set_status(self.status, "error", exc.message_zh)
+            return False
+
+        frozen_reference = deepcopy(reference)
+        before = deepcopy(self._payload())
+        expected = {
+            "materials": reference["materials"],
+            "warnings": list(reference["warnings"]),
+            "image_assets": merged,
+        }
+        self._word_import_epoch += 1
+        epoch = self._word_import_epoch
+        self._library_image_task_id = "pending-word"
+        self._word_import_in_flight = True
+        self.setEnabled(False)
+        set_status(
+            self.status,
+            "info",
+            "正在核对所选 Word 内容并保存原图；全部成功后一起追加，不调用模型…",
+        )
+
+        def active():
+            return isValid(self) and epoch == self._word_import_epoch
+
+        def failed(_message=None):
+            if not active():
+                return
+            self._library_image_task_id = None
+            self._word_import_in_flight = False
+            self.setEnabled(True)
+            set_status(
+                self.status,
+                "error",
+                "Word 图文未能完整导入，原有备课内容与图片保留。来源可能已变化或图片读取失败，请重新预览后重试。",
+            )
+
+        def ready(value):
+            if not active():
+                return
+            try:
+                if (
+                    not isinstance(value, dict)
+                    or any(value.get(key) != item for key, item in expected.items())
+                    or self._payload() != before
+                ):
+                    failed()
+                    return
+                checked = normalize_image_assets(value["image_assets"])
+                # Suppress intermediate change notifications until both fields agree.
+                image_blocker = QSignalBlocker(self.image_assets_widget)
+                text_blocker = QSignalBlocker(self.materials)
+                self.image_assets_widget.set_assets_strict(checked)
+                self.materials.setPlainText(combined)
+                del image_blocker, text_blocker
+                self.image_assets_widget.assets_changed.emit(
+                    self.image_assets_widget.assets()
+                )
+            except (PreparationImageError, RuntimeError, TypeError, ValueError):
+                failed()
+                return
+            self._library_image_task_id = None
+            self._word_import_in_flight = False
+            self.setEnabled(True)
+            set_status(
+                self.status,
+                "success",
+                f"Word 文字与 {len(merged) - len(existing)} 张新增原图已一起追加；原有表单和图片保留。"
+                "原图用于本地课件排版，模型只收到图片说明，不会看到像素；尚未调用模型。"
+                + (
+                    f" 包含 {len(expected['warnings'])} 条待核对提醒。"
+                    if expected["warnings"]
+                    else ""
+                ),
+            )
+            self.materials.setFocus()
+
+        try:
+            self._library_image_task_id = self.tasks.submit(
+                "导入 Word 选题图文",
+                lambda: self.facade.import_word_question_reference(
+                    frozen_reference, existing
+                ),
+                on_success=ready,
+                on_failure=failed,
+            )
+        except RuntimeError:
+            failed()
+            return False
+        return True
+
+    def closeEvent(self, event) -> None:
+        self._word_import_epoch += 1
+        if self._word_import_in_flight:
+            cancel = getattr(self.tasks, "cancel", None)
+            if callable(cancel) and self._library_image_task_id:
+                cancel(self._library_image_task_id)
+            self._library_image_task_id = None
+            self._word_import_in_flight = False
+            self.setEnabled(True)
+            set_status(
+                self.status, "info", "已取消本次 Word 图文追加，原有表单与图片保留。"
+            )
+        super().closeEvent(event)
 
     def import_paper_reference(self, snapshot: dict) -> bool:
         from .paper_preparation_dialog import PaperPreparationDialog

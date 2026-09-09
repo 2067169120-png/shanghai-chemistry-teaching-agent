@@ -2064,8 +2064,12 @@ class DesktopWorkbenchFacade:
     def word_question_update_range(self, key, revision, **boundaries):
         return self._word_questions().update_range(key, revision, **boundaries)
 
-    def word_question_reference(self, selections):
-        return self._word_questions().reference(selections)
+    def word_question_reference(self, selections, *, include_images=True):
+        return self._word_questions().reference(selections, include_images=include_images)
+
+    def import_word_question_reference(self, reference, existing_assets):
+        """Validate the confirmed selection and save its images locally, as one batch."""
+        return self._word_questions().prepare_reference(reference, existing_assets)
 
     def word_question_save_selection(self, selections):
         return self._word_questions().save_selection(selections)

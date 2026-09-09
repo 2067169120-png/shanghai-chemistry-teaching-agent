@@ -51,7 +51,7 @@ def verify_frozen_note_prompt(pyz) -> bool:
     """Execute only the frozen pure prompt formatter, never the provider."""
     code = pyz.extract("integrations.deeptutor_shchem_v1.desktop_preparation_provider")
     constants = strings(code)
-    revision = "20260909-classroom-projection-v22"
+    revision = "20260910-word-image-roles-v23"
     checks = [
         value for value in constants if value.startswith("\n授课与笔记最终检查（")
     ]
@@ -316,7 +316,7 @@ def main() -> int:
     expected = {
         "desktop_version": [args.version],
         "desktop_preparation_provider": [
-            "20260909-classroom-projection-v22",
+            "20260910-word-image-roles-v23",
             "20260909-deepseek-v4-output-budget-v12",
             "provider_response_empty",
         ],
@@ -408,6 +408,7 @@ def main() -> int:
         "desktop_word_questions": ["native-word-question-selection-v1"],
         "desktop_word_question_export": ["20260909-native-selected-blocks-v1"],
         "desktop_workbench.word_question_dialog": ["Word 逐题浏览与选题", "确认带入备课"],
+        "desktop_workbench.preparation_images_widget": ["PreparationImagesWidget"],
         "word_handout_import": ["1.2.1"],
         "desktop_workbench.import_word_dialog": ["查看 Word 内容并带入备课", "确认追加到备课"],
         "desktop_paper_preparation_sources": [],
@@ -422,7 +423,6 @@ def main() -> int:
         "desktop_preparation_images": [
             "Save exact locally verified bytes without an intermediate export file."
         ],
-        "desktop_workbench.preparation_images_widget": [],
         "desktop_preparation_renderer": ["w:cantSplit"],
         "desktop_preparation_worksheet": [],
         "desktop_preparation_drafts": [],

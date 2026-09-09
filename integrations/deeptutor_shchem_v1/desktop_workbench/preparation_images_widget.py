@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..desktop_preparation_images import MAX_IMAGES
+from ..desktop_preparation_images import MAX_IMAGES, normalize_image_assets
 from .components import set_status
 
 _ASSET_KEYS = (
@@ -312,6 +312,13 @@ class PreparationImagesWidget(QWidget):
 
     def clear_assets(self) -> None:
         self.set_assets(())
+
+    def set_assets_strict(self, values: object) -> None:
+        """Validate a complete batch before replacing anything; never drop rows."""
+        cleaned = normalize_image_assets(values)
+        self._assets = cleaned
+        self._render_assets()
+        self.assets_changed.emit(self.assets())
 
     def append_asset(self, value: object) -> bool:
         """Add one confirmed asset without replacing the teacher's existing list."""

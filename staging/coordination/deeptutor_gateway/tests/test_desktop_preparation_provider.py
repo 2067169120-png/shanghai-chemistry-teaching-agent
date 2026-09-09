@@ -409,7 +409,10 @@ def test_learning_sequence_contract_reaches_actual_request_without_mutating_brie
     )
     assert PREPARATION_PROMPT_REVISION in prompt
     assert TEACHING_SOURCE_RULES in prompt
-    assert PREPARATION_PROMPT_REVISION == "20260909-classroom-projection-v22"
+    assert PREPARATION_PROMPT_REVISION == "20260910-word-image-roles-v23"
+    assert "Word题目的图文对应关系" in prompt
+    assert "答案与解析图仅用于相应题目的后续讲评页" in prompt
+    assert "原图附入本地素材库不等于图中条件已被识别" in prompt
     assert prompt.endswith(CLASSROOM_NOTE_FINAL_CHECK)
     for rule in (
         "核心原句放在正文或完整知识表中",

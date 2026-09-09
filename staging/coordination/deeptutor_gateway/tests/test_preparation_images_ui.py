@@ -82,6 +82,30 @@ def test_twelve_images_reload_and_limit_match_backend(qt_app, image_asset):
     reopened.close()
 
 
+@pytest.mark.parametrize("fault", ["too_many", "malformed", "duplicate"])
+def test_strict_batch_replacement_is_atomic_without_truncation(
+    qt_app, image_asset, fault
+):
+    from integrations.deeptutor_shchem_v1.desktop_preparation_images import (
+        PreparationImageError,
+    )
+
+    widget = PreparationImagesWidget(_ImageFacade())
+    widget.set_assets_strict([image_asset])
+    values = []
+    for number in range(13 if fault == "too_many" else 2):
+        sha = f"{number:064x}"
+        values.append({**image_asset, "asset_id": "IMG-" + sha, "sha256": sha})
+    if fault == "malformed":
+        values[-1]["path"] = "private-local-path"
+    elif fault == "duplicate":
+        values[-1] = dict(values[0])
+    with pytest.raises(PreparationImageError):
+        widget.set_assets_strict(values)
+    assert widget.assets() == [image_asset]
+    widget.close()
+
+
 class _AcceptedMetadataDialog:
     DialogCode = QDialog.DialogCode
 

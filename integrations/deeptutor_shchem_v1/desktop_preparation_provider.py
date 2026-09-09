@@ -32,7 +32,7 @@ from .visual_provider_runtime import (
 # Pedagogy synthesis and source limits are documented in
 # staging/coordination/deeptutor_gateway/teacher_preparation_research_20260909/README.md.
 # This is a design revision, not a claim of award-winning or reviewed output.
-PREPARATION_PROMPT_REVISION = "20260909-classroom-projection-v22"
+PREPARATION_PROMPT_REVISION = "20260910-word-image-roles-v23"
 PREPARATION_REQUEST_POLICY_REVISION = "20260909-deepseek-v4-output-budget-v12"
 
 # Distilled from the inspected v15 live lesson, not additional source facts.
@@ -266,6 +266,11 @@ def _prompt(payload: Mapping[str, Any]) -> str:
         "图片接入：image_assets是教师已选择、软件已在本地保存的真实图片清单。"
         "你仅收到图题caption、来源source、用途purpose及尺寸等文字元数据，没有看到图片像素。"
         "只能根据这些说明安排观察任务，不得声称已看图、推断未描述的颜色/标签/实验现象。"
+        "若materials含Word题目的图文对应关系，按所列题号、原文区块及题面/共同材料/答案角色使用IMG标识；"
+        "同图重复引用不代表题目之间的条件可以互换。答案与解析图仅用于相应题目的后续讲评页，"
+        "不可放到题面、独立练习或提前揭示答案的知识页。公共材料图随依赖它的题目保留。"
+        "原图附入本地素材库不等于图中条件已被识别；若解答依赖未转写的图形连接、结构或数据，"
+        "在uncertainties具体指出需教师补充的题号与图，不凭图注生成缺失条件或确定答案。"
         "使用图片时在对应slide填写image={asset_id:清单中的完整标识,observation_prompt:观察问题}，"
         "软件会保留比例插入真实图片并显示原图题与来源；不要填路径、网址或base64。"
         "同一页image与visual只能有一个非null。无图片的页面image=null。"

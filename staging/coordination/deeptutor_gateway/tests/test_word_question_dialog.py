@@ -92,6 +92,20 @@ def _asset(asset_id):
     }
 
 
+def _preparation_asset(number=1):
+    sha = f"{number:064x}"
+    return {
+        "asset_id": "IMG-" + sha,
+        "sha256": sha,
+        "caption": "来源题图",
+        "source": "演示讲义",
+        "purpose": "课堂观察",
+        "width": 100,
+        "height": 80,
+        "content_type": "image/png",
+    }
+
+
 def _question(key, source, *, ready=True, export_ready=True):
     return {
         "key": key,
@@ -155,6 +169,8 @@ class _Facade:
         self.calls = []
         self.reference_changed = False
         self.reference_failed = False
+        self.image_issues = []
+        self.image_assets = []
         self.export_warnings = []
 
     def word_question_catalog(self):
@@ -183,8 +199,8 @@ class _Facade:
             "label": "原图",
         }
 
-    def word_question_reference(self, selections):
-        self.calls.append(("reference", deepcopy(selections)))
+    def word_question_reference(self, selections, *, include_images=True):
+        self.calls.append(("reference", deepcopy(selections), include_images))
         if self.reference_failed:
             raise RuntimeError("test failure")
         return {
@@ -194,6 +210,10 @@ class _Facade:
             )
             + ("发生变化" if self.reference_changed else ""),
             "warnings": ["原图与题目范围仍需核对"],
+            "selections": deepcopy(selections),
+            "include_images": include_images,
+            "image_assets": deepcopy(self.image_assets) if include_images else [],
+            "image_issues": list(self.image_issues),
         }
 
     def word_question_export(self, title, selections, *, show_student_scores=False):
@@ -403,6 +423,67 @@ def test_late_reference_does_not_restore_preview_after_selection_changes(qt_app)
     tasks.finish("预览 Word 选题")
     assert not dialog.import_button.isEnabled()
     assert dialog.preview.toPlainText() == ""
+    _cleanup(dialog, tasks)
+
+
+def test_image_mode_switch_invalidates_preview_and_explicit_text_only_is_confirmable(
+    qt_app,
+):
+    dialog, facade, tasks = _loaded()
+    facade.image_assets = [_preparation_asset()]
+    facade.image_issues = ["另有一张 WMF 暂不支持"]
+    _check(dialog, "Q1")
+    assert dialog.include_images.isChecked()
+    dialog.preview_button.click()
+    tasks.finish("预览 Word 选题")
+    assert "1 张原图" in dialog.preview.toPlainText()
+    assert "WMF" in dialog.preview.toPlainText()
+    assert not dialog.import_button.isEnabled()
+    dialog.include_images.setChecked(False)
+    assert not dialog.preview.toPlainText() and dialog._preview_reference is None
+    dialog.preview_button.click()
+    tasks.finish("预览 Word 选题")
+    assert dialog.import_button.isEnabled()
+    assert "仅文字（不带原图）" in dialog.preview.toPlainText()
+    assert "WMF" in dialog.preview.toPlainText()
+    assert facade.calls[-1][-1] is False
+    _cleanup(dialog, tasks)
+
+
+def test_mode_switch_during_background_preview_ignores_old_image_result(qt_app):
+    dialog, _, tasks = _loaded()
+    _check(dialog, "Q1")
+    dialog.preview_button.click()
+    dialog.include_images.setChecked(False)
+    tasks.finish("预览 Word 选题")
+    assert not dialog.preview.toPlainText()
+    assert not dialog.import_button.isEnabled()
+    _cleanup(dialog, tasks)
+
+
+def test_changed_image_manifest_rejects_confirmation(qt_app):
+    dialog, facade, tasks = _loaded()
+    facade.image_assets = [_preparation_asset()]
+    _check(dialog, "Q1")
+    tasks.flush()
+    dialog.preview_button.click()
+    tasks.finish("预览 Word 选题")
+    facade.image_assets = [_preparation_asset(2)]
+    dialog.import_button.click()
+    tasks.finish("确认 Word 选题参考")
+    assert dialog.preparation_reference is None
+    assert not dialog.import_button.isEnabled()
+    _cleanup(dialog, tasks)
+
+
+def test_over_limit_images_are_visible_and_never_silently_truncated(qt_app):
+    dialog, facade, tasks = _loaded()
+    facade.image_assets = [_preparation_asset(n) for n in range(13)]
+    _check(dialog, "Q1")
+    dialog.preview_button.click()
+    tasks.finish("预览 Word 选题")
+    assert "13 张原图" in dialog.preview.toPlainText()
+    assert not dialog.import_button.isEnabled()
     _cleanup(dialog, tasks)
 
 
