@@ -1,3 +1,4 @@
+import json
 from copy import deepcopy
 
 import pytest
@@ -129,4 +130,88 @@ def test_replacing_existing_design_requires_confirmation(page, monkeypatch, repl
         "template_and_delivery"
     ]
     assert after == before
+    assert not facade.prepare_calls and not facade.generate_calls
+
+
+@pytest.mark.parametrize(
+    "topic,expected,excluded",
+    [
+        ("系统的内能", "f010e1bf-b56c-de08-fa41-adc255b3b572", "fde67ee1"),
+        ("系统内能复习", "f010e1bf-b56c-de08-fa41-adc255b3b572", "fde67ee1"),
+        ("第二节 系统的内能", "f010e1bf-b56c-de08-fa41-adc255b3b572", "fde67ee1"),
+        ("电离平衡常数", "fde67ee1-cbbb-4cb2-828f-e5cd813bc64e", "f010e1bf"),
+        ("弱电解质的电离平衡", "fde67ee1-cbbb-4cb2-828f-e5cd813bc64e", "f010e1bf"),
+        ("电离 平衡 常数", "fde67ee1-cbbb-4cb2-828f-e5cd813bc64e", "f010e1bf"),
+    ],
+)
+def test_topic_matching_offers_only_relevant_editable_design(topic, expected, excluded):
+    text = teacher_design_starter("复习", topic)
+    assert expected in text and excluded not in text
+    assert "可修改或删除" in text
+    assert "未下载原PPT" in text
+    assert "不是原课件、教材原句或题库题" in text
+    assert "原教案和教材仍是知识内容依据" in text
+    assert "不把新授课整套重播" in text
+
+
+@pytest.mark.parametrize(
+    "topic", ["", "电解质的电离", "化学平衡", "有机化学", "内能与温度"]
+)
+def test_unmatched_topics_keep_existing_route_default(topic):
+    assert teacher_design_starter("新授", topic) == teacher_design_starter("新授")
+
+
+def test_two_topics_keep_both_sources_without_erasing_safety_exclusion():
+    text = teacher_design_starter("专题", "系统的内能与电离平衡常数")
+    assert text.count("f010e1bf-b56c-de08-fa41-adc255b3b572") == 1
+    assert text.count("fde67ee1-cbbb-4cb2-828f-e5cd813bc64e") == 1
+    assert "不复用原第二课时第5—7页" in text
+    assert "本课若不讲平衡常数，删除相关段落" in text
+    assert "若安排两课时" in text
+
+
+def test_courseware_starter_is_visible_editable_and_enters_actual_prompt(page):
+    _app, widget, facade = page
+    widget.topic.setText("电离平衡常数")
+    widget.audience.setText("高二")
+    widget.objective.setPlainText("用已提供的数据建立表达式并独立应用")
+    widget.materials.setPlainText("教师已选的完整原教案和例题")
+    before = widget._payload()
+    widget.design_starter_button.click()
+    starter = widget.template_detail.text()
+    assert starter == teacher_design_starter("新授", "电离平衡常数")
+    assert "第一课时第4—7页" in starter
+    widget.template_detail.setText(starter + "\n教师调整：第二课时预留10分钟订正。")
+    payload = widget._payload()
+    normalized = normalize_preparation_payload(payload)
+    assert (
+        normalized["advanced"]["template_and_delivery"] == widget.template_detail.text()
+    )
+    prompt = _prompt(payload)
+    embedded, _ = json.JSONDecoder().raw_decode(
+        prompt.split("教师备课简报 JSON：\n", 1)[1]
+    )
+    assert embedded == payload
+    assert "教师调整：第二课时预留10分钟订正。" in prompt
+    after = deepcopy(payload)
+    after["advanced"]["template_and_delivery"] = before["advanced"][
+        "template_and_delivery"
+    ]
+    assert after == before
+    assert not facade.prepare_calls and not facade.generate_calls
+
+
+def test_topic_changes_and_cancel_do_not_replace_teacher_reference(page, monkeypatch):
+    _app, widget, facade = page
+    widget.topic.setText("电离平衡常数")
+    widget.design_starter_button.click()
+    existing = widget.template_detail.text() + "\n我的课堂安排"
+    widget.template_detail.setText(existing)
+    widget.topic.setText("系统的内能")
+    assert widget.template_detail.text() == existing
+    monkeypatch.setattr(
+        QMessageBox, "question", lambda *args: QMessageBox.StandardButton.No
+    )
+    widget.design_starter_button.click()
+    assert widget.template_detail.text() == existing
     assert not facade.prepare_calls and not facade.generate_calls

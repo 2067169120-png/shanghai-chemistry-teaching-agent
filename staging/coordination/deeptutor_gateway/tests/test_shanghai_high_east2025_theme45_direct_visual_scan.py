@@ -201,7 +201,21 @@ def test_all_11_details_retain_exact_text_parents_answer_and_unknowns(reader):
         ]
         assert detail["cognitive_difficulty"] == part["difficulty"]
         assert detail["cognitive_difficulty"]["cognitive_prelabel"] is None
-        assert detail["dependency"]["status"] == "unknown_prior_dependency_not_recorded"
+        if hierarchy["theme_sequence"] == 5:
+            assert detail["dependency"]["status"] == module.DEPENDENCY_STATUS
+            assert detail["dependency"]["dependency_kind"] == "shared_theme_context"
+            assert detail["dependency_evidence"]["human_checked"] is False
+            assert detail["dependency_evidence"]["candidate_only"] is True
+            assert (
+                detail["dependency_evidence"]["revision_id"]
+                == module.DEPENDENCY_REVISION_ID
+            )
+        else:
+            assert (
+                detail["dependency"]["status"]
+                == "unknown_prior_dependency_not_recorded"
+            )
+            assert "dependency_evidence" not in detail
         assert detail["dependency"]["prior_atomic_part_ids"] == []
         assert all(
             value is False
@@ -535,3 +549,25 @@ def test_public_copies_cannot_mutate_later_reads(reader):
     assert again["authority"]["generation_allowed"] is False
     assert "K99" not in again["scan_classification"]["knowledge_candidates_K"]
     assert len(again["shared_materials"][0]["crop_ids"]) == 1
+
+
+@pytest.mark.parametrize("mutation", ["unknown_node", "source_page", "route"])
+def test_theme5_dependency_requires_inspected_question_and_complete_route(
+    reader, mutation
+):
+    snapshot = reader._snapshot()
+    node = "SHEAST2025-M05-B-T5-Q1-P1"
+    record = snapshot.by_master_id[node]
+    question, shared = [
+        deepcopy(snapshot.crop_by_id[row["crop_id"]])
+        for row in record["viewed_evidence"]
+    ]
+    if mutation == "unknown_node":
+        node = "SHEAST2025-M05-B-T4-Q1-P1"
+    elif mutation == "source_page":
+        question["source_sha256"] = "0" * 64
+    else:
+        shared["sha256"] = "0" * 64
+    with pytest.raises(MasterDirectVisualScanError) as caught:
+        module._theme5_source_dependency(node, question, shared)
+    assert caught.value.code == "master_direct_scan_dependency_evidence_invalid"

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import subprocess
 import sys
@@ -19,6 +20,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
+from PIL import Image
+
 ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT))
 
@@ -28,6 +31,10 @@ from integrations.deeptutor_shchem_v1 import (
 )
 from integrations.deeptutor_shchem_v1 import (
     songjiang2025_theme2_direct_visual_scan as songjiang,
+)
+from integrations.deeptutor_shchem_v1.archived_wechat_crop_revision import (
+    MARGIN_RECIPES,
+    SHARED_RECIPES,
 )
 from integrations.deeptutor_shchem_v1.desktop_facade import (
     DesktopWorkbenchFacade,
@@ -44,7 +51,7 @@ from integrations.deeptutor_shchem_v1.desktop_workbench.paper_composer import (
 BUNDLED_PYTHON = Path(
     "C:/Users/20671/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe"
 )
-OUTPUT_RELATIVE = "runtime/deeptutor_shchem/qa_0.1.55_repairs_export_20260910_r1"
+OUTPUT_RELATIVE = "runtime/deeptutor_shchem/qa_0.1.56_repairs_export_20260910_r1"
 REPAIRS_RELATIVE = (
     "runtime/deeptutor_shchem/crop_repairs_0.1.55_r1/crop_repair_manifest.json"
 )
@@ -52,6 +59,18 @@ THEMES = (
     (songjiang.PAPER_ID, songjiang.THEME_ID, 9),
     (east.PAPER_ID, "THEME-aa5b660ca407ced6230f", 5),
 )
+EXPECTED_SHARED = {
+    songjiang.THEME_ID: {
+        "SJ25T2-C-783aedf98189899baf2c2909",
+        "SJ25T2-C-377ff6ffad094904d6cf5ea4",
+        "SJ25T2-C-bc033f159e7aba3c44d5af29",
+    },
+    "THEME-aa5b660ca407ced6230f": {"SHEAST2025-CROP-b39d0d33cdac04884a42c934"},
+}
+ARCHIVE_ONLY_SHARED = {
+    "SJ25T2-C-cad3a95bc7739857cfe7515e",
+    "SJ25T2-C-c4702d34468809ed194d0065",
+}
 
 
 def sha(raw: bytes) -> str:
@@ -95,21 +114,40 @@ def block_hashes(blocks) -> list[str]:
     return [Path(block["asset_ref"]).stem for block in blocks if block.get("asset_ref")]
 
 
+def verify_source_pixels(db: Path, raw: bytes, recipe) -> None:
+    source = (db / recipe.source_asset).read_bytes()
+    require(sha(source) == recipe.source_sha256, "revised source page changed")
+    with Image.open(io.BytesIO(source)) as page, Image.open(io.BytesIO(raw)) as actual:
+        x, y, width, height = recipe.box
+        pixels = page.crop((x, y, x + width, y + height))
+        require(
+            actual.size == pixels.size
+            and actual.mode == pixels.mode
+            and actual.tobytes() == pixels.tobytes(),
+            "revised image is not exact source pixels",
+        )
+
+
 def verify_bundle(bundle, assets: Path, expected, repairs) -> dict:
     require(bundle["publication_allowed"] is False, "export authority changed")
     require(
         bundle["preset"]["student_version"]["show_item_scores"] is False,
         "student question scores must stay hidden",
     )
-    new_hashes = {row["sha256"] for row in repairs}
-    old_hashes = {row["supersedes_crop_sha256"] for row in repairs}
+    new_hashes = {row["sha256"] for row in repairs} | set(
+        expected["additional_repair_hashes"]
+    )
+    old_hashes = {row["supersedes_crop_sha256"] for row in repairs} | set(
+        expected["excluded_shared_hashes"]
+    )
     asset_files = {path.stem: path for path in (assets / "images").glob("*.png")}
     require(
         new_hashes <= set(asset_files),
-        "five repaired images missing from export assets",
+        "seven question and two shared repaired images missing from export assets",
     )
     require(
-        not old_hashes & set(asset_files), "superseded question image entered assets"
+        not old_hashes & set(asset_files),
+        "superseded or archive-only image entered assets",
     )
     for digest, path in asset_files.items():
         require(
@@ -352,6 +390,10 @@ def main() -> int:
                     repair_manifest_path.parent / row["crop_path"],
                 )
             )
+        source_paths.update(
+            db / recipe.source_asset
+            for recipe in (*SHARED_RECIPES.values(), *MARGIN_RECIPES.values())
+        )
         sources_before = {str(path): file_state(path) for path in sorted(source_paths)}
         report["source_files_before"] = sources_before
         report["stage"] = "source_bindings_verified_searching_native"
@@ -362,8 +404,22 @@ def main() -> int:
         )
         found = facade.search_themes(scope="master", limit=50)
         cards = {card.source_identity_sha256: card for card in found.cards}
-        expected = {"parts": {}, "shared": {}}
+        expected = {
+            "parts": {},
+            "shared": {},
+            "additional_repair_hashes": [],
+            "excluded_shared_hashes": [
+                row.archived_sha256
+                for row in (*SHARED_RECIPES.values(), *MARGIN_RECIPES.values())
+            ]
+            + [
+                snapshots[0].crop_by_id[crop_id]["sha256"]
+                for crop_id in sorted(ARCHIVE_ONLY_SHARED)
+            ],
+        }
         verified_repairs = set()
+        verified_shared_repairs = set()
+        verified_margin_repairs = set()
         for paper_id, theme_id, count in THEMES:
             key = _canonical_digest(
                 {"scope": "master", "paper": paper_id, "theme": theme_id}
@@ -382,6 +438,15 @@ def main() -> int:
                 raw = facade.library_image(image)
                 require(sha(raw) == image.sha256, "shared preview hash mismatch")
                 shared[image.crop_id] = image.sha256
+                if image.crop_id in SHARED_RECIPES:
+                    recipe = SHARED_RECIPES[image.crop_id]
+                    verify_source_pixels(db, raw, recipe)
+                    verified_shared_repairs.add(image.crop_id)
+                    expected["additional_repair_hashes"].append(image.sha256)
+            require(
+                set(shared) == EXPECTED_SHARED[theme_id],
+                "shared source blocks missing or duplicated",
+            )
             expected["shared"][theme_id] = shared
             for part in detail.parts:
                 original = originals[part.key]
@@ -399,6 +464,10 @@ def main() -> int:
                     raw = facade.library_image(image)
                     require(sha(raw) == image.sha256, "question preview hash mismatch")
                     question_hashes.append(image.sha256)
+                    if image.crop_id in MARGIN_RECIPES:
+                        verify_source_pixels(db, raw, MARGIN_RECIPES[image.crop_id])
+                        verified_margin_repairs.add(image.crop_id)
+                        expected["additional_repair_hashes"].append(image.sha256)
                     if part.key in by_repaired_node:
                         repair = by_repaired_node[part.key]
                         require(
@@ -438,13 +507,28 @@ def main() -> int:
             verified_repairs == set(by_repaired_node),
             "not all five repaired previews checked",
         )
+        require(
+            verified_shared_repairs == set(SHARED_RECIPES),
+            "not both shared repairs checked",
+        )
         report["native_checks"] = {
             "complete_theme_counts": [9, 5],
             "native_prompt_and_answer_match_original_candidate": True,
             "five_repaired_previews_match_manifest_and_png": sorted(verified_repairs),
+            "two_shared_previews_match_original_page_pixels": sorted(
+                verified_shared_repairs
+            ),
+            "archive_only_whole_page_crops_excluded": sorted(ARCHIVE_ONLY_SHARED),
+            "two_margin_previews_match_original_page_pixels": sorted(
+                verified_margin_repairs
+            ),
             "parts": expected["parts"],
             "shared_materials": expected["shared"],
         }
+        require(
+            verified_margin_repairs == set(MARGIN_RECIPES),
+            "not both margin repairs checked",
+        )
         catalog = facade.paper_theme_catalog("master")
         composer = PaperComposerModel.from_basket(
             facade.basket(),
@@ -500,8 +584,12 @@ def main() -> int:
             "renderer reports a machine blocker",
         )
         report["page_images"] = {}
-        new_hashes = {row["sha256"] for row in repairs}
-        old_hashes = {row["supersedes_crop_sha256"] for row in repairs}
+        new_hashes = {row["sha256"] for row in repairs} | set(
+            expected["additional_repair_hashes"]
+        )
+        old_hashes = {row["supersedes_crop_sha256"] for row in repairs} | set(
+            expected["excluded_shared_hashes"]
+        )
         for artifact in result["artifacts"]:
             path = Path(artifact["path"])
             require(
@@ -517,7 +605,7 @@ def main() -> int:
                     }
                 require(
                     new_hashes <= media_hashes and not old_hashes & media_hashes,
-                    "DOCX does not embed all five new and exclude five old repairs",
+                    "DOCX does not embed all nine repaired images or includes excluded images",
                 )
                 report.setdefault("docx_media_sha256", {})[artifact["artifact_id"]] = (
                     sorted(media_hashes)

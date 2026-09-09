@@ -33,8 +33,10 @@ from integrations.deeptutor_shchem_v1 import (
     songjiang2025_theme2_direct_visual_scan as songjiang,
 )
 from integrations.deeptutor_shchem_v1.archived_wechat_crop_revision import (
+    MARGIN_RECIPES,
     RECIPES,
     REVISION_ID,
+    SHARED_RECIPES,
 )
 from integrations.deeptutor_shchem_v1.desktop_facade import (
     DesktopWorkbenchFacade,
@@ -58,6 +60,49 @@ EXPECTED_THEMES = {
     east.THEME_IDS[5]: (east.PAPER_ID, 5),
 }
 EXPECTED_ATOMS = frozenset((*songjiang.EXPECTED_ATOMIC_IDS, *east.EXPECTED_ATOMIC_IDS))
+ALL_PRESENTATION_RECIPES = {**RECIPES, **SHARED_RECIPES, **MARGIN_RECIPES}
+EXPECTED_KNOWN_DEPENDENCIES = frozenset(
+    (
+        *songjiang.EXPECTED_ATOMIC_IDS,
+        *(f"SHEAST2025-M05-B-T5-Q{i}-P1" for i in range(1, 6)),
+    )
+)
+EXPECTED_PRIOR_IDS = {
+    "SJ2025-EM-S2-Q7-P1": ["SJ2025-EM-S2-Q6-P1"],
+    "SJ2025-EM-S2-Q9-P1": ["SJ2025-EM-S2-Q8-P1"],
+}
+EXPECTED_SHARED_IDS = {
+    songjiang.THEME_ID: {
+        "SJ25T2-C-783aedf98189899baf2c2909",
+        "SJ25T2-C-377ff6ffad094904d6cf5ea4",
+        "SJ25T2-C-bc033f159e7aba3c44d5af29",
+    },
+    east.THEME_IDS[4]: {"SHEAST2025-CROP-80fa74a02acc9c79eefdcaf0"},
+    east.THEME_IDS[5]: {"SHEAST2025-CROP-b39d0d33cdac04884a42c934"},
+}
+EXPECTED_SHARED_BY_ATOM = {
+    **{
+        f"SJ2025-EM-S2-Q{i}-P1": crop_id
+        for numbers, crop_id in (
+            ((1, 2, 3), "SJ25T2-C-783aedf98189899baf2c2909"),
+            ((4, 5, 6, 7), "SJ25T2-C-377ff6ffad094904d6cf5ea4"),
+            ((8, 9), "SJ25T2-C-bc033f159e7aba3c44d5af29"),
+        )
+        for i in numbers
+    },
+    **{
+        f"SHEAST2025-M05-B-T4-Q{i}-P1": "SHEAST2025-CROP-80fa74a02acc9c79eefdcaf0"
+        for i in range(1, 7)
+    },
+    **{
+        f"SHEAST2025-M05-B-T5-Q{i}-P1": "SHEAST2025-CROP-b39d0d33cdac04884a42c934"
+        for i in range(1, 6)
+    },
+}
+ARCHIVE_ONLY_SHARED_IDS = {
+    "SJ25T2-C-cad3a95bc7739857cfe7515e",
+    "SJ25T2-C-c4702d34468809ed194d0065",
+}
 NOTICE = (
     "仅供本机私人核查：源图展示、文本一致性和入口连通检查；不是化学全面审定、"
     "教师审核、裁片语义完整性或课堂可用性认可，不授权公开传播或教学成品复用。"
@@ -108,6 +153,126 @@ def _source_rows(root: Path, module) -> tuple[dict, dict]:
             _check(part["part_id"] not in parts, "duplicate upstream atomic identity")
             parts[part["part_id"]] = (question, part)
     return manifest, parts
+
+
+def _verify_presentation(evidence, image, raw, descriptor, archived, repaired):
+    """Independently compare archive binding, displayed bytes and source pixels."""
+    _check(
+        image.role == descriptor["evidence_role"] == archived["evidence_role"]
+        and archived["sha256"] == descriptor.get("archived_crop_sha256", image.sha256),
+        "presentation lost its original archived crop role or hash binding",
+    )
+    recipe = ALL_PRESENTATION_RECIPES.get(image.crop_id)
+    if recipe is None:
+        _check(
+            _sha(raw) == archived["sha256"]
+            and "presentation_revision_id" not in descriptor,
+            "unrevised source image unexpectedly changed",
+        )
+        return
+    _check(
+        descriptor.get("presentation_revision_id") == REVISION_ID
+        and descriptor["evidence_role"] == recipe.evidence_role
+        and descriptor["source_asset"] == recipe.source_asset
+        and descriptor["source_sha256"] == recipe.source_sha256
+        and descriptor["source_page"] == recipe.page
+        and descriptor["source_crop_box_convention"] == "xywh"
+        and tuple(descriptor["source_crop_box"]) == recipe.box
+        and tuple(descriptor["archived_source_crop_box"]) == recipe.original_box
+        and archived["sha256"] == recipe.archived_sha256,
+        "presentation recipe identity changed",
+    )
+    page_path = _inside(evidence, recipe.source_asset)
+    _check(
+        _sha(page_path.read_bytes()) == recipe.source_sha256,
+        "repaired presentation source page changed",
+    )
+    with Image.open(page_path) as page, Image.open(io.BytesIO(raw)) as shown:
+        x, y, width, height = recipe.box
+        region = page.crop((x, y, x + width, y + height))
+        expected_png = io.BytesIO()
+        region.save(expected_png, format="PNG", optimize=False, compress_level=9)
+        _check(
+            raw == expected_png.getvalue()
+            and shown.size == region.size == (width, height)
+            and shown.mode == region.mode
+            and shown.tobytes() == region.tobytes(),
+            "repaired presentation bytes or pixels differ from source rectangle",
+        )
+    repaired.add(image.crop_id)
+
+
+def _verify_dependency(node_id, projected, detail, source_crops, source_record):
+    dependency = detail["dependency"]
+    evidence = detail.get("dependency_evidence")
+    _check(
+        dependency["shared_material_crop_ids"] == [EXPECTED_SHARED_BY_ATOM[node_id]],
+        "a question was connected to another question's shared material",
+    )
+    if node_id not in EXPECTED_KNOWN_DEPENDENCIES:
+        _check(
+            dependency["dependency_kind"] == "unknown"
+            and dependency["status"] == "unknown_prior_dependency_not_recorded"
+            and dependency["prior_atomic_part_ids"] == []
+            and projected["kind"] == "blocked_pending_review"
+            and projected["status"] == "blocked_unknown_not_inferred"
+            and projected["prior_atomic_part_ids"] == []
+            and evidence is None,
+            "unknown source dependency was promoted",
+        )
+        return
+    prior = EXPECTED_PRIOR_IDS.get(node_id, [])
+    shared_ids = {
+        row["crop_id"]
+        for row in detail["evidence_descriptors"]
+        if row["evidence_role"] == "shared_material"
+    }
+    source_pages = set()
+    original_descriptors = {
+        row["crop_id"]: row for row in source_record["viewed_evidence"]
+    }
+    for row in detail["evidence_descriptors"]:
+        # Legacy East descriptors omit page SHA; use the explicit, frozen crop
+        # relation, not a guessed page or the dependency claim being checked.
+        crop = source_crops[row["crop_id"]]
+        original_page = original_descriptors[row["crop_id"]]["source_page"]
+        _check(
+            row["source_page"] == original_page
+            and crop.get("page_number", original_page) == original_page
+            and row.get("source_sha256", crop["source_sha256"])
+            == crop["source_sha256"],
+            "dependency source descriptor does not match its archived crop relation",
+        )
+        source_pages.add((original_page, crop["source_sha256"]))
+    expected_revision = (
+        songjiang.DEPENDENCY_REVISION_ID
+        if node_id in songjiang.EXPECTED_ATOMIC_IDS
+        else east.DEPENDENCY_REVISION_ID
+    )
+    _check(
+        dependency["status"] == "source_page_backed_candidate_dependency"
+        and dependency["dependency_kind"]
+        == ("one_prior_part" if prior else "shared_theme_context")
+        and dependency["prior_atomic_part_ids"] == prior
+        and projected["kind"] == ("one_prior_part" if prior else "shared_material_only")
+        and projected["status"] == "validated_explicit"
+        and projected["prior_atomic_part_ids"] == prior
+        and set(dependency["shared_material_crop_ids"]) == shared_ids
+        and len(shared_ids) == 1
+        and not shared_ids.intersection(ARCHIVE_ONLY_SHARED_IDS),
+        "source-backed dependency or required shared material changed",
+    )
+    _check(
+        isinstance(evidence, dict)
+        and evidence["revision_id"] == expected_revision
+        and evidence["status"] == "source_page_visual_inspection_candidate"
+        and evidence["candidate_only"] is True
+        and evidence["human_checked"] is False
+        and evidence["source_page_bindings"]
+        == [{"page": page, "sha256": digest} for page, digest in sorted(source_pages)]
+        and set(evidence["required_shared_material_crop_ids"]) == shared_ids,
+        "dependency evidence lost its source binding or became human approval",
+    )
 
 
 def _font(size: int):
@@ -188,7 +353,7 @@ def audit_archived(
         output_dir.mkdir(parents=True, exist_ok=True)
         (output_dir / "images").mkdir(exist_ok=True)
     report = {
-        "schema_version": "private-archived-wechat-native-qa-v2",
+        "schema_version": "private-archived-wechat-native-qa-v3",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "notice_zh": NOTICE,
         "model_calls": 0,
@@ -245,11 +410,17 @@ def audit_archived(
             songjiang.PRODUCT_ID: (songjiang, frozen_native.songjiang2025_theme2),
             east.PRODUCT_ID: (east, frozen_native.shanghai_high_east2025_theme45),
         }
-        originals, record_sources, source_before = {}, {}, {}
+        originals, record_sources, source_before, archived_crops = {}, {}, {}, {}
+        source_crops = {}
         for module, reader in source_readers.values():
             _manifest, rows = _source_rows(evidence, module)
             originals.update(rows)
             snapshot = reader._snapshot()
+            for crop_id, crop in snapshot.crop_by_id.items():
+                raw = snapshot.output_bytes[crop["output_path"]]
+                _check(_sha(raw) == crop["sha256"], "archived crop hash changed")
+                archived_crops[crop_id] = crop["sha256"]
+                source_crops[crop_id] = crop
             for atomic_id in snapshot.by_master_id:
                 record_sources[atomic_id] = (reader, snapshot.by_master_id[atomic_id])
             bound_paths = set(snapshot.output_bytes) | {
@@ -268,6 +439,16 @@ def audit_archived(
                     "sha256": _sha(raw),
                     "mtime_ns": path.stat().st_mtime_ns,
                 }
+        for recipe in ALL_PRESENTATION_RECIPES.values():
+            path = _inside(evidence, recipe.source_asset)
+            raw = path.read_bytes()
+            _check(_sha(raw) == recipe.source_sha256, "source page recipe hash changed")
+            source_before[recipe.source_asset] = {
+                "bytes": len(raw),
+                "sha256": _sha(raw),
+                "mtime_ns": path.stat().st_mtime_ns,
+            }
+        _check(len(archived_crops) == 52, "archive crop denominator changed")
         _check(
             set(originals) == set(record_sources) == EXPECTED_ATOMS,
             "upstream identities do not match native delta",
@@ -328,6 +509,7 @@ def audit_archived(
         selected_cards = []
         all_image_occurrences = []
         repaired_crop_ids = set()
+        archive_only_crop_ids = set()
         for theme_number, (theme_id, (paper_id, count)) in enumerate(
             EXPECTED_THEMES.items(), 1
         ):
@@ -371,11 +553,6 @@ def audit_archived(
                     "source knowledge candidates lost",
                 )
                 _check(
-                    atom["dependency"]["kind"] == "blocked_pending_review"
-                    and atom["dependency"]["status"] == "blocked_unknown_not_inferred",
-                    "unknown source dependency was promoted",
-                )
-                _check(
                     part.summary_zh == original["prompt_raw"],
                     "source prompt changed in native detail",
                 )
@@ -389,10 +566,21 @@ def audit_archived(
                     "new atomic is not visually available",
                 )
                 source_detail = reader.detail(node_id)
+                _verify_dependency(
+                    node_id, atom["dependency"], source_detail, source_crops, _record
+                )
                 _check(
                     source_detail["reference_answer"]["independently_verified"]
                     is False,
                     "answer verification was elevated",
+                )
+                _check(
+                    source_detail["candidate_analysis"]["candidate_only"] is True
+                    and source_detail["candidate_analysis"]["correctness_verified"]
+                    is False
+                    and source_detail["authority"]["formal_promotion_allowed"] is False
+                    and source_detail["authority"]["publication_allowed"] is False,
+                    "source candidate authority was elevated",
                 )
                 expected = {
                     row["crop_id"]: row for row in source_detail["evidence_descriptors"]
@@ -407,6 +595,22 @@ def audit_archived(
                     for key, row in expected.items()
                     if row["evidence_role"] == "shared_material"
                 )
+                for archived_context in source_detail.get(
+                    "archived_context_evidence", []
+                ):
+                    crop_id = archived_context["crop_id"]
+                    _check(
+                        crop_id in ARCHIVE_ONLY_SHARED_IDS
+                        and crop_id not in expected
+                        and archived_context["display_status"]
+                        == "archive_only_repeats_printed_questions"
+                        and archived_context["evidence_role"] == "shared_material"
+                        and _sha(reader.question_crop(node_id, crop_id).data)
+                        == archived_context["sha256"]
+                        == archived_crops[crop_id],
+                        "archive-only full page lost its source binding or leaked into display",
+                    )
+                    archive_only_crop_ids.add(crop_id)
                 _check(
                     {image.crop_id for image in part.question_images}
                     == expected_questions,
@@ -428,38 +632,9 @@ def audit_archived(
                         for row in _record["viewed_evidence"]
                         if row["crop_id"] == image.crop_id
                     )
-                    _check(
-                        archived["sha256"]
-                        == descriptor.get("archived_crop_sha256", image.sha256),
-                        "presentation lost its original archived crop binding",
+                    _verify_presentation(
+                        evidence, image, raw, descriptor, archived, repaired_crop_ids
                     )
-                    if image.crop_id in RECIPES:
-                        recipe = RECIPES[image.crop_id]
-                        _check(
-                            descriptor.get("presentation_revision_id") == REVISION_ID
-                            and descriptor["source_asset"] == recipe.source_asset
-                            and descriptor["source_sha256"] == recipe.source_sha256
-                            and tuple(descriptor["source_crop_box"]) == recipe.box,
-                            "presentation recipe identity changed",
-                        )
-                        page_path = _inside(evidence, recipe.source_asset)
-                        _check(
-                            _sha(page_path.read_bytes()) == recipe.source_sha256,
-                            "repaired presentation source page changed",
-                        )
-                        with (
-                            Image.open(page_path) as page,
-                            Image.open(io.BytesIO(raw)) as shown,
-                        ):
-                            x, y, width, height = recipe.box
-                            region = page.crop((x, y, x + width, y + height))
-                            _check(
-                                shown.size == region.size
-                                and shown.mode == region.mode
-                                and shown.tobytes() == region.tobytes(),
-                                "repaired presentation pixels differ from source rectangle",
-                            )
-                        repaired_crop_ids.add(image.crop_id)
                     theme_pictures.append(
                         {
                             "node_id": node_id,
@@ -485,10 +660,20 @@ def audit_archived(
                         "supporting_K": [],
                         "cognitive_prelabel": None,
                         "dependency": atom["dependency"]["kind"],
+                        "dependency_status": source_detail["dependency"]["status"],
+                        "prior_atomic_part_ids": atom["dependency"][
+                            "prior_atomic_part_ids"
+                        ],
+                        "required_shared_material_crop_ids": source_detail[
+                            "dependency"
+                        ]["shared_material_crop_ids"],
+                        "dependency_evidence": source_detail.get("dependency_evidence"),
                     }
                 )
             _check(
-                {image.crop_id for image in detail.shared_images} == expected_shared,
+                {image.crop_id for image in detail.shared_images}
+                == expected_shared
+                == EXPECTED_SHARED_IDS[theme_id],
                 "theme shared images were lost or cross-wired",
             )
             _check(
@@ -497,12 +682,25 @@ def audit_archived(
                 "theme catalog lost a shared material binding",
             )
             for image in detail.shared_images:
-                reader, _ = record_sources[image.node_id]
+                reader, record = record_sources[image.node_id]
                 raw = facade.library_image(image)
+                descriptor = next(
+                    row
+                    for row in reader.detail(image.node_id)["evidence_descriptors"]
+                    if row["crop_id"] == image.crop_id
+                )
+                archived = next(
+                    row
+                    for row in record["viewed_evidence"]
+                    if row["crop_id"] == image.crop_id
+                )
                 _check(
                     raw == reader.question_crop(image.node_id, image.crop_id).data
-                    and _sha(raw) == image.sha256,
+                    and _sha(raw) == image.sha256 == descriptor["sha256"],
                     "shared image bytes differ from their explicit source",
+                )
+                _verify_presentation(
+                    evidence, image, raw, descriptor, archived, repaired_crop_ids
                 )
                 theme_pictures.append(
                     {
@@ -511,6 +709,10 @@ def audit_archived(
                         "role": image.role,
                         "sha256": image.sha256,
                         "bytes": len(raw),
+                        "archived_crop_sha256": archived["sha256"],
+                        "presentation_revision_id": descriptor.get(
+                            "presentation_revision_id"
+                        ),
                         "raw": raw,
                     }
                 )
@@ -621,7 +823,9 @@ def audit_archived(
                 actual == expected, "a bound original source changed during the audit"
             )
         report["source_files"] = source_before
+        report["archived_crop_sha256"] = archived_crops
         report["checks"]["bound_sources_unchanged"] = True
+        parts = [part for theme in report["themes"] for part in theme["parts"]]
         report["counts"].update(
             bound_source_files=len(source_before),
             question_image_occurrences=sum(
@@ -632,12 +836,50 @@ def audit_archived(
             ),
             distinct_display_images=len({p["sha256"] for p in all_image_occurrences}),
             presentation_repaired_images=len(repaired_crop_ids),
+            question_presentation_repaired_images=len(
+                repaired_crop_ids.intersection(set(RECIPES) | set(MARGIN_RECIPES))
+            ),
+            question_margin_repaired_images=len(
+                repaired_crop_ids.intersection(MARGIN_RECIPES)
+            ),
+            shared_presentation_repaired_images=len(
+                repaired_crop_ids.intersection(SHARED_RECIPES)
+            ),
+            archived_crop_count=len(archived_crops),
+            archive_only_shared_images=len(archive_only_crop_ids),
+            source_backed_candidate_dependencies=sum(
+                part["dependency_status"] == "source_page_backed_candidate_dependency"
+                for part in parts
+            ),
+            unknown_dependencies=sum(
+                part["dependency"] == "blocked_pending_review" for part in parts
+            ),
         )
         _check(
-            repaired_crop_ids == set(RECIPES),
-            "not all five display repairs were exercised",
+            len(RECIPES) == 5
+            and len(SHARED_RECIPES) == 2
+            and len(MARGIN_RECIPES) == 2
+            and len(ALL_PRESENTATION_RECIPES) == 9
+            and repaired_crop_ids == set(ALL_PRESENTATION_RECIPES),
+            "not all five boundary, two margin and two shared display repairs were exercised",
+        )
+        _check(
+            archive_only_crop_ids == ARCHIVE_ONLY_SHARED_IDS,
+            "archival shared pages were lost",
+        )
+        _check(
+            report["counts"]["question_image_occurrences"] == 20
+            and report["counts"]["shared_image_occurrences"] == 5
+            and report["counts"]["distinct_display_images"] == 25
+            and report["counts"]["source_backed_candidate_dependencies"] == 14
+            and report["counts"]["unknown_dependencies"] == 6,
+            "native presentation or dependency denominator changed",
         )
         report["checks"]["presentation_repairs_verified"] = True
+        report["checks"]["source_backed_dependencies_remain_candidate"] = True
+        report["checks"]["unknown_dependencies_preserved"] = True
+        report["checks"]["archive_only_shared_preserved_not_displayed"] = True
+        report["checks"]["unrevised_images_match_archived_sha256"] = True
         report["status"] = "source_display_checks_passed_not_teaching_approval"
         report["elapsed_seconds"] = round(time.monotonic() - started, 3)
         return report

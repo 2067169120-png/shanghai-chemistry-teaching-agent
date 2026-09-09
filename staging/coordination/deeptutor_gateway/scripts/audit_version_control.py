@@ -16,6 +16,7 @@ PATTERNS = {
 ALLOWED_SUFFIXES = {".py", ".pyw", ".json", ".yaml", ".yml", ".md", ".txt", ".mjs", ".cjs", ".ps1", ".vbs", ".gitignore", ".gitattributes"}
 PUBLIC_DEMO_IMAGES = {"docs/screenshots/word-questions.png", "docs/screenshots/word-answers.png", "docs/screenshots/import-preview.png", "docs/screenshots/word-attributes.png", "docs/screenshots/word-attribute-preview.png", "docs/screenshots/lesson-source-library.png", "docs/screenshots/lesson-topic-questions.png"}
 PUBLIC_DEMO_IMAGES.add("docs/screenshots/library-theme-status.png")
+PUBLIC_DEMO_IMAGES.add("docs/screenshots/courseware-reference.png")
 
 
 def main():

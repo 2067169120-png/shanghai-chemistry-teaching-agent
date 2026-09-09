@@ -1,4 +1,4 @@
-"""Five inspected source-pixel display repairs; archived evidence stays intact.
+"""Inspected source-pixel display repairs; archived evidence stays intact.
 
 The recipes bind an existing node/crop pair to its original source page. They
 restore clipped ink or remove adjacent-question fragments, never redraw text,
@@ -20,7 +20,7 @@ from PIL import Image
 
 from .source_crop_revision import SourceCropRevisionError
 
-REVISION_ID = "archived-wechat-source-recrop-20260910-r1"
+REVISION_ID = "archived-wechat-source-recrop-20260910-r3"
 
 
 @dataclass(frozen=True)
@@ -33,6 +33,8 @@ class CropRecipe:
     page: int
     original_box: tuple[int, int, int, int]
     box: tuple[int, int, int, int]
+    evidence_role: str = "question"
+    related_node_ids: tuple[str, ...] = ()
 
 
 _SONGJIANG_PAGE = (
@@ -102,6 +104,71 @@ RECIPES = {
     )
 }
 
+# Existing apparatus references now include their actual source instructions.
+# Full-page archival crops remain available in the source reader, but are not
+# needed as classroom shared materials once these complete blocks are present.
+SHARED_RECIPES = {
+    row.crop_id: row
+    for row in (
+        CropRecipe(
+            "SJ2025-EM-S2-Q1-P1",
+            "SJ25T2-C-783aedf98189899baf2c2909",
+            "e521b1f65aaeea270c07a5c9d9689101a532d3824a6f78d6945766dc7b11ac47",
+            "03_各区一二模/松江区/2025-松江区-二模-化学试卷与参考答案/试卷-page-03.png",
+            "c58a932b3387e809cc3cd9dc09f5f954a8a7b7256fa9aa9040ba21fbad0c4191",
+            3,
+            (510, 400, 300, 225),
+            (185, 290, 920, 335),
+            "shared_material",
+            ("SJ2025-EM-S2-Q2-P1", "SJ2025-EM-S2-Q3-P1"),
+        ),
+        CropRecipe(
+            "SJ2025-EM-S2-Q4-P1",
+            "SJ25T2-C-377ff6ffad094904d6cf5ea4",
+            "014dacbf3e1ec9d7583a33a9f09e53ce54943b3acbf0238a7839cfd7a66ff5fa",
+            "03_各区一二模/松江区/2025-松江区-二模-化学试卷与参考答案/试卷-page-03.png",
+            "c58a932b3387e809cc3cd9dc09f5f954a8a7b7256fa9aa9040ba21fbad0c4191",
+            3,
+            (650, 900, 380, 330),
+            (185, 905, 920, 455),
+            "shared_material",
+            (
+                "SJ2025-EM-S2-Q5-P1",
+                "SJ2025-EM-S2-Q6-P1",
+                "SJ2025-EM-S2-Q7-P1",
+            ),
+        ),
+    )
+}
+
+# Source-page margins found during actual DOCX/PDF page inspection. Keep the
+# original question ink and answer spaces; exclude only the unrelated margins.
+MARGIN_RECIPES = {
+    row.crop_id: row
+    for row in (
+        CropRecipe(
+            "SJ2025-EM-S2-Q4-P1",
+            "SJ25T2-C-ee95745bec37e2d5033436dd",
+            "d66c6024f18978283042fd172a10a0eb18d4cfdad19a0e9a04a22bc9a5c4fcae",
+            "03_各区一二模/松江区/2025-松江区-二模-化学试卷与参考答案/试卷-page-03.png",
+            "c58a932b3387e809cc3cd9dc09f5f954a8a7b7256fa9aa9040ba21fbad0c4191",
+            3,
+            (160, 1360, 960, 295),
+            (160, 1360, 960, 215),
+        ),
+        CropRecipe(
+            "SJ2025-EM-S2-Q5-P1",
+            "SJ25T2-C-f7d24d51145ebd9426681cea",
+            "a002cb521dc4219ceadd632a5275df49775b9803e2ef80bb983d3d25be1b06bf",
+            _SONGJIANG_PAGE,
+            "1c95e0dc77a285ed189f6d9622184a4ffaaf5ea6161d8a92d68f555eac63b22e",
+            4,
+            (160, 215, 960, 95),
+            (160, 225, 960, 85),
+        ),
+    )
+}
+
 
 def presentation_fingerprint(catalog: Mapping[str, Any]) -> str | None:
     """Bind native catalog snapshots to relevant recipes without file reads."""
@@ -119,7 +186,15 @@ def presentation_fingerprint(catalog: Mapping[str, Any]) -> str | None:
                 visit(child)
 
     visit(catalog)
-    selected = [asdict(row) for row in RECIPES.values() if row.node_id in present]
+    selected = [
+        asdict(row)
+        for row in (
+            *RECIPES.values(),
+            *SHARED_RECIPES.values(),
+            *MARGIN_RECIPES.values(),
+        )
+        if present.intersection((row.node_id, *row.related_node_ids))
+    ]
     if not selected:
         return None
     payload = {
@@ -135,8 +210,12 @@ def presentation_fingerprint(catalog: Mapping[str, Any]) -> str | None:
 
 
 def _recipe(node_id: str, crop_id: str) -> CropRecipe | None:
-    recipe = RECIPES.get(crop_id)
-    if recipe is not None and recipe.node_id != node_id:
+    recipe = (
+        RECIPES.get(crop_id)
+        or SHARED_RECIPES.get(crop_id)
+        or MARGIN_RECIPES.get(crop_id)
+    )
+    if recipe is not None and node_id not in (recipe.node_id, *recipe.related_node_ids):
         raise SourceCropRevisionError("返工裁图不属于当前题目。")
     return recipe
 
@@ -195,7 +274,7 @@ def project_archived_wechat_descriptor(
         return item
     source_box = item.get("source_crop_box", recipe.original_box)
     if (
-        item.get("evidence_role") != "question"
+        item.get("evidence_role") != recipe.evidence_role
         or item.get("sha256") != recipe.archived_sha256
         or item.get("source_page") != recipe.page
         or (item.get("width"), item.get("height")) != recipe.original_box[2:]
@@ -219,6 +298,10 @@ def project_archived_wechat_descriptor(
         width=recipe.box[2],
         height=recipe.box[3],
         presentation_revision_id=REVISION_ID,
-        presentation_note_zh="题面边界已按原页修订，原裁片与来源记录保留。",
+        presentation_note_zh=(
+            "共同材料已按原页补全说明和图示，原裁片与来源记录保留。"
+            if recipe.evidence_role == "shared_material"
+            else "题面边界已按原页修订，原裁片与来源记录保留。"
+        ),
     )
     return item

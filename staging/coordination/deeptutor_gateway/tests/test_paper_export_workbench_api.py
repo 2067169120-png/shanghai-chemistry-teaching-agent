@@ -857,6 +857,7 @@ def test_single_atomic_export_does_not_load_unselected_unscanned_detail(
 
         theme = captured["bundle"]["blueprint"]["theme_bundles"][0]
         assert theme["final_atomic_ids"] == ["A1"]
+        assert theme["shared_materials"][0]["used_by_atomic_ids"] == ["A1"]
         shared_material = captured["bundle"]["student_plan"]["visible"][
             "theme_sections"
         ][0]["shared_materials"][0]
@@ -871,6 +872,33 @@ def test_single_atomic_export_does_not_load_unselected_unscanned_detail(
         ]["shared_material_order_basis"] == "source_page_order"
     finally:
         manager.shutdown()
+
+
+def test_shared_membership_uses_explicit_noncontiguous_selected_details():
+    blueprint = {
+        "theme_bundles": [{
+            "final_atomic_ids": ["A1", "A2", "A3"],
+            "shared_materials": [
+                {"material_id": "M1", "render_once_key": "key1", "used_by_atomic_count": 99},
+                {"material_id": "M2", "render_once_key": "key2", "used_by_atomic_count": 99},
+            ],
+        }],
+        "counts": {"shared_material_count": 2},
+        "blockers": [],
+        "status": "ready_for_content_resolution",
+        "blueprint_digest": "before",
+    }
+    details = {
+        node: {"evidence_descriptors": [{"crop_id": material, "evidence_role": "shared_material"}]}
+        for node, material in (("A1", "M1"), ("A2", "M2"), ("A3", "M1"))
+    }
+    before = deepcopy(blueprint)
+    result = workbench._bind_blueprint_shared_materials_to_selected_details(blueprint, details)
+    materials = result["theme_bundles"][0]["shared_materials"]
+    assert materials[0]["used_by_atomic_ids"] == ["A1", "A3"]
+    assert materials[1]["used_by_atomic_ids"] == ["A2"]
+    assert blueprint == before
+    assert result["blueprint_digest"] != "before"
 
 
 def test_same_material_id_in_two_papers_keeps_each_theme_bound_to_its_own_crop(

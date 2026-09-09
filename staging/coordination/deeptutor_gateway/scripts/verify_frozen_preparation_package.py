@@ -137,7 +137,10 @@ def frozen_course_namespace(pyz):
         "__builtins__": dict(vars(builtins), __import__=pure_import),
     }
     exec(code, namespace)  # noqa: S102 - our pure frozen module, import allowlist
-    if namespace.get("COURSE_DESIGN_REVISION") != "20260909-classroom-projection-v2":
+    if (
+        namespace.get("COURSE_DESIGN_REVISION")
+        != "20260910-editable-courseware-reference-v3"
+    ):
         raise RuntimeError("Frozen classroom course revision missing")
     contract = namespace["course_composition_contract"]("review")
     starter = namespace["teacher_design_starter"]("review")
@@ -151,6 +154,13 @@ def frozen_course_namespace(pyz):
             raise RuntimeError("Frozen classroom course contract incomplete")
     if "投影对象：约40人普通课堂" not in starter:
         raise RuntimeError("Frozen editable classroom starter missing")
+    courseware_starter = namespace["teacher_design_starter"]("review", "电离平衡常数")
+    if (
+        "fde67ee1-cbbb-4cb2-828f-e5cd813bc64e" not in courseware_starter
+        or "不复用原第二课时第5—7页" not in courseware_starter
+        or "未下载原PPT" not in courseware_starter
+    ):
+        raise RuntimeError("Frozen editable courseware reference incomplete")
     return namespace
 
 
@@ -469,10 +479,10 @@ def main() -> int:
             "检查课堂结构与笔记",
             "检查返回内容／本地修复表格…",
             "授课结构与学生笔记（可修改）",
-            "填入当前课型的建议结构",
+            "按当前课题与课型填入建议结构",
         ],
         "desktop_workbench.preparation_design_widget": [],
-        "desktop_preparation_pedagogy": ["20260909-classroom-projection-v2"],
+        "desktop_preparation_pedagogy": ["20260910-editable-courseware-reference-v3"],
         "desktop_preparation_classroom_layout": ["classroom-v2"],
         "desktop_workbench.library_detail": ["将这张原图用于备课…"],
         "desktop_workbench.library_page": ["选为备课参考…"],
@@ -489,7 +499,12 @@ def main() -> int:
         "master_direct_visual_scan": [],
         "songjiang2025_theme2_direct_visual_scan": [],
         "shanghai_high_east2025_theme45_direct_visual_scan": [],
-        "archived_wechat_crop_revision": ["archived-wechat-source-recrop-20260910-r1"],
+        "archived_wechat_crop_revision": ["archived-wechat-source-recrop-20260910-r3"],
+        "paper_export_workbench": ["used_by_atomic_ids"],
+        "paper_export_renderer": [
+            "used_by_atomic_ids",
+            "shared_material_membership_invalid",
+        ],
         "desktop_preparation_review": ["teacher_review_required"],
         "desktop_preparation_source_compare": [],
         "desktop_preparation_revision": ["内容没有变化，无需另存修订版。"],

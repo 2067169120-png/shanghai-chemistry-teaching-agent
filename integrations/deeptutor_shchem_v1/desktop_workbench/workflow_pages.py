@@ -250,13 +250,14 @@ class PreparationPage(QWidget):
         design_layout.addWidget(
             _stacked_field("授课结构与学生笔记（可修改）", self.template_detail)
         )
-        self.design_starter_button = QPushButton("填入当前课型的建议结构")
-        self.design_starter_button.setAccessibleName("填入可编辑的课型建议，不调用模型")
+        self.design_starter_button = QPushButton("按当前课题与课型填入建议结构")
+        self.design_starter_button.setAccessibleName("填入可编辑的课题与课型建议，不调用模型")
         self.design_starter_button.clicked.connect(self._insert_design_starter)
         design_layout.addWidget(self.design_starter_button)
         design_hint = QLabel(
             "与本次备课草稿一起保存，可载入后继续修改。切换课型不会覆盖这里的自写内容；"
-            "建议结构不是固定页序，也不会增加题目使用授权。"
+            "匹配到已阅读的平台课例时，会附教学组织参考和出处，可修改或删除；"
+            "不自动导入原题或图片。"
         )
         design_hint.setWordWrap(True)
         design_hint.setObjectName("MutedLabel")
@@ -950,7 +951,9 @@ class PreparationPage(QWidget):
             )
             if decision != QMessageBox.StandardButton.Yes:
                 return
-        self.template_detail.setText(teacher_design_starter(self.route.currentText()))
+        self.template_detail.setText(
+            teacher_design_starter(self.route.currentText(), self.topic.text())
+        )
         self.template_detail.setFocus()
 
     def _payload(self) -> dict[str, object]:

@@ -51,6 +51,67 @@ EXPECTED_MANIFEST_FILE_SHA256 = (
 EXPECTED_MANIFEST_BYTES = 20536
 EXPECTED_PRINTED_IDS = tuple(f"SJ2025-EM-S2-Q{i}" for i in range(1, 10))
 EXPECTED_ATOMIC_IDS = tuple(f"{qid}-P1" for qid in EXPECTED_PRINTED_IDS)
+DEPENDENCY_REVISION_ID = "sj2025-theme2-source-dependencies-20260910-r1"
+DEPENDENCY_STATUS = "source_page_backed_candidate_dependency"
+_ARCHIVE_ONLY_SHARED_IDS = frozenset(
+    {
+        "SJ25T2-C-cad3a95bc7739857cfe7515e",  # Page 3 also repeats Q1-4.
+        "SJ25T2-C-c4702d34468809ed194d0065",  # Page 4 also repeats Q5-9.
+    }
+)
+_DEPENDENCY_SOURCE_SHA256 = {
+    3: "c58a932b3387e809cc3cd9dc09f5f954a8a7b7256fa9aa9040ba21fbad0c4191",
+    4: "1c95e0dc77a285ed189f6d9622184a4ffaaf5ea6161d8a92d68f555eac63b22e",
+}
+# These declarations follow the complete source pages, not question-number
+# heuristics. Q7 retains a GIVEN operation in Q6, not an asserted Q6 answer.
+_DEPENDENCY_DECLARATIONS = {
+    "SJ2025-EM-S2-Q1-P1": (
+        (),
+        "电解制备的铁/石墨电极、装置a/b/c/d及本题NaCl条件均需保留；未使用前题答案。",
+        "不使用前题结论；使用完整电解共同材料。",
+    ),
+    "SJ2025-EM-S2-Q2-P1": (
+        (),
+        "使用完整电解制备语境和装置液层c；不用四氯化碳或乙醇的原因不依赖第1题作答。",
+        "不使用前题结论；使用完整电解共同材料。",
+    ),
+    "SJ2025-EM-S2-Q3-P1": (
+        (),
+        "由共同材料中的铁电极制备Fe(OH)2及本题0.02 mol电子求质量；不需第1或2题答案。",
+        "不使用前题结论；保留电解制备条件。",
+    ),
+    "SJ2025-EM-S2-Q4-P1": (
+        (),
+        "绿矾配制FeSO4的做法由本题条件判断；保留酵母菌装置与呼吸方程，不引用电解法答案。",
+        "不使用前题结论；保留酵母菌法共同材料。",
+    ),
+    "SJ2025-EM-S2-Q5-P1": (
+        (),
+        "本题明确检验FeSO4中的Fe3+并给出试剂选项，不使用第4题所选答案；酵母菌法背景保留。",
+        "不使用前题结论；保留酵母菌法共同材料。",
+    ),
+    "SJ2025-EM-S2-Q6-P1": (
+        (),
+        "装置内耗氧判断使用注射器图和有氧/无氧呼吸方程；题面还给出随后加入NaOH与FeSO4的操作。",
+        "不使用前题结论；本题给定操作是第7题的必要背景。",
+    ),
+    "SJ2025-EM-S2-Q7-P1": (
+        ("SJ2025-EM-S2-Q6-P1",),
+        "实验后灰绿色沉淀承接第6题题面中耗氧后向内管加入NaOH和FeSO4的操作；必须一并保留该操作及酵母菌共同材料。",
+        "保留第6题的给定操作背景，不把它误称为第6题答案或实验结论。",
+    ),
+    "SJ2025-EM-S2-Q8-P1": (
+        (),
+        "Fe2+物质的量由绿锈共同材料中250 mL定容、25.00 mL取样、KMnO4浓度体积和离子方程求得，不需前7题答案。",
+        "不使用前题结论；完整绿锈方法与定量条件不可省略。",
+    ),
+    "SJ2025-EM-S2-Q9-P1": (
+        ("SJ2025-EM-S2-Q8-P1",),
+        "绿锈化学式使用第8题的同一样品Fe2+物质的量、本题SO4量及共同材料的灼烧结果；保留第8题并仍须完整保留取样、滴定、灼烧方法。",
+        "使用第8题Fe2+计算量；第8题不能替代完整绿锈公共条件。",
+    ),
+}
 MAX_CROP_BYTES = 1024 * 1024
 AUTHORITY = {
     **_BASE_AUTHORITY,
@@ -91,6 +152,51 @@ def _require(condition, code, message):
 def _crop_id(asset, digest):
     # An opaque transport handle, never an inferred question ID or evidence role.
     return "SJ25T2-C-" + _sha256((asset + "\n" + digest).encode())[:24]
+
+
+def _source_dependency(part_id, descriptors):
+    _require(
+        part_id in _DEPENDENCY_DECLARATIONS,
+        "songjiang_dependency_evidence_invalid",
+        "node has no source-backed dependency declaration",
+    )
+    prior, analysis, conclusion = _DEPENDENCY_DECLARATIONS[part_id]
+    shared_ids = [
+        row["crop_id"]
+        for row in descriptors
+        if row["evidence_role"] == "shared_material"
+    ]
+    pages = {}
+    for row in descriptors:
+        page, digest = row["source_page"], row["source_sha256"]
+        _require(
+            _DEPENDENCY_SOURCE_SHA256.get(page) == digest,
+            "songjiang_dependency_evidence_invalid",
+            "dependency source page differs from the inspected page",
+        )
+        pages[page] = digest
+    _require(
+        len(shared_ids) == 1,
+        "songjiang_dependency_evidence_invalid",
+        "source-backed dependency requires its complete shared material",
+    )
+    return {
+        "dependency_kind": "one_prior_part" if prior else "shared_theme_context",
+        "status": DEPENDENCY_STATUS,
+        "prior_atomic_part_ids": list(prior),
+        "shared_material_crop_ids": shared_ids,
+        "conclusion_use_zh": conclusion,
+        "analysis_zh": analysis,
+    }, {
+        "revision_id": DEPENDENCY_REVISION_ID,
+        "status": "source_page_visual_inspection_candidate",
+        "candidate_only": True,
+        "human_checked": False,
+        "source_page_bindings": [
+            {"page": page, "sha256": digest} for page, digest in sorted(pages.items())
+        ],
+        "required_shared_material_crop_ids": list(shared_ids),
+    }
 
 
 class Songjiang2025Theme2DirectVisualScanReader(
@@ -435,6 +541,13 @@ class Songjiang2025Theme2DirectVisualScanReader(
     def _project(question, type_entry, descriptors, answer_descriptors):
         part = question["parts"][0]
         locator = question["source_locator"]
+        archived_descriptors = deepcopy(descriptors)
+        descriptors = [
+            row for row in descriptors if row["crop_id"] not in _ARCHIVE_ONLY_SHARED_IDS
+        ]
+        dependency, dependency_evidence = _source_dependency(
+            part["part_id"], descriptors
+        )
         source_answer = part["answer_evidence"]
         conflicts = [
             {
@@ -496,16 +609,8 @@ class Songjiang2025Theme2DirectVisualScanReader(
             },
             "classification": labels,
             "difficulty": deepcopy(part["difficulty"]),
-            "dependency": {
-                "analysis_zh": "保留来源显式共享材料；前题依赖未被候选记录明确标注，不能由题号或共同材料推断不存在依赖。",
-                "prior_atomic_part_ids": [],
-                "status": "unknown_prior_dependency_not_recorded",
-                "shared_material_crop_ids": [
-                    row["crop_id"]
-                    for row in descriptors
-                    if row["evidence_role"] == "shared_material"
-                ],
-            },
+            "dependency": dependency,
+            "dependency_evidence": dependency_evidence,
             "shared_materials": [
                 {
                     "block_id": row["block_id"],
@@ -545,6 +650,7 @@ class Songjiang2025Theme2DirectVisualScanReader(
             "quality_notes": conflicts,
             "symbol_validation": deepcopy(part["symbol_validation"]),
             "viewed_evidence": descriptors,
+            "archived_viewed_evidence": archived_descriptors,
             "answer_source_evidence": answer_descriptors,
             "source_identity": {
                 **deepcopy(PAPER_IDENTITY_BOUNDARY),
@@ -643,6 +749,8 @@ class Songjiang2025Theme2DirectVisualScanReader(
             "blocked_pending_broader_crop": 0,
             "question_crop_bindings": 9,
             "shared_crop_bindings": 5,
+            "display_shared_crop_bindings": 3,
+            "archive_only_shared_crop_bindings": 2,
             "nonofficial_answer_crop_bindings": 9,
             "boundary_crop_bindings": 1,
             "total_exact_crop_bindings": 24,
@@ -705,6 +813,7 @@ class Songjiang2025Theme2DirectVisualScanReader(
                     "response_requirement_zh",
                     "theme_chain_role",
                     "dependency",
+                    "dependency_evidence",
                     "shared_materials",
                     "candidate_analysis",
                     "quality_notes",
@@ -723,6 +832,14 @@ class Songjiang2025Theme2DirectVisualScanReader(
                     "access": "teacher_loopback_read_only",
                 }
                 for row in record["viewed_evidence"]
+            ],
+            "archived_context_evidence": [
+                {
+                    **deepcopy(row),
+                    "display_status": "archive_only_repeats_printed_questions",
+                }
+                for row in record["archived_viewed_evidence"]
+                if row["crop_id"] in _ARCHIVE_ONLY_SHARED_IDS
             ],
             "answer_source_evidence": [
                 {**deepcopy(row), "access": "source_binding_only_pixel_route_forbidden"}
@@ -754,7 +871,11 @@ class Songjiang2025Theme2DirectVisualScanReader(
                 403,
             )
         descriptor = next(
-            (row for row in record["viewed_evidence"] if row["crop_id"] == crop_id),
+            (
+                row
+                for row in record["archived_viewed_evidence"]
+                if row["crop_id"] == crop_id
+            ),
             None,
         )
         if descriptor is None:

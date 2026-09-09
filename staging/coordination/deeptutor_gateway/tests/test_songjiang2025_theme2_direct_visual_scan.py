@@ -187,8 +187,26 @@ def test_9_details_keep_source_text_answer_links_unknowns_and_authority(reader):
         )
         assert detail["cognitive_difficulty"] == part["difficulty"]
         assert detail["cognitive_difficulty"]["cognitive_prelabel"] is None
-        assert detail["dependency"]["status"] == "unknown_prior_dependency_not_recorded"
-        assert detail["dependency"]["prior_atomic_part_ids"] == []
+        assert detail["dependency"]["status"] == module.DEPENDENCY_STATUS
+        expected_prior = {
+            "SJ2025-EM-S2-Q7-P1": ["SJ2025-EM-S2-Q6-P1"],
+            "SJ2025-EM-S2-Q9-P1": ["SJ2025-EM-S2-Q8-P1"],
+        }.get(part["part_id"], [])
+        assert detail["dependency"]["prior_atomic_part_ids"] == expected_prior
+        assert detail["dependency_evidence"]["human_checked"] is False
+        assert detail["dependency_evidence"]["candidate_only"] is True
+        assert (
+            detail["dependency_evidence"]["revision_id"]
+            == module.DEPENDENCY_REVISION_ID
+        )
+        assert {
+            (binding["page"], binding["sha256"])
+            for binding in detail["dependency_evidence"]["source_page_bindings"]
+        } == {
+            (binding["page_number"], binding["source_sha256"])
+            for binding in original["source_locator"]["page_refs"]
+            if binding["role"] in {"question", "context"}
+        }
         assert (
             detail["source_identity"]["source_url"]
             == original["provenance"]["source_url"]
@@ -208,7 +226,7 @@ def test_9_details_keep_source_text_answer_links_unknowns_and_authority(reader):
         )
 
 
-def test_all_explicit_shared_context_edges_not_only_shorter_sidecar_are_retained(
+def test_shared_display_omits_repeated_questions_but_retains_archive_evidence(
     reader,
 ):
     for original in _rows():
@@ -223,23 +241,34 @@ def test_all_explicit_shared_context_edges_not_only_shorter_sidecar_are_retained
             for row in detail["evidence_descriptors"]
             if row["evidence_role"] == "shared_material"
         ]
-        assert {row["sha256"] for row in shared} == {
-            row["crop_sha256"] for row in expected
-        }
+        archive_only = detail["archived_context_evidence"]
+        assert len(shared) == 1
+        assert {
+            row.get("archived_crop_sha256", row["sha256"])
+            for row in [*shared, *archive_only]
+        } == {row["crop_sha256"] for row in expected}
+        assert all(
+            row["display_status"] == "archive_only_repeats_printed_questions"
+            for row in archive_only
+        )
+        assert not (
+            {row["crop_id"] for row in shared}
+            & {row["crop_id"] for row in archive_only}
+        )
         assert detail["dependency"]["shared_material_crop_ids"] == [
             row["crop_id"] for row in shared
         ]
         assert [row["raw_text"] for row in detail["shared_materials"]] == [
             row["raw_text"] for row in original["stimulus_blocks"]
         ]
-    # Q8/9 each explicitly include the full continuation as well as green rust.
+    # The original continuation remains archived, not repeated in classroom output.
     assert (
         len(
             reader.detail(module.EXPECTED_ATOMIC_IDS[7])["dependency"][
                 "shared_material_crop_ids"
             ]
         )
-        == 2
+        == 1
     )
 
 
@@ -273,15 +302,52 @@ def test_question_and_shared_crop_routes_return_exact_bound_pixels(reader, monke
             if "presentation_revision_id" in descriptor:
                 assert descriptor["archived_crop_sha256"] == archived["sha256"]
                 assert descriptor["archived_source_crop_box"] == crop["crop_box"]
-                assert descriptor["evidence_role"] == "question"
+                assert descriptor["evidence_role"] in {"question", "shared_material"}
                 assert result.data != original
-                revised.add(node_id)
+                revised.add((node_id, descriptor["evidence_role"]))
             else:
                 assert result.data == original
                 assert descriptor["sha256"] == archived["sha256"]
             seen.add(crop_id)
-    assert len(seen) == 14
-    assert revised == {"SJ2025-EM-S2-Q8-P1"}
+    assert len(seen) == 12
+    assert revised == {("SJ2025-EM-S2-Q8-P1", "question")} | {
+        (f"SJ2025-EM-S2-Q{number}-P1", "shared_material") for number in range(1, 8)
+    }
+
+
+def test_archive_only_shared_routes_keep_original_node_binding(reader, monkeypatch):
+    snapshot = reader._snapshot()
+    monkeypatch.setattr(reader, "_snapshot", lambda: snapshot)
+    seen = set()
+    for record in snapshot.records:
+        node = record["hierarchy"]["atomic_part_id"]
+        for row in record["archived_viewed_evidence"]:
+            if row["crop_id"] not in module._ARCHIVE_ONLY_SHARED_IDS:
+                continue
+            payload = reader.question_crop(node, row["crop_id"])
+            assert payload.sha256 == row["sha256"]
+            seen.add(row["crop_id"])
+    assert seen == module._ARCHIVE_ONLY_SHARED_IDS
+    for crop_id in seen:
+        with pytest.raises(module.Songjiang2025Theme2DirectVisualScanError) as caught:
+            reader.question_crop("SJ2025-EM-S2-Q1-P1", crop_id)
+        assert caught.value.status == 404
+
+
+@pytest.mark.parametrize("mutation", ["unknown_node", "source_page", "missing_shared"])
+def test_dependency_declaration_requires_inspected_source(reader, mutation):
+    record = reader._snapshot().records[0]
+    node = record["hierarchy"]["atomic_part_id"]
+    evidence = deepcopy(record["viewed_evidence"])
+    if mutation == "unknown_node":
+        node = "SJ2025-EM-S2-Q10-P1"
+    elif mutation == "source_page":
+        evidence[0]["source_sha256"] = "0" * 64
+    else:
+        evidence = [row for row in evidence if row["evidence_role"] == "question"]
+    with pytest.raises(module.Songjiang2025Theme2DirectVisualScanError) as caught:
+        module._source_dependency(node, evidence)
+    assert caught.value.code == "songjiang_dependency_evidence_invalid"
 
 
 def test_answer_unknown_and_cross_question_crops_are_not_routable(reader):

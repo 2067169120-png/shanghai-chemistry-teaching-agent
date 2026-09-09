@@ -58,6 +58,26 @@ EXPECTED_VIEWS = {
         (100, 856, 1080, 44),
     ),
 }
+EXPECTED_SHARED = {
+    "SJ25T2-C-783aedf98189899baf2c2909": (
+        "43378b56c2b5175f3cf3882698a57d01eabb6b344f1e66ab2cf0f53b2f1de92d",
+        (185, 290, 920, 335),
+    ),
+    "SJ25T2-C-377ff6ffad094904d6cf5ea4": (
+        "e139509ebf98c8d2373d1ca9ca4d29b2794093662b1c862ebfeea9a0bd8910f0",
+        (185, 905, 920, 455),
+    ),
+}
+EXPECTED_MARGINS = {
+    "SJ25T2-C-ee95745bec37e2d5033436dd": (
+        "ab78e6a463015e9694e61a945c56c489ae49689169c0b826c1f44f9255fc4713",
+        (160, 1360, 960, 215),
+    ),
+    "SJ25T2-C-f7d24d51145ebd9426681cea": (
+        "cc2e8353955a1c038fa4dc9f827d9557454d0f33a6d1cb6500f02974853a635b",
+        (160, 225, 960, 85),
+    ),
+}
 
 
 def _sha(raw):
@@ -67,7 +87,7 @@ def _sha(raw):
 def _descriptor(recipe, original=b"archived fixture"):
     return {
         "crop_id": recipe.crop_id,
-        "evidence_role": "question",
+        "evidence_role": recipe.evidence_role,
         "source_page": recipe.page,
         "sha256": recipe.archived_sha256,
         "bytes": len(original),
@@ -446,12 +466,84 @@ def test_five_live_descriptors_routes_and_manifest_are_exact_source_pixels(
     assert manifest["authority"]["teaching_use_approved"] is False
 
 
-def test_all_52_archive_crops_unchanged_and_only_five_views_revised(
+@pytest.mark.parametrize("crop_id", {**EXPECTED_SHARED, **EXPECTED_MARGINS})
+def test_new_source_views_have_exact_pixels_and_preserve_roles_and_node_bindings(
+    local_sources, monkeypatch, crop_id
+):
+    _manifest, entries = local_sources
+    reader, snapshot = entries[0]
+    monkeypatch.setattr(reader, "_snapshot", lambda: snapshot)
+    recipe = {**module.SHARED_RECIPES, **module.MARGIN_RECIPES}[crop_id]
+    expected_sha, expected_box = {**EXPECTED_SHARED, **EXPECTED_MARGINS}[crop_id]
+    assert recipe.box == expected_box
+    crop = snapshot.crop_by_id[crop_id]
+    archived = snapshot.output_bytes[crop["output_path"]]
+    source_path = DB / recipe.source_asset
+    source = source_path.read_bytes()
+    assert _sha(source) == recipe.source_sha256
+    assert _sha(archived) == recipe.archived_sha256
+    before = (source_path.stat().st_mtime_ns, _sha(source))
+    for node in (recipe.node_id, *recipe.related_node_ids):
+        descriptor = next(
+            row
+            for row in reader.detail(node)["evidence_descriptors"]
+            if row["crop_id"] == crop_id
+        )
+        payload = reader.question_crop(node, crop_id)
+        assert descriptor["evidence_role"] == recipe.evidence_role
+        assert recipe.evidence_role == (
+            "shared_material" if crop_id in EXPECTED_SHARED else "question"
+        )
+        assert descriptor["archived_crop_sha256"] == recipe.archived_sha256
+        assert descriptor["archived_source_crop_box"] == list(recipe.original_box)
+        assert descriptor["source_crop_box"] == list(expected_box)
+        assert (
+            descriptor["sha256"] == payload.sha256 == _sha(payload.data) == expected_sha
+        )
+        assert descriptor["presentation_revision_id"] == module.REVISION_ID
+        with (
+            Image.open(io.BytesIO(source)) as page,
+            Image.open(io.BytesIO(payload.data)) as actual,
+        ):
+            x, y, width, height = expected_box
+            expected = page.crop((x, y, x + width, y + height))
+            assert actual.mode == expected.mode
+            assert actual.size == expected.size
+            assert actual.tobytes() == expected.tobytes()
+    with pytest.raises(SourceCropRevisionError, match="不属于当前题目"):
+        module.recrop_archived_wechat_view(DB, "OTHER-NODE", crop_id, archived)
+    wrong_role = _descriptor(recipe, archived)
+    wrong_role["evidence_role"] = "answer"
+    with pytest.raises(SourceCropRevisionError):
+        module.project_archived_wechat_descriptor(DB, recipe.node_id, wrong_role)
+    assert source_path.read_bytes() == source
+    assert (source_path.stat().st_mtime_ns, _sha(source_path.read_bytes())) == before
+    assert (DB / crop["output_path"]).read_bytes() == archived
+
+
+def test_related_atomic_fingerprint_tracks_shared_recipe_without_file_reads(
+    monkeypatch,
+):
+    recipe = next(iter(module.SHARED_RECIPES.values()))
+    catalog = {"atomic_part_id": recipe.related_node_ids[0]}
+    monkeypatch.setattr(Path, "read_bytes", lambda *_: pytest.fail("no file reads"))
+    first = module.presentation_fingerprint(catalog)
+    assert first is not None
+    monkeypatch.setitem(
+        module.SHARED_RECIPES, recipe.crop_id, replace(recipe, box=(1, 2, 3, 4))
+    )
+    assert module.presentation_fingerprint(catalog) != first
+
+
+def test_all_52_archive_crops_unchanged_with_seven_question_and_two_shared_views_revised(
     local_sources, monkeypatch
 ):
     manifest, entries = local_sources
     assert manifest["count"] == len(manifest["records"]) == len(module.RECIPES) == 5
     assert set(EXPECTED_VIEWS) == {row.node_id for row in module.RECIPES.values()}
+    assert len(module.SHARED_RECIPES) == 2
+    assert len(module.MARGIN_RECIPES) == 2
+    recipes = {**module.RECIPES, **module.SHARED_RECIPES, **module.MARGIN_RECIPES}
     paths = {DB / binding["path"] for binding in manifest["source_bindings"]}
     for _reader, snapshot in entries:
         paths.update(DB / crop["output_path"] for crop in snapshot.crop_by_id.values())
@@ -467,9 +559,9 @@ def test_all_52_archive_crops_unchanged_and_only_five_views_revised(
             original = snapshot.output_bytes[crop["output_path"]]
             assert _sha(original) == crop["sha256"]
             assert (DB / crop["output_path"]).read_bytes() == original
-            if crop_id in module.RECIPES:
+            if crop_id in recipes:
                 revised.add(crop_id)
-                continue  # Exact revised pixels are independently checked in the five cases above.
+                continue  # All nine revised views have independent source-pixel checks above.
             descriptor = {
                 "crop_id": crop_id,
                 "evidence_role": crop["role"],
@@ -493,7 +585,7 @@ def test_all_52_archive_crops_unchanged_and_only_five_views_revised(
             public = {row["crop_id"]: row for row in detail["evidence_descriptors"]}
             for archived in record["viewed_evidence"]:
                 crop_id = archived["crop_id"]
-                if crop_id not in module.RECIPES:
+                if crop_id not in recipes:
                     assert all(
                         public[crop_id][key] == value for key, value in archived.items()
                     )
@@ -513,8 +605,8 @@ def test_all_52_archive_crops_unchanged_and_only_five_views_revised(
                     reader.question_crop(node_id, forbidden)
                 assert caught.value.status == 403
         assert snapshot.records == original_records
-    assert revised == set(module.RECIPES)
-    assert len(unchanged) == 47
+    assert revised == set(recipes)
+    assert len(unchanged) == 43
     assert roles == {"question": 20, "shared_material": 7, "answer": 20, "unknown": 5}
     assert {
         path: (path.stat().st_mtime_ns, _sha(path.read_bytes())) for path in paths

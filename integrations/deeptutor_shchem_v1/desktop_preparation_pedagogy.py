@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from .desktop_preparation import _LESSON_ROUTE
 
-COURSE_DESIGN_REVISION = "20260909-classroom-projection-v2"
+COURSE_DESIGN_REVISION = "20260910-editable-courseware-reference-v3"
 
 _ROUTES = {
     "new_lesson": (
@@ -79,7 +79,54 @@ def course_route(route: str) -> tuple[str, str]:
     return _ROUTES.get(_LESSON_ROUTE.get(route, "other"), _ROUTES["other"])
 
 
-def teacher_design_starter(route: str) -> str:
+def _courseware_reference(topic: str) -> str:
+    """Paraphrased, inspected design cards, offered only for matching topics.
+
+    The teacher sees and may edit this text before it enters the existing brief.
+    No network fetch, question selection or source-image import happens here.
+    Source pages and limitations: knowledge/courseware/smartedu/*design-card.md.
+    """
+    normalized = "".join(topic.split())
+    references = []
+    if "系统的内能" in normalized or "系统内能" in normalized:
+        references.append(
+            "《系统的内能》课例参考：先用同一个冷热情境明确研究系统，"
+            "再整理系统分类和概念条件；由已有实验材料建立解释工具后，"
+            "回到开头的同一实验作判断，最后做改变条件的练习。"
+            "分类笔记表安排在概念辨析后，关系小结安排在迁移练习后。"
+            "参考预览第5页分类表、第7/15/16页的实验回扣、第19页关系小结。\n"
+            "来源：国家中小学智慧教育平台，系统的内能，王志高。\n"
+            "https://basic.smartedu.cn/qualityCourse?courseId=f010e1bf-b56c-de08-fa41-adc255b3b572"
+        )
+    if "电离平衡" in normalized:
+        references.append(
+            "《电离平衡常数》课例参考：用已提供的浓度数据让学生先找关系，"
+            "再学习定义、适用条件和表达式，随后立即做一道短练习；"
+            "笔记表保留概念条件、对应方程式、表达式、典型用法。"
+            "参考第一课时第4—7页的数据到定义与应用、第15页知识结构。"
+            "若安排两课时，第一课时建立工具，第二课时先回忆条件，再用"
+            "条件改变、对照论证和独立练习检验；参考第二课时第3—4、10—12页。"
+            "题面与解析分开呈现；长分式和大数据表拆页，讲评后留订正与笔记时间。"
+            "本课若不讲平衡常数，删除相关段落，不因参照课例而扩大范围。\n"
+            "来源：国家中小学智慧教育平台，电离平衡常数，陆婵。\n"
+            "https://basic.smartedu.cn/qualityCourse?courseId=fde67ee1-cbbb-4cb2-828f-e5cd813bc64e\n"
+            "排除项：不复用原第二课时第5—7页的清洁产品混配生活示例、操作或配图；"
+            "需要例子时从本次教材或讲义中选择条件完整、适合课堂的题目。"
+        )
+    if not references:
+        return ""
+    return (
+        "\n\n【与当前课题匹配的平台课例参考，可修改或删除】\n"
+        + "\n\n".join(references)
+        + "\n这些是已阅读在线课件后改述的教学组织建议，不是原课件、教材原句或题库题。"
+        "未下载原PPT，未核验全部动画、数据和课堂效果，也没有自动带入原题或图片。"
+        "以本次教师范围、课型和课时为准，可调整顺序、例题、练习与笔记安排；"
+        "原教案和教材仍是知识内容依据。出处与采用说明放在教案或教师备注，"
+        "不把这段设计说明直接放到学生PPT上。"
+    )
+
+
+def teacher_design_starter(route: str, topic: str = "") -> str:
     """Teacher-editable text, persisted through the existing delivery field."""
     label, sequence = course_route(route)
     return (
@@ -99,6 +146,7 @@ def teacher_design_starter(route: str) -> str:
         "正文呈现完整定义、题干、方程式与笔记；教学意图和操作说明写入教师备注。\n"
         "课时调整：逐课时安排起点、主要任务和出口检查；材料偏多时先移出拓展，"
         "保留思考、讲评及记写时间。可在此修改讲练侧重、重点难点、板书和版式。"
+        + _courseware_reference(topic)
     )
 
 

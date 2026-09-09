@@ -672,6 +672,18 @@ def _bind_blueprint_shared_materials_to_selected_details(
             if isinstance(material, Mapping)
             and material.get("material_id") in referenced_ids
         ]
+        # Layout hints come from explicit selected-detail links, never from
+        # used_by_atomic_count or a guessed contiguous question range.
+        for material in selected_materials:
+            material["used_by_atomic_ids"] = [
+                node_id
+                for node_id in bundle["final_atomic_ids"]
+                if any(
+                    descriptor.get("evidence_role") == "shared_material"
+                    and descriptor.get("crop_id") == material["material_id"]
+                    for descriptor in _descriptor_rows(details.get(node_id, {}))
+                )
+            ]
         bundle["shared_materials"] = selected_materials
         material_keys.update(
             str(material["render_once_key"])

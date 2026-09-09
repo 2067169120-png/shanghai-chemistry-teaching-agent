@@ -107,8 +107,8 @@ def _patch_page_tools(monkeypatch: pytest.MonkeyPatch) -> None:
             "dpi": 300,
         }
 
-    def fake_pdf_audit(path, *, plan, preset=None):
-        del path, plan, preset
+    def fake_pdf_audit(path, *, plan, preset=None, blueprint=None):
+        del path, plan, preset, blueprint
         return {
             "status": "pass",
             "checks": {
@@ -256,11 +256,14 @@ def test_docx_builder_honors_editable_layout_tokens(tmp_path: Path):
     )
 
     assert audit["status"] == "pass"
-    with ZipFile(output) as archive:
-        document_xml = archive.read("word/document.xml").decode("utf-8")
     expected_width = round((210 - 25 - 22) / 25.4 * 1440)
-    assert f'w:w="{expected_width}"' in document_xml
-    assert f'w:gridCol w:w="{expected_width}"' in document_xml
+    # Shared context is now inline prose/figures, not a forced full-width box.
+    # Remaining answer-line tables may be narrower but cannot exceed the body.
+    table_widths = [
+        int(table._tbl.tblPr.find(renderer.qn("w:tblW")).get(renderer.qn("w:w")))
+        for table in Document(output).tables
+    ]
+    assert table_widths and all(width <= expected_width for width in table_widths)
 
 
 def test_source_numbered_images_keep_one_visible_number_and_compact_line_caps(
@@ -430,6 +433,165 @@ def test_shared_image_order_padding_and_edge_warning_are_nonblocking(tmp_path: P
     assert "下缘合计 90" in notes[0]["note_zh"]
     assert notes[0]["human_reviewed"] is False
     assert notes[0]["chemistry_reviewed"] is False
+
+
+def _bound_material_fixture(tmp_path, *, audience="student"):
+    bundle = renderer.build_synthetic_demo_bundle()
+    plan = deepcopy(bundle[f"{audience}_plan"])
+    blueprint = deepcopy(bundle["blueprint"])
+    section = plan["visible"]["theme_sections"][0]
+    source = blueprint["theme_bundles"][0]
+    section["shared_materials"] = []
+    source["shared_materials"] = []
+    for index, printed in enumerate(section["printed_questions"]):
+        for kind, height in (("M", 130), ("Q", 60)):
+            asset = f"{kind}{index}.png"
+            Image.new("RGB", (820, height), (245 - index, 250, 250)).save(tmp_path / asset)
+        printed["atomic_parts"][0]["question_blocks"] = [{
+            "block_type": "image", "text_zh": None, "asset_ref": f"Q{index}.png",
+            "alt_text_zh": f"QUESTION-{index}",
+        }]
+        printed["atomic_parts"][0]["answer_space"] = {"mode": "ruled_lines_exact", "lines": 0}
+        section["shared_materials"].append({
+            "render_once_key": f"material-{index}",
+            "content_blocks": [{
+                "block_type": "image", "text_zh": None, "asset_ref": f"M{index}.png",
+                "alt_text_zh": f"MATERIAL-{index}",
+            }],
+        })
+        source["shared_materials"].append({
+            "render_once_key": f"material-{index}", "page": 1,
+            "used_by_atomic_count": 99,  # Counts are deliberately not placement evidence.
+            "used_by_atomic_ids": [source["printed_questions"][index]["atomic_parts"][0]["atomic_part_id"]],
+        })
+    return bundle, plan, blueprint
+
+
+def test_bound_materials_are_inline_at_first_use_and_do_not_keep_entire_theme(tmp_path):
+    bundle, plan, blueprint = _bound_material_fixture(tmp_path)
+    before = deepcopy((plan, blueprint))
+    target = tmp_path / "flow.docx"
+    renderer.build_docx_from_plan(
+        plan, preset=bundle["preset"], output_path=target, asset_root=tmp_path,
+        blueprint=blueprint, suppressed_shared_keys=set(),
+    )
+    document = Document(target)
+    assert not document.tables  # No giant adjacent single-cell material boxes.
+    assert len(document.inline_shapes) == 6
+    xml = document._element.xml
+    markers = [f"{kind}-{index}" for index in range(3) for kind in ("MATERIAL", "QUESTION")]
+    assert [xml.index(marker) for marker in markers] == sorted(xml.index(marker) for marker in markers)
+    assert xml.count("【共同材料】") == 3
+    assert 'w:type="page"' not in xml and "w:pageBreakBefore" not in xml
+    labels = [p for p in document.paragraphs if "【共同材料】" in p.text]
+    assert all(p.paragraph_format.keep_with_next is True for p in labels)
+    for paragraph in document.paragraphs:
+        descriptions = paragraph._p.xpath(".//wp:docPr/@descr")
+        if any("MATERIAL-" in text for text in descriptions):
+            assert paragraph.paragraph_format.keep_with_next is True
+        if any("QUESTION-" in text for text in descriptions):
+            assert paragraph.paragraph_format.keep_with_next is False
+    assert (plan, blueprint) == before  # Layout projection never rewrites frozen bindings.
+
+
+def test_legacy_materials_without_member_ids_stay_at_theme_opening_without_long_keep_chain(tmp_path):
+    bundle, plan, blueprint = _bound_material_fixture(tmp_path)
+    for material in blueprint["theme_bundles"][0]["shared_materials"]:
+        material.pop("used_by_atomic_ids")
+    target = tmp_path / "legacy-flow.docx"
+    renderer.build_docx_from_plan(
+        plan, preset=bundle["preset"], output_path=target, asset_root=tmp_path,
+        blueprint=blueprint, suppressed_shared_keys=set(),
+    )
+    document = Document(target)
+    xml = document._element.xml
+    assert max(xml.index(f"MATERIAL-{index}") for index in range(3)) < xml.index("QUESTION-0")
+    images = [p for p in document.paragraphs if p._p.xpath(".//wp:docPr")]
+    assert [p.paragraph_format.keep_with_next for p in images[:3]] == [False, False, True]
+
+
+@pytest.mark.parametrize("members", [[], ["unknown"], ["SYNTH-CO2-A1", "SYNTH-CO2-A1"], "SYNTH-CO2-A1"])
+def test_invalid_material_membership_is_not_guessed_or_dropped(tmp_path, members):
+    _, plan, blueprint = _bound_material_fixture(tmp_path)
+    blueprint["theme_bundles"][0]["shared_materials"][0]["used_by_atomic_ids"] = members
+    with pytest.raises(renderer.PaperExportRendererError) as caught:
+        renderer._shared_material_schedule(plan["visible"]["theme_sections"][0], blueprint["theme_bundles"][0])
+    assert caught.value.code == "shared_material_membership_invalid"
+
+
+def test_duplicate_legacy_material_key_is_rejected_without_silent_dedup(tmp_path):
+    _, plan, blueprint = _bound_material_fixture(tmp_path)
+    section = plan["visible"]["theme_sections"][0]
+    section["shared_materials"].append(deepcopy(section["shared_materials"][0]))
+    with pytest.raises(renderer.PaperExportRendererError) as caught:
+        renderer._shared_material_schedule(section, blueprint["theme_bundles"][0])
+    assert caught.value.code == "shared_material_duplicate"
+
+
+@pytest.mark.parametrize("keys", [["other"], ["visible", "visible"]])
+def test_single_material_must_match_blueprint_key_instead_of_falling_back(keys):
+    section = {"shared_materials": [{"render_once_key": "visible"}], "printed_questions": [{}, {}]}
+    source = {
+        "shared_materials": [{"render_once_key": key, "used_by_atomic_ids": ["A2"]} for key in keys],
+        "printed_questions": [
+            {"atomic_parts": [{"atomic_part_id": "A1"}]},
+            {"atomic_parts": [{"atomic_part_id": "A2"}]},
+        ],
+    }
+    with pytest.raises(renderer.PaperExportRendererError) as caught:
+        renderer._shared_material_schedule(section, source)
+    assert caught.value.code == "render_hint_alignment_invalid"
+
+
+@pytest.mark.parametrize(
+    ("title", "sequence", "expected"),
+    [
+        ("五 有机合成药物", 5, "二、有机合成药物"),
+        ("五、 有机合成药物", 5, "二、有机合成药物"),
+        ("五 有机合成药物", None, "二、五 有机合成药物"),
+        ("五 有机合成药物", 4, "二、五 有机合成药物"),
+        ("1,2-二氯乙烷", 5, "二、1,2-二氯乙烷"),
+        ("五氯化磷", 5, "二、五氯化磷"),
+    ],
+)
+def test_theme_display_strips_only_bound_source_ordinal(title, sequence, expected):
+    section = {"theme_number": 2, "heading_zh": f"二、{title}"}
+    source = {"source": {"theme_title": title, "source_theme_sequence": sequence}}
+    assert renderer._display_theme_heading(section, source) == expected
+    assert source["source"]["theme_title"] == title
+
+
+def test_source_numbered_teacher_scores_follow_original_labels_and_keep_global_anchors(tmp_path):
+    bundle, plan, blueprint = _bound_material_fixture(tmp_path, audience="teacher")
+    section = plan["visible"]["theme_sections"][0]
+    source = blueprint["theme_bundles"][0]
+    for index, (printed, original) in enumerate(zip(section["printed_questions"], source["printed_questions"], strict=True)):
+        printed["question_number"] = 10 + index
+        original["source_number"] = ("1", "2a", None)[index]
+    target = tmp_path / "source-scores.docx"
+    renderer.build_docx_from_plan(
+        plan, preset=bundle["preset"], output_path=target, asset_root=tmp_path,
+        blueprint=blueprint, suppressed_shared_keys=set(),
+    )
+    text = _all_docx_text(target)
+    assert "第1题评分" in text and "第2a题评分" in text and "第12题评分" in text
+    assert "第10题评分" not in text and "第11题评分" not in text
+    assert renderer._score_labels_present(text, plan, True, blueprint)
+    assert not renderer._score_labels_present(text.replace("第2a题评分", "第11题评分"), plan, True, blueprint)
+    alts = renderer._docx_image_alt_texts(target)
+    assert any("第10题题图" in alt for alt in alts)
+    assert section["printed_questions"][0]["question_number"] == 10
+
+
+def test_tall_inline_question_is_scaled_whole_not_cropped_or_split(tmp_path):
+    Image.new("RGB", (300, 2000), "white").save(tmp_path / "tall.png")
+    document = Document()
+    renderer._add_asset_block(document, {"asset_ref": "tall.png"}, tmp_path)
+    assert len(document.inline_shapes) == 1
+    shape = document.inline_shapes[0]
+    assert shape.height.mm <= 210.01
+    assert shape.width / shape.height == pytest.approx(300 / 2000, abs=0.001)
+    assert document.paragraphs[-1].paragraph_format.keep_together is True
 
 
 def test_shared_question_visual_dedup_is_exact_and_keeps_merely_similar_images(

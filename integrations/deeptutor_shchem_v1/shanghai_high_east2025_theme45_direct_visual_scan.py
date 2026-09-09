@@ -61,6 +61,23 @@ EXPECTED_RECORDS_SHA256 = (
 EXPECTED_EVIDENCE_SHA256 = (
     "794f94280552114de40efbfd8fe1e11e906dfe72c7a7de9a81e5552d2642551d"
 )
+DEPENDENCY_REVISION_ID = "sheast2025-theme5-source-dependencies-20260910-r1"
+DEPENDENCY_STATUS = "source_page_backed_candidate_dependency"
+_THEME5_SOURCE_SHA256 = (
+    "f3ced481f510cf22e9b3936efc1a1de13eb015c2b672fabb2fbabaa56ff996a6"
+)
+_THEME5_SHARED_SHA256 = (
+    "5e6178edcc30dc4026a0442f7830433f492303a5c48cf3b99e3df19a587d064d"
+)
+# The entire A-J route was inspected on source page 5. E and I are given
+# intermediate labels with structures to infer, not absent prior questions.
+_THEME5_DEPENDENCY_ANALYSIS = {
+    "SHEAST2025-M05-B-T5-Q1-P1": "由完整路线中F、G结构判断氢谱信号与F到G反应类型，不使用前题答案。",
+    "SHEAST2025-M05-B-T5-Q2-P1": "比较路线中A与本题自带对位羟基苯甲酸结构；两处结构都保留，不使用第1题答案。",
+    "SHEAST2025-M05-B-T5-Q3-P1": "由完整路线中D到E条件推断E，再书写E到F反应；E为源题留待推断的中间体，不依赖第1或2题答案。",
+    "SHEAST2025-M05-B-T5-Q4-P1": "I到J需完整保留H经CH3I到I、再经NaOH/C2H5OH和酸化到J的路线；I字母在原图中，结构需推断，不依赖第3题答案。",
+    "SHEAST2025-M05-B-T5-Q5-P1": "题面明确参照以上合成路线，并自带起始物和目标结构；保留完整A到J路线及本题结构，不使用前4题答案。",
+}
 SCOPE = "candidate_only_read_only_master_direct_visual_scan"
 MAX_CROP_BYTES = 1024 * 1024
 AUTHORITY = {
@@ -117,6 +134,36 @@ def _closed(value: Any) -> None:
 def _crop_id(asset: str) -> str:
     # A transport identifier only: role and parentage never come from the name.
     return "SHEAST2025-CROP-" + _sha256(asset.encode("utf-8"))[:24]
+
+
+def _theme5_source_dependency(master_id, question_crop, shared):
+    if (
+        master_id not in _THEME5_DEPENDENCY_ANALYSIS
+        or shared["sha256"] != _THEME5_SHARED_SHA256
+        or any(
+            crop["page_number"] != 5 or crop["source_sha256"] != _THEME5_SOURCE_SHA256
+            for crop in (question_crop, shared)
+        )
+    ):
+        _fail(
+            "master_direct_scan_dependency_evidence_invalid",
+            "dependency source differs from the inspected complete route and question",
+        )
+    return {
+        "dependency_kind": "shared_theme_context",
+        "status": DEPENDENCY_STATUS,
+        "prior_atomic_part_ids": [],
+        "shared_material_crop_ids": [shared["crop_id"]],
+        "conclusion_use_zh": "不使用前题结论；必须保留完整A到J合成路线及本题自带结构。",
+        "analysis_zh": _THEME5_DEPENDENCY_ANALYSIS[master_id],
+    }, {
+        "revision_id": DEPENDENCY_REVISION_ID,
+        "status": "source_page_visual_inspection_candidate",
+        "candidate_only": True,
+        "human_checked": False,
+        "source_page_bindings": [{"page": 5, "sha256": _THEME5_SOURCE_SHA256}],
+        "required_shared_material_crop_ids": [shared["crop_id"]],
+    }
 
 
 class ShanghaiHighEast2025Theme45DirectVisualScanReader(
@@ -471,6 +518,18 @@ class ShanghaiHighEast2025Theme45DirectVisualScanReader(
             if conflict["resolution_status"] == "unresolved_keep_all"
         )
         shared = crops[relation["shared_visual_ref"]]
+        dependency = {
+            "dependency_kind": "unknown",
+            "status": "unknown_prior_dependency_not_recorded",
+            "prior_atomic_part_ids": [],
+            "shared_material_crop_ids": [shared["crop_id"]],
+            "analysis_zh": "已显式关联本主题公共材料；源候选未记录题间依赖边，前题结论依赖仍待核对，不能据题号或共享图推断独立。",
+        }
+        dependency_evidence = None
+        if relation["theme"] == 5:
+            dependency, dependency_evidence = _theme5_source_dependency(
+                master_id, crops[relation["question_crop"]], shared
+            )
         return {
             "scan_id": master_id,
             "scan_status": "visual_scan_completed",
@@ -525,13 +584,12 @@ class ShanghaiHighEast2025Theme45DirectVisualScanReader(
                 },
             },
             "difficulty": difficulty,
-            "dependency": {
-                "dependency_kind": "unknown",
-                "status": "unknown_prior_dependency_not_recorded",
-                "prior_atomic_part_ids": [],
-                "shared_material_crop_ids": [shared["crop_id"]],
-                "analysis_zh": "已显式关联本主题公共材料；源候选未记录题间依赖边，前题结论依赖仍待核对，不能据题号或共享图推断独立。",
-            },
+            "dependency": dependency,
+            **(
+                {"dependency_evidence": dependency_evidence}
+                if dependency_evidence
+                else {}
+            ),
             "shared_stimulus_text_zh": [
                 block["raw_text"] for block in row["stimulus_blocks"]
             ],
@@ -736,6 +794,11 @@ class ShanghaiHighEast2025Theme45DirectVisualScanReader(
             "scan_status": record["scan_status"],
             "scan_hierarchy": deepcopy(record["hierarchy"]),
             "identity_boundary": deepcopy(snapshot.paper_identity_boundary),
+            **(
+                {"dependency_evidence": deepcopy(record["dependency_evidence"])}
+                if "dependency_evidence" in record
+                else {}
+            ),
             **{
                 key: deepcopy(record[key])
                 for key in (

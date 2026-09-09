@@ -23,7 +23,6 @@ from docx import Document
 from docx.document import Document as DocumentType
 from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.table import (
-    WD_CELL_VERTICAL_ALIGNMENT,
     WD_ROW_HEIGHT_RULE,
     WD_TABLE_ALIGNMENT,
 )
@@ -40,6 +39,7 @@ if __package__:
         PAPER_FORMAT_SCHEMA_VERSION,
         RENDER_RECEIPT_KIND,
         PaperFormatContractError,
+        _chinese_number,
         build_assembly_blueprint,
         build_document_plans,
         build_render_request,
@@ -53,6 +53,7 @@ else:  # Direct CLI execution avoids importing the gateway package and its optio
         PAPER_FORMAT_SCHEMA_VERSION,
         RENDER_RECEIPT_KIND,
         PaperFormatContractError,
+        _chinese_number,
         build_assembly_blueprint,
         build_document_plans,
         build_render_request,
@@ -510,7 +511,8 @@ def _style_document(doc: DocumentType, preset: Mapping[str, Any]) -> None:
     styles["ShChemThemeHeading"].paragraph_format.space_before = Pt(5)
     styles["ShChemThemeHeading"].paragraph_format.space_after = Pt(2)
     styles["ShChemThemeHeading"].paragraph_format.keep_with_next = True
-    styles["ShChemQuestion"].paragraph_format.keep_with_next = True
+    # Keep labels with their content locally, not every question in a theme.
+    styles["ShChemQuestion"].paragraph_format.keep_with_next = False
     styles["ShChemTeacherNote"].paragraph_format.line_spacing = 1.08
     styles["ShChemTeacherNote"].paragraph_format.space_after = Pt(1)
     styles["ShChemQuiet"].paragraph_format.line_spacing = 1.05
@@ -1077,9 +1079,11 @@ def _add_content_blocks(
 ) -> None:
     pending_first = first_paragraph
     source_number_anchor_pending = source_question_number is not None
-    for block in blocks:
+    for block_index, block in enumerate(blocks):
+        keep_next = block_index < len(blocks) - 1 or keep_last_with_next
         block_type = block["block_type"]
         if pending_first is not None and _append_block_to_paragraph(pending_first, block):
+            pending_first.paragraph_format.keep_with_next = keep_next
             pending_first = None
             continue
         pending_first = None
@@ -1093,11 +1097,11 @@ def _add_content_blocks(
                 block,
                 asset_root,
                 alt_prefix_zh=alt_prefix,
-                keep_with_next=keep_last_with_next,
+                keep_with_next=keep_next,
             )
             continue
         paragraph = doc.add_paragraph(style="ShChemQuestion")
-        paragraph.paragraph_format.keep_with_next = True
+        paragraph.paragraph_format.keep_with_next = keep_next
         if not _append_block_to_paragraph(paragraph, block):
             raise PaperExportRendererError(
                 "content_block_unsupported", "题面包含当前渲染器无法处理的内容块。"
@@ -1112,15 +1116,12 @@ def _add_shared_material(
     asset_root: Path | None,
     content_width_dxa: int,
     body_size_pt: float,
+    keep_last_with_next: bool = True,
 ) -> None:
-    table = doc.add_table(rows=1, cols=1)
-    _set_repeat_table_width(table, content_width_dxa)
-    cell = table.cell(0, 0)
-    cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
-    _set_cell_shading(cell, "F2F5F7")
-    _set_cell_margins(cell, top=45, start=80, bottom=45, end=80)
-    paragraph = cell.paragraphs[0]
-    paragraph.style = doc.styles["ShChemQuestion"]
+    # Consecutive one-cell tables can coalesce in Word, pushing a whole group
+    # away from the title and splitting a material label from its image.
+    # Ordinary inline paragraphs keep the figure and first question in flow.
+    paragraph = doc.add_paragraph(style="ShChemQuestion")
     paragraph.paragraph_format.keep_with_next = True
     paragraph.paragraph_format.space_after = Pt(1)
     label = paragraph.add_run("【共同材料】")
@@ -1132,26 +1133,31 @@ def _add_shared_material(
         bold=True,
     )
     blocks = material["content_blocks"]
+    has_source_label = audience == "teacher" and material.get("source_label_zh")
     for index, block in enumerate(blocks):
+        keep_next = index < len(blocks) - 1 or bool(has_source_label) or keep_last_with_next
         if block["block_type"] in _SOURCE_IMAGE_BLOCK_TYPES:
             _add_asset_block(
-                cell,
+                doc,
                 block,
                 asset_root,
-                max_width_mm=162.0,
+                max_width_mm=min(162.0, content_width_dxa * 25.4 / 1440.0 - 4.0),
+                keep_with_next=keep_next,
             )
             continue
         target = (
             paragraph
             if index == 0
-            else cell.add_paragraph(style="ShChemQuestion")
+            else doc.add_paragraph(style="ShChemQuestion")
         )
+        target.paragraph_format.keep_with_next = keep_next
         if not _append_block_to_paragraph(target, block):
             raise PaperExportRendererError(
                 "content_block_unsupported", "共同材料包含当前渲染器无法处理的内容块。"
             )
-    if audience == "teacher" and material.get("source_label_zh"):
-        source = cell.add_paragraph(style="ShChemQuiet")
+    if has_source_label:
+        source = doc.add_paragraph(style="ShChemQuiet")
+        source.paragraph_format.keep_with_next = keep_last_with_next
         source.paragraph_format.space_before = Pt(1)
         source.paragraph_format.space_after = Pt(0)
         source_run = source.add_run("材料来源标签：" + material["source_label_zh"])
@@ -1384,12 +1390,21 @@ def _ordered_shared_materials(
     blueprint_section: Mapping[str, Any] | None,
 ) -> list[Mapping[str, Any]]:
     materials = list(section["shared_materials"])
-    if blueprint_section is None or len(materials) < 2:
+    keys = [material["render_once_key"] for material in materials]
+    if len(keys) != len(set(keys)):
+        raise PaperExportRendererError(
+            "shared_material_duplicate", "共同材料的冻结标识重复，不能确定唯一展示内容。"
+        )
+    if blueprint_section is None:
         return materials
     by_key = {material["render_once_key"]: material for material in materials}
     blueprint_materials = list(blueprint_section.get("shared_materials") or [])
     blueprint_keys = [row.get("render_once_key") for row in blueprint_materials]
-    if set(blueprint_keys) != set(by_key):
+    if (
+        any(not isinstance(key, str) for key in blueprint_keys)
+        or len(blueprint_keys) != len(set(blueprint_keys))
+        or set(blueprint_keys) != set(by_key)
+    ):
         raise PaperExportRendererError(
             "render_hint_alignment_invalid",
             "共享材料的原卷顺序无法与冻结文档计划对齐。",
@@ -1402,6 +1417,96 @@ def _ordered_shared_materials(
 
     ordered_rows = sorted(enumerate(blueprint_materials), key=sort_key)
     return [by_key[row["render_once_key"]] for _, row in ordered_rows]
+
+
+def _shared_material_schedule(
+    section: Mapping[str, Any],
+    blueprint_section: Mapping[str, Any] | None,
+) -> dict[int, list[Mapping[str, Any]]]:
+    """Place each material at its first explicitly bound printed question.
+
+    Older plans without member IDs retain theme-opening placement. Counts,
+    filenames and neighboring material order are not membership evidence.
+    """
+    materials = _ordered_shared_materials(section, blueprint_section)
+    references = {
+        row["render_once_key"]: row
+        for row in (blueprint_section or {}).get("shared_materials", [])
+    }
+    positions = {
+        atomic["atomic_part_id"]: printed_index
+        for printed_index, printed in enumerate(
+            (blueprint_section or {}).get("printed_questions", [])
+        )
+        for atomic in printed.get("atomic_parts", [])
+    }
+    schedule: dict[int, list[Mapping[str, Any]]] = {}
+    seen: set[str] = set()
+    for material in materials:
+        key = material["render_once_key"]
+        if key in seen:
+            raise PaperExportRendererError(
+                "shared_material_duplicate", "共同材料的冻结标识重复，不能确定首次展示位置。"
+            )
+        seen.add(key)
+        reference = references.get(key, {})
+        first_index = 0
+        if "used_by_atomic_ids" in reference:
+            members = reference["used_by_atomic_ids"]
+            if (
+                not isinstance(members, list)
+                or not members
+                or any(not isinstance(value, str) or value not in positions for value in members)
+                or len(set(members)) != len(members)
+            ):
+                raise PaperExportRendererError(
+                    "shared_material_membership_invalid",
+                    "共同材料的题目归属缺失、重复或不属于本次选题，请重新核对来源绑定。",
+                )
+            first_index = min(positions[value] for value in members)
+            if first_index >= len(section["printed_questions"]):
+                raise PaperExportRendererError(
+                    "render_hint_alignment_invalid", "共同材料的首次使用位置与文档题目不一致。"
+                )
+        schedule.setdefault(first_index, []).append(material)
+    return schedule
+
+
+def _display_theme_heading(
+    section: Mapping[str, Any], blueprint_section: Mapping[str, Any] | None
+) -> str:
+    """Strip a repeated source ordinal only when the source sequence supports it."""
+    heading = section["heading_zh"]
+    source = (blueprint_section or {}).get("source", {})
+    title, sequence = source.get("theme_title"), source.get("source_theme_sequence")
+    if not isinstance(title, str) or type(sequence) is not int or not 1 <= sequence <= 99:
+        return heading
+    prefix = re.escape(_chinese_number(sequence))
+    cleaned = re.sub(r"^\s*" + prefix + r"(?:\s*[、．.]\s*|\s+)", "", title, count=1)
+    expected_heading = f"{_chinese_number(section['theme_number'])}、{title}"
+    if cleaned.strip() and cleaned != title and heading == expected_heading:
+        return f"{_chinese_number(section['theme_number'])}、{cleaned}"
+    return heading
+
+
+def _source_question_number(
+    printed: Mapping[str, Any], blueprint_printed: Mapping[str, Any] | None
+) -> str | None:
+    parts = printed["atomic_parts"]
+    if not parts or not all(_is_source_image_question(part) for part in parts):
+        return None
+    number = (blueprint_printed or {}).get("source_number")
+    if type(number) is int and number > 0:
+        return str(number)
+    # Preserve explicit source labels such as 2a or (3); never parse IDs or
+    # turn a missing printed label into a guessed theme-local number.
+    if isinstance(number, str) and number.strip() and number.strip() not in {
+        "unknown", "unassigned", "待核验", "待补",
+    } and len(number) <= 40 and not any(
+        token in number for token in ("\n", "\r", "\t")
+    ):
+        return number.strip()
+    return None
 
 
 def _item_types_for_theme(
@@ -1456,10 +1561,12 @@ def _printed_question_blocks(
     return projected, suppressed
 
 
-def _teacher_scoring_label(printed: Mapping[str, Any], atomic_index: int) -> str:
+def _teacher_scoring_label(
+    printed: Mapping[str, Any], atomic_index: int, *, source_number: str | None = None
+) -> str:
     parts = printed["atomic_parts"]
     atomic = parts[atomic_index]
-    prefix = f"第{printed['question_number']}题"
+    prefix = f"第{source_number or printed['question_number']}题"
     if len(parts) > 1:
         if atomic_index == 0:
             prefix += f"（本题共 {_format_score(sum(part['score'] for part in parts))} 分）"
@@ -1484,9 +1591,15 @@ def _add_theme_sections(
     for section_index, section in enumerate(visible["theme_sections"]):
         blueprint_section = blueprint_sections[section_index]
         item_types = iter(_item_types_for_theme(section, blueprint_section))
+        material_schedule = _shared_material_schedule(section, blueprint_section)
+        blueprint_printed = list((blueprint_section or {}).get("printed_questions", []))
+        if blueprint_section is not None and len(blueprint_printed) != len(section["printed_questions"]):
+            raise PaperExportRendererError(
+                "render_hint_alignment_invalid", "来源题号与文档题目数量不一致。"
+            )
         seen_teacher_sources: set[tuple[str, str]] = set()
         heading = doc.add_paragraph(style="ShChemThemeHeading")
-        heading.add_run(section['heading_zh'] + (f"　（共 {_format_score(section['theme_score'])} 分）" if show_question_scores else ""))
+        heading.add_run(_display_theme_heading(section, blueprint_section) + (f"　（共 {_format_score(section['theme_score'])} 分）" if show_question_scores else ""))
         summary = str(section.get("context_summary_zh") or "")
         internal_placeholder = (
             summary.startswith("以卷面主题")
@@ -1496,24 +1609,27 @@ def _add_theme_sections(
             context = doc.add_paragraph(style="ShChemQuiet")
             context.paragraph_format.keep_with_next = True
             context.add_run("主题情境：" + summary)
-        for material in _ordered_shared_materials(section, blueprint_section):
-            key = material["render_once_key"]
-            if key in suppressed_shared_keys:
-                continue
-            if key in seen_materials:
-                raise PaperExportRendererError(
-                    "shared_material_duplicate", "共同材料被重复渲染。"
+        for printed_index, printed in enumerate(section["printed_questions"]):
+            placed_materials = [
+                material for material in material_schedule.get(printed_index, [])
+                if material["render_once_key"] not in suppressed_shared_keys
+            ]
+            for material_index, material in enumerate(placed_materials):
+                key = material["render_once_key"]
+                if key in seen_materials:
+                    raise PaperExportRendererError(
+                        "shared_material_duplicate", "共同材料被重复渲染。"
+                    )
+                seen_materials.add(key)
+                _add_shared_material(
+                    doc, material, audience=audience, asset_root=asset_root,
+                    content_width_dxa=content_width_dxa, body_size_pt=body_size_pt,
+                    keep_last_with_next=material_index == len(placed_materials) - 1,
                 )
-            seen_materials.add(key)
-            _add_shared_material(
-                doc,
-                material,
-                audience=audience,
-                asset_root=asset_root,
-                content_width_dxa=content_width_dxa,
-                body_size_pt=body_size_pt,
+            source_number = _source_question_number(
+                printed, blueprint_printed[printed_index] if blueprint_printed else None
             )
-        for printed in section["printed_questions"]:
+            display_number = source_number or printed["question_number"]
             atomic_parts = printed["atomic_parts"]
             printed_blocks, _shared_question_image = _printed_question_blocks(atomic_parts)
             compact_source_scores = (
@@ -1552,11 +1668,11 @@ def _add_theme_sections(
                     question.paragraph_format.keep_with_next = True
                     if compact_source_scores:
                         question.alignment = WD_ALIGN_PARAGRAPH.LEFT
-                        prefix = f"第{printed['question_number']}题（共 {_format_score(sum(part['score'] for part in atomic_parts))} 分）"
+                        prefix = f"第{display_number}题（共 {_format_score(sum(part['score'] for part in atomic_parts))} 分）"
                     elif source_image_question:
                         question.alignment = WD_ALIGN_PARAGRAPH.RIGHT
                         prefix = (
-                            f"第{printed['question_number']}题{atomic.get('part_label_zh') or f'（{atomic_index + 1}）'}"
+                            f"第{display_number}题{atomic.get('part_label_zh') or f'（{atomic_index + 1}）'}"
                             if len(atomic_parts) > 1 else ""
                         ) + f"（{_format_score(atomic['score'])} 分）"
                     else:
@@ -1600,7 +1716,9 @@ def _add_theme_sections(
                         atomic["teacher_notes"],
                         content_width_dxa=content_width_dxa,
                         include_source_label=include_source_label,
-                        scoring_label_zh=_teacher_scoring_label(printed, atomic_index),
+                        scoring_label_zh=_teacher_scoring_label(
+                            printed, atomic_index, source_number=source_number
+                        ),
                     )
 
 
@@ -1791,17 +1909,26 @@ def _teacher_answer_boundaries_present(text: str, plan: Mapping[str, Any]) -> bo
     )
 
 
-def _score_labels_present(text: str, plan: Mapping[str, Any], show_question_scores: bool) -> bool:
+def _score_labels_present(
+    text: str, plan: Mapping[str, Any], show_question_scores: bool,
+    blueprint: Mapping[str, Any] | None = None,
+) -> bool:
     """Check requested score labels; teacher answers always retain every score."""
     audience = plan["audience"]
     if audience == "student" and not show_question_scores:
         return True  # No score label is requested in student question content.
     expected: dict[str, int] = {}
-    for theme in plan["visible"]["theme_sections"]:
-        for printed in theme["printed_questions"]:
+    blueprint_sections = _blueprint_theme_sections(plan["visible"], blueprint)
+    for theme_index, theme in enumerate(plan["visible"]["theme_sections"]):
+        blueprint_printed = list((blueprint_sections[theme_index] or {}).get("printed_questions", []))
+        for printed_index, printed in enumerate(theme["printed_questions"]):
             parts = printed["atomic_parts"]
             if audience == "teacher":
-                labels = [_teacher_scoring_label(printed, index) for index in range(len(parts))]
+                source_number = _source_question_number(
+                    printed,
+                    blueprint_printed[printed_index] if printed_index < len(blueprint_printed) else None,
+                )
+                labels = [_teacher_scoring_label(printed, index, source_number=source_number) for index in range(len(parts))]
             elif len(parts) > 1 and all(_is_source_image_question(part) and part["answer_space"]["lines"] == 0 for part in parts):
                 labels = [f"（共 {_format_score(sum(part['score'] for part in parts))} 分）"]
             else:
@@ -1840,6 +1967,7 @@ def audit_docx(
     *,
     plan: Mapping[str, Any],
     preset: Mapping[str, Any],
+    blueprint: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     audience = plan["audience"]
     show_scores = preset["student_version"]["show_item_scores"]
@@ -1913,7 +2041,7 @@ def audit_docx(
         "source_image_numbers_not_repeated_as_text_headings": all(
             f"{number}.（" not in normalized for number in source_image_numbers
         ),
-        "scores_present": _score_labels_present(body_text, plan, show_scores),
+        "scores_present": _score_labels_present(body_text, plan, show_scores, blueprint),
         "identity_scope_correct": (
             "姓名：" in body_text and "班级：" in body_text
             if audience == "student"
@@ -2200,7 +2328,10 @@ def _pdf_page_count(path: Path) -> int:
     return len(PdfReader(path).pages)
 
 
-def _pdf_text_audit(path: Path, *, plan: Mapping[str, Any], preset: Mapping[str, Any] | None = None) -> dict[str, Any]:
+def _pdf_text_audit(
+    path: Path, *, plan: Mapping[str, Any], preset: Mapping[str, Any] | None = None,
+    blueprint: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     audience = plan["audience"]
     show_scores = preset["student_version"]["show_item_scores"] if preset else True
     text = _pdf_text(path)
@@ -2209,11 +2340,12 @@ def _pdf_text_audit(path: Path, *, plan: Mapping[str, Any], preset: Mapping[str,
     text_question_numbers, source_image_numbers = _expected_question_number_groups(
         plan
     )
+    blueprint_sections = _blueprint_theme_sections(plan["visible"], blueprint)
     checks = {
         "title_present": _normalize_text(plan["visible"]["paper_title_zh"]) in normalized,
         "theme_headings_present": all(
-            _normalize_text(theme["heading_zh"]) in normalized
-            for theme in plan["visible"]["theme_sections"]
+            _normalize_text(_display_theme_heading(theme, blueprint_sections[index])) in normalized
+            for index, theme in enumerate(plan["visible"]["theme_sections"])
         ),
         "shared_material_once": all(
             normalized.count(_normalize_text(material)) == 1 for material in materials
@@ -2224,7 +2356,7 @@ def _pdf_text_audit(path: Path, *, plan: Mapping[str, Any], preset: Mapping[str,
         "source_image_numbers_not_repeated_as_text_headings": all(
             f"{number}.（" not in normalized for number in source_image_numbers
         ),
-        "scores_present": _score_labels_present(text, plan, show_scores),
+        "scores_present": _score_labels_present(text, plan, show_scores, blueprint),
         "identity_scope_correct": (
             "姓名：" in text and "班级：" in text
             if audience == "student"
@@ -2354,7 +2486,9 @@ def render_export_bundle(
                 shared_question_dedup["suppressed_shared_keys"]
             ),
         )
-        docx_audit = audit_docx(docx_path, plan=plan, preset=frozen["preset"])
+        docx_audit = audit_docx(
+            docx_path, plan=plan, preset=frozen["preset"], blueprint=frozen["blueprint"]
+        )
         docx_pages, emitted_pdf, docx_tool = _render_with_canonical_docx_tool(
             docx_path,
             qa_root / f"{audience}_docx_pages",
@@ -2367,7 +2501,9 @@ def render_export_bundle(
             toolchain=toolchain,
         )
         pdf_count = _pdf_page_count(pdf_path)
-        pdf_audit = _pdf_text_audit(pdf_path, plan=plan, preset=frozen["preset"])
+        pdf_audit = _pdf_text_audit(
+            pdf_path, plan=plan, preset=frozen["preset"], blueprint=frozen["blueprint"]
+        )
         docx_page_records = _image_records(docx_pages, output_root)
         pdf_page_records = _image_records(pdf_pages, output_root)
         page_dimensions_match = [
