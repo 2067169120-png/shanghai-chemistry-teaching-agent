@@ -215,3 +215,36 @@ def test_topic_changes_and_cancel_do_not_replace_teacher_reference(page, monkeyp
     widget.design_starter_button.click()
     assert widget.template_detail.text() == existing
     assert not facade.prepare_calls and not facade.generate_calls
+
+
+def test_ready_made_word_is_primary_content_not_rewritten_summary():
+    text = teacher_design_starter("复习", "系统的内能")
+    assert "直接使用本次选定的原文、表格、公式、图片及例题答案" in text
+    assert "不先将整份教案改写后再备课" in text
+    assert "知识点摘要仅用于检索和定位" in text
+    assert "教学设计7页、学习任务单2页、作业练习2页已读文字" in text
+    assert "不自动复制平台题目或把任务单当作原PPT" in text
+    assert "未下载原PPT" in text
+    assert "同包配套参考" not in teacher_design_starter("新授", "电离平衡常数")
+    # Source preservation also applies without clicking the optional starter.
+    prompt = _prompt({"lesson_route": "复习", "materials": "已提供选段"})
+    assert "现成Word教案是内容来源，不是等待重写的提纲" in prompt
+    assert "只收到选段就只使用选段，不声称已读整份" in prompt
+
+
+def test_ready_made_word_package_reference_reaches_teacher_brief(page):
+    _app, widget, facade = page
+    widget.topic.setText("系统的内能")
+    widget.audience.setText("高二")
+    widget.objective.setPlainText("依据原教案组织两课时讲练")
+    widget.materials.setPlainText("教师选定的原教案区块，不以索引代替正文。")
+    widget.design_starter_button.click()
+    payload = normalize_preparation_payload(widget._payload())
+    prompt = _prompt(payload)
+    embedded, _ = json.JSONDecoder().raw_decode(
+        prompt.split("教师备课简报 JSON：\n", 1)[1]
+    )
+    assert embedded["materials"] == "教师选定的原教案区块，不以索引代替正文。"
+    assert "教学设计7页" in embedded["advanced"]["template_and_delivery"]
+    assert "不先将整份教案改写后再备课" in prompt
+    assert not facade.prepare_calls and not facade.generate_calls

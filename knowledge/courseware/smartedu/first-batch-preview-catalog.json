@@ -8,7 +8,9 @@
     "presentation_pages_visually_reviewed": 47,
     "source_courseware_files_downloaded": 0,
     "derived_design_cards": 3,
-    "source_safety_exclusions": 1
+    "source_safety_exclusions": 1,
+    "supplementary_documents_text_reviewed": 3,
+    "supplementary_document_pages_text_reviewed": 11
   },
   "scope_evidence": "公开UI筛选与课程面包屑显示高中、化学、沪科技版、选择性必修1化学反应原理；三份封面显示高二和上海学校。",
   "access_method": "独立隔离浏览器会话，公开页面点击、快照和视觉阅读；未登录、未读取凭据、未调用隐藏资源接口。",
@@ -122,5 +124,42 @@
       "limitations": ["源示例安全问题未被平台来源身份豁免", "第7页部分公式叠印", "第11页长分式未经原稿验证", "教学设计与任务单正文未读"]
     }
   ],
+  "restored_access_package_review": {
+    "checked_at": "2026-09-10T07:06:51+08:00",
+    "course_package_id": "f010e1bf-b56c-de08-fa41-adc255b3b572",
+    "access_method": "当前可用的Codex内置浏览器；课程包和已知课件备课详情的公开UI",
+    "session_state": "未登录",
+    "courseware_confirmed": "课件《系统的内能》王志高.pptx，在线演示20页",
+    "observed_courseware_menu": ["全屏授课", "H5播放器授课"],
+    "original_files_downloaded": 0,
+    "new_presentation_pages_added": 0,
+    "supplementary_documents": [
+      {
+        "ui_label": "教学设计",
+        "page_count": 7,
+        "text_reviewed_pages": [1,2,3,4,5,6,7],
+        "role": "教师教学过程与例题反馈组织",
+        "downloaded": false
+      },
+      {
+        "ui_label": "学习任务单",
+        "page_count": 2,
+        "text_reviewed_pages": [1,2],
+        "role": "前置阅读与课堂学习任务对应",
+        "downloaded": false
+      },
+      {
+        "ui_label": "作业练习",
+        "page_count": 2,
+        "text_reviewed_pages": [1,2],
+        "printed_exercise_count": 5,
+        "reference_answers_visible": true,
+        "role": "概念辨析、过程计算、原因说明与集中参考答案",
+        "downloaded": false
+      }
+    ],
+    "review_boundary": "11页仅计正文文本阅读，局部截图辅助观察；未完成这些附件的全页图形核验，不计入47页PPT视觉阅读。未取得原PPT或附件原文件，未将其原题、原图导入题库。",
+    "derived_design_card": "system-internal-energy-design-card.md"
+  },
   "publication_boundary": "仅本目录自述设计卡与此元数据可作为版本管理候选；原文件、过程截图、课件长文和整图不随代码发布。"
 }
