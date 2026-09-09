@@ -30,6 +30,10 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 
+from .desktop_preparation_image_input import (
+    PreparationImageInputError,
+    image_input_mode,
+)
 from .desktop_preparation_images import (
     PreparationImageError,
     PreparationImageStore,
@@ -117,10 +121,13 @@ _REQUEST_FIELDS = frozenset(
         "objective",
         "materials",
         "image_assets",
+        "image_input_mode",
         "advanced",
     }
 )
-_REQUEST_REQUIRED_FIELDS = frozenset(_REQUEST_FIELDS - {"advanced", "image_assets"})
+_REQUEST_REQUIRED_FIELDS = frozenset(
+    _REQUEST_FIELDS - {"advanced", "image_assets", "image_input_mode"}
+)
 _ADVANCED_FIELDS = (
     "learning_and_experiment",
     "template_and_delivery",
@@ -460,6 +467,10 @@ def normalize_preparation_payload(payload: Mapping[str, Any]) -> dict[str, Any]:
         raise DesktopPreparationError(
             "preparation_payload_invalid", "备课请求字段不完整或包含未知字段。"
         )
+    try:
+        input_mode = image_input_mode(payload)
+    except PreparationImageInputError as exc:
+        raise DesktopPreparationError(exc.code, exc.message_zh) from exc
     output_kind = payload.get("output_kind")
     artifact_mode = (
         _OUTPUT_KIND.get(output_kind) if isinstance(output_kind, str) else None
@@ -529,6 +540,19 @@ def normalize_preparation_payload(payload: Mapping[str, Any]) -> dict[str, Any]:
             raise DesktopPreparationError(exc.code, exc.message_zh) from exc
     elif "image_assets" in payload and payload["image_assets"] != []:
         raise DesktopPreparationError("preparation_image_invalid", "图片列表不正确。")
+    # Omit the historical default so old requests retain their exact identity.
+    if input_mode == "vision":
+        normalized["image_input_mode"] = input_mode
+        if normalized.get("image_assets"):
+            normalized["source_basis"] = {
+                "mode": "teacher_text_with_selected_image_pixels",
+                "evidence_ids": [],
+                "statement_zh": (
+                    "本请求将教师输入、图片说明和所选原图发送给教师确认的模型。"
+                    "图片内容、模型识读结果、来源权威性及教学适用性尚未经审核；"
+                    "仅生成个人备课候选，须由教师复核。"
+                ),
+            }
     return _json_clone(
         normalized,
         code="preparation_payload_invalid",
@@ -776,6 +800,12 @@ def _normalized_payload(payload: Mapping[str, Any]) -> dict[str, Any]:
             "publication_allowed",
             "official_claim_allowed",
         }
+        if "image_input_mode" in normalized:
+            expected_top.add("image_input_mode")
+        try:
+            image_input_mode(normalized)
+        except PreparationImageInputError as exc:
+            raise DesktopPreparationError(exc.code, exc.message_zh) from exc
         if "image_assets" in normalized:
             expected_top.add("image_assets")
             try:
@@ -1353,6 +1383,8 @@ def _invoke_provider(
     binding: Mapping[str, Any],
     report_progress: Callable[[Mapping[str, Any]], None],
     is_cancelled: Callable[[], bool],
+    *,
+    image_data: Mapping[str, bytes] | None = None,
 ) -> Any:
     target = provider if callable(provider) else getattr(provider, "generate", None)
     if not callable(target):
@@ -1384,6 +1416,13 @@ def _invoke_provider(
         ((deepcopy(dict(payload)), schema), {}),
         ((deepcopy(dict(payload)),), {}),
     )
+    if image_input_mode(payload) == "vision" and payload.get("image_assets"):
+        # Every compatible invocation must carry the same complete byte map.
+        # A legacy text-only adapter must fail, never silently omit images.
+        calls = tuple(
+            (args, {**kwargs, "image_data": dict(image_data or {})})
+            for args, kwargs in calls
+        )
     try:
         signature = inspect.signature(target)
     except (TypeError, ValueError):
@@ -2616,6 +2655,7 @@ class DesktopPreparationManager:
                         },
                         callback,
                         cancelled,
+                        image_data=image_data,
                     )
                 except DesktopPreparationError:
                     raise
@@ -2714,6 +2754,48 @@ class DesktopPreparationManager:
     def get_task(self, task_id: str) -> dict[str, Any]:
         with self._lock:
             return self._public_task(self._read_task(task_id))
+
+    def egress_snapshot(self, task_id: str) -> dict[str, Any]:
+        """Read the frozen image scope, never the editable form or secrets."""
+        with self._lock:
+            task = self._read_task(task_id)
+            payload = _normalized_payload(task["payload"])
+            assets = deepcopy(payload.get("image_assets", []))
+            for asset in assets:
+                self.image_store.load(asset)
+            return {
+                "task_id": task_id,
+                "request_sha256": task["request_sha256"],
+                "profile_id": task["profile_id"],
+                "profile_revision": task["profile_revision"],
+                "image_input_mode": image_input_mode(payload),
+                "image_assets": assets,
+                "local_only_operation": (
+                    task.get("candidate_seed_file") is not None
+                    or task.get("source_kind") == "teacher_revision"
+                ),
+            }
+
+    def record_egress_confirmation(self, task_id: str) -> None:
+        """Called only after the facade's explicit teacher-confirmed boundary."""
+        with self._lock:
+            snapshot = self.egress_snapshot(task_id)
+            task = self._read_task(task_id)
+            mode = snapshot["image_input_mode"]
+            sending = mode == "vision" and not snapshot["local_only_operation"]
+            task["last_egress_confirmation"] = {
+                "confirmed_at": _utc_now(),
+                "request_sha256": snapshot["request_sha256"],
+                "profile_id": snapshot["profile_id"],
+                "profile_revision": snapshot["profile_revision"],
+                "image_input_mode": mode,
+                "local_only_operation": snapshot["local_only_operation"],
+                "images": [
+                    {"asset_id": asset["asset_id"], "sha256": asset["sha256"]}
+                    for asset in snapshot["image_assets"]
+                ] if sending else [],
+            }
+            self._write_task(task)
 
     def list_tasks(self, limit: int = 50) -> tuple[dict[str, Any], ...]:
         if type(limit) is not int or not 1 <= limit <= 200:

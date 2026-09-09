@@ -31,6 +31,20 @@ class _CodeArchive:
         return compile(source, str(path), "exec")
 
 
+class _MutatedArchive(_CodeArchive):
+    def __init__(self, suffix, before, after):
+        super().__init__()
+        self.suffix, self.before, self.after = suffix, before, after
+
+    def extract(self, name):
+        if not name.endswith(self.suffix):
+            return super().extract(name)
+        path = ROOT / (name.replace(".", "/") + ".py")
+        source = path.read_text(encoding="utf-8")
+        assert self.before in source, "mutation must change current code"
+        return compile(source.replace(self.before, self.after), str(path), "exec")
+
+
 def test_inspector_checks_pure_code_without_loading_app_or_state():
     result = _inspector().verify_frozen_behavior(_CodeArchive())
     assert result["known_model_budget_cases"] == 5
@@ -154,3 +168,103 @@ def test_inspector_rejects_note_contract_with_missing_feedback_rule():
 
     with pytest.raises(RuntimeError, match="Frozen classroom note contract"):
         _inspector().verify_frozen_note_prompt(OldContract())
+
+
+def test_inspector_executes_frozen_image_modes_bindings_and_manager_adapter():
+    result = _inspector().verify_frozen_preparation_image_input(_CodeArchive())
+    assert result["pure_mode_cases"] == 7
+    assert result["pure_vision_policy_cases"] == 6
+    assert result["pure_pixel_binding_cases"] == 7
+    assert result["pure_manager_adapter_cases"] == 3
+    assert result["provider_keyword_and_builder_route_static_checked"] is True
+    assert result["provider_instantiated"] is False
+    assert result["transport_executed"] is False
+    assert result["real_model_called"] is False
+
+
+def test_inspector_rejects_old_v23_note_prompt():
+    archive = _MutatedArchive(
+        "desktop_preparation_provider",
+        "20260910-selected-image-pixels-v24",
+        "20260910-word-image-roles-v23",
+    )
+    with pytest.raises(RuntimeError, match="Frozen classroom note contract missing"):
+        _inspector().verify_frozen_note_prompt(archive)
+
+
+@pytest.mark.parametrize(
+    "suffix,before,after,error",
+    [
+        (
+            "desktop_preparation_image_input",
+            "return mode",
+            'return "local_only"',
+            "Frozen image input mode differs",
+        ),
+        (
+            "desktop_preparation_image_input",
+            'if "vision" not in declared or "vision" not in effective:',
+            "if False:",
+            "Frozen visual policy accepted",
+        ),
+        (
+            "desktop_preparation_provider",
+            "image_data: Mapping[str, bytes] | None = None,",
+            "pixel_data: Mapping[str, bytes] | None = None,",
+            "Frozen provider image_data keyword route missing",
+        ),
+        (
+            "desktop_preparation_provider",
+            "build_structured_visual_request(",
+            "build_structured_text_request(",
+            "Frozen provider text/visual builder route missing",
+        ),
+        (
+            "desktop_preparation_provider",
+            "return pages",
+            "return list(reversed(pages))",
+            "Frozen pixel helper changed bytes or attachment order",
+        ),
+        (
+            "desktop_preparation",
+            '"image_data": dict(image_data or {})',
+            '"image_data": {}',
+            "Frozen manager adapter dropped image_data",
+        ),
+    ],
+)
+def test_inspector_rejects_broken_frozen_image_mode_or_pixel_route(
+    suffix, before, after, error
+):
+    with pytest.raises(RuntimeError, match=error):
+        _inspector().verify_frozen_preparation_image_input(
+            _MutatedArchive(suffix, before, after)
+        )
+
+
+def test_inspector_image_input_namespace_rejects_application_imports():
+    archive = _MutatedArchive(
+        "desktop_preparation_image_input",
+        "from typing import Any",
+        "from typing import Any\nfrom . import desktop_facade",
+    )
+    with pytest.raises(
+        RuntimeError, match="Unexpected dependency in frozen pure image module"
+    ):
+        _inspector().frozen_image_namespaces(archive)
+
+
+def test_new_image_input_module_has_real_source_match_check():
+    module_name = "integrations.deeptutor_shchem_v1.desktop_preparation_image_input"
+    inspector = _inspector()
+    assert inspector.verify_source_matches_frozen(_CodeArchive(), module_name, ROOT)[
+        "code_matches"
+    ]
+    with pytest.raises(RuntimeError, match="Frozen module differs"):
+        inspector.verify_source_matches_frozen(
+            _MutatedArchive(
+                "desktop_preparation_image_input", "return mode", 'return "local_only"'
+            ),
+            module_name,
+            ROOT,
+        )

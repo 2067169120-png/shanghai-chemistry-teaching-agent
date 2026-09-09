@@ -115,7 +115,7 @@ def test_batch_handoff_waits_then_commits_text_and_all_images(qt_app):
     for key in before.keys() - {"materials", "image_assets"}:
         assert after[key] == before[key]
     assert observed == [after]
-    assert "模型只收到" in page.status.text()
+    assert "是否交给 AI 读图以“图片用法”为准" in page.status.text()
     page.close()
 
 

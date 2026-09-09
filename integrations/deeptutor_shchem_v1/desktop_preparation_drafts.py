@@ -108,6 +108,8 @@ class PreparationDraftService:
         }
         if "image_assets" in record:
             payload["image_assets"] = deepcopy(record["image_assets"])
+        if "image_input_mode" in record:
+            payload["image_input_mode"] = deepcopy(record["image_input_mode"])
         try:
             normalize_preparation_payload(payload)
         except DesktopPreparationError as exc:

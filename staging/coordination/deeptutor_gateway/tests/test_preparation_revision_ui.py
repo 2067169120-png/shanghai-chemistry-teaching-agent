@@ -136,6 +136,15 @@ def test_local_retry_confirmation_does_not_claim_model_or_charge(
     qt_app, tmp_path, monkeypatch
 ):
     facade, bridge = _PreparationFacade(tmp_path), DesktopTaskBridge()
+    from integrations.deeptutor_shchem_v1.desktop_facade import DesktopWorkbenchFacade
+
+    monkeypatch.setattr(
+        facade,
+        "preparation_task_egress_preview",
+        lambda task_id: DesktopWorkbenchFacade._preparation_egress_disclosure(
+            {}, "不调用模型", local_only_operation=True
+        ),
+    )
     page = PreparationPage(facade, bridge)
     page._availability_timer.stop()
     captured = []
@@ -158,7 +167,7 @@ def test_local_retry_confirmation_does_not_claim_model_or_charge(
     assert page.task_action_button.text() == "重试本地导出"
     page._activate_current_task()
     assert captured[0][0] == "确认本地重新导出"
-    assert "不读取模型配置" in captured[0][1] and "费用" not in captured[0][1]
+    assert "不调用模型" in captured[0][1] and "费用" not in captured[0][1]
     assert not facade.generate_calls
     page.close()
     bridge.shutdown(1000)

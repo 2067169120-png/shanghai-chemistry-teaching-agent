@@ -18,6 +18,7 @@ PUBLIC_DEMO_IMAGES = {"docs/screenshots/word-questions.png", "docs/screenshots/w
 PUBLIC_DEMO_IMAGES.add("docs/screenshots/library-theme-status.png")
 PUBLIC_DEMO_IMAGES.add("docs/screenshots/courseware-reference.png")
 PUBLIC_DEMO_IMAGES.add("docs/screenshots/answer-preview.png")
+PUBLIC_DEMO_IMAGES.add("docs/screenshots/preparation-image-input.png")
 
 
 def main():

@@ -22,8 +22,10 @@ def test_desktop_entrypoints_exist_and_default_to_native_app() -> None:
     package_entries = re.findall(r"desktop_package_[0-9.]+(?:-r[0-9]+)?", start_text)
     assert package_entries == [
         f"desktop_package_{DESKTOP_VERSION}",
-        "desktop_package_0.1.44",
-        "desktop_package_0.1.43",
+        "desktop_package_0.1.57",
+        "desktop_package_0.1.56",
+        "desktop_package_0.1.54",
+        "desktop_package_0.1.53",
     ]
     assert "for each packagename in array" in start_text
     assert "if fs.fileexists(exepath) then exit for" in start_text

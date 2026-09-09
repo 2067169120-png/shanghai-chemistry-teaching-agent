@@ -9,6 +9,8 @@ from __future__ import annotations
 import argparse
 import builtins
 import hashlib
+import inspect
+import io
 import json
 import tempfile
 import types
@@ -19,6 +21,8 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from PyInstaller.archive.readers import CArchiveReader
+
+PROMPT_REVISION = "20260910-selected-image-pixels-v24"
 
 
 def digest(path: Path) -> str:
@@ -47,11 +51,68 @@ def strings(value: object) -> set[str]:
     return set()
 
 
+def _frozen_function(code, name):
+    matches = [
+        item
+        for item in code.co_consts
+        if isinstance(item, types.CodeType) and item.co_name == name
+    ]
+    if len(matches) != 1:
+        raise RuntimeError(f"Frozen function missing or ambiguous: {name}")
+    return matches[0]
+
+
+def frozen_image_namespaces(pyz):
+    """Load only pure definitions; no image store or provider is instantiated."""
+    allowed = {
+        "__future__",
+        "collections.abc",
+        "typing",
+        "hashlib",
+        "io",
+        "os",
+        "re",
+        "pathlib",
+        "uuid",
+        "PIL",
+    }
+
+    def pure_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if level == 0 and name in allowed:
+            return builtins.__import__(name, globals, locals, fromlist, level)
+        raise RuntimeError("Unexpected dependency in frozen pure image module")
+
+    result = []
+    for suffix in ("desktop_preparation_image_input", "desktop_preparation_images"):
+        namespace = {
+            "__name__": "frozen_" + suffix,
+            "__builtins__": dict(vars(builtins), __import__=pure_import),
+        }
+        exec(  # noqa: S102 - isolated pure definitions and import allowlist
+            pyz.extract("integrations.deeptutor_shchem_v1." + suffix), namespace
+        )
+        result.append(namespace)
+    return result
+
+
+def _synthetic_image_metadata(number=1):
+    return {
+        "asset_id": "IMG-" + f"{number:064x}",
+        "sha256": f"{number:064x}",
+        "caption": "合成教学图片",
+        "source": "Synthetic inspection fixture",
+        "purpose": "检查冻结图片合同",
+        "width": 160,
+        "height": 90,
+        "content_type": "image/png",
+    }
+
+
 def verify_frozen_note_prompt(pyz) -> bool:
     """Execute only the frozen pure prompt formatter, never the provider."""
     code = pyz.extract("integrations.deeptutor_shchem_v1.desktop_preparation_provider")
     constants = strings(code)
-    revision = "20260910-word-image-roles-v23"
+    revision = PROMPT_REVISION
     checks = [
         value for value in constants if value.startswith("\n授课与笔记最终检查（")
     ]
@@ -88,32 +149,252 @@ def verify_frozen_note_prompt(pyz) -> bool:
         for item in code.co_consts
         if isinstance(item, types.CodeType) and item.co_name == "_prompt"
     )
-    prompt = types.FunctionType(
-        prompt_code,
+    modes, images = frozen_image_namespaces(pyz)
+    namespace = {
+        "deepcopy": deepcopy,
+        "json": json,
+        "PREPARATION_PROMPT_REVISION": revision,
+        "CLASSROOM_NOTE_FINAL_CHECK": checklist,
+        "TEACHING_SOURCE_RULES": source_rules,
+        "course_composition_contract": frozen_course_namespace(pyz)[
+            "course_composition_contract"
+        ],
+        "image_input_mode": modes["image_input_mode"],
+        "normalize_image_assets": images["normalize_image_assets"],
+    }
+    namespace["_image_input_instructions"] = types.FunctionType(
+        _frozen_function(code, "_image_input_instructions"), namespace
+    )
+    prompt = types.FunctionType(prompt_code, namespace)
+    base = {"topic": "课堂笔记检查", "materials": "完整参考资料-不截断"}
+    asset = _synthetic_image_metadata()
+    cases = [
+        (base, "没有看到图片像素"),
+        (
+            {**base, "image_input_mode": "local_only", "image_assets": [asset]},
+            "没有看到图片像素",
+        ),
+        (
+            {**base, "image_input_mode": "vision", "image_assets": [asset]},
+            "随本请求附上图片像素",
+        ),
+        (
+            {**base, "image_input_mode": "vision", "image_assets": []},
+            "没有收到任何图片像素",
+        ),
+    ]
+    for brief, expected in cases:
+        original = deepcopy(brief)
+        rendered = prompt(brief)
+        embedded, _ = json.JSONDecoder().raw_decode(
+            rendered.split("教师备课简报 JSON：\n", 1)[1]
+        )
+        if (
+            brief != original
+            or embedded != original
+            or not rendered.endswith(checklist)
+        ):
+            raise RuntimeError("Frozen prompt changed source or omitted final check")
+        if "G 课堂投影：默认服务约40人班级" not in rendered:
+            raise RuntimeError("Frozen prompt omitted classroom course contract")
+        if source_rules not in rendered:
+            raise RuntimeError("Frozen prompt omitted teacher source closure contract")
+        if expected not in rendered:
+            raise RuntimeError("Frozen conditional image prompt differs")
+        if (
+            brief.get("image_input_mode") == "vision"
+            and brief.get("image_assets")
+            and (
+                "没有看到图片像素" in rendered
+                or "图片转写，待教师核对" not in rendered
+                or f'"attachment_number":1,"asset_id":"{asset["asset_id"]}"'
+                not in rendered
+            )
+        ):
+            raise RuntimeError(
+                "Frozen visual prompt lost image order or source caution"
+            )
+    return True
+
+
+def verify_frozen_preparation_image_input(pyz) -> dict:
+    """Exercise frozen pure bindings and adapter; inspect provider routes statically.
+
+    Synthetic pixels and a recorder function are inspector fixtures. No provider
+    object or transport is constructed and no network behavior is claimed.
+    """
+    modes, images = frozen_image_namespaces(pyz)
+    mode, mode_error = modes["image_input_mode"], modes["PreparationImageInputError"]
+    for payload, expected in (
+        ({}, "local_only"),
+        ({"image_input_mode": "local_only"}, "local_only"),
+        ({"image_input_mode": "vision"}, "vision"),
+    ):
+        if mode(payload) != expected:
+            raise RuntimeError("Frozen image input mode differs")
+    for invalid in (None, True, 1, "auto"):
+        try:
+            mode({"image_input_mode": invalid})
+        except mode_error:
+            pass
+        else:
+            raise RuntimeError("Frozen image input mode accepted invalid value")
+    policy = {
+        "capability_evidence": {"declared": ["vision"], "catalog": [], "probed": []},
+        "effective_capabilities": ["vision", "structured_output"],
+        "allowed_data_classes": ["source_page_image"],
+        "image_egress": "teacher_confirmed_visual_pages",
+    }
+    require = modes["require_preparation_vision_policy"]
+    require(policy)
+    require({**policy, "image_egress": "teacher_confirmed_source_pages"})
+    for changed in (
+        {"capability_evidence": {"declared": [], "catalog": [], "probed": ["vision"]}},
+        {"effective_capabilities": ["vision"]},
+        {"allowed_data_classes": []},
+        {"image_egress": "deny"},
+    ):
+        try:
+            require({**policy, **changed})
+        except mode_error:
+            pass
+        else:
+            raise RuntimeError("Frozen visual policy accepted unconfirmed image egress")
+
+    prefix = "integrations.deeptutor_shchem_v1."
+    provider_code = pyz.extract(prefix + "desktop_preparation_provider")
+    provider_class = _frozen_function(provider_code, "StructuredPreparationProvider")
+    for name in ("generate", "__call__"):
+        method = _frozen_function(provider_class, name)
+        keyword_only = method.co_varnames[
+            method.co_argcount : method.co_argcount + method.co_kwonlyargcount
+        ]
+        if "image_data" not in keyword_only:
+            raise RuntimeError("Frozen provider image_data keyword route missing")
+        if name == "generate" and not {
+            "_provider_image_pages",
+            "build_structured_visual_request",
+            "build_structured_text_request",
+        }.issubset(method.co_names):
+            raise RuntimeError("Frozen provider text/visual builder route missing")
+        if name == "__call__" and "image_data" not in strings(method):
+            raise RuntimeError("Frozen provider call dropped image_data forwarding")
+
+    namespace = {
+        "__name__": "frozen_preparation_pixel_helper",
+        "Mapping": Mapping,
+        "image_input_mode": mode,
+        "normalize_image_assets": images["normalize_image_assets"],
+        "verify_image_bytes": images["verify_image_bytes"],
+    }
+    error_code = _frozen_function(provider_code, "DesktopPreparationProviderError")
+    error_type = builtins.__build_class__(
+        types.FunctionType(error_code, namespace),
+        "DesktopPreparationProviderError",
+        RuntimeError,
+    )
+    namespace["DesktopPreparationProviderError"] = error_type
+    pixel_helper = types.FunctionType(
+        _frozen_function(provider_code, "_provider_image_pages"), namespace
+    )
+    from PIL import Image
+
+    assets, data = [], {}
+    for number in (1, 2):
+        stream = io.BytesIO()
+        Image.new("RGB", (40 + number, 30), (number * 40, 60, 90)).save(stream, "PNG")
+        raw = stream.getvalue()
+        sha = hashlib.sha256(raw).hexdigest()
+        asset = {
+            **_synthetic_image_metadata(number),
+            **images["image_info"](raw),
+            "sha256": sha,
+            "asset_id": "IMG-" + sha,
+        }
+        assets.append(asset)
+        data[asset["asset_id"]] = raw
+    payload = {"image_input_mode": "vision", "image_assets": assets}
+    expected = [(asset["content_type"], data[asset["asset_id"]]) for asset in assets]
+    if pixel_helper(payload, dict(reversed(list(data.items())))) != expected:
+        raise RuntimeError("Frozen pixel helper changed bytes or attachment order")
+    if (
+        pixel_helper({"image_input_mode": "local_only", "image_assets": assets}, None)
+        != []
+        or pixel_helper({"image_input_mode": "vision", "image_assets": []}, None) != []
+    ):
+        raise RuntimeError("Frozen empty/local image routing differs")
+    for brief, raw_map in (
+        (payload, {}),
+        (payload, {**data, "unexpected": b"extra"}),
+        (payload, {**data, assets[0]["asset_id"]: b"changed"}),
+        ({**payload, "image_input_mode": "local_only"}, data),
+    ):
+        try:
+            pixel_helper(brief, raw_map)
+        except (error_type, images["PreparationImageError"]):
+            pass
+        else:
+            raise RuntimeError("Frozen pixel helper accepted invalid selected pixels")
+
+    manager_code = pyz.extract(prefix + "desktop_preparation")
+    namespace.update(
         {
             "deepcopy": deepcopy,
-            "json": json,
-            "PREPARATION_PROMPT_REVISION": revision,
-            "CLASSROOM_NOTE_FINAL_CHECK": checklist,
-            "TEACHING_SOURCE_RULES": source_rules,
-            "course_composition_contract": frozen_course_namespace(pyz)[
-                "course_composition_contract"
-            ],
-        },
+            "inspect": inspect,
+            "preparation_candidate_schema": lambda: {"type": "object"},
+        }
     )
-    brief = {"topic": "课堂笔记检查", "materials": "完整参考资料-不截断"}
-    original = deepcopy(brief)
-    rendered = prompt(brief)
-    embedded, _ = json.JSONDecoder().raw_decode(
-        rendered.split("教师备课简报 JSON：\n", 1)[1]
+    namespace["DesktopPreparationError"] = builtins.__build_class__(
+        types.FunctionType(
+            _frozen_function(manager_code, "DesktopPreparationError"), namespace
+        ),
+        "DesktopPreparationError",
+        RuntimeError,
     )
-    if brief != original or embedded != original or not rendered.endswith(checklist):
-        raise RuntimeError("Frozen prompt changed source or omitted final check")
-    if "G 课堂投影：默认服务约40人班级" not in rendered:
-        raise RuntimeError("Frozen prompt omitted classroom course contract")
-    if source_rules not in rendered:
-        raise RuntimeError("Frozen prompt omitted teacher source closure contract")
-    return True
+    invoke = types.FunctionType(
+        _frozen_function(manager_code, "_invoke_provider"), namespace
+    )
+
+    def recorder(*args, **kwargs):
+        return kwargs.get("image_data")
+
+    if (
+        invoke(
+            recorder, payload, {}, lambda value: None, lambda: False, image_data=data
+        )
+        != data
+    ):
+        raise RuntimeError("Frozen manager adapter dropped image_data")
+
+    def text_only(brief):
+        return brief
+
+    local = {"image_input_mode": "local_only", "image_assets": assets}
+    if (
+        invoke(text_only, local, {}, lambda value: None, lambda: False, image_data=data)
+        != local
+    ):
+        raise RuntimeError("Frozen manager broke legacy local-only adapter")
+    try:
+        invoke(
+            text_only, payload, {}, lambda value: None, lambda: False, image_data=data
+        )
+    except namespace["DesktopPreparationError"]:
+        pass
+    else:
+        raise RuntimeError("Frozen manager allowed vision with a text-only adapter")
+    return {
+        "pure_mode_cases": 7,
+        "pure_vision_policy_cases": 6,
+        "pure_pixel_binding_cases": 7,
+        "pure_manager_adapter_cases": 3,
+        "provider_keyword_and_builder_route_static_checked": True,
+        "synthetic_pixel_count": 2,
+        "provider_instantiated": False,
+        "transport_executed": False,
+        "real_model_called": False,
+        "inspection_dependencies": "inspector_interpreter_and_synthetic_fixtures_not_frozen_runtime",
+    }
 
 
 def frozen_course_namespace(pyz):
@@ -462,7 +743,7 @@ def main() -> int:
     expected = {
         "desktop_version": [args.version],
         "desktop_preparation_provider": [
-            "20260910-word-image-roles-v23",
+            PROMPT_REVISION,
             "20260909-deepseek-v4-output-budget-v12",
             "provider_response_empty",
         ],
@@ -484,7 +765,10 @@ def main() -> int:
         "desktop_workbench.preparation_design_widget": [],
         "desktop_preparation_pedagogy": ["20260910-editable-courseware-reference-v3"],
         "desktop_preparation_classroom_layout": ["classroom-v2"],
-        "desktop_workbench.library_detail": ["将这张原图用于备课…", "LibraryShowAnswerImage"],
+        "desktop_workbench.library_detail": [
+            "将这张原图用于备课…",
+            "LibraryShowAnswerImage",
+        ],
         "desktop_workbench.library_page": ["选为备课参考…"],
         "desktop_library_preparation": [
             "【题库备课参考：当前阅读快照，不是原题全文或已核定答案】"
@@ -500,8 +784,15 @@ def main() -> int:
         "songjiang2025_theme2_direct_visual_scan": [],
         "shanghai_high_east2025_theme45_direct_visual_scan": [],
         "archived_wechat_crop_revision": ["archived-wechat-source-recrop-20260910-r3"],
-        "reference_answer_images": ["sheast-source-answer-images-20260910-r1", "inline_required", "preview_only"],
-        "paper_export_workbench": ["used_by_atomic_ids", "paper_export_answer_image_loader_missing"],
+        "reference_answer_images": [
+            "sheast-source-answer-images-20260910-r1",
+            "inline_required",
+            "preview_only",
+        ],
+        "paper_export_workbench": [
+            "used_by_atomic_ids",
+            "paper_export_answer_image_loader_missing",
+        ],
         "paper_format_presets": ["reference_answer_invalid", "content_blocks"],
         "paper_export_renderer": [
             "used_by_atomic_ids",
@@ -617,6 +908,13 @@ def main() -> int:
         "desktop_preparation_images": [
             "Save exact locally verified bytes without an intermediate export file."
         ],
+        "desktop_preparation_image_input": [
+            "local_only",
+            "vision",
+            "preparation_image_mode_invalid",
+            "vision_capability_unconfirmed",
+            "image_egress_not_allowed",
+        ],
         "desktop_preparation_renderer": ["w:cantSplit"],
         "desktop_preparation_worksheet": [],
         "desktop_preparation_drafts": [],
@@ -656,6 +954,7 @@ def main() -> int:
 
     behavior = verify_frozen_behavior(pyz)
     note_prompt = verify_frozen_note_prompt(pyz)
+    image_input = verify_frozen_preparation_image_input(pyz)
     classroom_layout = verify_frozen_classroom_layout(pyz)
     image_capacity = verify_frozen_image_limit(pyz)
     catalog_session = verify_catalog_session(pyz.extract(prefix + "desktop_facade"))
@@ -687,6 +986,8 @@ def main() -> int:
         "native_pdf_runtime_files": qt_pdf_files,
         "frozen_behavior": behavior,
         "frozen_note_prompt_checked": note_prompt,
+        "frozen_note_prompt_mode_cases": 4,
+        "frozen_preparation_image_input": image_input,
         "frozen_classroom_adaptive_layout_checked": classroom_layout,
         "frozen_twelve_image_capacity_checked": image_capacity,
         "frozen_catalog_session_checked": catalog_session,

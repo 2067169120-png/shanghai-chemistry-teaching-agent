@@ -190,7 +190,7 @@ class PreparationPage(QWidget):
         self.objective.setAccessibleName("目标或考试定位")
         self.materials = QPlainTextEdit()
         self.materials.setPlaceholderText(
-            "教材页、完整大题、试卷、学生分析或已核验热点；本里程碑仅发送文字"
+            "教材页、完整大题、试卷、学生分析或已核验热点；图片发送方式在下方选择"
         )
         self.materials.setMinimumHeight(76)
         self.materials.setMaximumHeight(120)
@@ -446,6 +446,10 @@ class PreparationPage(QWidget):
         self._availability_timer.start(120)
         self._form_baseline = self._payload()
         self._saving_payload: dict | None = None
+        self.image_assets_widget.mode_changed.connect(self._image_input_mode_changed)
+
+    def _image_input_mode_changed(self, _mode: str) -> None:
+        self.setWindowModified(self._payload() != self._form_baseline)
 
     def _open_draft(self) -> None:
         from ..desktop_preparation import normalize_preparation_payload
@@ -488,6 +492,7 @@ class PreparationPage(QWidget):
         self.objective.setPlainText(payload["objective"])
         self.materials.setPlainText(payload["materials"])
         self.image_assets_widget.set_assets(payload.get("image_assets", ()))
+        self.image_assets_widget.set_image_input_mode(payload.get("image_input_mode"))
         for key, widget in (
             ("learning_and_experiment", self.learning_detail),
             ("template_and_delivery", self.template_detail),
@@ -495,6 +500,7 @@ class PreparationPage(QWidget):
         ):
             widget.setText(payload["advanced"].get(key, ""))
         self._form_baseline = self._payload()
+        self.setWindowModified(False)
         self._preparation_task_id = None
         self._current_task_status = ""
         self._current_task_retryable = False
@@ -773,7 +779,7 @@ class PreparationPage(QWidget):
                 self.status,
                 "success",
                 f"Word 文字与 {len(merged) - len(existing)} 张新增原图已一起追加；原有表单和图片保留。"
-                "原图用于本地课件排版，模型只收到图片说明，不会看到像素；尚未调用模型。"
+                "原图已保存到本机；是否交给 AI 读图以“图片用法”为准，生成前会确认发送清单。尚未调用模型。"
                 + (
                     f" 包含 {len(expected['warnings'])} 条待核对提醒。"
                     if expected["warnings"]
@@ -974,6 +980,8 @@ class PreparationPage(QWidget):
         image_assets = self.image_assets_widget.assets()
         if image_assets:
             payload["image_assets"] = image_assets
+        if self.image_assets_widget.image_input_mode() == "vision":
+            payload["image_input_mode"] = "vision"
         return payload
 
     def _save(self) -> None:
@@ -996,6 +1004,7 @@ class PreparationPage(QWidget):
         self._save_task_id = None
         if self._saving_payload is not None:
             self._form_baseline = self._saving_payload
+        self.setWindowModified(self._payload() != self._form_baseline)
         self._saving_payload = None
         self.save_button.setEnabled(True)
         self.image_assets_widget.set_editing_enabled(True)
@@ -1120,16 +1129,21 @@ class PreparationPage(QWidget):
             set_status(self.status, "attention", "请先填写六个常用备课字段。")
             self.topic.setFocus()
             return
-        provider_name = str(getattr(profile, "provider_name", "模型服务"))
-        model_id = str(getattr(profile, "model_id", "模型"))
+        profile_id = str(getattr(profile, "profile_id", ""))
+        revision = str(getattr(profile, "revision", ""))
+        try:
+            preview = self.facade.preparation_egress_preview(payload, profile_id, revision)
+            confirmation_text = self._egress_confirmation_text(preview)
+        except DesktopFacadeError as exc:
+            set_status(self.status, "error", exc.message_zh)
+            return
+        except (AttributeError, OSError, RuntimeError, TypeError, ValueError):
+            set_status(self.status, "error", "备课发送预检未能完成；尚未准备任务或调用模型，请检查输入与设置后重试。")
+            return
         answer = QMessageBox.question(
             self,
             "确认调用模型",
-            "将使用以下模型生成备课候选：\n\n"
-            f"供应商 / 模型：{provider_name} / {model_id}\n"
-            "发送内容：本页填写的备课文字\n"
-            f"{self.image_assets_widget.confirmation_text()}\n\n"
-            "模型服务可能产生费用，文字将发送给所选供应商。是否继续？",
+            confirmation_text + "\n\n是否继续？",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
@@ -1139,8 +1153,8 @@ class PreparationPage(QWidget):
         try:
             prepared = self.facade.prepare_preparation(
                 payload,
-                str(getattr(profile, "profile_id", "")),
-                str(getattr(profile, "revision", "")),
+                profile_id,
+                revision,
             )
         except DesktopFacadeError as exc:
             set_status(self.status, "error", exc.message_zh)
@@ -1151,6 +1165,15 @@ class PreparationPage(QWidget):
             )
             return
         self._continue_confirmed_preparation(prepared)
+
+    @staticmethod
+    def _egress_confirmation_text(preview: object) -> str:
+        if not isinstance(preview, dict):
+            raise TypeError("发送预检结果不完整。")
+        text = preview.get("confirmation_text")
+        if not isinstance(text, str) or not text.strip():
+            raise ValueError("发送预检缺少确认说明。")
+        return text
 
     def _continue_confirmed_preparation(self, summary: object) -> None:
         """Continue a prepared identity without asking for the same consent twice."""
@@ -1282,17 +1305,22 @@ class PreparationPage(QWidget):
         if not is_retry and self._current_task_status != "prepared":
             set_status(self.status, "attention", "这个备课任务当前不能继续生成。")
             return
-        if self._current_task_source_kind == "teacher_revision":
+        try:
+            preview = self.facade.preparation_task_egress_preview(task_id)
+            message = self._egress_confirmation_text(preview)
+            local_only = preview.get("local_only_operation")
+            if type(local_only) is not bool:
+                raise ValueError("历史任务发送预检缺少本地操作标记。")
+        except DesktopFacadeError as exc:
+            set_status(self.status, "error", exc.message_zh)
+            return
+        except (AttributeError, OSError, RuntimeError, TypeError, ValueError):
+            set_status(self.status, "error", "历史任务发送预检未能完成；本次没有继续生成，请刷新后重试。")
+            return
+        if local_only:
             title = "确认本地重新导出"
-            message = "将使用已保存的修订内容重新导出文件，不读取模型配置，不发送请求，也不覆盖原稿。是否继续？"
         elif is_retry:
             title = "确认重试备课候选"
-            message = (
-                "将重试这个备课任务。已有冻结候选时会直接继续本地生成；"
-                "只有不存在冻结候选时才可能再次调用模型。\n\n"
-                "若需要调用模型，已冻结的备课文字会发送给任务绑定的供应商，"
-                f"并可能产生费用。{self.image_assets_widget.confirmation_text()}是否继续？"
-            )
             if self._current_returned_available:
                 message = (
                     "这个任务已有本地保存的模型返回稿，但尚未通过结构检查。"
@@ -1301,14 +1329,10 @@ class PreparationPage(QWidget):
                 )
         else:
             title = "确认继续生成"
-            message = (
-                "将继续这个已准备的备课任务。任务可能调用已绑定的模型服务，"
-                f"发送已冻结的备课文字并产生费用。{self.image_assets_widget.confirmation_text()}是否继续？"
-            )
         answer = QMessageBox.question(
             self,
             title,
-            message,
+            message + "\n\n是否继续？",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )

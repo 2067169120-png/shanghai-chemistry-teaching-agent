@@ -5344,6 +5344,8 @@ class DesktopWorkbenchFacade:
         }
         if normalized.get("image_assets"):
             value["image_assets"] = normalized["image_assets"]
+        if normalized.get("image_input_mode") == "vision":
+            value["image_input_mode"] = "vision"
         self._state.save_draft(draft_id, value)
         return DraftReceipt(
             draft_id=draft_id,
@@ -5446,13 +5448,122 @@ class DesktopWorkbenchFacade:
             message = "模型与演示文稿运行环境已就绪。"
         return PreparationAvailability(provider_ready, renderer_ready, message)
 
+    def _preparation_image_policy(
+        self, payload: Mapping[str, Any], profile_id: str, revision: str
+    ) -> None:
+        from .desktop_preparation_image_input import (
+            image_input_mode,
+            require_preparation_vision_policy,
+        )
+
+        if image_input_mode(payload) != "vision" or not payload.get("image_assets"):
+            return
+        policy_reader = getattr(self._providers, "invocation_policy", None)
+        if not callable(policy_reader):
+            raise DesktopFacadeError(
+                "vision_capability_unconfirmed", "无法核对所选模型的视觉能力与图片发送设置。"
+            )
+        policy = policy_reader(profile_id, expected_revision=revision)
+        require_preparation_vision_policy(policy)
+
+    @staticmethod
+    def _preparation_egress_disclosure(
+        payload: Mapping[str, Any], model_label: str, *, local_only_operation: bool = False
+    ) -> dict[str, Any]:
+        from .desktop_preparation_image_input import image_input_mode
+
+        mode = image_input_mode(payload)
+        assets = payload.get("image_assets", [])
+        sending = mode == "vision" and not local_only_operation
+        images = [
+            {key: asset[key] for key in ("asset_id", "sha256", "caption")}
+            for asset in assets
+        ] if sending else []
+        if local_only_operation:
+            text = "已有冻结候选，本次只在本机继续导出；不调用模型，不发送文字或图片。"
+        else:
+            text = (
+                f"接收模型：{model_label}。\n"
+                "发送内容：本任务备课文字，以及已选图片的图注、来源和用途。\n"
+            )
+            if images:
+                text += (
+                    f"同时发送 {len(images)} 张所选原图（含图内全部可见内容及文件自带元数据）。\n"
+                    + "\n".join(f"{index}. {asset['caption']}" for index, asset in enumerate(images, 1))
+                    + "\n请勿选入未经授权的个人信息。视觉能力来自模型目录或您的声明，"
+                    "连接测试并未核验识图质量。"
+                )
+            else:
+                text += "发送图片像素：0 张；不发送图片像素，原图仅用于本地课件排版。"
+            text += "\n本次调用可能产生费用；重试可能再次计费。"
+        return {
+            "image_input_mode": mode,
+            "image_count": len(images),
+            "images": images,
+            "model_label": model_label,
+            "confirmation_text": text,
+            "local_only_operation": local_only_operation,
+        }
+
+    def _preparation_preflight_manager(self) -> Any:
+        # Availability/history loading owns startup recovery. A preview itself
+        # must not instantiate a manager and rewrite interrupted task records.
+        with self._preparation_lock:
+            if self._preparation_manager is None:
+                raise DesktopFacadeError(
+                    "preparation_not_initialized",
+                    "备课工作区尚未就绪，请打开备课页面并等待环境检查完成。",
+                )
+            return self._preparation_manager
+
+    def preparation_egress_preview(
+        self, payload: Mapping[str, Any], profile_id: str, expected_profile_revision: str
+    ) -> dict[str, Any]:
+        """Preflight is local and read-only, before any confirmation or secret borrow."""
+        from .desktop_preparation import normalize_preparation_payload
+
+        try:
+            normalized = normalize_preparation_payload(payload)
+            profile = self._preparation_profile(profile_id, expected_profile_revision)
+            self._preparation_image_policy(normalized, profile_id, expected_profile_revision)
+            for asset in normalized.get("image_assets", []):
+                self._preparation_preflight_manager().image_store.load(asset)
+            return self._preparation_egress_disclosure(
+                normalized, f"{profile.provider_name} / {profile.model_id}（{profile.base_url}）"
+            )
+        except DesktopFacadeError:
+            raise
+        except Exception as exc:
+            raise self._as_preparation_error(exc, "无法核对本次发送内容，请检查图片与模型设置。") from exc
+
+    def preparation_task_egress_preview(self, task_id: str) -> dict[str, Any]:
+        """History uses the original task's pixels and model, not the open form."""
+        try:
+            snapshot = self._preparation_preflight_manager().egress_snapshot(task_id)
+            local = snapshot["local_only_operation"]
+            label = "不调用模型"
+            if not local:
+                profile = self._preparation_profile(snapshot["profile_id"], snapshot["profile_revision"])
+                self._preparation_image_policy(snapshot, profile.profile_id, profile.revision)
+                label = f"{profile.provider_name} / {profile.model_id}（{profile.base_url}）"
+            return {
+                **self._preparation_egress_disclosure(snapshot, label, local_only_operation=local),
+                "task_id": task_id,
+                "request_sha256": snapshot["request_sha256"],
+            }
+        except DesktopFacadeError:
+            raise
+        except Exception as exc:
+            raise self._as_preparation_error(exc, "无法核对历史任务的发送范围。") from exc
+
     def prepare_preparation(
         self,
         payload: Mapping[str, Any],
         profile_id: str,
         expected_profile_revision: str,
     ) -> PreparationTaskSummary:
-        self._preparation_profile(profile_id, expected_profile_revision)
+        self._preparation_manager_instance()
+        self.preparation_egress_preview(payload, profile_id, expected_profile_revision)
         try:
             value = self._preparation_manager_instance().prepare(
                 payload,
@@ -5482,6 +5593,7 @@ class DesktopWorkbenchFacade:
         manager = self._preparation_manager_instance()
         try:
             task = manager.get_task(task_id)
+            manager.record_egress_confirmation(task_id)
         except Exception as exc:
             raise self._as_preparation_error(exc, "找不到这个备课任务。") from exc
         profile_id = task.get("profile_id") if isinstance(task, Mapping) else None
@@ -5520,6 +5632,7 @@ class DesktopWorkbenchFacade:
 
             try:
                 self._preparation_profile(profile_id, revision)
+                self._preparation_image_policy(args[0], profile_id, revision)
                 with borrow(profile_id, expected_revision=revision) as context:
                     return StructuredPreparationProvider(
                         context,

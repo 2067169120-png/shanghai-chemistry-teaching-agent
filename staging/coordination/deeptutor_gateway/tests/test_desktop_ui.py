@@ -336,6 +336,21 @@ def test_paper_page_score_checkbox_is_independent_and_invalidates_preview(qt_app
 
 
 class _PreparationFacade(_Facade):
+    def preparation_egress_preview(self, payload, profile_id, revision):
+        assert profile_id == self.profile.profile_id
+        assert revision == self.profile.revision
+        return {
+            "confirmation_text": "本页填写的备课文字发送给示例模型服务 / teacher-model；不发送图片像素；可能产生费用。",
+            "local_only_operation": False,
+        }
+
+    def preparation_task_egress_preview(self, task_id):
+        assert isinstance(task_id, str) and task_id
+        return {
+            "confirmation_text": "发送原任务冻结文字给示例模型服务 / teacher-model；不发送图片像素；可能产生费用。",
+            "local_only_operation": False,
+        }
+
     def __init__(self, artifact_root: Path) -> None:
         super().__init__()
         self.profile = SimpleNamespace(
@@ -973,8 +988,8 @@ def test_retryable_failed_history_retries_once_before_generation(
         lambda: page._generation_qt_task_id is None and page.result_card.isVisible(),
     )
     assert confirmation["title"] == "确认重试备课候选"
-    assert "已有冻结候选时会直接继续本地生成" in confirmation["message"]
-    assert "只有不存在冻结候选时才可能再次调用模型" in confirmation["message"]
+    assert "原任务冻结文字" in confirmation["message"]
+    assert "不发送图片像素" in confirmation["message"]
     assert facade.retry_calls == ["PREP-INTERNAL-SECRET"]
     assert facade.generate_calls == [
         {"task_id": "PREP-INTERNAL-SECRET", "teacher_confirmed": True}

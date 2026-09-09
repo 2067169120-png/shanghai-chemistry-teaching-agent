@@ -15,6 +15,7 @@ from typing import Any
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QCloseEvent, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
     QDialogButtonBox,
     QFileDialog,
@@ -258,8 +259,9 @@ class PreparationImageMetadataDialog(QDialog):
         root.addWidget(selected)
 
         hint = QLabel(
-            "请填写给模型和课堂使用的文字说明。图片像素仍只保留在本机；"
-            "这些字段会随确认后的备课文字发送。"
+            "请填写给模型和课堂使用的文字说明。图片先导入本机素材库；"
+            "是否发送图片像素，由备课页面的“图片用法”决定。"
+            "图注、来源和用途会随确认后的备课文字发送。"
         )
         hint.setObjectName("MutedLabel")
         hint.setWordWrap(True)
@@ -379,6 +381,7 @@ class PreparationImagesWidget(QWidget):
         "模型仅收到你填写的图注、来源和用途，不会直接看到图片。"
     )
     assets_changed = Signal(object)
+    mode_changed = Signal(str)
 
     def __init__(self, facade: object, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -399,11 +402,34 @@ class PreparationImagesWidget(QWidget):
         title.setAccessibleName("本次课使用的教学图片")
         root.addWidget(title)
 
+        mode_form = QFormLayout()
+        mode_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
+        self.image_mode_combo = QComboBox()
+        self.image_mode_combo.setObjectName("PreparationImageInputMode")
+        self.image_mode_combo.setAccessibleName("图片用法")
+        self.image_mode_combo.addItem("仅用于课件排版", "local_only")
+        self.image_mode_combo.addItem("同时交给 AI 读图", "vision")
+        self.image_mode_combo.setMinimumWidth(0)
+        self.image_mode_combo.setMinimumContentsLength(10)
+        self.image_mode_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
+        self.image_mode_combo.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
+        self.image_mode_combo.setToolTip(
+            "仅用于课件排版：不发送图片像素。\n"
+            "同时交给 AI 读图：确认备课请求后，将所选图片交给模型读取。"
+        )
+        mode_form.addRow("图片用法", self.image_mode_combo)
+        root.addLayout(mode_form)
+
         self.privacy_label = QLabel(self.privacy_notice_text)
         self.privacy_label.setObjectName("MutedLabel")
         self.privacy_label.setWordWrap(True)
         self.privacy_label.setAccessibleName("图片本地保存与模型发送说明")
         root.addWidget(self.privacy_label)
+        self.image_mode_combo.currentIndexChanged.connect(self._image_mode_changed)
 
         actions = QHBoxLayout()
         actions.setSpacing(8)
@@ -451,6 +477,20 @@ class PreparationImagesWidget(QWidget):
         """Return a payload-safe copy with no local path or image bytes."""
 
         return [dict(asset) for asset in self._assets]
+
+    def image_input_mode(self) -> str:
+        return str(self.image_mode_combo.currentData())
+
+    def set_image_input_mode(self, value: str | None) -> None:
+        """Old drafts default to local-only; unknown modes never downgrade."""
+        mode = "local_only" if value is None else value
+        if not isinstance(mode, str) or mode not in {"local_only", "vision"}:
+            raise ValueError("图片用法必须为 local_only 或 vision。")
+        self.image_mode_combo.setCurrentIndex(self.image_mode_combo.findData(mode))
+
+    def _image_mode_changed(self, _index: int) -> None:
+        self.privacy_label.setText(self.confirmation_text())
+        self.mode_changed.emit(self.image_input_mode())
 
     def set_assets(self, values: Iterable[object] | None) -> None:
         """Replace the list when loading a draft, including clearing stale data."""
@@ -528,7 +568,19 @@ class PreparationImagesWidget(QWidget):
         return self._editing_enabled
 
     def confirmation_text(self) -> str:
-        return self.privacy_notice_text
+        if self.image_input_mode() == "local_only":
+            return "图片用法：仅用于课件排版。本次发送 0 张图片。" + self.privacy_notice_text
+        count = len(self._assets)
+        if count == 0:
+            return (
+                "图片用法：同时交给 AI 读图。本次发送 0 张图片；当前没有教学图片，"
+                "不发送图片像素。备课文字及已填写的图注、来源和用途会随确认后的请求发送。"
+            )
+        return (
+            f"图片用法：同时交给 AI 读图。确认后将发送 {count} 张图片像素给模型读取；"
+            "你填写的图注、来源和用途也会随备课文字发送。"
+            "本机素材库仍保留原图片。"
+        )
 
     def _choose_image(self) -> None:
         if not self._editing_enabled:
@@ -662,6 +714,8 @@ class PreparationImagesWidget(QWidget):
 
     def _update_controls(self) -> None:
         can_edit = self._editing_enabled
+        self.image_mode_combo.setEnabled(can_edit)
+        self.privacy_label.setText(self.confirmation_text())
         self.add_button.setEnabled(can_edit and len(self._assets) < self.MAX_ASSETS)
         self.remove_button.setEnabled(can_edit and self.asset_list.currentRow() >= 0)
 
