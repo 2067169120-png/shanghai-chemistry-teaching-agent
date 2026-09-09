@@ -1962,6 +1962,89 @@ class DesktopWorkbenchFacade:
             ) from exc
         return tuple(sources)
 
+    def _imported_word_source(self, batch_id: str, source_id: str):
+        descriptor = self._saved_visual_import_batch(batch_id)
+        sources = self._restore_visual_import_sources(descriptor)
+        source = next((item for item in sources if item.effective_source_file_id == source_id), None)
+        if source is None or not source.filename.casefold().endswith(".docx"):
+            raise DesktopFacadeError("imported_word_missing", "未找到这份已导入的Word资料，请重新选择。")
+        return source
+
+    def imported_word_sources(self, batch_id: str) -> list[dict[str, Any]]:
+        """List saved Word sources without depending on the original picker path."""
+        from .desktop_visual_import_v2 import inspect_native_docx
+
+        descriptor = self._saved_visual_import_batch(batch_id)
+        return [
+            {
+                "source_id": source.effective_source_file_id,
+                "source_name": source.filename,
+                "role": source.role,
+                "import_state": inspect_native_docx(source).import_state,
+            }
+            for source in self._restore_visual_import_sources(descriptor)
+            if source.filename.casefold().endswith(".docx")
+        ]
+
+    def list_imported_word_batches(self) -> tuple[DesktopVisualImportReceipt, ...]:
+        """Completed native-only imports remain reachable after a restart."""
+        values = []
+        for key, value in self._state.snapshot().get("drafts", {}).items():
+            if (
+                isinstance(key, str) and key.startswith(_VISUAL_IMPORT_DRAFT_PREFIX)
+                and isinstance(value, Mapping)
+                and value.get("schema_version") == _VISUAL_IMPORT_DRAFT_SCHEMA
+                and any(
+                    isinstance(source, Mapping)
+                    and str(source.get("filename", "")).casefold().endswith(".docx")
+                    for source in value.get("sources", [])
+                )
+            ):
+                values.append(value)
+        values.sort(key=lambda value: str(value.get("created_at") or ""))
+        return tuple(self._visual_import_receipt_from_saved(value) for value in values)
+
+    def imported_word_preview(self, batch_id: str, source_id: str) -> dict[str, Any]:
+        from .desktop_preparation_sources import PreparationSourcesService
+
+        source = self._imported_word_source(batch_id, source_id)
+        return PreparationSourcesService(self.paths.workspace_root).word_preview_bytes(
+            source.content, source.filename
+        )
+
+    def imported_word_asset(self, batch_id: str, source_id: str, asset_id: str) -> dict[str, Any]:
+        from .desktop_preparation_sources import (
+            PreparationSourceError,
+            PreparationSourcesService,
+        )
+
+        source = self._imported_word_source(batch_id, source_id)
+        try:
+            return PreparationSourcesService(self.paths.workspace_root).word_asset_bytes(source.content, asset_id)
+        except PreparationSourceError:
+            raise
+        except (OSError, ValueError) as exc:
+            raise DesktopFacadeError("imported_word_image_invalid", "原图无法预览，请在Word原文件中查看；文字内容仍可使用。") from exc
+
+    def imported_word_reference(
+        self, batch_id: str, source_id: str, source_sha256: str,
+        block_start: int, block_end: int, expected_revision: str,
+    ) -> dict[str, Any]:
+        from .desktop_preparation_sources import PreparationSourcesService
+
+        source = self._imported_word_source(batch_id, source_id)
+        service = PreparationSourcesService(self.paths.workspace_root)
+        preview = service.word_preview_bytes(source.content, source.filename)
+        if source_sha256 != source.source_sha256 or expected_revision != preview["revision"]:
+            raise DesktopFacadeError("imported_word_changed", "Word原文或提取结果已变化，请重新预览后再确认。")
+        # Reuse the same reference compiler as the existing preparation dialog;
+        # it reads the archive again and validates hash/range/length without
+        # truncating. The original teacher-visible filename stays intact.
+        return service.reference(
+            self._visual_import_root / "sources" / f"{source.source_sha256}.docx",
+            source_sha256, block_start, block_end, [], word_source_name=source.filename,
+        )
+
     def _visual_import_profile(
         self, profile_id: str, expected_revision: str
     ) -> Mapping[str, Any]:

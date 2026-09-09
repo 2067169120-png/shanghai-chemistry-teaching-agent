@@ -1,0 +1,543 @@
+from __future__ import annotations
+
+from copy import deepcopy
+from typing import Any
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap, QResizeEvent
+from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QPlainTextEdit,
+    QPushButton,
+    QSizePolicy,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
+
+from .components import page_scroll, section_title, set_status
+
+
+def _safe_message(exc: Exception, fallback: str) -> str:
+    # Facade errors have teacher-facing messages. Do not surface raw exception
+    # text, which may contain cached filenames, paths, or implementation data.
+    message = getattr(exc, "message_zh", None)
+    return message if isinstance(message, str) and message.strip() else fallback
+
+
+def _warnings(value: Any) -> list[str]:
+    if not isinstance(value, (list, tuple)) or any(
+        not isinstance(item, str) for item in value
+    ):
+        raise ValueError("invalid warnings")
+    return [item for item in value if item]
+
+
+class ImportWordDialog(QDialog):
+    """Inspect saved Word blocks and hand a freshly checked selection to preparation."""
+
+    def __init__(self, facade: Any, batch_id: str, parent: QWidget | None = None):
+        super().__init__(parent)
+        self.facade = facade
+        self._batch_id = batch_id
+        self.reference: dict[str, Any] | None = None
+        self._preview_reference: dict[str, Any] | None = None
+        self._preview_key: tuple | None = None
+        self._source: dict[str, Any] | None = None
+        self._loading = False
+        self._image_pixmap: QPixmap | None = None
+        self.setWindowTitle("查看 Word 内容并带入备课")
+        self.resize(760, 800)
+        self.setMinimumSize(400, 540)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(16, 16, 16, 16)
+        root.addWidget(
+            section_title(
+                "查看已保存的 Word",
+                "选择原文区块，核对文字与缺失提示后追加到备课资料。这里仅在本机读取，不调用模型。",
+            )
+        )
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        source_form = QFormLayout()
+        source_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
+        self.source_combo = self._combo("选择已保存的 Word 来源")
+        source_form.addRow("Word 来源", self.source_combo)
+        self.section_picker = self._combo("按 Word 章节选择区块")
+        source_form.addRow("章节定位", self.section_picker)
+        layout.addLayout(source_form)
+        self.block_list = QListWidget()
+        self.block_list.setAccessibleName("Word 原文区块")
+        self.block_list.setMinimumHeight(120)
+        self.block_list.setMaximumHeight(170)
+        self.block_list.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.block_list.setTextElideMode(Qt.TextElideMode.ElideRight)
+        layout.addWidget(self.block_list)
+        range_layout = QHBoxLayout()
+        self.block_start = QSpinBox()
+        self.block_start.setAccessibleName("起始区块")
+        self.block_end = QSpinBox()
+        self.block_end.setAccessibleName("结束区块")
+        for label, widget in (("从区块", self.block_start), ("至区块", self.block_end)):
+            widget.setRange(0, 0)
+            range_layout.addWidget(QLabel(label))
+            range_layout.addWidget(widget, 1)
+        layout.addLayout(range_layout)
+        self.block_hint = QLabel("正在读取已保存的 Word…")
+        self.block_hint.setWordWrap(True)
+        layout.addWidget(self.block_hint)
+        layout.addWidget(QLabel("所选原文与缺失提示"))
+        self.source_preview = QPlainTextEdit()
+        self.source_preview.setReadOnly(True)
+        self.source_preview.setAccessibleName("所选 Word 原文与缺失提示")
+        self.source_preview.setMinimumHeight(150)
+        self.source_preview.setMaximumHeight(220)
+        layout.addWidget(self.source_preview)
+        self.asset_combo = self._combo("查看 Word 内嵌来源图片")
+        layout.addWidget(self.asset_combo)
+        self.image_label = QLabel()
+        self.image_label.setAccessibleName("Word 内嵌来源图片预览")
+        self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.image_label.setMinimumSize(1, 1)
+        self.image_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
+        )
+        self.image_label.setFixedHeight(230)
+        self.image_label.hide()
+        layout.addWidget(self.image_label)
+        self.image_note = QLabel(
+            "图片仅供核对来源；所选参考中的图片和公式缺口仍须核对。"
+        )
+        self.image_note.setWordWrap(True)
+        self.image_note.hide()
+        layout.addWidget(self.image_note)
+        self.preview_button = QPushButton("预览将带入的内容")
+        self.preview_button.clicked.connect(self._compile_preview)
+        layout.addWidget(self.preview_button)
+        self.preview_body_button = QPushButton("定位到所选正文")
+        self.preview_body_button.setAccessibleName("定位到预览中的所选 Word 正文")
+        self.preview_body_button.setObjectName("QuietButton")
+        self.preview_body_button.setEnabled(False)
+        self.preview_body_button.clicked.connect(self._locate_reference_body)
+        layout.addWidget(self.preview_body_button)
+        self.preview = QPlainTextEdit()
+        self.preview.setReadOnly(True)
+        self.preview.setAccessibleName("将追加到备课的完整参考预览")
+        self.preview.setPlaceholderText("生成预览后，在这里核对将追加的完整内容。")
+        self.preview.setMinimumHeight(170)
+        layout.addWidget(self.preview)
+        root.addWidget(page_scroll(content), 1)
+        self.status = QLabel()
+        self.status.setWordWrap(True)
+        self.status.setAccessibleName("Word 内容导入状态")
+        root.addWidget(self.status)
+        buttons = QHBoxLayout()
+        self.close_button = QPushButton("取消")
+        self.close_button.clicked.connect(self.reject)
+        self.import_button = QPushButton("确认追加到备课")
+        self.import_button.setEnabled(False)
+        self.import_button.clicked.connect(self._confirm)
+        buttons.addWidget(self.close_button)
+        buttons.addStretch(1)
+        buttons.addWidget(self.import_button)
+        root.addLayout(buttons)
+        self.source_combo.currentIndexChanged.connect(self._source_changed)
+        self.section_picker.currentIndexChanged.connect(self._section_selected)
+        self.block_list.currentItemChanged.connect(self._block_selected)
+        self.block_start.valueChanged.connect(self._selection_changed)
+        self.block_end.valueChanged.connect(self._selection_changed)
+        self.asset_combo.currentIndexChanged.connect(self._asset_selected)
+        self._load_sources()
+
+    @staticmethod
+    def _combo(accessible_name: str) -> QComboBox:
+        combo = QComboBox()
+        combo.setAccessibleName(accessible_name)
+        combo.setMinimumContentsLength(12)
+        combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
+        combo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        return combo
+
+    def _load_sources(self) -> None:
+        self._loading = True
+        try:
+            sources = self.facade.imported_word_sources(self._batch_id)
+            if not isinstance(sources, (list, tuple)):
+                raise TypeError("invalid sources")
+            roles = {"question": "题目", "answer": "参考答案", "handout": "讲义"}
+            for source in sources:
+                if not isinstance(source, dict) or not source.get("source_id"):
+                    continue
+                name = source.get("source_name")
+                if not isinstance(name, str) or not name.strip():
+                    continue
+                name = name.replace("\\", "/").rsplit("/", 1)[-1]
+                role = roles.get(source.get("role"), "资料")
+                self.source_combo.addItem(f"{name} · {role}", source["source_id"])
+            if not self.source_combo.count():
+                set_status(
+                    self.status,
+                    "attention",
+                    "本批没有可读取的 Word 来源，请重新保存资料后查看。",
+                )
+        except Exception as exc:  # noqa: BLE001 - local facade boundary
+            set_status(
+                self.status,
+                "error",
+                _safe_message(exc, "已保存的 Word 来源暂时无法读取。"),
+            )
+        finally:
+            self._loading = False
+        if self.source_combo.count():
+            self._source_changed()
+        else:
+            self._clear_source()
+            self.block_hint.setText("没有可选 Word 来源。")
+
+    def _clear_source(self) -> None:
+        self._source = None
+        self._invalidate_preview()
+        self.block_list.clear()
+        self.section_picker.clear()
+        self.section_picker.addItem("按章节定位，或手动选择区块", None)
+        self.section_picker.setEnabled(False)
+        self.block_start.setRange(0, 0)
+        self.block_end.setRange(0, 0)
+        self.source_preview.clear()
+        self.asset_combo.clear()
+        self.asset_combo.addItem("选择内嵌来源图片进行核对（可选）", None)
+        self.asset_combo.hide()
+        self._image_pixmap = None
+        self.image_label.clear()
+        self.image_label.hide()
+        self.image_note.hide()
+        self.preview_button.setEnabled(False)
+
+    def _source_changed(self, *_args: Any) -> None:
+        if self._loading:
+            return
+        self._loading = True
+        self._clear_source()
+        try:
+            value = self.facade.imported_word_preview(
+                self._batch_id, self.source_combo.currentData()
+            )
+            if not isinstance(value, dict) or not all(
+                isinstance(value.get(key), str) and value[key]
+                for key in ("source_sha256", "revision")
+            ):
+                raise ValueError("invalid source preview")
+            blocks = value.get("blocks")
+            if not isinstance(blocks, (list, tuple)) or any(
+                not isinstance(block, dict)
+                or type(block.get("index")) is not int
+                or block["index"] < 1
+                or not isinstance(block.get("text"), str)
+                for block in blocks
+            ):
+                raise ValueError("invalid blocks")
+            indices = [block["index"] for block in blocks]
+            if indices != sorted(set(indices)):
+                raise ValueError("invalid block order")
+            _warnings(value.get("warnings", ()))
+            for block in blocks:
+                _warnings(block.get("warnings", ()))
+                item = QListWidgetItem(
+                    str(block.get("label") or f"区块 {block['index']}")
+                )
+                item.setData(Qt.ItemDataRole.UserRole, block["index"])
+                item.setToolTip(block["text"])
+                self.block_list.addItem(item)
+            self._source = deepcopy(value)
+            for section in value.get("sections", ()):
+                if not isinstance(section, dict):
+                    continue
+                start, end, title = (
+                    section.get("start"),
+                    section.get("end"),
+                    section.get("title"),
+                )
+                if (
+                    type(start) is int
+                    and type(end) is int
+                    and start in indices
+                    and end in indices
+                    and start <= end
+                    and isinstance(title, str)
+                    and title
+                ):
+                    self.section_picker.addItem(
+                        f"{title} · 区块 {start}—{end}", (start, end)
+                    )
+            self.section_picker.setEnabled(self.section_picker.count() > 1)
+            for asset in value.get("assets", ()):
+                if not isinstance(asset, dict) or not asset.get("asset_id"):
+                    continue
+                label = str(asset.get("label") or "内嵌来源图片")
+                if not asset.get("preview_supported"):
+                    label += "（暂不能预览）"
+                self.asset_combo.addItem(label, deepcopy(asset))
+            self.asset_combo.setVisible(self.asset_combo.count() > 1)
+            if blocks:
+                self.block_start.setRange(min(indices), max(indices))
+                self.block_end.setRange(min(indices), max(indices))
+                self.block_start.setValue(indices[0])
+                self.block_end.setValue(indices[0])
+                self.block_list.setCurrentRow(0)
+                set_status(
+                    self.status,
+                    "success",
+                    "已读取 Word，默认选择首个区块。请选择范围并核对原文。",
+                )
+            else:
+                set_status(
+                    self.status, "attention", "该 Word 没有可选文字区块，无法带入备课。"
+                )
+        except Exception as exc:  # noqa: BLE001 - local facade boundary
+            self._clear_source()
+            set_status(
+                self.status,
+                "error",
+                _safe_message(exc, "Word 内容暂时无法读取，请重新选择来源。"),
+            )
+        finally:
+            self._loading = False
+        self._selection_changed()
+
+    def _selection_key(self) -> tuple:
+        source = self._source or {}
+        return (
+            self.source_combo.currentData(),
+            source.get("source_sha256"),
+            source.get("revision"),
+            self.block_start.value(),
+            self.block_end.value(),
+        )
+
+    def _valid_range(self) -> bool:
+        indices = {block["index"] for block in (self._source or {}).get("blocks", ())}
+        start, end = self.block_start.value(), self.block_end.value()
+        return start in indices and end in indices and start <= end
+
+    def _invalidate_preview(self, *, clear: bool = True) -> None:
+        self.reference = None
+        self._preview_reference = None
+        self._preview_key = None
+        self.import_button.setEnabled(False)
+        self.preview_body_button.setEnabled(False)
+        if clear:
+            self.preview.clear()
+
+    def _selection_changed(self, *_args: Any) -> None:
+        if self._loading:
+            return
+        self._invalidate_preview()
+        valid = self._valid_range()
+        self.preview_button.setEnabled(valid)
+        start, end = self.block_start.value(), self.block_end.value()
+        blocks = (self._source or {}).get("blocks", ())
+        self.block_hint.setText(
+            f"共 {len(blocks)} 个区块；当前选择 {start}—{end}。"
+            if blocks
+            else "没有可选区块。"
+        )
+        bounds = self.section_picker.currentData()
+        if bounds and tuple(bounds) != (start, end):
+            self.section_picker.setCurrentIndex(0)
+        selected = (
+            [block for block in blocks if start <= block["index"] <= end]
+            if valid
+            else []
+        )
+        notes = list((self._source or {}).get("warnings", ()))
+        text = []
+        for block in selected:
+            text.append(f"区块 {block['index']}\n{block['text']}")
+            notes.extend(block.get("warnings", ()))
+        if notes:
+            text.append("原文缺口 / 待核对提醒：\n" + "\n".join(dict.fromkeys(notes)))
+        self.source_preview.setPlainText("\n\n".join(text))
+
+    def _block_selected(self, item: QListWidgetItem | None, *_args: Any) -> None:
+        if self._loading or item is None:
+            return
+        self._set_range(
+            item.data(Qt.ItemDataRole.UserRole), item.data(Qt.ItemDataRole.UserRole)
+        )
+
+    def _section_selected(self, *_args: Any) -> None:
+        bounds = self.section_picker.currentData()
+        if not self._loading and bounds:
+            self._set_range(*bounds)
+
+    def _set_range(self, start: int, end: int) -> None:
+        self._loading = True
+        try:
+            self.block_start.setValue(start)
+            self.block_end.setValue(end)
+        finally:
+            self._loading = False
+        self._selection_changed()
+
+    def _compile_reference(self) -> dict[str, Any]:
+        if not self._source or not self._valid_range():
+            raise ValueError("invalid selection")
+        source_id, sha256, revision, start, end = self._selection_key()
+        value = self.facade.imported_word_reference(
+            self._batch_id, source_id, sha256, start, end, expected_revision=revision
+        )
+        if (
+            not isinstance(value, dict)
+            or not isinstance(value.get("materials"), str)
+            or not value["materials"].strip()
+        ):
+            raise ValueError("invalid reference")
+        _warnings(value.get("warnings", ()))
+        return deepcopy(value)
+
+    def _compile_preview(self) -> None:
+        self._invalidate_preview()
+        try:
+            reference = self._compile_reference()
+        except Exception as exc:  # noqa: BLE001 - local facade boundary
+            set_status(
+                self.status,
+                "error",
+                _safe_message(exc, "所选内容暂时无法形成参考，请重新核对来源和范围。"),
+            )
+            return
+        self._preview_reference = reference
+        self._preview_key = self._selection_key()
+        self._show_reference(reference)
+        self.import_button.setEnabled(True)
+        notes = _warnings(reference.get("warnings", ()))
+        message = "请核对完整参考。确认时会再次核对来源及内容，然后追加到备课资料。"
+        if notes:
+            message += f" 含 {len(notes)} 条原文缺口/待核对提醒。"
+        set_status(self.status, "attention" if notes else "success", message)
+
+    def _show_reference(self, reference: dict[str, Any]) -> None:
+        materials = reference["materials"]
+        missing = [
+            warning
+            for warning in _warnings(reference.get("warnings", ()))
+            if warning not in materials
+        ]
+        if missing:
+            materials += "\n\n原文缺口 / 待核对提醒：\n" + "\n".join(missing)
+        self.preview.setPlainText(materials)
+        self.preview_body_button.setEnabled(
+            not self.preview.document().find(self._body_marker()).isNull()
+        )
+
+    def _body_marker(self) -> str:
+        return f"[Word区块{self.block_start.value()}]"
+
+    def _locate_reference_body(self) -> None:
+        cursor = self.preview.document().find(self._body_marker())
+        if cursor.isNull():
+            self.preview_body_button.setEnabled(False)
+            return
+        cursor.setPosition(cursor.selectionStart())
+        self.preview.setTextCursor(cursor)
+        self.preview.verticalScrollBar().setValue(cursor.block().firstLineNumber())
+        self.preview.setFocus()
+
+    def _confirm(self) -> None:
+        previous = self._preview_reference
+        if previous is None or self._preview_key != self._selection_key():
+            self._invalidate_preview(clear=False)
+            set_status(self.status, "attention", "选择已变化，请重新生成预览后确认。")
+            return
+        try:
+            current = self._compile_reference()
+        except Exception as exc:  # noqa: BLE001 - local facade boundary
+            self._invalidate_preview(clear=False)
+            set_status(
+                self.status,
+                "error",
+                _safe_message(exc, "确认前核对失败，请重新读取来源并预览。"),
+            )
+            return
+        if current != previous:
+            self._invalidate_preview(clear=False)
+            self._show_reference(current)
+            set_status(
+                self.status, "attention", "参考内容已变化，请重新生成预览并核对后确认。"
+            )
+            return
+        self.reference = current
+        self.accept()
+
+    def _asset_selected(self, *_args: Any) -> None:
+        self._image_pixmap = None
+        self.image_label.clear()
+        self.image_label.hide()
+        self.image_note.hide()
+        asset = self.asset_combo.currentData()
+        if self._loading or not asset:
+            return
+        if not asset.get("preview_supported"):
+            set_status(
+                self.status,
+                "attention",
+                "此图片格式暂不能在窗口内预览，请核对原始 Word。",
+            )
+            return
+        try:
+            result = self.facade.imported_word_asset(
+                self._batch_id, self.source_combo.currentData(), asset["asset_id"]
+            )
+            if (
+                not isinstance(result, dict)
+                or not isinstance(result.get("bytes"), bytes)
+                or result.get("mime_type")
+                not in {
+                    "image/png",
+                    "image/jpeg",
+                    "image/webp",
+                    "image/gif",
+                    "image/bmp",
+                    "image/tiff",
+                }
+            ):
+                raise ValueError("invalid source image")
+            pixmap = QPixmap()
+            if not pixmap.loadFromData(result["bytes"]) or pixmap.isNull():
+                raise ValueError("unreadable source image")
+            self._image_pixmap = pixmap
+            self.image_label.show()
+            self.image_note.show()
+            self._resize_image()
+        except Exception as exc:  # noqa: BLE001 - local facade boundary
+            set_status(
+                self.status,
+                "error",
+                _safe_message(exc, "来源图片暂时无法预览，请核对原始 Word。"),
+            )
+
+    def _resize_image(self) -> None:
+        if self._image_pixmap is not None:
+            self.image_label.setPixmap(
+                self._image_pixmap.scaled(
+                    max(1, self.image_label.width()),
+                    self.image_label.height(),
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            )
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._resize_image()

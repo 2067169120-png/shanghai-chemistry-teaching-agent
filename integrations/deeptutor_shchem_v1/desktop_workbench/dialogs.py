@@ -58,6 +58,8 @@ class ImportDialog(QDialog):
         self._active_task_id: str | None = None
         self._active_task_kind: str | None = None
         self._saved_visual_receipt: DesktopVisualImportReceipt | None = None
+        self.preparation_reference: dict | None = None
+        self._word_receipts: dict[str, DesktopVisualImportReceipt] = {}
         self._resumable_receipts: tuple[DesktopVisualImportReceipt, ...] = ()
         self.setWindowTitle("导入资料")
         self.resize(720, 680)
@@ -195,6 +197,26 @@ class ImportDialog(QDialog):
         )
         self.provider_card.setVisible(False)
         content_layout.addWidget(self.provider_card)
+        self.word_history_card = CardFrame()
+        word_history_layout = QVBoxLayout(self.word_history_card)
+        word_history_layout.setContentsMargins(16, 13, 16, 13)
+        word_history_title = QLabel("已导入 Word")
+        word_history_title.setObjectName("CardTitle")
+        word_history_layout.addWidget(word_history_title)
+        self.word_batch_combo = QComboBox()
+        self.word_batch_combo.setAccessibleName("选择已保存的 Word 导入批次")
+        self.word_batch_combo.setMinimumContentsLength(12)
+        self.word_batch_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
+        word_history_layout.addWidget(self.word_batch_combo)
+        self.word_reference_button = QPushButton("查看 Word 内容并带入备课…")
+        self.word_reference_button.setAccessibleName("查看已保存的 Word 内容并带入备课")
+        self.word_reference_button.clicked.connect(self._open_word_reference)
+        self.word_reference_button.setVisible(False)
+        word_history_layout.addWidget(self.word_reference_button)
+        self.word_history_card.setVisible(False)
+        content_layout.addWidget(self.word_history_card)
         content_layout.addStretch(1)
 
         self.scroll = page_scroll(content)
@@ -231,6 +253,7 @@ class ImportDialog(QDialog):
         self.tasks.task_finished.connect(self._task_finished)
         self.tasks.task_cancelled.connect(self._task_cancelled)
         self._load_resumable_batches()
+        self._load_word_batches()
 
     def _role_panels(self) -> tuple[FileSelectionPanel, ...]:
         return (self.question_files, self.answer_files, self.handout_files)
@@ -316,6 +339,10 @@ class ImportDialog(QDialog):
         self.save_button.setEnabled(not busy)
         self.close_button.setEnabled(not busy)
         self.resume_button.setEnabled(not busy)
+        self.word_batch_combo.setEnabled(not busy)
+        self.word_reference_button.setEnabled(
+            not busy and self.word_batch_combo.count() > 0
+        )
         if busy:
             self.generate_button.setEnabled(False)
         else:
@@ -361,10 +388,11 @@ class ImportDialog(QDialog):
     def _show_saved_receipt(
         self, receipt: DesktopVisualImportReceipt, *, resumed: bool = False
     ) -> None:
+        self._remember_word_receipt(receipt, select=True)
         question_count, answer_count, handout_count = self._source_role_counts(receipt)
         summary = (
             f"来源 {receipt.source_count} 份（题目 {question_count}、答案 {answer_count}、"
-            f"讲义 {handout_count}）；原生文字候选 {receipt.native_quick_count} 项；"
+            f"讲义 {handout_count}）；可完整读取的 Word 来源 {receipt.native_quick_count} 份；"
             f"待视觉资料 {receipt.visual_queue_count} 份。"
         )
         if receipt.visual_status == "completed" or receipt.visual_queue_count <= 0:
@@ -383,6 +411,57 @@ class ImportDialog(QDialog):
             "success",
             lead + summary + " 可在第二步选择模型生成视觉候选。",
         )
+
+    def _load_word_batches(self) -> None:
+        loader = getattr(self.facade, "list_imported_word_batches", None)
+        if not callable(loader):
+            return
+        try:
+            for receipt in loader():
+                self._remember_word_receipt(receipt, select=True)
+        except (DesktopFacadeError, OSError, RuntimeError, TypeError, ValueError):
+            set_status(
+                self.status,
+                "attention",
+                "已保存的 Word 列表暂时无法读取；仍可选择新资料并在本机保存。",
+            )
+
+    def _remember_word_receipt(
+        self, receipt: DesktopVisualImportReceipt, *, select: bool = False
+    ) -> None:
+        names = [
+            item.filename.replace("\\", "/").rsplit("/", 1)[-1]
+            for item in receipt.sources
+            if item.filename.lower().endswith(".docx")
+        ]
+        if not receipt.batch_id or not names:
+            return
+        self._word_receipts[receipt.batch_id] = receipt
+        index = self.word_batch_combo.findData(receipt.batch_id)
+        label = "、".join(names[:2]) + ("等" if len(names) > 2 else "")
+        label += f" · {len(names)} 份 Word"
+        if index < 0:
+            self.word_batch_combo.addItem(label, receipt.batch_id)
+            index = self.word_batch_combo.count() - 1
+        else:
+            self.word_batch_combo.setItemText(index, label)
+        if select:
+            self.word_batch_combo.setCurrentIndex(index)
+        self.word_history_card.setVisible(True)
+        self.word_reference_button.setVisible(True)
+        self.word_reference_button.setEnabled(self._active_task_id is None)
+
+    def _open_word_reference(self) -> None:
+        from .import_word_dialog import ImportWordDialog
+
+        batch_id = self.word_batch_combo.currentData()
+        if self._active_task_id or batch_id not in self._word_receipts:
+            return
+        dialog = ImportWordDialog(self.facade, batch_id, self)
+        if dialog.exec() == dialog.DialogCode.Accepted and dialog.reference is not None:
+            self.preparation_reference = dialog.reference
+            self.accept()
+        dialog.deleteLater()
 
     def _refresh_visual_profiles(self) -> None:
         selected = self.provider_combo.currentData()

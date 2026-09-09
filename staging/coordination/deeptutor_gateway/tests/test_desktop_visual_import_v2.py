@@ -119,6 +119,20 @@ def _fixture() -> dict[str, Any]:
     return json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
 
 
+def test_table_markers_do_not_certify_actual_editable_content():
+    output = io.BytesIO()
+    document = '''<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+    <w:body><w:tbl><w:tr><w:tc><w:p><w:r><w:object/></w:r></w:p></w:tc></w:tr></w:tbl></w:body>
+    </w:document>'''
+    with zipfile.ZipFile(output, "w") as package:
+        package.writestr("word/document.xml", document)
+    result = bridge.inspect_native_docx(_source(
+        role="handout", order=1, filename="visual-table.docx", content=output.getvalue()
+    ))
+    assert not result.quick_import_eligible
+    assert result.import_state == "visual_only_required"
+
+
 def _mixed_fixture() -> dict[str, Any]:
     return json.loads(MIXED_FIXTURE_PATH.read_text(encoding="utf-8"))
 
@@ -862,7 +876,7 @@ def _strict_candidate_from_shards(
     )
 
 
-def test_native_docx_inspection_excludes_math_and_drawing_text() -> None:
+def test_native_docx_inspection_reads_supported_math_but_excludes_drawing_text() -> None:
     source = _source(
         role="handout",
         order=1,
@@ -873,12 +887,15 @@ def test_native_docx_inspection_excludes_math_and_drawing_text() -> None:
 
     assert "可编辑题干" in inspection.native_text
     assert "DRAWING_TEXT_MUST_NOT_BE_NATIVE" not in inspection.native_text
-    assert "OMML_TEXT_MUST_NOT_BE_NATIVE" not in inspection.native_text
+    # This legacy-named sentinel is inside valid, editable m:r/m:t. The new
+    # native reader preserves it; pixels and OLE contents remain unsupported.
+    assert "OMML_TEXT_MUST_NOT_BE_NATIVE" in inspection.native_text
     assert inspection.import_state == "hybrid_visual_required"
     assert inspection.quick_import_eligible is False
     assert inspection.page_binding_status == "pending_rendered_page_evidence"
     assert inspection.visual_object_refs
-    assert "omml_equation" in inspection.features
+    assert "omml_equation" not in inspection.features
+    assert sum(block["native_math_count"] for block in inspection.native_blocks) == 1
     assert "ole_object_reference" in inspection.features
 
 

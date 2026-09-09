@@ -402,6 +402,10 @@ def main() -> int:
             "教案的多活动分组、页面归属或已有分钟数未能对应，不能唯一核对活动时间。"
         ],
         "desktop_paper_preparation": [],
+        "word_native_math": [],
+        "word_native_text": ["20260909-editable-chemistry-v2"],
+        "word_handout_import": ["1.2.1"],
+        "desktop_workbench.import_word_dialog": ["查看 Word 内容并带入备课", "确认追加到备课"],
         "desktop_paper_preparation_sources": [],
         "desktop_workbench.paper_preparation_dialog": ["将当前组卷带入备课"],
         "desktop_workbench.assembly_page": ["将当前组卷带入备课…", "题面显示分数"],

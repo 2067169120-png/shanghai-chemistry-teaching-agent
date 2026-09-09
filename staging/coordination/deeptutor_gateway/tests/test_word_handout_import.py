@@ -11,11 +11,10 @@ from integrations.deeptutor_shchem_v1.desktop_facade import DesktopWorkbenchFaca
 from integrations.deeptutor_shchem_v1.desktop_paths import DesktopPaths
 from integrations.deeptutor_shchem_v1.word_handout_import import (
     WORD_HANDOUT_IMPORT_SCHEMA,
-    WordHandoutImportError,
     WordHandoutImporter,
+    WordHandoutImportError,
     inspect_docx_native_summary,
 )
-
 
 W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
@@ -62,7 +61,7 @@ def _native_pair(root: Path, package_id: str = "PKG-001") -> tuple[Path, Path]:
     heading = _paragraph("01 核心突破练", style="Heading2")
     question = _paragraph("1．下列分离方法正确的是__________。")
     options = _paragraph("A．过滤  B．蒸馏  C．分液  D．升华")
-    table = f'''<w:tbl><w:tr>
+    table = '''<w:tbl><w:tr>
       <w:tc><w:p><w:r><w:t>混合物</w:t></w:r></w:p></w:tc>
       <w:tc><w:p><w:r><w:t>方法</w:t></w:r></w:p></w:tc>
     </w:tr></w:tbl>'''
@@ -190,7 +189,7 @@ def test_formula_ole_and_vertical_alignment_never_silently_become_plain_text(
 </Relationships>'''
     body = (
         _paragraph("01 真题溯源练", style="Heading2")
-        + f'''<w:p><w:r><w:t>1．写出反应的方程式</w:t></w:r>
+        + '''<w:p><w:r><w:t>1．写出反应的方程式</w:t></w:r>
           <m:oMath><m:r><m:t>x+y</m:t></m:r></m:oMath>
           <w:r><w:object><w:OLEObject r:id="rId2"/></w:object></w:r>
           <w:r><w:rPr><w:vertAlign w:val="subscript"/></w:rPr><w:t>2</w:t></w:r>
@@ -205,11 +204,12 @@ def test_formula_ole_and_vertical_alignment_never_silently_become_plain_text(
     result = WordHandoutImporter().scan_document(path)
     candidate = result.candidates[0]
     assert candidate.import_state == "hybrid_visual_required"
-    assert {
-        "omml_equation_reference",
-        "ole_object_reference",
-        "run_vertical_alignment",
-    }.issubset(set(candidate.blockers))
+    assert "ole_object_reference" in candidate.blockers
+    assert "omml_equation_reference" not in candidate.blockers
+    assert "run_vertical_alignment" not in candidate.blockers
+    assert "x+y" in candidate.native_text
+    assert "_{2}" in candidate.native_text
+    assert "【待查看原文：嵌入对象或旧公式】" in candidate.native_text
     assert candidate.ole_references[0]["part_name"] == "word/embeddings/oleObject1.bin"
     assert candidate.ole_references[0]["sha256"]
 
@@ -227,7 +227,7 @@ def test_automatic_numbering_style_and_table_structure_are_preserved(tmp_path: P
     <w:numFmt w:val="decimal"/><w:lvlText w:val="%1．"/></w:lvl></w:abstractNum>
   <w:num w:numId="7"><w:abstractNumId w:val="9"/></w:num>
 </w:numbering>'''
-    body = f'''<w:p><w:pPr><w:pStyle w:val="Question"/><w:numPr><w:ilvl w:val="0"/>
+    body = '''<w:p><w:pPr><w:pStyle w:val="Question"/><w:numPr><w:ilvl w:val="0"/>
       <w:numId w:val="7"/></w:numPr></w:pPr><w:r><w:t>下列说法正确的是__________。</w:t></w:r></w:p>'''
     _write_docx(path, body, styles=styles, numbering=numbering)
     result = WordHandoutImporter().scan_document(path)
@@ -352,6 +352,100 @@ def test_content_addressed_cache_is_idempotent_and_supports_resume(
     assert inventory["counts"]["visual_completion_queue"] == 0
     assert inventory["page"]["filtered_total"] == 1
     assert inventory["items"][0]["inventory_lane"] == "native_text_submitted"
+
+
+@pytest.mark.parametrize(
+    "hidden_body",
+    [
+        '<w:p><w:r><w:rPr><w:vanish/></w:rPr><w:t>OMITTED_DIRECT</w:t></w:r></w:p>',
+        (
+            '<w:p><w:r><w:rPr><w:rStyle w:val="HiddenChar"/></w:rPr>'
+            '<w:t>OMITTED_CHAR_STYLE</w:t></w:r></w:p>'
+        ),
+        (
+            '<w:p><w:pPr><w:pStyle w:val="HiddenParagraph"/></w:pPr>'
+            '<w:r><w:t>OMITTED_PARAGRAPH_STYLE</w:t></w:r></w:p>'
+        ),
+        '<w:p><w:del><w:r><w:delText>OMITTED_DELETION</w:delText></w:r></w:del></w:p>',
+        (
+            '<w:p><w:moveFrom><w:r><w:t>OMITTED_MOVE_FROM</w:t></w:r></w:moveFrom>'
+            '<w:moveTo><w:r><w:t>VISIBLE_MOVE_DESTINATION</w:t></w:r></w:moveTo></w:p>'
+        ),
+    ],
+    ids=["direct-hidden", "character-style", "paragraph-style", "deleted", "moved"],
+)
+def test_persisted_candidates_never_reintroduce_omitted_run_content(
+    tmp_path: Path, hidden_body: str
+) -> None:
+    path = tmp_path / "PKG-008" / "可见性（原卷版）.docx"
+    styles = f'''<w:styles xmlns:w="{W}">
+      <w:style w:type="character" w:styleId="HiddenBase"><w:rPr><w:vanish/></w:rPr></w:style>
+      <w:style w:type="character" w:styleId="HiddenChar"><w:basedOn w:val="HiddenBase"/></w:style>
+      <w:style w:type="paragraph" w:styleId="HiddenParagraphBase"><w:rPr><w:vanish/></w:rPr></w:style>
+      <w:style w:type="paragraph" w:styleId="HiddenParagraph"><w:basedOn w:val="HiddenParagraphBase"/></w:style>
+      <w:style w:type="character" w:styleId="SubBase"><w:rPr><w:vertAlign w:val="subscript"/></w:rPr></w:style>
+      <w:style w:type="character" w:styleId="Sub"><w:basedOn w:val="SubBase"/></w:style>
+    </w:styles>'''
+    body = (
+        _paragraph("01 核心突破练", style="Heading2")
+        + _paragraph("1．请写出该物质的化学式__________。")
+        + hidden_body
+        + _paragraph(
+            "可见物质H",
+            extra='<w:r><w:rPr><w:rStyle w:val="Sub"/></w:rPr><w:t>2</w:t></w:r>'
+            '<w:r><w:t>O</w:t></w:r>',
+        )
+    )
+    _write_docx(path, body, styles=styles)
+    state = tmp_path / "state"
+    importer = WordHandoutImporter(state)
+    first = importer.run_batch([path], persist=True)
+
+    assert first.documents_failed == 0
+    assert len(first.candidate_index) == 1
+    candidate = first.candidate_index[0]
+    assert "H_{2}O" in candidate.native_text
+    assert "OMITTED_" not in json.dumps(candidate.as_dict())
+    assert all(block["rich_runs"] == () for block in candidate.native_blocks)
+    if "moveTo" in hidden_body:
+        assert candidate.native_text.count("VISIBLE_MOVE_DESTINATION") == 1
+        assert "tracked_changes" in candidate.features
+
+    document_records = list((state / "documents").glob("*.json"))
+    assert len(document_records) == 1
+    stored = json.loads(document_records[0].read_text(encoding="utf-8"))
+    assert "OMITTED_" not in json.dumps(stored)
+    assert all(
+        block["rich_runs"] == []
+        for item in stored["document"]["candidates"]
+        for block in item["native_blocks"]
+    )
+    assert "OMITTED_" not in Path(str(first.manifest_path)).read_text(encoding="utf-8")
+
+    reopened = WordHandoutImporter(state).run_batch([path], persist=True)
+    assert reopened.documents_cached == 1
+    assert "OMITTED_" not in json.dumps(reopened.as_dict())
+    assert "H_{2}O" in reopened.candidate_index[0].native_text
+
+
+def test_previous_parser_cache_with_raw_runs_is_rebuilt(tmp_path: Path) -> None:
+    original, _ = _native_pair(tmp_path, "PKG-009")
+    state = tmp_path / "state"
+    importer = WordHandoutImporter(state)
+    importer.run_batch([original], persist=True)
+    cache = next((state / "documents").glob("*.json"))
+    stored = json.loads(cache.read_text(encoding="utf-8"))
+    stored["parser_version"] = "1.2.0"
+    stored["document"]["candidates"][0]["native_blocks"][0]["rich_runs"] = [
+        {"text": "OMITTED_LEGACY_RAW_RUN"}
+    ]
+    cache.write_text(json.dumps(stored, ensure_ascii=False), encoding="utf-8")
+
+    rebuilt = WordHandoutImporter(state).run_batch([original], persist=True)
+
+    assert rebuilt.documents_cached == 0
+    assert "OMITTED_LEGACY_RAW_RUN" not in json.dumps(rebuilt.as_dict())
+    assert "OMITTED_LEGACY_RAW_RUN" not in cache.read_text(encoding="utf-8")
 
 
 def test_corpus_discovery_and_desktop_facade_direct_call_need_no_http(tmp_path: Path) -> None:

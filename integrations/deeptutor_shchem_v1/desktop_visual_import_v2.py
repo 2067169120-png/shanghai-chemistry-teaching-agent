@@ -37,6 +37,12 @@ from xml.etree import ElementTree
 
 from PIL import Image, UnidentifiedImageError
 
+from .word_native_text import (
+    NATIVE_WORD_TEXT_REVISION,
+    WordNativeTextReader,
+    native_body_blocks,
+)
+
 try:  # The tests import this module both as a package and by file path.
     from .intake_batches_v2 import (
         CandidateCAS,
@@ -759,6 +765,8 @@ def inspect_native_docx(source: DesktopSourceFile) -> NativeDocxInspection:
             package,
             skip_names={"word/document.xml"},
         )
+        styles = _read_docx_xml(package, "word/styles.xml") if "word/styles.xml" in package.namelist() else None
+        text_reader = WordNativeTextReader(styles)
     body = root.find(f".//{_W}body")
     if body is None:
         raise _docx_error("docx_body_missing")
@@ -768,22 +776,29 @@ def inspect_native_docx(source: DesktopSourceFile) -> NativeDocxInspection:
         *deepcopy(package_visual_refs),
     ]
     blocks: list[dict[str, Any]] = []
-    block_nodes = [child for child in list(body) if child.tag in {_W + "p", _W + "tbl"}]
-    if not block_nodes:
-        block_nodes = list(root.iter(_W + "p"))
-    for index, node in enumerate(block_nodes, 1):
+    for index, (node, locator) in enumerate(native_body_blocks(body), 1):
         kind = "paragraph" if node.tag == _W + "p" else "table"
-        locator = f"word/document.xml#/w:body/{'w:p' if kind == 'paragraph' else 'w:tbl'}[{index}]"
+        if node.tag != _W + "tbl":
+            kind = "paragraph"
         block_features: set[str] = set()
-        text = _collect_block_text(
+        block_refs: list[dict[str, Any]] = []
+        _collect_block_text(
             node,
             locator=locator,
-            features=features,
-            object_refs=object_refs,
+            features=block_features,
+            object_refs=block_refs,
             relationship_ids=relationship_ids,
             block_features=block_features,
         )
-        normalized = re.sub(r"[ \t\r\f\v]+", " ", text).strip()
+        native = text_reader.read(node)
+        block_features.difference_update({"omml_equation", "run_vertical_alignment"})
+        block_features.update(native.features)
+        features.update(block_features)
+        object_refs.extend(
+            ref for ref in block_refs
+            if ref.get("kind") != "omml_equation" or "omml_equation" in block_features
+        )
+        normalized = native.text
         blocks.append(
             {
                 "index": index,
@@ -791,6 +806,7 @@ def inspect_native_docx(source: DesktopSourceFile) -> NativeDocxInspection:
                 "text": normalized,
                 "xml_locator": locator,
                 "features": sorted(block_features),
+                "native_math_count": native.native_math_count,
             }
         )
     native_blocks = tuple(
@@ -814,11 +830,14 @@ def inspect_native_docx(source: DesktopSourceFile) -> NativeDocxInspection:
             }
         )
     features.discard(None)
-    if not native_text and features:
+    actual_text = re.sub(r"【待查看原文：[^】]*】", "", native_text)
+    actual_text = re.sub(r"【表格(?:开始[^】]*|结束)】|〔第\d+行[^〕]*〕", "", actual_text)
+    has_editable_text = bool(actual_text.strip())
+    if not has_editable_text and features:
         state = "visual_only_required"
     elif features:
         state = "hybrid_visual_required"
-    elif not native_text:
+    elif not has_editable_text:
         state = "visual_only_required"
     else:
         state = "native_text_complete"
@@ -1477,6 +1496,7 @@ class DesktopImportCoordinatorV2:
     ) -> str:
         subject = {
             "schema_version": DESKTOP_IMPORT_BRIDGE_SCHEMA_VERSION,
+            "native_text_revision": NATIVE_WORD_TEXT_REVISION,
             "source_type": request.source_type.strip() or "未分类资料",
             "sources": [source.as_manifest() for source in sources],
         }

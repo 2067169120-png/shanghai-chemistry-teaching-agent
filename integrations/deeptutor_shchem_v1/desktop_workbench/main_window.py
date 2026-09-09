@@ -372,7 +372,16 @@ class TeacherWorkbenchWindow(QMainWindow):
             self.navigate("preparation")
 
     def open_import(self) -> None:
-        ImportDialog(self.facade, self.tasks, self).exec()
+        dialog = ImportDialog(self.facade, self.tasks, self)
+        if (
+            dialog.exec() == dialog.DialogCode.Accepted
+            and dialog.preparation_reference is not None
+            and self.preparation_page.import_word_reference(
+                dialog.preparation_reference
+            )
+        ):
+            self.navigate("preparation")
+        dialog.deleteLater()
 
     def open_settings(self) -> None:
         SettingsDialog(self.facade, self.tasks, self).exec()

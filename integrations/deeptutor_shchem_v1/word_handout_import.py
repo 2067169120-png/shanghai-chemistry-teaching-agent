@@ -18,16 +18,18 @@ import tempfile
 import threading
 import zipfile
 from collections import Counter, defaultdict
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from copy import deepcopy
-from dataclasses import asdict, dataclass, field, replace
+from dataclasses import asdict, dataclass, replace
 from difflib import SequenceMatcher
 from pathlib import Path, PurePosixPath
-from typing import Any, Callable, Iterable, Mapping, Sequence
+from typing import Any
 from xml.etree import ElementTree
 
+from .word_native_text import WordNativeTextReader
 
 WORD_HANDOUT_IMPORT_SCHEMA = "shchem.word-handout-native-import.v1"
-WORD_HANDOUT_PARSER_VERSION = "1.1.0"
+WORD_HANDOUT_PARSER_VERSION = "1.2.1"
 PERSONAL_HANDOUT_INVENTORY_SCHEMA = "shchem.personal-handout-inventory.v1"
 IMPORT_STATES = (
     "native_text_complete",
@@ -100,6 +102,9 @@ _VISUAL_OR_UNSUPPORTED_FEATURES = {
     "layout_break_dependency",
     "unsupported_embedded_part",
     "preceding_visual_context_possible",
+    "tracked_changes",
+    "hidden_text_omitted",
+    "automatic_numbering",
 }
 
 _FEATURE_BLOCKERS = {
@@ -397,7 +402,7 @@ def _resolve_internal_part(base_part: str, target: str) -> str | None:
         normalized = posixpath.normpath(
             posixpath.join(posixpath.dirname(base_part), target)
         )
-    if normalized == ".." or normalized.startswith("../") or normalized.startswith("/"):
+    if normalized == ".." or normalized.startswith(("../", "/")):
         return None
     return normalized
 
@@ -571,31 +576,9 @@ def _relationship_ids(element: ElementTree.Element) -> tuple[str, ...]:
     result: set[str] = set()
     for node in element.iter():
         for key, value in node.attrib.items():
-            if key.startswith(_R) and _local_name(key) in {"id", "embed", "link"}:
-                if value:
-                    result.add(value)
+            if key.startswith(_R) and _local_name(key) in {"id", "embed", "link"} and value:
+                result.add(value)
     return tuple(sorted(result))
-
-
-def _visible_text(element: ElementTree.Element) -> str:
-    parts: list[str] = []
-    for node in element.iter():
-        local = _local_name(node.tag)
-        if local == "t":
-            parts.append(node.text or "")
-        elif local == "tab":
-            parts.append("\t")
-        elif local in {"br", "cr"}:
-            parts.append("\n")
-        elif local == "noBreakHyphen":
-            parts.append("‑")
-        elif local == "softHyphen":
-            parts.append("\u00ad")
-        elif local == "sym":
-            font = node.get(_W + "font") or "unknown"
-            char = node.get(_W + "char") or "unknown"
-            parts.append(f"⟦SYM:{font}:{char}⟧")
-    return "".join(parts).strip()
 
 
 def _features(
@@ -645,34 +628,6 @@ def _features(
     return tuple(sorted(result))
 
 
-def _rich_runs(paragraph: ElementTree.Element) -> tuple[Mapping[str, Any], ...]:
-    result: list[Mapping[str, Any]] = []
-    for run in paragraph.iter(_W + "r"):
-        text = _visible_text(run)
-        if not text and not _relationship_ids(run):
-            continue
-        properties = run.find("w:rPr", _NS)
-        vertical = None
-        if properties is not None:
-            vertical_node = properties.find("w:vertAlign", _NS)
-            vertical = vertical_node.get(_W + "val") if vertical_node is not None else None
-        result.append(
-            {
-                "text": text,
-                "bold": properties is not None and properties.find("w:b", _NS) is not None,
-                "italic": properties is not None and properties.find("w:i", _NS) is not None,
-                "underline": (
-                    properties.find("w:u", _NS).get(_W + "val")
-                    if properties is not None and properties.find("w:u", _NS) is not None
-                    else None
-                ),
-                "vertical_align": vertical,
-                "relationship_ids": _relationship_ids(run),
-            }
-        )
-    return tuple(result)
-
-
 def _paragraph_numbering(
     paragraph: ElementTree.Element,
     style_id: str | None,
@@ -696,7 +651,8 @@ def _paragraph_numbering(
     return numbering_state.next(str(num_id), max(level, 0))
 
 
-def _table_projection(table: ElementTree.Element) -> Mapping[str, Any]:
+def _table_projection(table: ElementTree.Element, text_reader=None) -> Mapping[str, Any]:
+    text_reader = text_reader or WordNativeTextReader()
     rows: list[Mapping[str, Any]] = []
     for row_index, row in enumerate(table.findall("w:tr", _NS)):
         cells: list[Mapping[str, Any]] = []
@@ -708,7 +664,7 @@ def _table_projection(table: ElementTree.Element) -> Mapping[str, Any]:
                 {
                     "row": row_index,
                     "column": cell_index,
-                    "text": _visible_text(cell),
+                    "text": text_reader.read(cell).text,
                     "grid_span": int(grid_span_node.get(_W + "val") or 1) if grid_span_node is not None else 1,
                     "vertical_merge": merge_node.get(_W + "val") if merge_node is not None else None,
                 }
@@ -723,7 +679,9 @@ def _block_from_element(
     styles: Mapping[str, Mapping[str, Any]],
     relationships: Mapping[str, _Relationship],
     numbering_state: _NumberingState,
+    text_reader: WordNativeTextReader | None = None,
 ) -> NativeBlock:
+    text_reader = text_reader or WordNativeTextReader()
     kind = _local_name(element.tag)
     paragraph = element if kind == "p" else None
     style_id: str | None = None
@@ -737,12 +695,18 @@ def _block_from_element(
         numbering = _paragraph_numbering(
             paragraph, style_id, styles, numbering_state
         )
-        rich_runs = _rich_runs(paragraph)
     else:
-        rich_runs = ()
         if kind == "tbl":
-            table = _table_projection(element)
-    text = _visible_text(element)
+            table = _table_projection(element, text_reader)
+    native = text_reader.read(element)
+    text = native.text
+    features = set(_features(element, relationships))
+    # These features are blockers only if the shared native reader could not
+    # preserve them. Supported editable scripts/math no longer require vision.
+    features.difference_update({"omml_equation", "run_vertical_alignment"})
+    features.update(native.features)
+    if numbering is not None:
+        features.discard("automatic_numbering")
     if numbering and numbering.get("label") and text:
         text = f"{numbering['label']}{text}"
     elif numbering and numbering.get("label"):
@@ -756,8 +720,12 @@ def _block_from_element(
         numbering=numbering,
         table=table,
         relationship_ids=_relationship_ids(element),
-        features=_features(element, relationships),
-        rich_runs=rich_runs,
+        features=tuple(sorted(features)),
+        # Keep the legacy field for record compatibility, but never serialize
+        # a second text projection that bypasses ancestor visibility or style
+        # inheritance. All editable content is retained in the shared-reader
+        # text above; there are no consumers of the old raw-run projection.
+        rich_runs=(),
     )
 
 
@@ -829,7 +797,6 @@ def _question_score(
         score += 1
     if block.features and len(_normalize_text(body)) <= 10:
         score += 2
-    has_question_continuation = False
     for following in blocks[index + 1 : index + 6]:
         if (
             _OPTION_RE.match(following.text)
@@ -838,7 +805,6 @@ def _question_score(
             or "____" in following.text
         ):
             score += 2
-            has_question_continuation = True
             break
         if _is_heading(following) or _question_match(
             following, allow_parenthesized=allow_parenthesized
@@ -895,7 +861,7 @@ def _candidate_state(
     features: set[str],
     blockers: set[str],
 ) -> str:
-    compact = _normalize_text(question_text)
+    compact = _normalize_text(re.sub(r"【待查看原文：[^】]*】", "", question_text))
     visual = bool(features & _VISUAL_OR_UNSUPPORTED_FEATURES)
     if visual and len(compact) <= 8:
         return "visual_only_required"
@@ -1340,6 +1306,7 @@ class WordHandoutImporter:
                     raise WordHandoutImportError("docx_body_missing", "DOCX 缺少正文。")
                 relationships = _relationships(package, names)
                 styles = _style_catalog(package)
+                text_reader = WordNativeTextReader(_xml_root(package, "word/styles.xml"))
                 numbering = _numbering_catalog(package)
                 numbering_state = _NumberingState(numbering)
                 blocks = tuple(
@@ -1349,6 +1316,7 @@ class WordHandoutImporter:
                         styles,
                         relationships,
                         numbering_state,
+                        text_reader,
                     )
                     for index, element in enumerate(_iter_body_blocks(body))
                 )
@@ -1656,8 +1624,8 @@ class WordHandoutImporter:
         if persist:
             assert self.store_root is not None
             manifest_path = self._batch_path(batch_id)
-            # Keep the batch manifest light.  Complete text, tables and rich
-            # runs live once in the content-addressed per-document records;
+            # Keep the batch manifest light. Complete visible text and tables
+            # live once in the content-addressed per-document records;
             # the batch only needs a resumable document index and teacher UI
             # candidate summaries.
             manifest = {
@@ -1888,14 +1856,14 @@ class WordHandoutImporter:
 
 
 __all__ = [
-    "BatchResult",
-    "DocumentResult",
     "IMPORT_STATES",
-    "ImportProgress",
     "PERSONAL_HANDOUT_INVENTORY_SCHEMA",
-    "QuestionCandidate",
     "WORD_HANDOUT_IMPORT_SCHEMA",
     "WORD_HANDOUT_PARSER_VERSION",
+    "BatchResult",
+    "DocumentResult",
+    "ImportProgress",
+    "QuestionCandidate",
     "WordHandoutImportError",
     "WordHandoutImporter",
     "inspect_docx_native_summary",

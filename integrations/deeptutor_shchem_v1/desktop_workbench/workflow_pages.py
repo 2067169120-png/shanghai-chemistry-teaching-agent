@@ -545,6 +545,60 @@ class PreparationPage(QWidget):
             + warning_text,
         )
 
+    def import_word_reference(self, reference: dict) -> bool:
+        """Append the confirmed offline Word selection to the current materials."""
+        from ..desktop_blueprint_drafts import BlueprintDraftError
+        from ..desktop_blueprint_preparation import append_reference
+
+        if (
+            self._save_task_id
+            or self._library_image_task_id
+            or self._generation_qt_task_id
+            or self._active_preparation_task_id
+        ):
+            QMessageBox.information(
+                self,
+                "暂不能追加 Word 资料",
+                "请先等待当前备课保存、生成或图片导入结束，再重新选择 Word 内容。",
+            )
+            return False
+        if not isinstance(reference, dict):
+            return False
+        materials = reference.get("materials")
+        warnings = reference.get("warnings", ())
+        if (
+            not isinstance(materials, str)
+            or not materials.strip()
+            or not isinstance(warnings, (list, tuple))
+            or any(not isinstance(warning, str) for warning in warnings)
+        ):
+            set_status(self.status, "error", "Word 参考内容不完整，请重新预览后导入。")
+            return False
+        missing_warnings = [
+            warning for warning in warnings if warning and warning not in materials
+        ]
+        if missing_warnings:
+            materials += "\n\n原文缺口 / 待核对提醒：\n" + "\n".join(missing_warnings)
+        try:
+            combined = append_reference(self.materials.toPlainText(), materials)
+        except BlueprintDraftError as exc:
+            QMessageBox.information(self, "未追加 Word 资料", exc.message_zh)
+            return False
+        self.materials.setPlainText(combined)
+        warning_note = (
+            f" 包含 {len(warnings)} 条原文缺口/待核对提醒，请逐项核对。"
+            if warnings
+            else ""
+        )
+        set_status(
+            self.status,
+            "success",
+            "所选 Word 内容已追加到备课资料。请核对课题、对象和目标后保存或生成；尚未调用模型。"
+            + warning_note,
+        )
+        self.materials.setFocus()
+        return True
+
     def import_paper_reference(self, snapshot: dict) -> bool:
         from .paper_preparation_dialog import PaperPreparationDialog
 
