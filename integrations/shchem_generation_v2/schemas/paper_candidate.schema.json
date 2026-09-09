@@ -1,0 +1,403 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/shchem-generation-v2/paper-candidate.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "version_id", "paper_id", "content_status", "claim_boundary", "answer_authority", "rubric_authority", "human_reviewed", "teaching_use_allowed", "publication_allowed", "page_span", "task_card", "generation_policy", "observed_profile_contract", "evidence_sources", "figure_refs", "themes"],
+  "properties": {
+    "schema_version": {"const": "2.0.0"},
+    "version_id": {"type": "string", "minLength": 1},
+    "paper_id": {"type": "string", "minLength": 1},
+    "content_status": {"const": "machine_review_pending"},
+    "claim_boundary": {"type": "string", "minLength": 10},
+    "answer_authority": {"const": "suggested"},
+    "rubric_authority": {"const": "suggested"},
+    "human_reviewed": {"const": false},
+    "teaching_use_allowed": {"const": false},
+    "publication_allowed": {"const": false},
+    "page_span": {"$ref": "#/$defs/page_span"},
+    "generation_policy": {"$ref": "#/$defs/generation_policy"},
+    "task_card": {"$ref": "#/$defs/task_card"},
+    "observed_profile_contract": {"$ref": "#/$defs/observed_profile"},
+    "evidence_sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {"$ref": "#/$defs/fact_card_source"},
+          {"$ref": "#/$defs/machine_verified_extract_source"}
+        ]
+      }
+    },
+    "figure_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "themes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/theme"}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "taxonomy_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes", "schema_version"],
+      "properties": {
+        "path": {"const": "sh-chem-db/kb/knowledge_taxonomy.json"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "schema_version": {"const": "1.0.0"}
+      }
+    },
+    "page_span": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "start_page", "end_page", "reason_code"],
+      "properties": {
+        "status": {"const": "blocked_pending_review"},
+        "start_page": {"type": "null"},
+        "end_page": {"type": "null"},
+        "reason_code": {"const": "publication_layout_not_generated_at_prefreeze"}
+      }
+    },
+    "page_anchor": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "page_number", "reason_code"],
+      "properties": {
+        "status": {"const": "blocked_pending_review"},
+        "page_number": {"type": "null"},
+        "reason_code": {"const": "publication_layout_not_generated_at_prefreeze"}
+      }
+    },
+    "textbook_mapping": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "knowledge_mappings", "merged_textbook_chapter_refs"],
+      "properties": {
+        "status": {"const": "mapped"},
+        "knowledge_mappings": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["knowledge_id", "knowledge_name", "textbook_chapter_refs", "mapping_source"],
+            "properties": {
+              "knowledge_id": {"pattern": "^K(?:0[1-9]|1[0-9])$"},
+              "knowledge_name": {"type": "string", "minLength": 2},
+              "textbook_chapter_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"pattern": "^TB-"}},
+              "mapping_source": {"$ref": "#/$defs/taxonomy_source"}
+            }
+          }
+        },
+        "merged_textbook_chapter_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"pattern": "^TB-"}}
+      }
+    },
+    "fact_card_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_kind", "path", "sha256", "bytes", "source_locator", "card_ids", "use", "prohibited_use", "fact_card_file_sha256", "fact_card_file_bytes", "bound_cards", "live_acquisition_performed"],
+      "properties": {
+        "source_kind": {"const": "fact_card_collection"},
+        "path": {"type": "string", "pattern": "^(?![A-Za-z]:[\\\\/])(?![/\\\\]).+"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "source_locator": {"type": "string", "pattern": "^(?![A-Za-z]:[\\\\/])(?![/\\\\]).+"},
+        "card_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+        "use": {"const": "verified_fact_and_quantitative_boundary_only"},
+        "prohibited_use": {"const": "not_a_formal_question_or_official_rubric"},
+        "fact_card_file_sha256": {"$ref": "#/$defs/sha256"},
+        "fact_card_file_bytes": {"type": "integer", "minimum": 1},
+        "bound_cards": {"type": "array", "minItems": 1},
+        "live_acquisition_performed": {"const": false}
+      }
+    },
+    "machine_verified_extract_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_kind", "path", "evidence_ids", "use", "prohibited_use", "extract_file_sha256", "bound_extracts", "live_acquisition_performed"],
+      "properties": {
+        "source_kind": {"const": "machine_verified_local_pdf_extract"},
+        "path": {"type": "string", "pattern": "^(?![A-Za-z]:[\\\\/])(?![/\\\\]).+"},
+        "evidence_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^SRCEX-"}},
+        "use": {"const": "machine_verified_claims_and_locator_boundary_only"},
+        "prohibited_use": {"const": "not_primary_measurement_system_performance_formal_question_or_official_rubric"},
+        "extract_file_sha256": {"$ref": "#/$defs/sha256"},
+        "bound_extracts": {"type": "array", "minItems": 1},
+        "live_acquisition_performed": {"const": false}
+      }
+    },
+    "bound_value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "value_status", "evidence_refs"],
+      "properties": {
+        "value": {},
+        "value_status": {"enum": ["evidence", "unknown", "project_template"]},
+        "evidence_refs": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "task_card": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version_id", "paper_id", "target", "grade", "teaching_stage", "purpose", "knowledge_scope", "ability_targets", "difficulty_distribution", "prohibited_content", "duration_minutes", "total_score", "theme_count", "theme_scores", "theme_score_design_basis", "numbering_mode", "selection_rule", "standalone_choice_section", "hierarchy", "hierarchy_counts", "generation_policy"],
+      "properties": {
+        "version_id": {"type": "string", "pattern": "-R[0-9]+$"},
+        "paper_id": {"type": "string", "pattern": "-[0-9]{3}$"},
+        "target": {"type": "string", "minLength": 1},
+        "grade": {"const": "高三"},
+        "teaching_stage": {"const": "高三上海化学等级考综合模拟（项目模板、非官方）"},
+        "purpose": {"const": "machine_only_private_teacher_managed_practice_mock"},
+        "knowledge_scope": {"type": "object"},
+        "ability_targets": {"type": "object"},
+        "difficulty_distribution": {"type": "object"},
+        "prohibited_content": {"type": "array", "minItems": 11, "uniqueItems": true, "items": {"type": "object"}},
+        "duration_minutes": {"$ref": "#/$defs/bound_value"},
+        "total_score": {"$ref": "#/$defs/bound_value"},
+        "theme_count": {"$ref": "#/$defs/bound_value"},
+        "theme_scores": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}},
+        "theme_score_design_basis": {"type": "string", "minLength": 10},
+        "numbering_mode": {"$ref": "#/$defs/bound_value"},
+        "selection_rule": {"type": "string", "minLength": 1},
+        "standalone_choice_section": {"const": false},
+        "hierarchy": {"const": "paper -> theme_big_question -> printed_question -> atomic_part"},
+        "hierarchy_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["printed_question_count", "atomic_part_count"],
+          "properties": {
+            "printed_question_count": {"type": "integer", "minimum": 1},
+            "atomic_part_count": {"type": "integer", "minimum": 1}
+          }
+        },
+        "generation_policy": {"$ref": "#/$defs/generation_policy"}
+      }
+    },
+    "generation_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_usage", "profile_generation_authority_claimed", "original_question_generation", "source_question_republication", "project_generation_authorization"],
+      "properties": {
+        "profile_usage": {"const": "read_only_structure_observation"},
+        "profile_generation_authority_claimed": {"const": false},
+        "original_question_generation": {"const": true},
+        "source_question_republication": {"const": false},
+        "project_generation_authorization": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256", "version", "authorization_id"],
+          "properties": {
+            "path": {"type": "string", "pattern": "^(?![A-Za-z]:[\\\\/]).+"},
+            "sha256": {"$ref": "#/$defs/sha256"},
+            "version": {"const": "1.0.0"},
+            "authorization_id": {"const": "SH-CHEM-PROJECT-GENERATION-AUTH-001"}
+          }
+        }
+      }
+    },
+    "observed_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter_version", "profile_id", "profile_version", "profile_path", "profile_sha256", "evidence_manifest", "field_bindings", "profile_gates", "provisional_fixture", "global_template_claim_allowed", "official_claim_allowed", "applicability", "limitations", "publication_allowed"],
+      "properties": {
+        "adapter_version": {"const": "observed-profile-adapter/1.0.0"},
+        "profile_id": {"pattern": "^OSV1-"},
+        "profile_version": {"const": "1.0.0"},
+        "profile_path": {"type": "string", "minLength": 1},
+        "profile_sha256": {"$ref": "#/$defs/sha256"},
+        "evidence_manifest": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256"],
+          "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}}
+        },
+        "field_bindings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["theme_count", "numbering_mode", "total_score", "duration_minutes"],
+          "properties": {
+            "theme_count": {"$ref": "#/$defs/bound_value"},
+            "numbering_mode": {"$ref": "#/$defs/bound_value"},
+            "total_score": {"$ref": "#/$defs/bound_value"},
+            "duration_minutes": {"$ref": "#/$defs/bound_value"}
+          }
+        },
+        "profile_gates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["question_retrieval_allowed", "unattended_generation_allowed"],
+          "properties": {
+            "question_retrieval_allowed": {"const": false},
+            "unattended_generation_allowed": {"const": false}
+          }
+        },
+        "provisional_fixture": {"const": false},
+        "global_template_claim_allowed": {"const": false},
+        "official_claim_allowed": {"const": false},
+        "applicability": {"type": "object"},
+        "limitations": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "publication_allowed": {"const": false}
+      }
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["theme_id", "parent_paper_id", "order", "title", "score", "context", "shared_material", "source_card_refs", "page_span", "printed_questions"],
+      "properties": {
+        "theme_id": {"pattern": "^T[0-9]{2}$"},
+        "parent_paper_id": {"type": "string", "minLength": 1},
+        "order": {"type": "integer", "minimum": 1},
+        "title": {"type": "string", "minLength": 2},
+        "score": {"type": "integer", "minimum": 1},
+        "context": {"type": "string", "minLength": 10},
+        "shared_material": {"type": "string", "minLength": 10},
+        "source_card_refs": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "page_span": {"$ref": "#/$defs/page_span"},
+        "printed_questions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/question"}}
+      }
+    },
+    "question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["printed_question_id", "parent_theme_id", "display_number", "theme_order", "dependency_relation", "page_anchor", "atomic_parts"],
+      "properties": {
+        "printed_question_id": {"pattern": "^Q[0-9]{2}$"},
+        "parent_theme_id": {"pattern": "^T[0-9]{2}$"},
+        "display_number": {"type": "integer", "minimum": 1},
+        "theme_order": {"type": "integer", "minimum": 1},
+        "dependency_relation": {"enum": ["uses_prior_result", "shared_stimulus_only"]},
+        "page_anchor": {"$ref": "#/$defs/page_anchor"},
+        "atomic_parts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/part"}}
+      }
+    },
+    "part": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["part_id", "parent_printed_question_id", "label", "score", "item_type", "selection_rule", "response_R", "representation_RP", "primary_knowledge_K", "supporting_knowledge_K", "ability_A", "context_C", "primary_theme_chain_role", "dependencies", "prompt", "options", "answer", "solver", "equation_balance", "evidence_refs", "difficulty", "originality", "page_anchor", "textbook_chapter_mapping"],
+      "properties": {
+        "part_id": {"pattern": "^P[0-9]{2}$"},
+        "parent_printed_question_id": {"pattern": "^Q[0-9]{2}$"},
+        "label": {"type": "string", "minLength": 1},
+        "score": {"type": "integer", "minimum": 1},
+        "item_type": {"enum": ["chemical_equation_or_notation", "comparison_or_open_response", "embedded_single_choice", "experiment_operation_apparatus_plan", "quantitative_calculation", "reasoned_explanation", "short_fill"]},
+        "selection_rule": {"enum": ["single", "not_applicable"]},
+        "response_R": {"enum": ["calculation", "chemical_equation", "fill_blank", "short_explanation", "single_choice"]},
+        "representation_RP": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["apparatus", "chemical_equation", "chemical_symbols", "energy_model", "equation", "experiment_process", "organic_structure", "particle_model", "process_flow", "quantitative_data", "reaction_route", "text"]}},
+        "primary_knowledge_K": {"pattern": "^K(?:0[1-9]|1[0-9])$"},
+        "supporting_knowledge_K": {"type": "array", "uniqueItems": true, "items": {"pattern": "^K(?:0[1-9]|1[0-9])$"}},
+        "ability_A": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"pattern": "^A(?:0[1-9]|10)$"}},
+        "context_C": {"type": "array", "minItems": 1, "maxItems": 1, "uniqueItems": true, "items": {"const": "current_science_and_sustainability"}},
+        "primary_theme_chain_role": {"type": "string", "minLength": 3},
+        "dependencies": {"type": "array", "uniqueItems": true, "items": {"pattern": "^P[0-9]{2}$"}},
+        "prompt": {"type": "string", "minLength": 8},
+        "options": {"type": "array", "items": {"type": "string"}},
+        "solver": {"type": ["object", "null"]},
+        "equation_balance": {"type": ["object", "null"]},
+        "evidence_refs": {"type": "array", "items": {"type": "string"}},
+        "difficulty": {
+          "type": "object", "additionalProperties": false,
+          "required": ["cognitive_prelabel", "evidence", "measured_difficulty", "claim_boundary"],
+          "properties": {
+            "cognitive_prelabel": {"pattern": "^D[1-5]$"},
+            "evidence": {"type": "object", "minProperties": 10, "maxProperties": 10, "additionalProperties": {"type": "string"}},
+            "measured_difficulty": {"type": "null"},
+            "claim_boundary": {"type": "string", "minLength": 10}
+          }
+        },
+        "page_anchor": {"$ref": "#/$defs/page_anchor"},
+        "textbook_chapter_mapping": {"$ref": "#/$defs/textbook_mapping"},
+        "answer": {
+          "type": "object",
+          "required": ["label", "value", "score_points", "suggested_scoring"],
+          "properties": {
+            "label": {"const": "suggested"},
+            "value": {"type": "string", "minLength": 1},
+            "detailed_explanation": {"type": "string", "minLength": 20},
+            "score_points": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+            "major_substance_name_contract": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["required", "source", "required_species_names", "full_score_requires_all_species_names"],
+              "properties": {
+                "required": {"const": true},
+                "source": {"const": "equation_balance_species_bidirectional_binding"},
+                "required_species_names": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["species_id", "accepted_chinese_names"],
+                    "properties": {
+                      "species_id": {"type": "string", "minLength": 1},
+                      "accepted_chinese_names": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+                    }
+                  }
+                },
+                "full_score_requires_all_species_names": {"const": true}
+              }
+            },
+            "suggested_scoring": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["authority", "max_score", "aggregation", "criterion_weights", "equivalent_response_policy"],
+              "properties": {
+                "authority": {"const": "suggested_nonofficial"},
+                "max_score": {"type": "number", "minimum": 0.5},
+                "aggregation": {"enum": ["sum_satisfied_criteria_capped_at_max_score", "all_or_nothing_single_criterion"]},
+                "criterion_weights": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["criterion", "points"],
+                    "properties": {
+                      "criterion": {"type": "string", "minLength": 1},
+                      "points": {"type": "number", "minimum": 0.5, "multipleOf": 0.5},
+                      "criterion_type": {"enum": ["required_major_substance_names"]},
+                      "required_species_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+                    }
+                  }
+                },
+                "equivalent_response_policy": {"type": "string", "minLength": 10}
+              }
+            }
+          }
+        },
+        "originality": {
+          "type": "object",
+          "required": ["semantic_signature", "changed_dimensions", "source_pixels_reused"],
+          "properties": {
+            "semantic_signature": {"type": "string", "minLength": 8},
+            "changed_dimensions": {"type": "array", "minItems": 2},
+            "source_pixels_reused": {"const": false}
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"item_type": {"const": "embedded_single_choice"}}, "required": ["item_type"]},
+          "then": {"properties": {"response_R": {"const": "single_choice"}, "selection_rule": {"const": "single"}, "options": {"minItems": 2}}}
+        },
+        {
+          "if": {"properties": {"item_type": {"const": "quantitative_calculation"}}, "required": ["item_type"]},
+          "then": {"properties": {"response_R": {"const": "calculation"}, "selection_rule": {"const": "not_applicable"}}}
+        },
+        {
+          "if": {"properties": {"item_type": {"const": "short_fill"}}, "required": ["item_type"]},
+          "then": {"properties": {"response_R": {"const": "fill_blank"}, "selection_rule": {"const": "not_applicable"}}}
+        },
+        {
+          "if": {"properties": {"item_type": {"const": "chemical_equation_or_notation"}}, "required": ["item_type"]},
+          "then": {"properties": {"response_R": {"enum": ["chemical_equation", "short_explanation"]}, "selection_rule": {"const": "not_applicable"}}}
+        },
+        {
+          "if": {"properties": {"item_type": {"enum": ["comparison_or_open_response", "experiment_operation_apparatus_plan", "reasoned_explanation"]}}, "required": ["item_type"]},
+          "then": {"properties": {"response_R": {"const": "short_explanation"}, "selection_rule": {"const": "not_applicable"}}}
+        },
+        {
+          "if": {"properties": {"response_R": {"const": "calculation"}}, "required": ["response_R"]},
+          "then": {"properties": {"solver": {"type": "object"}, "representation_RP": {"contains": {"const": "quantitative_data"}}}}
+        },
+        {
+          "if": {"properties": {"response_R": {"const": "chemical_equation"}}, "required": ["response_R"]},
+          "then": {"properties": {"equation_balance": {"type": "object"}, "representation_RP": {"contains": {"const": "chemical_symbols"}}}}
+        }
+      ]
+    }
+  }
+}

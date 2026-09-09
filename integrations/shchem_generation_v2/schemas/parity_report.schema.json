@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/shchem-generation-v2/parity-report.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "check", "semantic_kind", "status", "docx", "pdf",
+    "render_root", "render_tree_content_address", "render_root_tree_sha256", "render_root_total_bytes",
+    "render_root_page_count", "rendered_pages", "required_markers", "errors"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "check": {"const": "docx_pdf_full_page_parity"},
+    "semantic_kind": {"type": "string", "minLength": 1},
+    "status": {"enum": ["pass", "fail"]},
+    "docx": {"$ref": "#/$defs/document"},
+    "pdf": {"$ref": "#/$defs/document"},
+    "render_root": {"$ref": "#/$defs/safe_workspace_path"},
+    "render_tree_content_address": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "render_root_tree_sha256": {"$ref": "#/$defs/sha256"},
+    "render_root_total_bytes": {"type": "integer", "minimum": 0},
+    "render_root_page_count": {"type": "integer", "minimum": 1},
+    "rendered_pages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/rendered_page"}
+    },
+    "required_markers": {"type": "array", "items": {"type": "string"}},
+    "errors": {"type": "array", "items": {"type": "string"}},
+    "paper_sha256": {"$ref": "#/$defs/sha256"},
+    "task_card_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "safe_workspace_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?![A-Za-z]:[\\\\/])(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+"
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "image_count"],
+      "properties": {
+        "path": {"$ref": "#/$defs/safe_workspace_path"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "page_count": {"type": "integer", "minimum": 1},
+        "image_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "rendered_page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "page_number", "relative_path", "size", "bbox", "nonwhite_pixels",
+        "body_text_length", "status", "sha256", "bytes"
+      ],
+      "properties": {
+        "page_number": {"type": "integer", "minimum": 1},
+        "relative_path": {"type": "string", "pattern": "^page-[1-9][0-9]*\\.png$"},
+        "size": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer", "minimum": 1}},
+        "bbox": {"type": ["array", "null"]},
+        "nonwhite_pixels": {"type": "integer", "minimum": 0},
+        "body_text_length": {"type": "integer", "minimum": 0},
+        "status": {"enum": ["pass", "fail"]},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

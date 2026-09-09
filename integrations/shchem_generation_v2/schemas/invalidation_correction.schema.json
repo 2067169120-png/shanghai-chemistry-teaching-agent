@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.sh-chem.invalid/generation_v2/invalidation_correction.schema.json",
+  "title": "Append-only invalidation drift correction",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "record_type", "revision", "status", "initial_authoritative_record",
+    "drifted_snapshot", "bound_r13_artifacts", "change_event", "semantic_finalization",
+    "selector_contract", "human_reviewed", "official_claim_allowed", "self_hash_algorithm", "self_hash"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "record_type": {"const": "generation_v2_invalidation_drift_correction"},
+    "revision": {"const": "R13"},
+    "status": {"const": "finalized_append_only_correction"},
+    "initial_authoritative_record": {"$ref": "#/$defs/file_ref"},
+    "drifted_snapshot": {
+      "$ref": "#/$defs/drifted_file_ref"
+    },
+    "bound_r13_artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["formal_freeze", "review_dispatch", "external_review_a", "external_review_b"],
+      "properties": {
+        "formal_freeze": {"$ref": "#/$defs/file_ref"},
+        "review_dispatch": {"$ref": "#/$defs/file_ref"},
+        "external_review_a": {"$ref": "#/$defs/review_ref"},
+        "external_review_b": {"$ref": "#/$defs/review_ref"}
+      }
+    },
+    "change_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["detected_by", "reason", "changed_fields", "recovery_evidence"],
+      "properties": {
+        "detected_by": {"const": "root_independent_audit"},
+        "reason": {"const": "post_creation_extension_violated_embedded_immutability_contract"},
+        "changed_fields": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {"enum": ["reason_codes", "failed_atomic_parts_union"]}
+        },
+        "recovery_evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_kind", "evidence_locator", "event_type", "source_event_sha256",
+            "source_event_bytes", "recovered_content_bytes", "recovered_content_sha256",
+            "runtime_external_session_dependency"
+          ],
+          "properties": {
+            "source_kind": {"const": "codex_raw_session_patch_apply_end_change_content"},
+            "evidence_locator": {
+              "type": "string",
+              "pattern": "^codex-event:sha256:[0-9a-f]{64}#ordinal=[1-9][0-9]*$"
+            },
+            "event_type": {"const": "patch_apply_end.changes.content"},
+            "source_event_sha256": {"const": "ab17ea8dcbd8e08d10af5aba4b3afe74b26457d31f22103ffcde056c3ea916ff"},
+            "source_event_bytes": {"const": 4233},
+            "recovered_content_bytes": {"const": 3395},
+            "recovered_content_sha256": {"const": "96dab85b999d261ee9a87e96348d268336e16d2002345eda2f65d6a5aaad2b47"},
+            "runtime_external_session_dependency": {"const": false}
+          }
+        }
+      }
+    },
+    "semantic_finalization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["failed_atomic_parts_union", "additional_reason_codes", "adversarial_not_dispatched", "downstream_actions_all_false"],
+      "properties": {
+        "failed_atomic_parts_union": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^P[0-9]{2}$"}
+        },
+        "additional_reason_codes": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "minLength": 8}},
+        "adversarial_not_dispatched": {"const": true},
+        "downstream_actions_all_false": {"const": true}
+      }
+    },
+    "selector_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["r13_invalidated", "r13_active", "correction_required", "fail_closed_on_any_hash_mismatch", "drifted_snapshot_is_not_authority"],
+      "properties": {
+        "r13_invalidated": {"const": true},
+        "r13_active": {"const": false},
+        "correction_required": {"const": true},
+        "fail_closed_on_any_hash_mismatch": {"const": true},
+        "drifted_snapshot_is_not_authority": {"const": true}
+      }
+    },
+    "human_reviewed": {"const": false},
+    "official_claim_allowed": {"const": false},
+    "self_hash_algorithm": {"const": "sha256_canonical_json_without_self_hash_v1"},
+    "self_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "file_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "drifted_file_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes", "authority_status"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "authority_status": {"const": "preserved_historical_drift_superseded_for_consumption"}
+      }
+    },
+    "review_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes", "output_sha256", "thread_id", "turn_id"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "output_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "thread_id": {"type": "string", "minLength": 16},
+        "turn_id": {"type": "string", "minLength": 16}
+      }
+    }
+  }
+}

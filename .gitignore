@@ -3,6 +3,7 @@
 !/.gitignore
 !/.gitattributes
 !/README.md
+!/requirements-dev.txt
 !/CHANGELOG.md
 !/AGENTS.md
 !/integrations/
@@ -28,8 +29,7 @@
 !/runtime/deeptutor_shchem/desktop_build.ps1
 !/runtime/deeptutor_shchem/desktop_requirements.txt
 !/runtime/deeptutor_shchem/verify_desktop_package.ps1
-!/打开沪上化学智研台（无窗口）.vbs
-!/关闭沪上化学智研台（无窗口）.vbs
+# Legacy web launchers depend on private runtime configuration and stay local.
 !/启动沪上化学智研台桌面版.vbs
 !/关闭沪上化学智研台桌面版.vbs
 **/__pycache__/

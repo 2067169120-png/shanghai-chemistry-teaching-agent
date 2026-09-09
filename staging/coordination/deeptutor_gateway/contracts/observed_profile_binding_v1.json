@@ -1,0 +1,32 @@
+{
+  "contract_version": "shchem.observed_profile_binding.v1",
+  "status": "available_read_only_versioned_profile",
+  "required_fields": [
+    "profile_id",
+    "profile_version",
+    "evidence_manifest",
+    "theme_count",
+    "numbering_mode",
+    "total_score",
+    "duration_minutes"
+  ],
+  "value_status_enum": ["evidence", "unknown", "project_template"],
+  "claim_rule": "project_template must never be described as a universal or official Shanghai standard",
+  "gateway_behavior": "pass only an allow-listed profile_path to controller preflight; generation v2 performs its own hash binding; fail closed on missing or mismatched fields",
+  "known_controller_2_0_mismatch": {
+    "controller_current_lookup": [
+      "theme_count",
+      "numbering_mode",
+      "total_score",
+      "duration_minutes"
+    ],
+    "produced_profile_lookup": [
+      "organization.theme_count",
+      "organization.numbering_mode",
+      "organization.total_score",
+      "organization.duration_minutes"
+    ],
+    "observed_blocker": "missing_or_false:observed_profile_value_status_contract",
+    "proposal": "controller owner should read the four fields under organization, matching the root and generation-v2 contract"
+  }
+}

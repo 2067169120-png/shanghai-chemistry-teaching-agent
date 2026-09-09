@@ -1,0 +1,35 @@
+{
+  "adapter_contract_version": "shchem.generation_domain_adapter.v1",
+  "required_domain_version": "2.0.0",
+  "transport": "in_process_public_python_api",
+  "capabilities": {
+    "candidate_build": {
+      "calls": [
+        "content.build_paper",
+        "content.build_week_plan",
+        "gateway_api.prepare_generation_candidate (required when exposed)"
+      ],
+      "controller_preflight_mode": "generate",
+      "controller_preflight_phase": "post_generation_candidate_and_chain",
+      "empty_or_pre_candidate_input_allowed": false,
+      "current_prepare_only_interface_status": "dynamic_fail_closed_if_unavailable"
+    },
+    "figure_candidate": {
+      "calls": [
+        "core.figure_spec",
+        "core.figure_svg"
+      ],
+      "controller_preflight_mode": "figure"
+    },
+    "publication_candidate_status": {
+      "status": "fail_closed_not_yet_public",
+      "controller_preflight_mode": "publish"
+    }
+  },
+  "dynamic_probe": true,
+  "failure_behavior": "fail_closed",
+  "machine_only": true,
+  "human_reviewed": false,
+  "teaching_use_allowed": false,
+  "publication_allowed": false
+}

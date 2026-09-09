@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/shchem-generation-v2/weekpack-manifest.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "package_id", "version_id", "content_status", "source_scope", "generation_policy",
+    "demonstration_scope", "machine_review_chain", "observed_profile", "artifact_count", "artifacts",
+    "qa_report_count", "qa_reports", "external_delivery_attestation", "open_issues", "human_reviewed",
+    "teacher_managed_delivery_candidate", "delivery_scope", "teacher_action_required",
+    "teaching_use_allowed", "official_publication_allowed",
+    "external_publication_allowed", "publication_allowed"
+  ],
+  "properties": {
+    "schema_version": {"const": "3.0.0-r17"},
+    "package_id": {"type": "string", "minLength": 1},
+    "version_id": {"type": "string", "minLength": 1},
+    "content_status": {"const": "automated_verified_candidate"},
+    "source_scope": {"type": "object"},
+    "generation_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_usage", "profile_generation_authority_claimed", "original_question_generation", "source_question_republication", "project_generation_authorization"],
+      "properties": {
+        "profile_usage": {"const": "read_only_structure_observation"},
+        "profile_generation_authority_claimed": {"const": false},
+        "original_question_generation": {"const": true},
+        "source_question_republication": {"const": false},
+        "project_generation_authorization": {
+          "type": "object",
+          "required": ["path", "sha256", "version", "authorization_id"],
+          "properties": {
+            "path": {"$ref": "#/$defs/relpath"},
+            "sha256": {"$ref": "#/$defs/sha256"},
+            "version": {"const": "1.0.0"},
+            "authorization_id": {"const": "SH-CHEM-PROJECT-GENERATION-AUTH-001"}
+          }
+        }
+      }
+    },
+    "demonstration_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "student_profile_status", "content_status", "real_student_data_used",
+        "personal_diagnosis_claimed", "learning_effect_claimed", "content_provider",
+        "content_bundle_path", "content_bundle_sha256", "catalog_item_count"
+      ],
+      "properties": {
+        "student_profile_status": {"const": "synthetic_student_profile"},
+        "content_status": {"const": "automated_verified_content"},
+        "real_student_data_used": {"const": false},
+        "personal_diagnosis_claimed": {"const": false},
+        "learning_effect_claimed": {"const": false},
+        "content_provider": {"const": "shchem-content-provider/2.0.0"},
+        "content_bundle_path": {"$ref": "#/$defs/relpath"},
+        "content_bundle_sha256": {"$ref": "#/$defs/sha256"},
+        "catalog_item_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "machine_review_chain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required", "controller_chain_path", "controller_chain_sha256",
+        "controller_registry_path", "controller_registry_sha256", "registered",
+        "expected_atomic_part_ids", "registered_atomic_chain_count",
+        "post_generation_preflight", "status", "teacher_managed_delivery"
+      ],
+      "properties": {
+        "required": {"type": "array", "minItems": 4, "items": {"type": "string"}},
+        "controller_chain_path": {"$ref": "#/$defs/relpath"},
+        "controller_chain_sha256": {"$ref": "#/$defs/sha256"},
+        "controller_registry_path": {"$ref": "#/$defs/relpath"},
+        "controller_registry_sha256": {"$ref": "#/$defs/sha256"},
+        "registered": {"const": true},
+        "expected_atomic_part_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^P[0-9]+$"}},
+        "registered_atomic_chain_count": {"type": "integer", "minimum": 1},
+        "post_generation_preflight": {"$ref": "#/$defs/relpath"},
+        "status": {"const": "pass"},
+        "teacher_managed_delivery": {"type": "null"}
+      }
+    },
+    "observed_profile": {"type": "object"},
+    "artifact_count": {"type": "integer", "minimum": 1},
+    "qa_report_count": {"const": 18},
+    "artifacts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/artifact"}},
+    "qa_reports": {"type": "array", "minItems": 18, "maxItems": 18, "items": {"$ref": "#/$defs/qa_report"}},
+    "external_delivery_attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "status", "included_in_archive", "claim_boundary"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relpath"},
+        "status": {"const": "pending"},
+        "included_in_archive": {"const": false},
+        "claim_boundary": {"type": "string", "minLength": 20}
+      }
+    },
+    "open_issues": {"type": "array", "items": {"type": "string"}},
+    "human_reviewed": {"const": false},
+    "teacher_managed_delivery_candidate": {"const": false},
+    "delivery_scope": {"type": "null"},
+    "teacher_action_required": {"const": false},
+    "teaching_use_allowed": {"const": false},
+    "official_publication_allowed": {"const": false},
+    "external_publication_allowed": {"const": false},
+    "publication_allowed": {"const": false}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "relpath": {"type": "string", "pattern": "^(?![A-Za-z]:[\\\\/])(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+"},
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes", "archive_path", "kind"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relpath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "archive_path": {"$ref": "#/$defs/relpath"},
+        "kind": {"type": "string", "minLength": 1}
+      }
+    },
+    "qa_report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes", "status"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relpath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "status": {"const": "pass"}
+      }
+    }
+  }
+}

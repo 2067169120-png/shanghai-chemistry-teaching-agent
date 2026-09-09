@@ -17,8 +17,7 @@
 
 ```powershell
 python -m venv .venv-desktop
-.\.venv-desktop\Scripts\python.exe -m pip install -r runtime/deeptutor_shchem/desktop_requirements.txt
-.\.venv-desktop\Scripts\python.exe -m pip install pytest ruff
+.\.venv-desktop\Scripts\python.exe -m pip install -r requirements-dev.txt
 ```
 
 本软件当前读取已有的本地资料库。开发机需要在工作区配置 `sh-chem-db`，或通过 `SHCHEM_WORKSPACE_ROOT` 指向同时包含该目录和 `integrations/deeptutor_shchem_v1` 的本地工作区。空仓库克隆不包含教学资料，也不等于已经具备完整可运行题库。不要用虚构的题库或来源元数据填补缺失资料。

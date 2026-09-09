@@ -1,0 +1,62 @@
+{
+  "adapter_contract_version": "shchem.student_learning_domain_adapter.v2",
+  "required_domain_interface_version": "gateway_student_learning_api_v1",
+  "required_domain_version": "2.1.0",
+  "transport": "in_process_public_python_api",
+  "public_class": "integrations.student_learning_v1.gateway_api.GatewayStudentLearningAPI",
+  "capabilities": {
+    "private_upload": {
+      "calls": [
+        "GatewayStudentLearningAPI.save_raw_error_image",
+        "GatewayStudentLearningAPI.record_input"
+      ],
+      "structured_input_types": [
+        "score",
+        "grade_progress",
+        "attempt",
+        "timing",
+        "declared_weakness"
+      ],
+      "raw_image_egress_allowed": false,
+      "local_save_blocked_by_uncertain_privacy_detection": false,
+      "model_processing_requires": "versioned media receipt with egress_allowed=true"
+    },
+    "learning_view": {
+      "calls": ["GatewayStudentLearningAPI.select_student"],
+      "fields": [
+        "metadata",
+        "input_event_count",
+        "timeline_event_count",
+        "learning_history.mastery_history",
+        "learning_history.focus_history"
+      ]
+    },
+    "diagnosis_real": {
+      "calls_in_order": [
+        "GatewayStudentLearningAPI.prepare_real_diagnosis",
+        "GatewayStudentLearningAPI.issue_real_diagnosis_receipt",
+        "GatewayStudentLearningAPI.execute_real_diagnosis"
+      ],
+      "controller_issue_contract": "preflight --mode diagnose returns diagnosis_input_gate.controller_receipt",
+      "controller_receipt_contract": "central_diagnosis_adapter_v2",
+      "execute_time_verification": "diagnosis-receipt-verify --input INPUT --receipt RECEIPT",
+      "caller_supplied_receipt_allowed": false,
+      "gateway_duplicate_preflight_allowed": false,
+      "claim_scope": "machine_only_real_student_candidate",
+      "teaching_effectiveness_unverified": true
+    },
+    "formal_week_bundle": {
+      "calls": ["GatewayStudentLearningAPI.build_week_bundle"],
+      "formal_content_provider": "Gateway GenerationFormalContentProvider backed by generation adapter v2",
+      "manifest_schema_version": "student_week_zip_manifest_v1",
+      "required_manifest_scope": "sidecar_final_zip_hash_bound",
+      "return_shape_at_gateway_bridge": "tuple(bundle, bundle_path)",
+      "missing_final_sidecar": "fail_closed"
+    }
+  },
+  "capabilities_secret_source": "environment_only",
+  "dynamic_probe": true,
+  "failure_behavior": "fail_closed",
+  "human_reviewed": false,
+  "publication_allowed": false
+}

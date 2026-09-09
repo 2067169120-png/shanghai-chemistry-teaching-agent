@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.sh-chem.invalid/generation_v2/generator_execution_self_report_r18.schema.json",
+  "title": "R18 generator-only execution self-report and expected root projection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "record_type", "version_id", "provenance_status", "reported_execution", "expected_root_observation_projection"],
+  "properties": {
+    "schema_version": {"const": "2.0.0-r18"},
+    "record_type": {"const": "generation_execution_self_report"},
+    "version_id": {"type": "string", "pattern": "-R18$"},
+    "provenance_status": {"const": "self_reported"},
+    "reported_execution": {"$ref": "#/$defs/execution"},
+    "expected_root_observation_projection": {
+      "type": "object", "additionalProperties": false,
+      "required": ["task_role", "observed_task_identity", "root_dispatch_configuration", "receipt_derivation", "derived_local_receipt_id"],
+      "properties": {
+        "task_role": {"const": "generator"},
+        "observed_task_identity": {
+          "type": "object", "additionalProperties": false, "required": ["thread_id", "turn_id"],
+          "properties": {"thread_id": {"type": "string", "format": "uuid"}, "turn_id": {"type": "string", "minLength": 1}}
+        },
+        "root_dispatch_configuration": {
+          "type": "object", "additionalProperties": false, "required": ["root_dispatch_id", "model", "reasoning_effort"],
+          "properties": {"root_dispatch_id": {"type": "string", "minLength": 1}, "model": {"const": "gpt-5.6-sol"}, "reasoning_effort": {"const": "xhigh"}}
+        },
+        "receipt_derivation": {"const": "local_r18_role_prefix_plus_turn_id"},
+        "derived_local_receipt_id": {"type": "string", "minLength": 1}
+      }
+    }
+  },
+  "$defs": {
+    "execution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider", "thread_id", "turn_id", "receipt_id", "model", "reasoning_effort", "root_dispatch_id"],
+      "properties": {
+        "provider": {"const": "codex_app_thread"}, "thread_id": {"type": "string", "format": "uuid"}, "turn_id": {"type": "string", "minLength": 1},
+        "receipt_id": {"type": "string", "minLength": 1}, "model": {"const": "gpt-5.6-sol"}, "reasoning_effort": {"const": "xhigh"},
+        "root_dispatch_id": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

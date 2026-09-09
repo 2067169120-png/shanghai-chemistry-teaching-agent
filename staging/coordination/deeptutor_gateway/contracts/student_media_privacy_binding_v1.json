@@ -1,0 +1,24 @@
+{
+  "contract_version": "deeptutor_image_sanitization_v1",
+  "owner": "integrations/student_learning_v1",
+  "gateway_role": "read_and_validate_receipt_only",
+  "raw_local_save_allowed": true,
+  "raw_model_access_allowed": false,
+  "required_checks": [
+    "sensitive_metadata",
+    "identity_text",
+    "qr_code",
+    "barcode",
+    "face"
+  ],
+  "required_egress_state": {
+    "state": "ready_for_model_processing",
+    "egress_allowed": true,
+    "allowed_consumers": ["DeepTutor", "Sol"],
+    "machine_status": "machine_only_not_human_reviewed",
+    "human_reviewed": false
+  },
+  "failure_behavior": "keep raw local private; block DeepTutor Sol and CCSwitch",
+  "dependency_rule": "Gateway installs or copies no OCR OpenCV QR barcode or face dependencies"
+}
+
