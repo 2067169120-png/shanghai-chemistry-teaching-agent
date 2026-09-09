@@ -12,6 +12,9 @@ from PySide6.QtCore import QBuffer, QByteArray, QIODevice, QObject, Qt, Signal
 from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication, QDialog, QLabel
 
+from integrations.deeptutor_shchem_v1.desktop_word_question_attributes import (
+    suggest_attributes,
+)
 from integrations.deeptutor_shchem_v1.desktop_workbench.main_window import (
     WORKBENCH_STYLE,
 )
@@ -19,6 +22,69 @@ from integrations.deeptutor_shchem_v1.desktop_workbench.word_question_dialog imp
     WordQuestionDialog,
     WordQuestionRangeDialog,
 )
+
+
+def test_saved_attributes_visible_searchable_and_do_not_leak_to_next_question(qt_app):
+    facade, tasks = _Facade(), _Tasks()
+    item = facade.catalog["items"][0]
+    item["source_sha256"] = "a" * 64
+    item["attributes"] = suggest_attributes(
+        item,
+        {
+            "usage_context": "高三一轮复习",
+            "collection_name": "合成资料包",
+            "package_id": "PKG-001",
+        },
+    )
+    dialog = WordQuestionDialog(facade, tasks)
+    tasks.flush()
+    assert "电解质与电离" in dialog.attribute_note.text()
+    details = dialog.attributes_preview.toPlainText()
+    assert "原题年级：待确认" in details
+    assert "适用年级：高三" in details
+    assert "不等于原题年级" in details
+    assert "自动建议，待教师确认" in details
+    assert "原考试待确认" in details
+    assert "来源区块 2" in details
+    assert dialog.tabs.tabText(3) == "教学属性与依据"
+    dialog.search.setText("高三")
+    dialog._filter_items()
+    assert dialog.question_list.count() == 1
+    dialog.search.setText("PKG-001")
+    dialog._filter_items()
+    assert dialog.question_list.count() == 1
+    dialog.search.clear()
+    dialog._filter_items()
+    dialog.question_list.setCurrentRow(1)
+    assert not dialog.attribute_note.text()
+    assert "尚未保存" in dialog.attributes_preview.toPlainText()
+    dialog.search.setText("no-synthetic-question")
+    dialog._filter_items()
+    assert not dialog.attributes_preview.toPlainText()
+    dialog.reject()
+
+
+@pytest.mark.parametrize("width", [400, 700])
+def test_attribute_view_is_bounded_at_supported_widths(qt_app, width):
+    facade, tasks = _Facade(), _Tasks()
+    item = facade.catalog["items"][0]
+    item["source_sha256"] = "a" * 64
+    item["attributes"] = suggest_attributes(
+        item, {"lecture_topic": "合成教学专题" * 60, "usage_context": "高三一轮复习"}
+    )
+    dialog = WordQuestionDialog(facade, tasks)
+    tasks.flush()
+    dialog.resize(width, 800)
+    dialog.show()
+    dialog.tabs.setCurrentIndex(3)
+    qt_app.processEvents()
+    assert dialog.width() == width
+    assert (
+        dialog.attributes_preview.lineWrapMode()
+        == dialog.attributes_preview.LineWrapMode.WidgetWidth
+    )
+    assert dialog.body_scroll.horizontalScrollBar().maximum() == 0
+    dialog.reject()
 
 
 @pytest.fixture

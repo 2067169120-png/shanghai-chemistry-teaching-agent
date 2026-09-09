@@ -18,6 +18,7 @@ from integrations.deeptutor_shchem_v1.desktop_facade import (
 )
 from integrations.deeptutor_shchem_v1.desktop_workbench.import_word_dialog import (
     ImportWordDialog,
+    _WordImageDialog,
 )
 from integrations.deeptutor_shchem_v1.desktop_workbench.tasks import DesktopTaskBridge
 
@@ -499,3 +500,217 @@ def test_completed_word_batch_is_available_after_reopening_import(qt_app):
     assert dialog.resume_card.isHidden()
     dialog.close()
     bridge.shutdown(1000)
+
+
+def test_whole_lesson_reader_is_complete_without_reference_size_limit(qt_app):
+    facade = _Facade()
+    original_preview = facade.imported_word_preview
+
+    def long_preview(*args):
+        value = original_preview(*args)
+        value["blocks"][0]["text"] = "原教案正文" * 5000
+        value["blocks"][1]["text"] = "最后一个表格：完整末尾"
+        return value
+
+    facade.imported_word_preview = long_preview
+    dialog = ImportWordDialog(facade, "internal-batch")
+    dialog.whole_document_button.click()
+    assert (dialog.block_start.value(), dialog.block_end.value()) == (1, 2)
+    assert "原教案正文" * 5000 in dialog.source_preview.toPlainText()
+    assert "最后一个表格：完整末尾" in dialog.source_preview.toPlainText()
+    assert not facade.reference_calls
+    assert not dialog.import_button.isEnabled()
+    assert "未按备课字数限制截断" in dialog.status.text()
+
+    class TooLongReference(ValueError):
+        message_zh = "所选参考超过 20,000 字，请缩小区块范围。"
+
+    def reject_large_reference(*_args, **_kwargs):
+        raise TooLongReference()
+
+    facade.imported_word_reference = reject_large_reference
+    before = dialog.source_preview.toPlainText()
+    dialog.preview_button.click()
+    assert dialog.source_preview.toPlainText() == before
+    assert "20,000" in dialog.status.text()
+    assert not dialog.import_button.isEnabled()
+    assert dialog.reference is None
+    dialog.close()
+
+
+def test_whole_lesson_selection_invalidates_previously_compiled_reference(qt_app):
+    facade = _Facade()
+    dialog = ImportWordDialog(facade, "internal-batch")
+    dialog.preview_button.click()
+    assert dialog.import_button.isEnabled()
+    dialog.whole_document_button.click()
+    assert not dialog.import_button.isEnabled()
+    assert not dialog.preview.toPlainText()
+    assert len(facade.reference_calls) == 1
+    dialog._confirm()
+    assert dialog.result() != QDialog.DialogCode.Accepted
+    dialog.close()
+
+
+@pytest.mark.parametrize("width", [400, 760, 1200])
+def test_whole_lesson_actions_fit_narrow_reader(qt_app, width):
+    dialog = ImportWordDialog(_Facade(), "internal-batch")
+    dialog.resize(width, 800)
+    dialog.show()
+    qt_app.processEvents()
+    assert dialog.width() == width
+    assert dialog.whole_document_button.width() <= width
+    assert dialog.open_word_button.width() <= width
+    assert dialog.zoom_image_button.width() <= width
+    assert "完整教案原文与图片" == dialog.windowTitle()
+    assert "知识摘要不替代原文" in "\n".join(
+        label.text() for label in dialog.findChildren(QLabel)
+    )
+    dialog.close()
+
+
+def test_full_size_image_is_scrollable_and_zoom_does_not_mutate_source(qt_app):
+    from PySide6.QtGui import QPixmap
+
+    parent = ImportWordDialog(_Facade(), "internal-batch")
+    pixmap = QPixmap(1600, 1100)
+    pixmap.fill(0xFFCCDDEE)
+    dialog = _WordImageDialog(pixmap, "演示原图", parent)
+    dialog.resize(400, 540)
+    dialog.show()
+    qt_app.processEvents()
+    assert dialog.zoom.currentData() == 1.0
+    assert dialog.image.pixmap().width() == 1600
+    assert dialog.image.pixmap().height() == 1100
+    assert dialog.scroll.horizontalScrollBar().maximum() > 0
+    assert dialog.scroll.verticalScrollBar().maximum() > 0
+    dialog.zoom.setCurrentIndex(1)  # 50%
+    assert dialog.image.pixmap().width() == 800
+    dialog.zoom.setCurrentIndex(0)  # fit width
+    qt_app.processEvents()
+    assert dialog.image.pixmap().width() <= dialog.scroll.viewport().width()
+    assert pixmap.width() == 1600 and dialog._original.width() == 1600
+    dialog.close()
+    parent.close()
+
+
+def test_image_zoom_requires_current_image_and_clears_on_failure(qt_app, monkeypatch):
+    facade = _Facade()
+    dialog = ImportWordDialog(facade, "internal-batch")
+    calls = []
+    monkeypatch.setattr(
+        _WordImageDialog, "exec", lambda self: calls.append(self._original.size())
+    )
+    assert not dialog.zoom_image_button.isEnabled()
+    dialog.asset_combo.setCurrentIndex(1)
+    dialog.zoom_image_button.click()
+    assert len(calls) == 1
+    dialog.asset_combo.setCurrentIndex(2)
+    assert dialog._image_pixmap is None
+    assert not dialog.zoom_image_button.isEnabled()
+    assert "用 Word 打开完整原文件" in dialog.status.text()
+    facade.imported_word_asset = lambda *_args: {
+        "bytes": b"broken",
+        "mime_type": "image/png",
+    }
+    dialog.asset_combo.setCurrentIndex(1)
+    assert dialog._image_pixmap is None
+    assert not dialog.zoom_image_button.isEnabled()
+    assert dialog.image_label.isHidden()
+    dialog._open_image()
+    assert len(calls) == 1
+    dialog.close()
+
+
+def test_open_original_word_is_user_initiated_and_uses_current_verified_source(
+    qt_app, monkeypatch, tmp_path
+):
+    import integrations.deeptutor_shchem_v1.desktop_workbench.import_word_dialog as module
+
+    facade = _Facade()
+    original = tmp_path / "已归档 原教案.docx"
+    original.write_bytes(b"synthetic file; facade owns document validation")
+    paths, urls = [], []
+
+    def verified_path(batch_id, source_id):
+        paths.append((batch_id, source_id))
+        return str(original.resolve())
+
+    facade.imported_word_path = verified_path
+    monkeypatch.setattr(
+        module.QDesktopServices, "openUrl", lambda url: urls.append(url) or True
+    )
+    dialog = ImportWordDialog(facade, "internal-batch")
+    dialog.whole_document_button.click()
+    assert not paths and not urls
+    dialog.open_word_button.click()
+    assert paths == [("internal-batch", "internal-handout")]
+    assert len(urls) == 1 and urls[0].isLocalFile()
+    assert urls[0].toLocalFile().replace("\\", "/") == str(original.resolve()).replace(
+        "\\", "/"
+    )
+    dialog.source_combo.setCurrentIndex(1)
+    assert len(paths) == 1
+    dialog.open_word_button.click()
+    assert paths[-1] == ("internal-batch", "internal-answer")
+    assert "已请求" in dialog.status.text()
+    assert not facade.reference_calls
+    dialog.close()
+
+
+@pytest.mark.parametrize("failure", ["facade", "relative", "missing", "scheme", "open"])
+def test_open_original_word_failure_is_safe_and_keeps_full_reader(
+    qt_app, monkeypatch, tmp_path, failure
+):
+    import integrations.deeptutor_shchem_v1.desktop_workbench.import_word_dialog as module
+
+    facade = _Facade()
+    original = tmp_path / "demo.docx"
+    original.write_bytes(b"synthetic fixture")
+    urls = []
+
+    def verified_path(*_args):
+        if failure == "facade":
+            raise OSError("C:/private/secret-cache.docx")
+        return {
+            "relative": "demo.docx",
+            "missing": str(tmp_path / "missing.docx"),
+            "scheme": "https://example.invalid/demo.docx",
+        }.get(failure, str(original.resolve()))
+
+    facade.imported_word_path = verified_path
+    monkeypatch.setattr(
+        module.QDesktopServices, "openUrl", lambda url: urls.append(url) or False
+    )
+    dialog = ImportWordDialog(facade, "internal-batch")
+    dialog.whole_document_button.click()
+    before = dialog.source_preview.toPlainText()
+    dialog.open_word_button.click()
+    assert "无法打开" in dialog.status.text()
+    assert "private" not in dialog.status.text()
+    assert dialog.source_preview.toPlainText() == before
+    assert len(urls) == (1 if failure == "open" else 0)
+    assert dialog.reference is None
+    dialog.close()
+
+
+def test_source_load_failure_clears_previous_full_text_and_image(qt_app):
+    facade = _Facade()
+    dialog = ImportWordDialog(facade, "internal-batch")
+    dialog.whole_document_button.click()
+    dialog.asset_combo.setCurrentIndex(1)
+    assert dialog._image_pixmap is not None
+
+    def fail(*_args):
+        raise OSError("private/internal.docx")
+
+    facade.imported_word_preview = fail
+    dialog.source_combo.setCurrentIndex(1)
+    assert not dialog.source_preview.toPlainText()
+    assert dialog._source is None and dialog._image_pixmap is None
+    assert dialog.image_label.isHidden()
+    assert not dialog.zoom_image_button.isEnabled()
+    assert not dialog.whole_document_button.isEnabled()
+    assert dialog.open_word_button.isEnabled()  # Original-file fallback remains.
+    assert "private" not in dialog.status.text()
+    dialog.close()

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QPixmap, QResizeEvent
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtGui import QDesktopServices, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -15,6 +16,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QPlainTextEdit,
     QPushButton,
+    QScrollArea,
     QSizePolicy,
     QSpinBox,
     QVBoxLayout,
@@ -39,6 +41,65 @@ def _warnings(value: Any) -> list[str]:
     return [item for item in value if item]
 
 
+class _WordImageDialog(QDialog):
+    """Display the original pixels; zoom affects only the local viewer."""
+
+    def __init__(self, pixmap: QPixmap, title: str, parent: QWidget):
+        super().__init__(parent)
+        self._original = QPixmap(pixmap)
+        self.setWindowTitle(title)
+        self.setMinimumSize(360, 360)
+        self.resize(min(1000, max(400, parent.width())), 700)
+        layout = QVBoxLayout(self)
+        note = QLabel(
+            f"原图 {pixmap.width()} × {pixmap.height()} 像素；"
+            "100% 按原始像素显示，可滚动查看。缩放不修改原文件。"
+        )
+        note.setWordWrap(True)
+        layout.addWidget(note)
+        self.zoom = QComboBox()
+        self.zoom.setAccessibleName("原图缩放比例")
+        for label, scale in (
+            ("适合宽度", None),
+            ("50%", 0.5),
+            ("100%（原尺寸）", 1.0),
+            ("150%", 1.5),
+            ("200%", 2.0),
+        ):
+            self.zoom.addItem(label, scale)
+        self.zoom.setCurrentIndex(2)
+        layout.addWidget(self.zoom)
+        self.scroll = QScrollArea()
+        self.scroll.setWidgetResizable(False)
+        self.image = QLabel()
+        self.image.setAccessibleName("完整原图")
+        self.scroll.setWidget(self.image)
+        layout.addWidget(self.scroll, 1)
+        close_button = QPushButton("关闭原图")
+        close_button.clicked.connect(self.accept)
+        layout.addWidget(close_button)
+        self.zoom.currentIndexChanged.connect(self._render)
+        self._render()
+
+    def _render(self, *_args: Any) -> None:
+        scale = self.zoom.currentData()
+        width = (
+            max(1, self.scroll.viewport().width() - 4)
+            if scale is None
+            else max(1, round(self._original.width() * scale))
+        )
+        shown = self._original.scaledToWidth(
+            width, Qt.TransformationMode.SmoothTransformation
+        )
+        self.image.setPixmap(shown)
+        self.image.resize(shown.size())
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        if self.zoom.currentData() is None:
+            self._render()
+
+
 class ImportWordDialog(QDialog):
     """Inspect saved Word blocks and hand a freshly checked selection to preparation."""
 
@@ -52,15 +113,16 @@ class ImportWordDialog(QDialog):
         self._source: dict[str, Any] | None = None
         self._loading = False
         self._image_pixmap: QPixmap | None = None
-        self.setWindowTitle("查看 Word 内容并带入备课")
+        self.setWindowTitle("完整教案原文与图片")
         self.resize(760, 800)
         self.setMinimumSize(400, 540)
         root = QVBoxLayout(self)
         root.setContentsMargins(16, 16, 16, 16)
         root.addWidget(
             section_title(
-                "查看已保存的 Word",
-                "选择原文区块，核对文字与缺失提示后追加到备课资料。这里仅在本机读取，不调用模型。",
+                "完整教案原文与图片",
+                "已保存原 Word，正文、表格文字和原图可在本机查看，不调用模型。"
+                "知识摘要不替代原文；旧公式或版式请用 Word 打开完整原文件核对。",
             )
         )
         content = QWidget()
@@ -73,6 +135,18 @@ class ImportWordDialog(QDialog):
         self.section_picker = self._combo("按 Word 章节选择区块")
         source_form.addRow("章节定位", self.section_picker)
         layout.addLayout(source_form)
+        self.whole_document_button = QPushButton("查看整份教案")
+        self.whole_document_button.setAccessibleName(
+            "查看整份教案原文，不限备课追加字数"
+        )
+        self.whole_document_button.setEnabled(False)
+        self.whole_document_button.clicked.connect(self._view_whole_document)
+        layout.addWidget(self.whole_document_button)
+        self.open_word_button = QPushButton("用 Word 打开完整原文件")
+        self.open_word_button.setAccessibleName("用默认 Word 文档应用打开已保存原文件")
+        self.open_word_button.setEnabled(False)
+        self.open_word_button.clicked.connect(self._open_original_word)
+        layout.addWidget(self.open_word_button)
         self.block_list = QListWidget()
         self.block_list.setAccessibleName("Word 原文区块")
         self.block_list.setMinimumHeight(120)
@@ -95,7 +169,7 @@ class ImportWordDialog(QDialog):
         self.block_hint = QLabel("正在读取已保存的 Word…")
         self.block_hint.setWordWrap(True)
         layout.addWidget(self.block_hint)
-        layout.addWidget(QLabel("所选原文与缺失提示"))
+        layout.addWidget(QLabel("教案原文（含表格文字；可滚动阅读全文）"))
         self.source_preview = QPlainTextEdit()
         self.source_preview.setReadOnly(True)
         self.source_preview.setAccessibleName("所选 Word 原文与缺失提示")
@@ -114,8 +188,14 @@ class ImportWordDialog(QDialog):
         self.image_label.setFixedHeight(230)
         self.image_label.hide()
         layout.addWidget(self.image_label)
+        self.zoom_image_button = QPushButton("放大查看原图（原尺寸 / 缩放）")
+        self.zoom_image_button.setAccessibleName("放大查看当前教案原图")
+        self.zoom_image_button.setEnabled(False)
+        self.zoom_image_button.clicked.connect(self._open_image)
+        layout.addWidget(self.zoom_image_button)
         self.image_note = QLabel(
-            "图片仅供核对来源；所选参考中的图片和公式缺口仍须核对。"
+            "这是原 Word 中的图片，不是重绘图。可放大核对；"
+            "下方追加到备课的文字参考不会自动带入这些图片像素。"
         )
         self.image_note.setWordWrap(True)
         self.image_note.hide()
@@ -222,6 +302,9 @@ class ImportWordDialog(QDialog):
         self.image_label.clear()
         self.image_label.hide()
         self.image_note.hide()
+        self.zoom_image_button.setEnabled(False)
+        self.whole_document_button.setEnabled(False)
+        self.open_word_button.setEnabled(bool(self.source_combo.currentData()))
         self.preview_button.setEnabled(False)
 
     def _source_changed(self, *_args: Any) -> None:
@@ -290,6 +373,7 @@ class ImportWordDialog(QDialog):
                 self.asset_combo.addItem(label, deepcopy(asset))
             self.asset_combo.setVisible(self.asset_combo.count() > 1)
             if blocks:
+                self.whole_document_button.setEnabled(True)
                 self.block_start.setRange(min(indices), max(indices))
                 self.block_end.setRange(min(indices), max(indices))
                 self.block_start.setValue(indices[0])
@@ -298,7 +382,8 @@ class ImportWordDialog(QDialog):
                 set_status(
                     self.status,
                     "success",
-                    "已读取 Word，默认选择首个区块。请选择范围并核对原文。",
+                    "已读取原教案，默认定位首个区块。点“查看整份教案”可阅读全文；"
+                    "选择图片后可放大，或用 Word 查看完整原版。",
                 )
             else:
                 set_status(
@@ -389,6 +474,55 @@ class ImportWordDialog(QDialog):
         finally:
             self._loading = False
         self._selection_changed()
+
+    def _view_whole_document(self) -> None:
+        blocks = (self._source or {}).get("blocks", ())
+        if not blocks:
+            return
+        # This is a reader action, not reference compilation: never apply the
+        # preparation size limit or shorten the body just to fit that limit.
+        self._set_range(blocks[0]["index"], blocks[-1]["index"])
+        self.source_preview.moveCursor(
+            self.source_preview.textCursor().MoveOperation.Start
+        )
+        self.source_preview.setFocus()
+        set_status(
+            self.status,
+            "success",
+            f"正在查看整份教案，共 {len(blocks)} 个区块，正文未按备课字数限制截断。"
+            "若要追加到备课，请另点“预览将带入的内容”；超长时可缩小区块范围。",
+        )
+
+    def _open_original_word(self) -> None:
+        source_id = self.source_combo.currentData()
+        if not source_id:
+            return
+        try:
+            value = self.facade.imported_word_path(self._batch_id, source_id)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError("invalid local source")
+            path = Path(value)
+            if (
+                not path.is_absolute()
+                or path.suffix.lower() != ".docx"
+                or not path.is_file()
+            ):
+                raise ValueError("invalid local source")
+            if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(path))):
+                raise ValueError("document application unavailable")
+        except Exception as exc:  # noqa: BLE001 - verified local facade boundary
+            set_status(
+                self.status,
+                "error",
+                _safe_message(
+                    exc,
+                    "原文件暂时无法打开，请检查文件仍存在且已安装 Word 或兼容应用。",
+                ),
+            )
+            return
+        set_status(
+            self.status, "success", "已请求使用默认 Word 文档应用打开完整原文件。"
+        )
 
     def _compile_reference(self) -> dict[str, Any]:
         if not self._source or not self._valid_range():
@@ -485,6 +619,7 @@ class ImportWordDialog(QDialog):
         self.image_label.clear()
         self.image_label.hide()
         self.image_note.hide()
+        self.zoom_image_button.setEnabled(False)
         asset = self.asset_combo.currentData()
         if self._loading or not asset:
             return
@@ -492,7 +627,7 @@ class ImportWordDialog(QDialog):
             set_status(
                 self.status,
                 "attention",
-                "此图片格式暂不能在窗口内预览，请核对原始 Word。",
+                "此图片或旧公式格式暂不能在窗口内预览，请点“用 Word 打开完整原文件”核对。",
             )
             return
         try:
@@ -519,6 +654,7 @@ class ImportWordDialog(QDialog):
             self._image_pixmap = pixmap
             self.image_label.show()
             self.image_note.show()
+            self.zoom_image_button.setEnabled(True)
             self._resize_image()
         except Exception as exc:  # noqa: BLE001 - local facade boundary
             set_status(
@@ -526,6 +662,16 @@ class ImportWordDialog(QDialog):
                 "error",
                 _safe_message(exc, "来源图片暂时无法预览，请核对原始 Word。"),
             )
+
+    def _open_image(self) -> None:
+        if self._image_pixmap is None:
+            return
+        asset = self.asset_combo.currentData() or {}
+        dialog = _WordImageDialog(
+            self._image_pixmap, str(asset.get("label") or "教案原图"), self
+        )
+        dialog.exec()
+        dialog.deleteLater()
 
     def _resize_image(self) -> None:
         if self._image_pixmap is not None:

@@ -60,6 +60,8 @@ class ImportDialog(QDialog):
         self._saved_visual_receipt: DesktopVisualImportReceipt | None = None
         self.preparation_reference: dict | None = None
         self._word_receipts: dict[str, DesktopVisualImportReceipt] = {}
+        self._import_preview_session: dict | None = None
+        self._import_preview_epoch = 0
         self._resumable_receipts: tuple[DesktopVisualImportReceipt, ...] = ()
         self.setWindowTitle("导入资料")
         self.resize(720, 680)
@@ -70,7 +72,7 @@ class ImportDialog(QDialog):
         root.addWidget(
             section_title(
                 "导入资料",
-                "先在本机保存并分流；只有你确认后，才把待视觉资料渲染后的页面发送给所选模型。",
+                "先在本机预览并选择文件，确认后再保存。视觉识别另行选择模型并确认。",
             )
         )
 
@@ -93,8 +95,8 @@ class ImportDialog(QDialog):
             label.setWordWrap(True)
             label.setObjectName("MutedLabel")
             state_layout.addWidget(label)
-        self.corpus_button = QPushButton("导入现有一轮复习讲义（98 包 / 196 份）")
-        self.corpus_button.setAccessibleName("导入现有一轮复习讲义 98 包 196 份")
+        self.corpus_button = QPushButton("预览指定一轮复习解析版（98 份）")
+        self.corpus_button.setAccessibleName("预览指定上好课资料包的 98 份解析版 Word，再选择导入")
         self.corpus_button.clicked.connect(self._run_one_round_corpus)
         state_layout.addWidget(self.corpus_button)
         content_layout.addWidget(state_card)
@@ -166,6 +168,8 @@ class ImportDialog(QDialog):
         self.files = self.question_files
         for panel in self._role_panels():
             content_layout.addWidget(panel)
+            panel.files_changed.connect(self._preview_inputs_changed)
+        self.source_type.currentTextChanged.connect(self._preview_inputs_changed)
 
         self.provider_card = CardFrame()
         provider_layout = QVBoxLayout(self.provider_card)
@@ -248,8 +252,8 @@ class ImportDialog(QDialog):
         self.close_button.setObjectName("QuietButton")
         self.close_button.setAccessibleName("关闭导入窗口")
         self.close_button.clicked.connect(self.reject)
-        self.save_button = QPushButton("保存并分流")
-        self.save_button.setAccessibleName("在本机保存并分流资料")
+        self.save_button = QPushButton("预览并选择导入")
+        self.save_button.setAccessibleName("先在本机预览来源，再选择整份文件导入")
         self.save_button.clicked.connect(self._save)
         buttons.addWidget(self.close_button)
         buttons.addWidget(self.save_button)
@@ -301,25 +305,102 @@ class ImportDialog(QDialog):
     def _save(self) -> None:
         if self._active_task_id:
             return
-        question_files = tuple(self.question_files.paths())
-        answer_files = tuple(self.answer_files.paths())
-        handout_files = tuple(self.handout_files.paths())
-        source_type = self.source_type.currentText().strip()
-        self._begin_task("save", "正在本机核对并保存来源；此步骤不会调用视觉模型。")
-        self._active_task_id = self.tasks.submit_progress(
-            "保存并分流",
-            lambda report, cancelled: self.facade.save_visual_import_batch(
-                question_files=question_files,
-                answer_files=answer_files,
-                handout_files=handout_files,
-                source_type=source_type,
-                progress_callback=report,
-                should_cancel=cancelled,
-            ),
-            on_progress=self._import_progress,
-            on_success=self._visual_batch_saved,
-            on_failure=self._import_failed,
-        )
+        arguments = {
+            "question_files": tuple(self.question_files.paths()),
+            "answer_files": tuple(self.answer_files.paths()),
+            "handout_files": tuple(self.handout_files.paths()),
+            "source_type": self.source_type.currentText().strip(),
+        }
+        self._start_import_preview(lambda: self.facade.preview_import_files(**arguments))
+
+    def _preview_inputs_changed(self, *_args) -> None:
+        self._import_preview_epoch += 1
+        self._discard_import_preview()
+
+    def _discard_import_preview(self) -> None:
+        preview, self._import_preview_session = self._import_preview_session, None
+        if preview:
+            try:
+                self.facade.discard_import_preview(preview["preview_id"])
+            except (AttributeError, KeyError, RuntimeError, TypeError, ValueError):
+                pass
+
+    def _start_import_preview(self, loader) -> None:
+        self._discard_import_preview()
+        self._import_preview_epoch += 1
+        epoch = self._import_preview_epoch
+        self._begin_task("preview", "正在核对文件清单，随后打开原文预览；尚未保存，不调用模型。")
+        def operation(_report, cancelled):
+            value = loader()
+            if cancelled():
+                self.facade.discard_import_preview(value["preview_id"])
+            return value
+        def ready(value):
+            if epoch != self._import_preview_epoch:
+                if isinstance(value, dict) and value.get("preview_id"):
+                    self.facade.discard_import_preview(value["preview_id"])
+                return
+            self._open_import_preview(value, epoch)
+        try:
+            self._active_task_id = self.tasks.submit_progress(
+                "准备导入前预览", operation, on_success=ready,
+                on_failure=self._import_failed,
+            )
+        except RuntimeError:
+            self._active_task_id = None
+            self._active_task_kind = None
+            self._set_busy(False)
+            set_status(self.status, "error", "预览暂时无法启动，尚未保存任何来源。")
+
+    def _open_import_preview(self, preview, epoch) -> None:
+        from .import_preview_dialog import ImportPreviewDialog
+
+        if (
+            not isinstance(preview, dict)
+            or not isinstance(preview.get("preview_id"), str)
+            or not isinstance(preview.get("revision"), str)
+            or not isinstance(preview.get("sources"), list)
+            or not preview["sources"]
+        ):
+            set_status(self.status, "error", "没有可预览的来源文件，尚未保存。")
+            return
+        self._import_preview_session = preview
+        self._active_task_id = None
+        self._active_task_kind = None
+        self.cancel_button.hide()
+        self._set_busy(False)
+        dialog = ImportPreviewDialog(self.facade, self.tasks, preview, self)
+        result = dialog.exec()
+        selected = list(dialog.selected_source_ids)
+        dialog.deleteLater()
+        if result != QDialog.DialogCode.Accepted or epoch != self._import_preview_epoch:
+            self._discard_import_preview()
+            set_status(self.status, "info", "已取消本次导入预览，未保存到个人题库。")
+            return
+        if not selected:
+            self._discard_import_preview()
+            set_status(self.status, "attention", "未选择文件，未保存。")
+            return
+        self._begin_task("commit", f"正在核对并保存所选 {len(selected)} 份完整文件，请稍候。此阶段不能撤销，不调用模型。")
+        self.cancel_button.setEnabled(False)
+        self.cancel_button.hide()
+        try:
+            self._active_task_id = self.tasks.submit_progress(
+                "保存已预览的所选文件",
+                lambda report, cancelled: self.facade.commit_import_preview(
+                    preview["preview_id"], preview["revision"], selected,
+                    progress_callback=report, should_cancel=cancelled,
+                ),
+                on_progress=self._import_progress,
+                on_success=self._visual_batch_saved,
+                on_failure=self._import_failed,
+            )
+        except RuntimeError:
+            self._discard_import_preview()
+            self._active_task_id = None
+            self._active_task_kind = None
+            self._set_busy(False)
+            set_status(self.status, "error", "所选文件暂未保存，请重新预览后重试。")
 
     def _begin_task(self, kind: str, message: str) -> None:
         self._active_task_kind = kind
@@ -347,6 +428,7 @@ class ImportDialog(QDialog):
         self.word_reference_button.setEnabled(
             not busy and self.word_batch_combo.count() > 0
         )
+        self.word_questions_button.setEnabled(not busy)
         if busy:
             self.generate_button.setEnabled(False)
         else:
@@ -617,6 +699,8 @@ class ImportDialog(QDialog):
         self.progress.setFormat("任务未完成")
         if self._active_task_kind == "visual":
             text = f"视觉候选未生成；离线来源仍已保存，可重试。{message}"
+        elif self._active_task_kind == "preview":
+            text = f"导入预览未完成，尚未保存。{message}"
         else:
             text = f"离线保存未完成。{message}"
         set_status(self.status, "error", text)
@@ -624,23 +708,11 @@ class ImportDialog(QDialog):
     def _run_one_round_corpus(self) -> None:
         if self._active_task_id:
             return
-        self._begin_task(
-            "corpus", "正在读取一轮复习讲义的文字、题号和题目—解析对应关系…"
-        )
-        self.progress.setRange(0, 196)
-        self.progress.setValue(0)
-        self.progress.setFormat("准备读取 196 份 Word…")
-        self._corpus_task_id = self.tasks.submit_progress(
-            "读取一轮复习讲义",
-            lambda report, cancelled: self.facade.run_one_round_review_corpus_import(
-                progress_callback=report,
-                should_cancel=cancelled,
-            ),
-            on_progress=self._corpus_progress,
-            on_success=self._corpus_saved,
-            on_failure=self._corpus_failed,
-        )
-        self._active_task_id = self._corpus_task_id
+        self._start_import_preview(lambda: self.facade.preview_import_files(
+            question_files=(), answer_files=(),
+            handout_files=self.facade.teaching_pack_analysis_files(),
+            source_type="教师讲义",
+        ))
 
     def _corpus_progress(self, value: object) -> None:
         payload = value.as_dict() if hasattr(value, "as_dict") else value
@@ -681,6 +753,9 @@ class ImportDialog(QDialog):
         self.status.setText(message)
 
     def _cancel_active(self) -> None:
+        if self._active_task_kind == "commit":
+            set_status(self.status, "info", "正在完整保存所选文件，请稍候；本阶段不能撤销。")
+            return
         if self._active_task_id:
             self.tasks.cancel(self._active_task_id)
             self.cancel_button.setEnabled(False)
@@ -709,6 +784,8 @@ class ImportDialog(QDialog):
     def _task_finished(self, task_id: str) -> None:
         if task_id != self._active_task_id:
             return
+        if self._active_task_kind == "commit":
+            self._discard_import_preview()
         self._active_task_id = None
         if task_id == self._corpus_task_id:
             self._corpus_task_id = None
@@ -728,6 +805,8 @@ class ImportDialog(QDialog):
             else:
                 self.status.setText("导入内容仍在本机保存；请等待任务结束后再关闭。")
             return
+        self._import_preview_epoch += 1
+        self._discard_import_preview()
         super().reject()
 
     def closeEvent(self, event: QCloseEvent) -> None:
@@ -745,6 +824,8 @@ class ImportDialog(QDialog):
                 event.ignore()
             return
         event.accept()
+        self._import_preview_epoch += 1
+        self._discard_import_preview()
 
 
 class SettingsDialog(QDialog):

@@ -131,6 +131,7 @@ class FitWidthImage(QLabel):
         self.descriptor = image
         self._tasks = tasks
         self._source = QPixmap()
+        self.loaded_bytes: bytes | None = None
         self._task_id: str | None = None
         self._generation = 1
         self._zoom_dialog: ImageZoomDialog | None = None
@@ -165,6 +166,7 @@ class FitWidthImage(QLabel):
             self._failed(generation, "题图文件无法解码")
             return
         self._source = pixmap
+        self.loaded_bytes = value
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip("点击查看大图并缩放")
         self._fit()
@@ -174,6 +176,7 @@ class FitWidthImage(QLabel):
             return
         self._task_id = None
         self._source = QPixmap()
+        self.loaded_bytes = None
         self.setMinimumHeight(72)
         self.setMaximumHeight(16777215)
         set_status(
@@ -332,6 +335,7 @@ class LibraryDetailDialog(QDialog):
             caption=caption,
             source=source,
             purpose="观察原图，记录已知条件、符号与作答要求，再结合教材知识讲解。",
+            preview_bytes=widget.loaded_bytes,
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return

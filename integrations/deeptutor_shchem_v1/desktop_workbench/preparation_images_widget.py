@@ -1,19 +1,19 @@
 """Native teacher-selected image assets for the preparation workflow.
 
-The preparation model receives only the teacher-authored metadata for these
-assets.  The image bytes stay in the local application asset store managed by
-the facade.  This module deliberately has no network, browser, preview, or
-image-decoding surface: the first UI milestone only needs a clear, reviewable
-asset list and a reliable hand-off to ``DesktopWorkbenchFacade``.
+The preparation payload contains metadata only. Local, size-bounded pixel
+previews let the teacher check each selected picture without adding bytes or
+paths to that payload. Only the current selection is decoded.
 """
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QCloseEvent, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -24,12 +24,22 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QPlainTextEdit,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
-from ..desktop_preparation_images import MAX_IMAGES, normalize_image_assets
+from ..desktop_preparation_images import (
+    MAX_IMAGE_BYTES,
+    MAX_IMAGE_PIXELS,
+    MAX_IMAGES,
+    PreparationImageError,
+    image_info,
+    normalize_image_assets,
+    verify_image_bytes,
+)
 from .components import set_status
 
 _ASSET_KEYS = (
@@ -49,6 +59,127 @@ _IMAGE_CONTENT_TYPES = frozenset(
         "image/webp",
     }
 )
+
+
+class _LocalImagePreview(QWidget):
+    """One bounded thumbnail and the existing scrollable, zoomable viewer."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._source = QPixmap()
+        self._caption = "教学图片"
+        self._zoom_dialog = None
+        self.setMinimumWidth(0)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+        self.image = QLabel("选择一张图片查看预览。")
+        self.image.setObjectName("PreparationImagePreview")
+        self.image.setAccessibleName("教学图片像素预览")
+        self.image.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.image.setWordWrap(True)
+        self.image.setMinimumWidth(0)
+        self.image.setFixedHeight(140)
+        self.image.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        layout.addWidget(self.image)
+        self.zoom_button = QPushButton("放大查看")
+        self.zoom_button.setObjectName("QuietButton")
+        self.zoom_button.setAccessibleName("放大查看当前教学图片")
+        self.zoom_button.clicked.connect(self._open_zoom)
+        layout.addWidget(self.zoom_button, 0, Qt.AlignmentFlag.AlignRight)
+        self.clear("选择一张图片查看预览。")
+
+    @property
+    def has_image(self) -> bool:
+        return not self._source.isNull()
+
+    def clear(self, message: str) -> None:
+        self.close_zoom()
+        self._source = QPixmap()
+        self.image.clear()
+        self.image.setText(message)
+        self.zoom_button.setEnabled(False)
+
+    def set_bytes(self, data: bytes, caption: str) -> None:
+        # Callers check byte, pixel, static-image and metadata limits first.
+        self.clear("")
+        pixmap = QPixmap()
+        if not pixmap.loadFromData(data):
+            raise PreparationImageError("图片无法完整显示，请重新选择图片。")
+        self._source = pixmap
+        self._caption = caption or "教学图片"
+        self.image.setAccessibleDescription(self._caption)
+        self.zoom_button.setEnabled(True)
+        self._fit()
+
+    def _fit(self) -> None:
+        if self.has_image:
+            self.image.setPixmap(self._source.scaled(
+                max(1, self.image.contentsRect().width()),
+                self.image.height(),
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            ))
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._fit()
+
+    def _open_zoom(self) -> None:
+        if not self.has_image:
+            return
+        from .library_detail import ImageZoomDialog
+
+        self.close_zoom()
+        self._zoom_dialog = ImageZoomDialog(self._source, self._caption, self.window())
+        dialog = self._zoom_dialog
+        # Keep zoomed rasters within the same pixel budget as source images.
+        max_percent = int(math.sqrt(
+            MAX_IMAGE_PIXELS / (self._source.width() * self._source.height())
+        ) * 100)
+        dialog.zoom.setMaximum(min(250, max_percent))
+        dialog.destroyed.connect(lambda: self._forget_zoom(dialog))
+        dialog.show()
+
+    def _forget_zoom(self, dialog: object) -> None:
+        if self._zoom_dialog is dialog:
+            self._zoom_dialog = None
+
+    def close_zoom(self) -> None:
+        dialog, self._zoom_dialog = self._zoom_dialog, None
+        if dialog is not None:
+            dialog.close()
+
+
+def _preview_file_bytes(file_path: str) -> bytes:
+    if not file_path or file_path.startswith(("\\\\", "//")):
+        raise PreparationImageError("请选择本机的PNG、JPEG或WebP图片。")
+    path = Path(file_path)
+    if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_IMAGE_BYTES:
+        raise PreparationImageError("请选择不超过10MB的本机图片。")
+    with path.open("rb") as stream:
+        return stream.read(MAX_IMAGE_BYTES + 1)
+
+
+class _WrappingSourceInput(QPlainTextEdit):
+    """Keep the field's small text/setText API while wrapping long sources."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setFixedHeight(58)
+        self.setTabChangesFocus(True)
+        self.setMinimumWidth(0)
+
+    def text(self) -> str:
+        return self.toPlainText().replace("\n", " ")
+
+    def setText(self, text: str) -> None:
+        self.setPlainText(text)
+
+    def setCursorPosition(self, position: int) -> None:
+        cursor = self.textCursor()
+        cursor.setPosition(position)
+        self.setTextCursor(cursor)
 
 
 def _normalise_asset(value: object) -> dict[str, Any] | None:
@@ -107,11 +238,13 @@ class PreparationImageMetadataDialog(QDialog):
         source: str = "",
         purpose: str = "",
         display_name: str = "",
+        preview_bytes: bytes | None = None,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("添加教学图片说明")
         self.setModal(True)
-        self.resize(460, 260)
+        self.resize(500, 560)
+        self.setMinimumWidth(320)
 
         root = QVBoxLayout(self)
         root.setContentsMargins(20, 18, 20, 18)
@@ -132,13 +265,24 @@ class PreparationImageMetadataDialog(QDialog):
         hint.setWordWrap(True)
         root.addWidget(hint)
 
+        self.preview = _LocalImagePreview(self)
+        root.addWidget(self.preview)
+        self.preview_error = ""
+        try:
+            data = preview_bytes if preview_bytes is not None else _preview_file_bytes(file_path)
+            image_info(data)
+            self.preview.set_bytes(data, file_name)
+        except Exception:  # noqa: BLE001 - hide local paths and decoder diagnostics
+            self.preview_error = "图片无法预览；请选择不超过10MB的PNG、JPEG或WebP静态图片。"
+            self.preview.clear(self.preview_error)
+
         form = QFormLayout()
         form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         form.setVerticalSpacing(9)
         self.caption_input = QLineEdit()
         self.caption_input.setPlaceholderText("例如：教材图 2.14 氯化钠电离过程示意图")
         self.caption_input.setAccessibleName("图片图注")
-        self.source_input = QLineEdit()
+        self.source_input = _WrappingSourceInput()
         self.source_input.setPlaceholderText("例如：沪科技化学必修第一册，第 57 页")
         self.source_input.setAccessibleName("图片来源")
         self.purpose_input = QLineEdit()
@@ -216,7 +360,14 @@ class PreparationImageMetadataDialog(QDialog):
                     editor.setFocus()
                     break
             return
+        if not self.preview.has_image:
+            set_status(self.status, "attention", self.preview_error + "图片尚未导入。")
+            return
         self.accept()
+
+    def done(self, result: int) -> None:
+        self.preview.close_zoom()
+        super().done(result)
 
 
 class PreparationImagesWidget(QWidget):
@@ -234,6 +385,7 @@ class PreparationImagesWidget(QWidget):
         self.facade = facade
         self._assets: list[dict[str, Any]] = []
         self._editing_enabled = True
+        self._preview_generation = 0
         self.setObjectName("PreparationImagesWidget")
         self.setAccessibleName("备课教学图片")
 
@@ -277,8 +429,16 @@ class PreparationImagesWidget(QWidget):
         self.asset_list.setMinimumHeight(72)
         self.asset_list.setMaximumHeight(190)
         self.asset_list.setWordWrap(True)
-        self.asset_list.itemSelectionChanged.connect(self._update_controls)
+        self.asset_list.setMinimumWidth(0)
+        self.asset_list.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.asset_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.asset_list.setResizeMode(QListWidget.ResizeMode.Adjust)
+        self.asset_list.itemSelectionChanged.connect(self._selection_changed)
         root.addWidget(self.asset_list)
+
+        self.preview = _LocalImagePreview(self)
+        self.preview.setVisible(False)
+        root.addWidget(self.preview)
 
         self.status = QLabel("尚未添加教学图片。")
         self.status.setObjectName("MutedLabel")
@@ -430,6 +590,8 @@ class PreparationImagesWidget(QWidget):
         )
 
     def _render_assets(self) -> None:
+        self._preview_generation += 1
+        self.preview.clear("选择一张图片查看预览。")
         self.asset_list.blockSignals(True)
         try:
             self.asset_list.clear()
@@ -446,14 +608,44 @@ class PreparationImagesWidget(QWidget):
                     f"用途：{asset['purpose']}"
                 )
                 self.asset_list.addItem(item)
+            if self._assets:
+                self.asset_list.setCurrentRow(0)
         finally:
             self.asset_list.blockSignals(False)
         if self._assets:
-            self.asset_list.setCurrentRow(0)
             self.status.setText(f"已添加 {len(self._assets)} 张教学图片。")
         else:
             self.status.setText("尚未添加教学图片。")
+        self._selection_changed()
+
+    def _selection_changed(self) -> None:
+        self._preview_generation += 1
+        generation = self._preview_generation
         self._update_controls()
+        self.preview.clear("正在读取当前图片…")
+        row = self.asset_list.currentRow()
+        self.preview.setVisible(0 <= row < len(self._assets))
+        if row < 0 or row >= len(self._assets):
+            self.preview.clear("尚未选择教学图片。")
+            return
+        asset = dict(self._assets[row])
+        try:
+            loader = getattr(self.facade, "preparation_image_bytes", None)
+            if not callable(loader):
+                raise PreparationImageError("本地图片读取暂不可用。")
+            data = loader(dict(asset))
+            verify_image_bytes(asset, data)
+            if generation != self._preview_generation:
+                return
+            self.preview.set_bytes(data, asset["caption"])
+        except Exception:  # noqa: BLE001 - never attach old pixels or leak diagnostics
+            if generation == self._preview_generation:
+                self.preview.clear("这张图片暂时无法显示，文件可能缺失或已变化；请重新选择图片。")
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        self._preview_generation += 1
+        self.preview.clear("图片预览已关闭。")
+        super().closeEvent(event)
 
     def _update_controls(self) -> None:
         can_edit = self._editing_enabled

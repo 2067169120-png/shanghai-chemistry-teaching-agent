@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "review_method": "AI read of original Word-rendered pages plus native text and independent calculation; not human approval",
+  "human_reviewed": false,
+  "sources": [
+    {
+      "package_id": "PKG-001",
+      "source_name": "2026年高考化学一轮复习检测卷（上海专用）（解析版）.docx",
+      "source_sha256": "671443598246f248392e58a991b0224386858872e2de442151dc1eb79adcccc9",
+      "source_revision": "aaca40186e1796917ba74492affbd4ccc007a969da46cac325fcef1d4e10fcf2",
+      "rendered_pages": 15,
+      "ai_viewed_pages": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      "coverage_caveat": "已逐页看图不代表每小问已独立逆解；未列出的内容不自动视为正确。仅下列结论已经按给定数据或守恒关系复核。原文件保留不改。",
+      "issues": [
+        {
+          "id": "PKG001-LA-DISSOCIATION",
+          "block_indices": [46, 62],
+          "pages": [3, 4],
+          "summary": "稀土萃取部分的解离式把一个镧配合物对应的镧离子系数写成3，与物料和电荷守恒不符；后文区块72的系数为1。",
+          "suggested_correction": "按题目模型应为 (RCOO)₃La ⇌ 3RCOO⁻ + La³⁺。每个配合物含一个镧；右侧总电荷为0。保留原题另列此AI修订建议。",
+          "status": "ai_verified_source_inconsistency_pending_teacher_review"
+        },
+        {
+          "id": "PKG001-MG-CHARGE",
+          "block_indices": [63, 73],
+          "pages": [4, 5],
+          "summary": "稀土主题第(6)问答案将镁离子误写为三价；题干关系图标明Mg²⁺，原式电荷不守恒。",
+          "suggested_correction": "3MgO + 2La³⁺ + 3CO₂ → La₂(CO₃)₃↓ + 3Mg²⁺。氧化镁、镧离子和二氧化碳生成碳酸镧沉淀和镁离子；左右电荷均为+6，Mg、La、C、O原子数分别相等。",
+          "status": "ai_verified_source_inconsistency_pending_teacher_review"
+        },
+        {
+          "id": "PKG001-MG-PRECIPITATION",
+          "block_indices": [42, 54, 64, 74],
+          "pages": [3, 4, 5],
+          "summary": "稀土主题第(7)问的给定数值与“不生成MgCO₃”的设问不一致，原答案把较大的离子积写成小于溶度积。",
+          "suggested_correction": "按题设浓度近似处理：c(CO₃²⁻)=[4.0×10⁻³⁴/(10⁻⁵)²]^(1/3)=1.5874×10⁻⁸ mol·L⁻¹；Q=0.45×1.5874×10⁻⁸=7.1433×10⁻⁹，大于给定Ksp(MgCO₃)=3.5×10⁻⁹，故应判断会发生沉淀，不能证明不沉淀。建议另建修订题把设问改为判断是否生成并说明理由；不暗改原题数值。",
+          "status": "ai_verified_source_inconsistency_pending_teacher_review"
+        },
+        {
+          "id": "PKG001-REFORMING-WATER",
+          "block_indices": [119],
+          "pages": [8],
+          "summary": "水蒸气制氢第(6)问解析引用总反应时漏写水前的系数2，和题干区块81所列总反应不一致。",
+          "suggested_correction": "总反应应为 CH₄(g) + 2H₂O(g) ⇌ CO₂(g) + 4H₂(g)；甲烷与水蒸气生成二氧化碳和氢气。该式由题给反应Ⅰ与Ⅱ相加得到，左右C、H、O分别守恒。此更正不代表该主题的其余小问全部独立核验完成。",
+          "status": "ai_verified_source_inconsistency_pending_teacher_review"
+        }
+      ]
+    }
+  ]
+}

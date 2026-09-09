@@ -118,8 +118,12 @@ class _AcceptedMetadataDialog:
         return self.DialogCode.Accepted
 
 
-def test_metadata_dialog_requires_all_three_teacher_fields(qt_app) -> None:
-    dialog = PreparationImageMetadataDialog("C:/教材/图2.14.png")
+def test_metadata_dialog_requires_all_three_teacher_fields(qt_app, tmp_path) -> None:
+    from PIL import Image
+
+    path = tmp_path / "图2.14.png"
+    Image.new("RGB", (80, 40), "green").save(path)
+    dialog = PreparationImageMetadataDialog(str(path))
     dialog.show()
     qt_app.processEvents()
     dialog.confirm_button.click()

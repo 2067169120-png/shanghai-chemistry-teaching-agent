@@ -98,6 +98,45 @@ class _Facade:
         self.resumable = resumable
         self.save_calls: list[dict[str, Any]] = []
         self.run_calls: list[dict[str, Any]] = []
+        self.preview_calls = []
+        self.commit_calls = []
+        self.discard_calls = []
+
+    def preview_import_files(self, **kwargs):
+        self.preview_calls.append(kwargs)
+        sources = []
+        for role, field in (
+            ("question", "question_files"),
+            ("answer", "answer_files"),
+            ("handout", "handout_files"),
+        ):
+            for index, path in enumerate(kwargs[field], 1):
+                sources.append(
+                    {
+                        "source_id": f"{role}-{index}",
+                        "source_name": Path(path).name,
+                        "role": role,
+                        "kind": "docx" if str(path).endswith(".docx") else "image",
+                        "source_sha256": "a" * 64,
+                        "order_index": index,
+                    }
+                )
+        return {
+            "preview_id": "preview",
+            "revision": "revision",
+            "sources": sources,
+            "warnings": [],
+        }
+
+    def commit_import_preview(self, preview_id, revision, selected, **kwargs):
+        self.commit_calls.append((preview_id, revision, selected))
+        return self.save_visual_import_batch(**self.preview_calls[-1], **kwargs)
+
+    def discard_import_preview(self, preview_id):
+        self.discard_calls.append(preview_id)
+
+    def teaching_pack_analysis_files(self):
+        return tuple(f"C:/demo/PKG-{i:03d}/解析版.docx" for i in range(1, 99))
 
     def list_provider_profiles(self) -> tuple[ProviderProfileSummary, ...]:
         return self.profiles
@@ -160,6 +199,7 @@ def _manual_task_bridge() -> Any:
             super().__init__()
             self.pending: list[_PendingTask] = []
             self.cancelled: set[str] = set()
+            self.serial = 0
 
         def submit_progress(
             self,
@@ -170,7 +210,8 @@ def _manual_task_bridge() -> Any:
             on_success: Any = None,
             on_failure: Any = None,
         ) -> str:
-            task_id = f"task-{len(self.pending) + 1}"
+            self.serial += 1
+            task_id = f"task-{self.serial}"
             self.pending.append(
                 _PendingTask(
                     task_id,
@@ -221,11 +262,12 @@ def _visible_text(dialog: Any) -> str:
 
 
 def test_three_role_lists_keep_order_filter_formats_and_save_offline_args(
-    qt_app: Any, tmp_path: Path
+    qt_app: Any, tmp_path: Path, monkeypatch
 ) -> None:
     from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
 
     facade = _Facade(profiles=(_visual_profile(),))
+    _preview_choice(monkeypatch)
     tasks = _manual_task_bridge()
     dialog = ImportDialog(facade, tasks)  # type: ignore[arg-type]
     files: dict[str, Path] = {}
@@ -265,6 +307,10 @@ def test_three_role_lists_keep_order_filter_formats_and_save_offline_args(
     dialog._save()
     assert facade.run_calls == []
     tasks.finish_next()
+    assert not facade.save_calls
+    assert len(facade.preview_calls) == 1
+    assert not dialog.cancel_button.isEnabled()
+    tasks.finish_next()
     _settle(qt_app)
 
     assert len(facade.save_calls) == 1
@@ -284,6 +330,110 @@ def test_three_role_lists_keep_order_filter_formats_and_save_offline_args(
     assert not dialog.word_reference_button.isHidden()
     assert "待视觉资料 2" in dialog.status.text()
     assert dialog.provider_card.isVisible() is False  # dialog itself was never shown
+
+
+def _preview_choice(monkeypatch, *, selected=None, accepted=True, during=None):
+    from PySide6.QtWidgets import QDialog
+
+    import integrations.deeptutor_shchem_v1.desktop_workbench.import_preview_dialog as module
+
+    class Choice:
+        def __init__(self, _facade, _tasks, preview, parent):
+            self.selected_source_ids = (
+                selected
+                if selected is not None
+                else [source["source_id"] for source in preview["sources"]]
+            )
+            self.parent = parent
+
+        def exec(self):
+            if during:
+                during(self.parent)
+            return (
+                QDialog.DialogCode.Accepted if accepted else QDialog.DialogCode.Rejected
+            )
+
+        def deleteLater(self):
+            pass
+
+    monkeypatch.setattr(module, "ImportPreviewDialog", Choice)
+
+
+def test_cancel_preimport_has_zero_saved_candidates(qt_app, tmp_path, monkeypatch):
+    from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
+
+    _preview_choice(monkeypatch, accepted=False)
+    facade, tasks = _Facade(), _manual_task_bridge()
+    dialog = ImportDialog(facade, tasks)
+    source = tmp_path / "demo.docx"
+    source.write_bytes(b"fake")
+    dialog.handout_files.file_list._append_paths([str(source)])
+    dialog._save()
+    assert not facade.preview_calls and not facade.save_calls
+    tasks.finish_next()
+    assert not facade.save_calls and not facade.commit_calls and not tasks.pending
+    assert facade.discard_calls == ["preview"]
+    assert "未保存" in dialog.status.text()
+    dialog.close()
+
+
+def test_preimport_commit_receives_only_explicit_file_selection(
+    qt_app, tmp_path, monkeypatch
+):
+    from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
+
+    _preview_choice(monkeypatch, selected=["handout-2"])
+    facade, tasks = _Facade(), _manual_task_bridge()
+    dialog = ImportDialog(facade, tasks)
+    paths = [tmp_path / name for name in ("first.docx", "second.docx")]
+    for path in paths:
+        path.write_bytes(b"fixture")
+    dialog.handout_files.file_list._append_paths([str(path) for path in paths])
+    dialog._save()
+    tasks.finish_next()
+    dialog._cancel_active()
+    assert not tasks.cancelled and not dialog.close_button.isEnabled()
+    tasks.finish_next()
+    assert facade.commit_calls[0][2] == ["handout-2"]
+    assert facade.discard_calls == ["preview"]
+    dialog.close()
+
+
+def test_98_analysis_entry_only_previews_and_does_not_run_196_import(
+    qt_app, monkeypatch
+):
+    from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
+
+    _preview_choice(monkeypatch, accepted=False)
+    facade, tasks = _Facade(), _manual_task_bridge()
+    facade.run_one_round_review_corpus_import = lambda **_kwargs: pytest.fail(
+        "old 196-file import must never run"
+    )
+    dialog = ImportDialog(facade, tasks)
+    dialog.corpus_button.click()
+    tasks.finish_next()
+    assert len(facade.preview_calls[0]["handout_files"]) == 98
+    assert not facade.preview_calls[0]["question_files"]
+    assert not facade.save_calls and not facade.commit_calls
+    dialog.close()
+
+
+def test_input_change_invalidates_preimport_confirmation(qt_app, tmp_path, monkeypatch):
+    from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
+
+    _preview_choice(
+        monkeypatch, during=lambda parent: parent.source_type.setCurrentText("教师讲义")
+    )
+    facade, tasks = _Facade(), _manual_task_bridge()
+    dialog = ImportDialog(facade, tasks)
+    path = tmp_path / "first.docx"
+    path.write_bytes(b"fixture")
+    dialog.handout_files.file_list._append_paths([str(path)])
+    dialog._save()
+    tasks.finish_next()
+    assert not facade.commit_calls and not tasks.pending
+    assert facade.discard_calls == ["preview"]
+    dialog.close()
 
 
 def test_visual_confirmation_no_does_not_call_model_and_yes_binds_batch_revision_once(

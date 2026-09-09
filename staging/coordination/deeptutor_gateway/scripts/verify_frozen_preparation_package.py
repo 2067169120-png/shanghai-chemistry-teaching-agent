@@ -75,7 +75,12 @@ def verify_frozen_note_prompt(pyz) -> bool:
     if any(text not in checklist for text in required):
         raise RuntimeError("Frozen classroom note contract incomplete")
     source_rules = next(
-        value for value in strings(pyz.extract("integrations.deeptutor_shchem_v1.desktop_chemistry_prompt_rules"))
+        value
+        for value in strings(
+            pyz.extract(
+                "integrations.deeptutor_shchem_v1.desktop_chemistry_prompt_rules"
+            )
+        )
         if value.startswith("教师资料与选题完整性规则（teacher-source-closure-v1）")
     )
     prompt_code = next(
@@ -298,12 +303,143 @@ def verify_frozen_image_limit(pyz) -> bool:
     raise RuntimeError("Frozen image limit was not enforced")
 
 
+def normalized_code(code):
+    """Ignore only the checkout path embedded by the compiler."""
+    return code.replace(
+        co_filename="<verified-source>",
+        co_consts=tuple(
+            normalized_code(value) if isinstance(value, types.CodeType) else value
+            for value in code.co_consts
+        ),
+    )
+
+
+def verify_source_matches_frozen(pyz, module: str, workspace: Path) -> dict:
+    """Compare code, constants and nested methods, not just a version string."""
+    source = workspace.joinpath(*module.split(".")).with_suffix(".py")
+    raw = source.read_bytes()
+    local = compile(raw, str(source), "exec", dont_inherit=True, optimize=0)
+    frozen = pyz.extract(module)
+    if normalized_code(local) != normalized_code(frozen):
+        raise RuntimeError(f"Frozen module differs from current source: {module}")
+    return {
+        "module": module,
+        "source_sha256": hashlib.sha256(raw).hexdigest(),
+        "code_matches": True,
+    }
+
+
+def verify_frozen_word_theme_index(pyz) -> dict:
+    """Exercise the real frozen pure index with synthetic theme material."""
+    code = pyz.extract("integrations.deeptutor_shchem_v1.desktop_word_question_index")
+    namespace = {"__name__": "frozen_word_theme_index"}
+    exec(code, namespace)  # noqa: S102 - pure frozen index, no app state or provider
+    texts = [
+        "考试时间：60分钟，满分：100分",
+        "可能用到的相对原子质量：H-1",
+        "一、金属应用(20分)",
+        "先阅读公共材料",
+        "(1)写出化学式____",
+        "后续实验数据",
+        "(2)计算质量____",
+        "【答案】(1)合成示例",
+        "(2)合成解析",
+        "二、反应原理（20分）",
+        "（1）解释原因____",
+        "【答案】合成示例",
+    ]
+    preview = {
+        "source_name": "synthetic-theme.docx",
+        "source_sha256": "a" * 64,
+        "revision": "synthetic-preview-v1",
+        "extraction_revision": "synthetic-extractor-v1",
+        "blocks": [
+            {"index": i, "text": text, "warnings": []}
+            for i, text in enumerate(texts, 1)
+        ],
+        "assets": [],
+        "sections": [],
+    }
+    original = deepcopy(preview)
+    items = namespace["index_word_questions"](preview)
+    if len(items) != 2 or items[0]["selection_unit"] != "theme_big_question":
+        raise RuntimeError("Frozen Word index did not retain whole themes")
+    if items[0]["printed_subpart_starts"] != [5, 7]:
+        raise RuntimeError("Frozen Word theme subparts differ")
+    if [block["index"] for block in items[0]["question_blocks"]] != [3, 4, 5, 6, 7]:
+        raise RuntimeError("Frozen Word theme lost interleaved shared material")
+    if [block["index"] for block in items[0]["answer_blocks"]] != [8, 9]:
+        raise RuntimeError("Frozen Word theme answer separation differs")
+    if [block["index"] for block in items[1]["context_blocks"]] != [2]:
+        raise RuntimeError("Frozen Word theme lost paper context")
+    if preview != original:
+        raise RuntimeError("Frozen Word index changed the source preview")
+    return {
+        "synthetic_themes": 2,
+        "shared_material_preserved": True,
+        "answers_separated": True,
+        "source_unchanged": True,
+    }
+
+
+def verify_frozen_import_binding(pyz) -> dict:
+    """Run only the final-loaded-input validator, never import or persistence."""
+    code = pyz.extract("integrations.deeptutor_shchem_v1.desktop_import_preview")
+    validator_code = next(
+        item
+        for item in code.co_consts
+        if isinstance(item, types.CodeType) and item.co_name == "validate_loaded_inputs"
+    )
+
+    class ExpectedBindingError(ValueError):
+        pass
+
+    validator = types.FunctionType(
+        validator_code, {"ImportPreviewError": ExpectedBindingError}
+    )
+    fields = {
+        "role": "question",
+        "order_index": 1,
+        "filename": "synthetic.docx",
+        "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "source_sha256": hashlib.sha256(b"synthetic bytes").hexdigest(),
+        "size_bytes": 15,
+        "group_id": None,
+    }
+    source = types.SimpleNamespace(**fields, content=b"synthetic bytes")
+    fields["size_bytes"] = len(source.content)
+    validator([source], [fields])
+    rejected = 0
+    for field, changed in (
+        ("source_sha256", "b" * 64),
+        ("role", "answer"),
+        ("order_index", 2),
+        ("size_bytes", 16),
+        ("filename", "replaced.docx"),
+    ):
+        altered = {**fields, field: changed}
+        try:
+            validator([source], [altered])
+        except ExpectedBindingError:
+            rejected += 1
+        else:
+            raise RuntimeError(f"Frozen import binding accepted changed {field}")
+    return {
+        "unchanged_loaded_input_accepted": True,
+        "changed_input_cases_rejected": rejected,
+        "persistence_or_provider_run": False,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--package", type=Path, required=True)
     parser.add_argument("--zip", type=Path, required=True)
     parser.add_argument("--version", required=True)
     parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument(
+        "--workspace", type=Path, default=Path(__file__).resolve().parents[4]
+    )
     args = parser.parse_args()
     if args.zip.exists() or args.report.exists():
         raise RuntimeError("ZIP/report exists; use a new output path")
@@ -404,13 +540,37 @@ def main() -> int:
         "desktop_paper_preparation": [],
         "word_native_math": [],
         "word_native_text": ["20260909-editable-chemistry-v2"],
-        "desktop_word_question_index": ["20260909-word-question-index-v2"],
-        "desktop_word_questions": ["native-word-question-selection-v1"],
-        "desktop_word_question_export": ["20260909-native-selected-blocks-v1"],
-        "desktop_workbench.word_question_dialog": ["Word 逐题浏览与选题", "确认带入备课"],
+        "desktop_word_question_index": ["20260910-word-theme-question-index-v3"],
+        "desktop_import_preview": ["import_preview_changed"],
+        "desktop_word_preview_cache": ["20260910-native-word-preview-cache-v1"],
+        "desktop_word_question_attributes": ["word-attributes-20260910-v1"],
+        "desktop_source_quality": [
+            "known_source_issue_pending_revision",
+            "source_errata_pending_relocation",
+        ],
+        "desktop_workbench.import_preview_dialog": [
+            "导入前预览与文件选择",
+            "确认导入所选 0 份文件",
+        ],
+        "desktop_word_questions": [
+            "native-word-question-selection-v1",
+            "当前选定范围尚未识别到答案；请先核对原教案及题答边界，不能据此判断原文没有答案。",
+        ],
+        "desktop_word_question_export": [
+            "20260909-native-selected-blocks-v1",
+            "当前选定范围未识别到本题答案，请核对原教案与题答边界；这不表示原文没有答案。",
+        ],
+        "desktop_workbench.word_question_dialog": [
+            "Word 逐题浏览与选题",
+            "确认带入备课",
+        ],
         "desktop_workbench.preparation_images_widget": ["PreparationImagesWidget"],
         "word_handout_import": ["1.2.1"],
-        "desktop_workbench.import_word_dialog": ["查看 Word 内容并带入备课", "确认追加到备课"],
+        "desktop_workbench.import_word_dialog": [
+            "完整教案原文与图片",
+            "用 Word 打开完整原文件",
+            "确认追加到备课",
+        ],
         "desktop_paper_preparation_sources": [],
         "desktop_workbench.paper_preparation_dialog": ["将当前组卷带入备课"],
         "desktop_workbench.assembly_page": ["将当前组卷带入备课…", "题面显示分数"],
@@ -428,7 +588,7 @@ def main() -> int:
         "desktop_preparation_drafts": [],
         "docx": [],
     }
-    checked = []
+    checked, source_matches = [], []
     for module, constants in expected.items():
         full_name = module if module == "docx" else prefix + module
         if full_name not in pyz.toc:
@@ -437,6 +597,10 @@ def main() -> int:
         missing = set(constants) - actual
         if missing:
             raise RuntimeError(f"Frozen constants differ: {full_name}: {missing}")
+        if module != "docx":
+            source_matches.append(
+                verify_source_matches_frozen(pyz, full_name, args.workspace)
+            )
         checked.append(full_name)
     forbidden = [prefix + suffix for suffix in ("service", "http_app", "launcher")]
     forbidden += [name for name in pyz.toc if name.startswith("PySide6.QtWebEngine")]
@@ -461,6 +625,8 @@ def main() -> int:
     classroom_layout = verify_frozen_classroom_layout(pyz)
     image_capacity = verify_frozen_image_limit(pyz)
     catalog_session = verify_catalog_session(pyz.extract(prefix + "desktop_facade"))
+    word_theme_index = verify_frozen_word_theme_index(pyz)
+    import_binding = verify_frozen_import_binding(pyz)
 
     original = tree(package)
     args.zip.parent.mkdir(parents=True, exist_ok=True)
@@ -483,12 +649,15 @@ def main() -> int:
         "zip_sha256": digest(args.zip),
         "exe_sha256": digest(exe),
         "frozen_modules_checked": checked,
+        "source_module_matches": source_matches,
         "native_pdf_runtime_files": qt_pdf_files,
         "frozen_behavior": behavior,
         "frozen_note_prompt_checked": note_prompt,
         "frozen_classroom_adaptive_layout_checked": classroom_layout,
         "frozen_twelve_image_capacity_checked": image_capacity,
         "frozen_catalog_session_checked": catalog_session,
+        "frozen_word_theme_index": word_theme_index,
+        "frozen_import_loaded_input_binding": import_binding,
         "legacy_web_and_external_icu_absent": True,
         "fresh_extraction": str(fresh),
         "fresh_extraction_file_count": len(extracted),

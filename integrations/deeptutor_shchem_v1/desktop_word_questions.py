@@ -21,6 +21,9 @@ from .desktop_preparation_sources import (
     PreparationSourceError,
     PreparationSourcesService,
 )
+from .desktop_source_quality import apply_source_quality, source_quality_notes
+from .desktop_word_preview_cache import WordPreviewCache
+from .desktop_word_question_attributes import WordQuestionAttributeStore
 from .desktop_word_question_index import apply_question_range, index_word_questions
 
 SELECTION_DRAFT = "native-word-question-selection-v1"
@@ -59,6 +62,8 @@ class WordQuestionService:
         self.facade = facade
         self.state = facade.state_store
         self.reader = PreparationSourcesService(facade.paths.workspace_root)
+        self.preview_cache = WordPreviewCache(facade.paths.state_root / "word-question-previews")
+        self.attribute_store = WordQuestionAttributeStore(facade.paths.state_root)
         self._cache = {}
         self._lock = threading.RLock()
 
@@ -87,9 +92,10 @@ class WordQuestionService:
                 with self._lock:
                     if token not in self._cache:
                         try:
-                            preview = self.reader.word_preview_bytes(
-                                source.content, source.filename
-                            )
+                            preview = self.preview_cache.load(source.content, source.filename)
+                            if preview is None:
+                                preview = self.reader.word_preview_bytes(source.content, source.filename)
+                                self.preview_cache.save(source.content, source.filename, preview)
                             indexed = index_word_questions(preview)
                         except (PreparationSourceError, ValueError, TypeError):
                             warnings.append(
@@ -103,6 +109,10 @@ class WordQuestionService:
 
     def _catalog(self):
         inventory, warnings = self._inventory()
+        try:
+            quality = source_quality_notes(self.facade.paths.workspace_root)
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            raise WordQuestionError("来源修订记录无法读取，未继续选题；请检查资料完整性。") from exc
         overrides = (
             self.state.snapshot()
             .get("drafts", {})
@@ -118,7 +128,8 @@ class WordQuestionService:
                     "batch_id": batch_id,
                 }
             )
-            for item in indexed:
+            for original_item in indexed:
+                item = deepcopy(original_item)
                 override = overrides.get(item["key"])
                 if override:
                     if override.get("source_revision") != preview["revision"]:
@@ -141,7 +152,12 @@ class WordQuestionService:
                     archive_source_id=source.effective_source_file_id,
                     source_block_count=len(preview["blocks"]),
                 )
-                result.append(item)
+                result.append(apply_source_quality(item, quality))
+        attributes = self.attribute_store.get_many([row["key"] for row in result])
+        for row in result:
+            saved = attributes.get(row["key"])
+            if saved and saved["source_sha256"] == row["source_sha256"] and saved["question_revision"] == row["revision"]:
+                row["attributes"] = saved
         revision = _digest([(row["key"], row["revision"]) for row in result])
         return {
             "revision": revision,
@@ -200,19 +216,9 @@ class WordQuestionService:
         rows, inventory = self._resolve([{"key": key, "revision": revision}])
         row = rows[0]
         preview = inventory[row["source_id"]][2]
-        indexed = {
-            key: value
-            for key, value in row.items()
-            if key
-            not in {
-                "batch_id",
-                "source_id",
-                "source_name",
-                "archive_source_id",
-                "source_block_count",
-                "points",
-            }
-        }
+        # Rebuild the complete new range from the verified source index, not
+        # catalog annotations (attributes/quality warnings are not source bytes).
+        indexed = next(item for item in inventory[row["source_id"]][3] if item["key"] == key)
         updated = apply_question_range(preview, indexed, **boundaries)
         with self._lock:
             overrides = (
@@ -238,7 +244,7 @@ class WordQuestionService:
                 )
             }
         )
-        return updated
+        return apply_source_quality(updated, source_quality_notes(self.facade.paths.workspace_root))
 
     def saved_selection(self):
         values = (
@@ -407,7 +413,7 @@ class WordQuestionService:
                             lines.append(label + f" → {asset_id}（{usage}）")
             if not row["answer_blocks"]:
                 lines.append(
-                    "原文未提供答案；后续如推导答案，须标注AI建议答案并经教师核对。"
+                    "当前选定范围尚未识别到答案；请先核对原教案及题答边界，不能据此判断原文没有答案。"
                 )
             warnings.extend(row.get("warnings", []))
         # Normalize independently so an over-capacity preview remains complete.

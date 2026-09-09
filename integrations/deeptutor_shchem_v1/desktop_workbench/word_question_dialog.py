@@ -50,6 +50,154 @@ def _text(value: Any) -> str:
     return value if isinstance(value, str) else ""
 
 
+_GRADE_LABELS = {
+    "grade_10": "高一",
+    "grade_11": "高二",
+    "grade_12": "高三",
+    "unknown": "待确认",
+}
+_STATUS_LABELS = {
+    "auto_suggested": "自动建议，待教师确认",
+    "source_observed": "原文可见，未核验原始出处",
+    "usage_positioning": "资料包使用定位",
+    "teacher_confirmed": "教师确认",
+    "unknown": "待确认",
+}
+
+
+def _attribute_text(value: dict, *, details: bool = False) -> str:
+    """Readable personal labels, separate from the untouched question text."""
+    attributes = value.get("attributes")
+    if not isinstance(attributes, dict):
+        return (
+            "本题尚未保存教学属性。原题出处、知识点和适用年级待标记。"
+            if details
+            else ""
+        )
+    source = attributes.get("source", {})
+    original = attributes.get("original_source", {})
+    primary = attributes.get("primary_knowledge", {})
+    lines = [
+        _text(original.get("display_label")) or "讲义收录题·原考试待确认",
+        "主知识点："
+        + (_text(primary.get("label")) or "待标记")
+        + "（"
+        + _STATUS_LABELS.get(primary.get("status"), "待确认")
+        + "）",
+    ]
+    if not details:
+        return "\n".join(lines)
+
+    def evidence_lines(evidence):
+        return [
+            "  依据"
+            + (
+                f"〔来源区块 {entry['block_index']}〕"
+                if entry.get("block_index")
+                else ""
+            )
+            + "："
+            + _text(entry.get("quote"))
+            for entry in evidence
+            if isinstance(entry, dict)
+        ]
+
+    lines += evidence_lines(primary.get("evidence", []))
+    for label, name in (
+        ("资料包", "collection_name"),
+        ("包内编号", "package_id"),
+        ("讲义专题", "lecture_topic"),
+        ("原文章节", "source_chapter"),
+    ):
+        if source.get(name):
+            lines.append(label + "：" + _text(source[name]))
+    grades = attributes.get("applicable_grades", {})
+    lines.append(
+        "适用年级："
+        + "、".join(
+            _GRADE_LABELS.get(grade, "待确认") for grade in grades.get("values", [])
+        )
+        if grades.get("values")
+        else "适用年级：待确认"
+    )
+    lines.append("适用依据：" + _text(grades.get("basis")))
+    for label, name in (
+        ("原题年级", "grade"),
+        ("原题年份", "year"),
+        ("原题地区", "region"),
+    ):
+        fact = original.get(name, {})
+        content = _text(fact.get("value"))
+        content = (
+            _GRADE_LABELS.get(content, content)
+            if name == "grade"
+            else ("待确认" if content == "unknown" else content)
+        )
+        lines.append(label + "：" + (content or "待确认"))
+    lines += evidence_lines(original.get("citation_quotes", []))
+    for candidate in attributes.get("supporting_knowledge", []):
+        lines.append(
+            "辅助知识点："
+            + _text(candidate.get("label"))
+            + "（"
+            + _STATUS_LABELS.get(candidate.get("status"), "待确认")
+            + "）"
+        )
+        lines += evidence_lines(candidate.get("evidence", []))
+    mappings = attributes.get("curriculum_candidates", [])
+    if not mappings:
+        lines.append("教材章节点：待映射；知识主题建议不等于已确认教材归属。")
+    for candidate in mappings:
+        lines.append(
+            "教材章节点候选："
+            + _text(candidate.get("label"))
+            + "〔"
+            + _text(candidate.get("section_key"))
+            + "〕（"
+            + _STATUS_LABELS.get(candidate.get("status"), "待确认")
+            + "）"
+        )
+        lines += evidence_lines(candidate.get("evidence", []))
+    forms = attributes.get("response_forms", [])
+    lines.append(
+        "作答形态建议："
+        + ("、".join(_text(form.get("label")) for form in forms) or "待确认")
+    )
+    answer = attributes.get("answer_status", {}).get("value")
+    lines.append(
+        "答案状态："
+        + (
+            "已提取讲义参考答案；不等于官方答案或化学内容已审核"
+            if answer == "present_nonofficial_unverified"
+            else "尚未检测到完整参考答案，待核对"
+        )
+    )
+    material = attributes.get("material_status", {})
+    lines.append(
+        "公共材料："
+        + (
+            "已关联，选题时随题保留"
+            if material.get("has_shared_context")
+            else "未检测到单独公共材料"
+        )
+    )
+    if material.get("missing_context"):
+        lines.append("待核对：题目可能引用未关联的前文或公共材料。")
+    if material.get("missing_visual"):
+        lines.append("待核对：题面有图示引用，但未检测到对应图片。")
+    lines.append(
+        "属性版本："
+        + str(attributes.get("edit_version", 0))
+        + "；"
+        + (
+            "含教师修改"
+            if attributes.get("annotation_source") == "teacher_modified"
+            else "自动标记，尚未教师确认"
+        )
+    )
+    return "\n".join(lines)
+
+
 class WordQuestionRangeDialog(QDialog):
     """Choose an explicit range while the complete extracted source stays visible."""
 
@@ -262,8 +410,8 @@ class WordQuestionDialog(QDialog):
         self.source_combo.addItem("全部来源", None)
         left_layout.addWidget(self.source_combo)
         self.search = QLineEdit()
-        self.search.setPlaceholderText("搜索题面、题号或章节")
-        self.search.setAccessibleName("搜索 Word 题面、题号或章节")
+        self.search.setPlaceholderText("搜索题面、章节、知识点、年级或原考试")
+        self.search.setAccessibleName("搜索 Word 题面、章节与教学属性")
         left_layout.addWidget(self.search)
         self.result_count = _label("正在读取题目…", muted=True)
         left_layout.addWidget(self.result_count)
@@ -293,6 +441,9 @@ class WordQuestionDialog(QDialog):
         self.detail_note = _label("", muted=True)
         right_layout.addWidget(self.detail_title)
         right_layout.addWidget(self.detail_note)
+        self.attribute_note = _label("", muted=True)
+        self.attribute_note.setAccessibleName("当前 Word 题目知识点与出处摘要")
+        right_layout.addWidget(self.attribute_note)
         points_row = QHBoxLayout()
         points_row.addWidget(_label("本次练习分值"))
         self.points = QSpinBox()
@@ -328,6 +479,10 @@ class WordQuestionDialog(QDialog):
         self.preview.setAccessibleName("勾选题目将带入备课的完整参考")
         self.preview.setPlaceholderText("勾选题目后点击“预览选题”。")
         self.tabs.addTab(self.preview, "选题预览")
+        self.attributes_preview = QPlainTextEdit()
+        self.attributes_preview.setReadOnly(True)
+        self.attributes_preview.setAccessibleName("当前 Word 题目属性及标注依据")
+        self.tabs.addTab(self.attributes_preview, "教学属性与依据")
         right_layout.addWidget(self.tabs, 1)
         self.splitter.addWidget(right)
         self.splitter.setStretchFactor(0, 1)
@@ -628,6 +783,7 @@ class WordQuestionDialog(QDialog):
                     _text(value.get("chapter")),
                     _text(value.get("source_name")),
                     question_text,
+                    _attribute_text(value, details=True),
                 ]
             ).casefold()
             if query and query not in searchable:
@@ -719,6 +875,11 @@ class WordQuestionDialog(QDialog):
         source = _text(value.get("source_label")) or _text(value.get("source_name"))
         self.detail_note.setText(
             " · ".join(part for part in (source, _text(value.get("chapter"))) if part)
+        )
+        self.attribute_note.setText(_attribute_text(value))
+        self.attribute_note.setVisible(bool(value.get("attributes")))
+        self.attributes_preview.setPlainText(
+            _attribute_text(value, details=True) if value else ""
         )
         self.points.blockSignals(True)
         self.points.setValue(self._points.get(key, 2))

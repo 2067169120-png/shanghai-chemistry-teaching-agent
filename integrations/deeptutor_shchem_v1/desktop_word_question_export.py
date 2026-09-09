@@ -626,7 +626,7 @@ def export_word_questions(title: str, questions: list[dict], *, show_student_sco
                     document.add_paragraph("参考答案", "Heading 1")
                     writer.append(item.source, item.answer)
                 else:
-                    document.add_paragraph("原文未提供本题答案。")
+                    document.add_paragraph("当前选定范围未识别到本题答案，请核对原教案与题答边界；这不表示原文没有答案。")
         output = BytesIO()
         document.save(output)
         outputs[role + "_bytes"] = output.getvalue()

@@ -1136,7 +1136,9 @@ def test_import_and_settings_dialogs_keep_clear_chinese_actions_and_close_guard(
     import_dialog = ImportDialog(_Facade(), bridge)
     import_dialog.show()
     _settle(qt_app)
-    assert "98 包 / 196 份" in import_dialog.corpus_button.text()
+    assert "98 份" in import_dialog.corpus_button.text()
+    assert "预览" in import_dialog.corpus_button.text()
+    assert import_dialog.save_button.text() == "预览并选择导入"
     assert any(
         button.text() == "选择文件夹"
         for button in import_dialog.files.findChildren(type(import_dialog.save_button))

@@ -1,0 +1,474 @@
+{
+  "schema_version": 1,
+  "source_pack_analysis_documents": 98,
+  "lecture_index_count": 46,
+  "other_exercise_and_test_documents": 52,
+  "purpose": "辅助查找原教案知识与方法，不替代98份完整原文、表格、图片及答案。",
+  "source_hashes_and_block_refs_verified": true,
+  "all_chemical_claims_teacher_reviewed": false,
+  "knowledge_claims": 262,
+  "method_claims": 48,
+  "pitfall_claims": 56,
+  "sources": [
+    {
+      "package_id": "PKG-002",
+      "title": "饱和烃和卤代烃",
+      "source_sha256": "c2195789348b846331c0fedb1e62a58dd690726b04663c954a471ac58b8faec2",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 2,
+      "claim_count": 9,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-004",
+      "title": "氯及其重要化合物",
+      "source_sha256": "ef9c0853039d732fc63e24300eedcba43028e62bf61f24090ddc0579ae25ea66",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 2,
+      "claim_count": 9,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-006",
+      "title": "物质的分类与胶体",
+      "source_sha256": "5d034fba4b6daca82c35bb13a1e6227a5ae3127a8333e27f12ad444a506087ba",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-008",
+      "title": "氧化还原反应",
+      "source_sha256": "66c478f2f9545fed5c0f1ce4b39877cd046dcf6e09a9f3bcd65c756f19b4d74c",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-010",
+      "title": "原子结构与核外电子排布",
+      "source_sha256": "32048ea76e40a7bc186811d4e2bcca17954ae0f80908d87f22adddc2266a7056",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-012",
+      "title": "不饱和烃",
+      "source_sha256": "e5c318a0f34d238afb28b6397ba10453443bb8f18ebf9604b1a598154822f9d1",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-014",
+      "title": "硫及其重要化合物",
+      "source_sha256": "ec38d6d20b370d431b53044a2fbf584b157eda04e50a6eff44dc92f2e352190c",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-016",
+      "title": "物质的量与气体摩尔体积",
+      "source_sha256": "c77acd279731e699ec95f88f2a889de635db05f4c0da02e733f45a6becb0a5ca",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-018",
+      "title": "原电池与化学电源",
+      "source_sha256": "503fe6db1c8771fce50fd38db833c4d7b8fdb07320e5a27fc4f30789225dc680",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-020",
+      "title": "原子结构与性质",
+      "source_sha256": "cd40c3a4b1af8be6ba3c3c8b4329d1106499ef7329e3b4f396a5983eef8d0981",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-022",
+      "title": "醇和酚",
+      "source_sha256": "6dc0a132c5a1716c195fba215943d3e917e5d3aea3b559db5dfcfee43f1f9dc9",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-024",
+      "title": "氮及其重要化合物",
+      "source_sha256": "5ea83f43cce9a8c7868760a0ec9e945df202418f82fefe5eb8518b7bfc03ea5c",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-026",
+      "title": "电解池、金属腐蚀与防护",
+      "source_sha256": "1975ffc15f26a44beac1f146dce6163dc1380ce89eef835248667a058e9c17af",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-028",
+      "title": "物质的量浓度",
+      "source_sha256": "3b93da907570ffc7b07616eb25602b83ffaa53e85abd80d2271a173e5fbd5287",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-030",
+      "title": "元素周期表",
+      "source_sha256": "c164f49fcd2e08895f398bc34785858ac1466d015548ed151e1e370c65f9441b",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-032",
+      "title": "离子反应和离子方程式",
+      "source_sha256": "d60317b8e533b957943e98b481305b85557d030d3056bf2eb0e9273f2811162d",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-034",
+      "title": "钠及其重要化合物",
+      "source_sha256": "50bd3990d5e3b3e8837a2d6b718a4f8da10f95ae86578a5880670a0635a9e0a6",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-036",
+      "title": "醛和酮",
+      "source_sha256": "a9a174ce53a8d3ac7f6be1ee6b73b4e71c268d9a1d7d0ad42abc059635c3f00e",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-038",
+      "title": "物质的分离和提纯",
+      "source_sha256": "59e4577ee16553dd9b5194ed54da0c5f43d5794ea11dc2ad809c4a7f6465db7a",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-040",
+      "title": "元素周期律",
+      "source_sha256": "fbd71747d2b620c02d8a112a8f370f6f7459248a97e2861c69302bda3249b01c",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-042",
+      "title": "化学键和共价键",
+      "source_sha256": "4ff0a44c7ae1744ea64bc1c71893ba0a5182c71bbc47d0fd650baaac93fb8c33",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-044",
+      "title": "水的电离和溶液的酸碱性",
+      "source_sha256": "d5a592d0372ad9edaf6000089dcfb8d87deabcc30927d3e99630188266655a14",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-046",
+      "title": "羧酸及其衍生物",
+      "source_sha256": "14f08c7e8486b2bb95a13a9de457fb21e42d6682ea0fc2ea01ad6b8ddc3ec813",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-048",
+      "title": "铁及其重要化合物",
+      "source_sha256": "4a68bf425af0d4c1fd128957b3082a8e374a9cbcb97aae8e5be9c68bd1b66d1f",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-050",
+      "title": "物质的检验",
+      "source_sha256": "dec2a992607434bdf73a4569729830daf9e4091668211222592c7bdbe3976e10",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-052",
+      "title": "共价分子的空间构型和分子的极性",
+      "source_sha256": "515e68f45c0272e3ade992de8b51741f04673b76ab868a8adfa2ece040dfaaaf",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-054",
+      "title": "铝及其重要化合物",
+      "source_sha256": "29a257401b339a157448bf1873d80e99222072af73fd2c9900097151192b97f3",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-056",
+      "title": "弱电解质的电离平衡",
+      "source_sha256": "8cda068028bafa475614cd124effaf56caea133084813b9609926af8e325bfb2",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-058",
+      "title": "糖类和油脂",
+      "source_sha256": "83831cafbb8634e881957efd98ec78c5f24b94ccddc24e617702bdfaeb21723f",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-060",
+      "title": "物质的制备",
+      "source_sha256": "68f4f4c3b93a048a50eea10a15a0dc91e9a41f7621623f857014d30d1393f6f1",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-062",
+      "title": "蛋白质与核酸",
+      "source_sha256": "4bf36447638b9835792e99c25ce5fed43dbddc13f326e69e585efe64f3f7cc91",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-064",
+      "title": "分子的手性和分子间作用力",
+      "source_sha256": "084da90dae9f2a26007164e070290255325995241de4c34051c4ffc97bbe3d71",
+      "knowledge_count": 6,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-066",
+      "title": "化学实验方案的设计和评价",
+      "source_sha256": "edd4696d06e0d3ad762319eb3f17f609729fec086781b393f212fc90b9eaef6e",
+      "knowledge_count": 5,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 7,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-068",
+      "title": "盐类水解与酸碱滴定",
+      "source_sha256": "5d84d4a43ec1f0fceb2644acdbe369dcafe61eaa717dd6eba2b2c2f9a5848976",
+      "knowledge_count": 5,
+      "method_count": 1,
+      "pitfall_count": 2,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-070",
+      "title": "沉淀溶解平衡",
+      "source_sha256": "0a63621f88178f44c966ea55c3efd88f5c96233f5d27e569ab4b75294ac06340",
+      "knowledge_count": 5,
+      "method_count": 2,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-072",
+      "title": "高分子有机物",
+      "source_sha256": "01f91a44ebbd0376c857cdbf8c5a186764a36f4a011c327a724b037c7c4f9c33",
+      "knowledge_count": 5,
+      "method_count": 2,
+      "pitfall_count": 1,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-074",
+      "title": "配位化合物和超分子",
+      "source_sha256": "ce42a35186fe08e9440f27900207a7e7e7639770d6c4b12dac50907a2eb35e31",
+      "knowledge_count": 5,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 7,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-076",
+      "title": "化学反应与能量变化",
+      "source_sha256": "5df18535cee41bc58bf9211d687a2490869c6ebee31dcc91ce2aca89fb954032",
+      "knowledge_count": 5,
+      "method_count": 1,
+      "pitfall_count": 2,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-078",
+      "title": "晶体与金属晶体",
+      "source_sha256": "28abde3f604dd5e66b841d2a105631f5a526f39f0aaf33add4605d500e41847d",
+      "knowledge_count": 5,
+      "method_count": 1,
+      "pitfall_count": 2,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-081",
+      "title": "有机物合成的一般思路",
+      "source_sha256": "812e273ab966f11a309b7ad5db704d9a7656fd432cb79ba0a49a0a14e3b5d6a6",
+      "knowledge_count": 5,
+      "method_count": 1,
+      "pitfall_count": 2,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-082",
+      "title": "焓变熵变与反应方向",
+      "source_sha256": "8634fdfeac1207bcb84eb294eb050a4ebae8a0a9a05abd56fc18f50d03ca7ce3",
+      "knowledge_count": 5,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 7,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-084",
+      "title": "离子共价和分子晶体比较",
+      "source_sha256": "cf3f18417d048170a9496d8e969577c65ed0c70a5f3077ee0970c5d141b53577",
+      "knowledge_count": 5,
+      "method_count": 1,
+      "pitfall_count": 1,
+      "claim_count": 7,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-086",
+      "title": "有机综合考查",
+      "source_sha256": "aa2b018bd1f7109729b766ac43897e4a8951be34e6543fe0d6e9d4b89837826e",
+      "knowledge_count": 5,
+      "method_count": 1,
+      "pitfall_count": 2,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-088",
+      "title": "化学反应速率",
+      "source_sha256": "a99cc06139ed468668a0b8f2a2d29779e937144820e82d2c37d5e9dcd913ba72",
+      "knowledge_count": 5,
+      "method_count": 1,
+      "pitfall_count": 2,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-090",
+      "title": "化学平衡移动",
+      "source_sha256": "758409bd54d47b215bf936149ac7e1983c5613eeeb340eb32d8f0ee2841146d6",
+      "knowledge_count": 5,
+      "method_count": 1,
+      "pitfall_count": 2,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    },
+    {
+      "package_id": "PKG-092",
+      "title": "工业反应条件选择与合成氨",
+      "source_sha256": "b0c0276c5d9874864cecf8a5853556eba7f1c21d44e23bdc40620a1b5f983c4a",
+      "knowledge_count": 5,
+      "method_count": 1,
+      "pitfall_count": 2,
+      "claim_count": 8,
+      "all_block_refs_exist": true
+    }
+  ]
+}

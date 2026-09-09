@@ -80,7 +80,10 @@ def test_source_printed_score_and_existing_answer_space_not_erased_or_duplicated
     student = output_doc(result)
     assert sum(p.text.count("__________") for p in student.paragraphs) == 1
     assert "（3分）" in text(student)
-    assert "原文未提供本题答案。" in text(output_doc(result, "teacher"))
+    teacher_text = text(output_doc(result, "teacher"))
+    assert "当前选定范围未识别到本题答案" in teacher_text
+    assert "这不表示原文没有答案" in teacher_text
+    assert "原文未提供本题答案。" not in teacher_text
 
 
 def test_source_images_with_colliding_relationship_ids_are_rebound():

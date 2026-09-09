@@ -647,6 +647,7 @@ class DesktopWorkbenchFacade:
                 temporary_parent=paths.state_root / "visual-import-v2" / "temporary",
             )
         )
+        self._import_preview_lock = threading.RLock()
         self._preparation_manager = preparation_manager
         self._preparation_renderer = preparation_renderer
         self._preparation_transport = preparation_transport
@@ -1853,6 +1854,61 @@ class DesktopWorkbenchFacade:
             archive_root=self._visual_import_root,
         )
 
+    def _import_preview_call(self, method, *args, **kwargs):
+        from .desktop_import_preview import ImportPreviewError, ImportPreviewService
+        from .desktop_preparation_sources import PreparationSourceError
+
+        with self._import_preview_lock:
+            if not hasattr(self, "_import_preview_service"):
+                self._import_preview_service = ImportPreviewService(self)
+        try:
+            return getattr(self._import_preview_service, method)(*args, **kwargs)
+        except (ImportPreviewError, PreparationSourceError) as exc:
+            raise DesktopFacadeError(exc.code, exc.message_zh) from exc
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            raise DesktopFacadeError(
+                "import_preview_unavailable", "资料预览暂不可用，请检查原文件并重新选择。"
+            ) from exc
+
+    def preview_import_files(
+        self, *, question_files=(), answer_files=(), handout_files=(), source_type
+    ):
+        return self._import_preview_call(
+            "preview", question_files=question_files, answer_files=answer_files,
+            handout_files=handout_files, source_type=source_type,
+        )
+
+    def preview_import_source(self, preview_id, expected_revision, source_id):
+        return self._import_preview_call("source", preview_id, expected_revision, source_id)
+
+    def preview_import_asset(self, preview_id, expected_revision, source_id, asset_id):
+        return self._import_preview_call(
+            "asset", preview_id, expected_revision, source_id, asset_id
+        )
+
+    def discard_import_preview(self, preview_id):
+        return self._import_preview_call("discard", preview_id)
+
+    def commit_import_preview(
+        self, preview_id, expected_revision, selected_source_ids, *,
+        progress_callback=None, should_cancel=None,
+    ):
+        return self._import_preview_call(
+            "commit", preview_id, expected_revision, selected_source_ids,
+            progress_callback=progress_callback, should_cancel=should_cancel,
+        )
+
+    def teaching_pack_analysis_files(self) -> tuple[str, ...]:
+        from .desktop_import_preview import (
+            ImportPreviewError,
+            teaching_pack_analysis_files,
+        )
+
+        try:
+            return teaching_pack_analysis_files(self.paths.shchem_root)
+        except ImportPreviewError as exc:
+            raise DesktopFacadeError(exc.code, exc.message_zh) from exc
+
     def save_visual_import_batch(
         self,
         *,
@@ -1863,19 +1919,37 @@ class DesktopWorkbenchFacade:
         group_id: str = "default",
         progress_callback: Callable[[Mapping[str, Any]], None] | None = None,
         should_cancel: Callable[[], bool] | None = None,
+        _expected_inputs: list[dict[str, Any]] | None = None,
     ) -> DesktopVisualImportReceipt:
         """Archive and classify a batch without installing or calling a provider."""
 
+        if _expected_inputs is not None and should_cancel is not None and should_cancel():
+            raise DesktopFacadeError("cancelled", "导入已取消，未保存任何导入记录。")
         sources = self._build_visual_import_sources(
             question_files=question_files,
             answer_files=answer_files,
             handout_files=handout_files,
             group_id=group_id,
         )
-        coordinator = self._visual_import_coordinator()
+        if _expected_inputs is not None:
+            from .desktop_import_preview import (
+                ImportPreviewError,
+                validate_loaded_inputs,
+            )
+
+            try:
+                validate_loaded_inputs(sources, _expected_inputs)
+            except ImportPreviewError as exc:
+                raise DesktopFacadeError(exc.code, exc.message_zh) from exc
+            # Read-only planning must finish before creating an archive store.
+            coordinator = DesktopImportCoordinatorV2()
+        else:
+            coordinator = self._visual_import_coordinator()
         request = DesktopImportRequest(sources=sources, source_type=source_type)
         try:
             plan = coordinator.plan(request)
+            if _expected_inputs is not None and should_cancel is not None and should_cancel():
+                raise DesktopFacadeError("cancelled", "导入已取消，未保存任何导入记录。")
             drafts = self._state.snapshot().get("drafts")
             existing = (
                 drafts.get(self._visual_import_draft_id(plan.batch_id))
@@ -1887,10 +1961,15 @@ class DesktopWorkbenchFacade:
                 and existing.get("status") == "candidate_ready_for_review"
             ):
                 return self._visual_import_receipt_from_saved(existing)
+            if _expected_inputs is not None:
+                # Confirmation is the final cancellation gate. Once persistence
+                # starts, finish this whole-file batch rather than report a
+                # misleading cancellation after sources/candidates were saved.
+                coordinator = self._visual_import_coordinator()
             result = coordinator.process(
                 request,
                 progress_callback=progress_callback,
-                should_cancel=should_cancel,
+                should_cancel=None if _expected_inputs is not None else should_cancel,
                 visual_confirmation=False,
             )
         except DesktopImportBridgeError as exc:
@@ -1907,7 +1986,7 @@ class DesktopWorkbenchFacade:
         )
 
     def _restore_visual_import_sources(
-        self, descriptor: Mapping[str, Any]
+        self, descriptor: Mapping[str, Any], *, source_ids: set[str] | None = None
     ) -> tuple[DesktopSourceFile, ...]:
         raw_sources = descriptor.get("sources")
         if not isinstance(raw_sources, list) or not raw_sources:
@@ -1928,9 +2007,16 @@ class DesktopWorkbenchFacade:
                 raw_sources
             ):
                 raise ValueError("closure changed")
+            if source_ids is not None and (
+                not source_ids
+                or not source_ids.issubset({str(item.get("source_file_id")) for item in raw_sources if isinstance(item, Mapping)})
+            ):
+                raise ValueError("selected source missing")
             for item in raw_sources:
                 if not isinstance(item, Mapping):
                     raise TypeError("source descriptor invalid")
+                if source_ids is not None and str(item.get("source_file_id")) not in source_ids:
+                    continue
                 mime_type = str(item["mime_type"])
                 digest = str(item["source_sha256"])
                 expected_relative = f"sources/{digest}{extensions[mime_type]}"
@@ -1964,26 +2050,31 @@ class DesktopWorkbenchFacade:
 
     def _imported_word_source(self, batch_id: str, source_id: str):
         descriptor = self._saved_visual_import_batch(batch_id)
-        sources = self._restore_visual_import_sources(descriptor)
+        if not any(isinstance(item, Mapping) and item.get("source_file_id") == source_id for item in descriptor.get("sources", [])):
+            raise DesktopFacadeError("imported_word_missing", "未找到这份已导入的Word资料，请重新选择。")
+        sources = self._restore_visual_import_sources(descriptor, source_ids={source_id})
         source = next((item for item in sources if item.effective_source_file_id == source_id), None)
         if source is None or not source.filename.casefold().endswith(".docx"):
             raise DesktopFacadeError("imported_word_missing", "未找到这份已导入的Word资料，请重新选择。")
         return source
 
     def imported_word_sources(self, batch_id: str) -> list[dict[str, Any]]:
-        """List saved Word sources without depending on the original picker path."""
-        from .desktop_visual_import_v2 import inspect_native_docx
-
+        """List saved metadata; opening a document revalidates that source's bytes."""
         descriptor = self._saved_visual_import_batch(batch_id)
+        raw_sources = descriptor.get("sources")
+        if not isinstance(raw_sources, list) or descriptor.get("source_closure_sha256") != _canonical_digest(raw_sources):
+            raise DesktopFacadeError("visual_import_source_archive_invalid", "已保存的Word来源目录已变化，请重新核对。")
+        receipt = self._visual_import_receipt_from_saved(descriptor)
+        states = {(row.role, row.order_index, row.filename): row.import_state for row in receipt.sources}
         return [
             {
-                "source_id": source.effective_source_file_id,
-                "source_name": source.filename,
-                "role": source.role,
-                "import_state": inspect_native_docx(source).import_state,
+                "source_id": str(source["source_file_id"]),
+                "source_name": str(source["filename"]),
+                "role": str(source["role"]),
+                "import_state": states.get((str(source["role"]), int(source["order_index"]), str(source["filename"])), "pending"),
             }
-            for source in self._restore_visual_import_sources(descriptor)
-            if source.filename.casefold().endswith(".docx")
+            for source in raw_sources
+            if isinstance(source, Mapping) and str(source.get("filename", "")).casefold().endswith(".docx")
         ]
 
     def list_imported_word_batches(self) -> tuple[DesktopVisualImportReceipt, ...]:
@@ -2006,11 +2097,15 @@ class DesktopWorkbenchFacade:
 
     def imported_word_preview(self, batch_id: str, source_id: str) -> dict[str, Any]:
         from .desktop_preparation_sources import PreparationSourcesService
+        from .desktop_word_preview_cache import WordPreviewCache
 
         source = self._imported_word_source(batch_id, source_id)
-        return PreparationSourcesService(self.paths.workspace_root).word_preview_bytes(
-            source.content, source.filename
-        )
+        cache = WordPreviewCache(self.paths.state_root / "word-question-previews")
+        preview = cache.load(source.content, source.filename)
+        if preview is None:
+            preview = PreparationSourcesService(self.paths.workspace_root).word_preview_bytes(source.content, source.filename)
+            cache.save(source.content, source.filename, preview)
+        return preview
 
     def imported_word_asset(self, batch_id: str, source_id: str, asset_id: str) -> dict[str, Any]:
         from .desktop_preparation_sources import (
@@ -2025,6 +2120,11 @@ class DesktopWorkbenchFacade:
             raise
         except (OSError, ValueError) as exc:
             raise DesktopFacadeError("imported_word_image_invalid", "原图无法预览，请在Word原文件中查看；文字内容仍可使用。") from exc
+
+    def imported_word_path(self, batch_id: str, source_id: str) -> str:
+        """Return the verified local original; opening it requires an explicit UI click."""
+        source = self._imported_word_source(batch_id, source_id)
+        return str(self._visual_import_root / "sources" / f"{source.source_sha256}.docx")
 
     def imported_word_reference(
         self, batch_id: str, source_id: str, source_sha256: str,
@@ -5169,6 +5269,25 @@ class DesktopWorkbenchFacade:
         except OSError as exc:
             raise DesktopFacadeError(
                 "preparation_image_unavailable", "题库图片无法保存到本地备课素材库。"
+            ) from exc
+
+    def preparation_image_bytes(self, asset) -> bytes:
+        """Read the exact locally stored picture after metadata and hash checks."""
+        from .desktop_preparation_images import (
+            PreparationImageError,
+            PreparationImageStore,
+            normalize_image_assets,
+        )
+
+        try:
+            normalized = normalize_image_assets([asset])[0]
+            return PreparationImageStore(
+                self.paths.task_root / "preparation-v1" / "images"
+            ).load(normalized)
+        except (PreparationImageError, OSError) as exc:
+            raise DesktopFacadeError(
+                "preparation_image_unavailable",
+                getattr(exc, "message_zh", "本地图片无法读取，请重新选择图片。"),
             ) from exc
 
     def preparation_availability(self) -> PreparationAvailability:

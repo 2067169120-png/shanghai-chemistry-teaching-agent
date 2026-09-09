@@ -110,6 +110,7 @@ def test_detail_image_requires_loaded_pixels_and_explicit_confirmation(
     bridge.succeed(first, run=True)
     dialog._preparation_buttons[0].click()
     assert metadata[0]["source"].startswith(detail.paper_title_zh)
+    assert metadata[0]["preview_bytes"] == _png_bytes()
     if accept:
         assert received[0]["image"] is detail.shared_images[0]
         assert received[0]["purpose"] == "教师确认的观察用途"
@@ -213,7 +214,7 @@ def test_failed_image_read_restores_enabled_form_and_no_raw_error(app, monkeypat
 def test_metadata_length_is_explicitly_rejected_without_truncation(app, field, limit):
     values = {"caption": "原图", "source": "教材", "purpose": "观察"}
     values[field] = "字" * (limit + 1)
-    dialog = PreparationImageMetadataDialog("", **values)
+    dialog = PreparationImageMetadataDialog("", preview_bytes=_png_bytes(), **values)
     assert getattr(dialog, field) == values[field]
     dialog._accept_if_complete()
     assert dialog.result() != QDialog.DialogCode.Accepted

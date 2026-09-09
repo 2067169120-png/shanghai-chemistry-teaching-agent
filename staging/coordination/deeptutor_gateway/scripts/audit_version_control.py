@@ -14,7 +14,7 @@ PATTERNS = {
     "literal_api_key": re.compile(r'''["'](?:api_key|apiKey)["']\s*:\s*["']([^"'\r\n]{24,})["']'''),
 }
 ALLOWED_SUFFIXES = {".py", ".pyw", ".json", ".yaml", ".yml", ".md", ".txt", ".mjs", ".cjs", ".ps1", ".vbs", ".gitignore", ".gitattributes"}
-PUBLIC_DEMO_IMAGES = {"docs/screenshots/word-questions.png", "docs/screenshots/word-answers.png"}
+PUBLIC_DEMO_IMAGES = {"docs/screenshots/word-questions.png", "docs/screenshots/word-answers.png", "docs/screenshots/import-preview.png"}
 
 
 def main():
@@ -36,7 +36,8 @@ def main():
             if not raw.startswith(b"\x89PNG\r\n\x1a\n") or len(raw) > 2_000_000:
                 issues.append({"file": relative, "kind": "invalid_demo_screenshot"})
             continue
-        if path.suffix.lower() not in ALLOWED_SUFFIXES and path.name not in {".gitignore", ".gitattributes"}:
+        derived_jsonl = relative.startswith(("knowledge/textbook/", "knowledge/lectures/")) and path.suffix.lower() == ".jsonl"
+        if not derived_jsonl and path.suffix.lower() not in ALLOWED_SUFFIXES and path.name not in {".gitignore", ".gitattributes"}:
             issues.append({"file": relative, "kind": "unexpected_type"})
         utf16_script = path.suffix.lower() == ".vbs" and raw.startswith((b"\xff\xfe", b"\xfe\xff"))
         if len(raw) > 2_000_000 or (b"\0" in raw and not utf16_script):

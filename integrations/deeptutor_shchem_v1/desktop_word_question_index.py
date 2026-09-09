@@ -14,15 +14,15 @@ import re
 from copy import deepcopy
 from typing import Any
 
-QUESTION_INDEX_REVISION = "20260909-word-question-index-v2"
+QUESTION_INDEX_REVISION = "20260910-word-theme-question-index-v3"
 _GAP = re.compile(r"【(?:待查看原文：[\s\S]*?|未提取到文字)】")
 _NUMBER = r"[0-9０-９一二三四五六七八九十百]+(?:[-－—][0-9０-９]+)?"
 _KIND = r"(?:即学即练|同步练习|随堂练习|针对训练|典例|例题|例|变式(?:训练|练习)?|练习)"
-_BRACKETED = re.compile(rf"^[【\[（(]\s*({_KIND}\s*{_NUMBER})\s*[】\]）)]")
+_BRACKETED = re.compile(rf"^[【\[（(]\s*({_KIND}\s*{_NUMBER})(?:\s*[·•]\s*[^】\]）)\n]{{1,24}})?\s*[】\]）)]")
 _BARE = re.compile(
     rf"^({_KIND}\s*{_NUMBER})(?=\s|[．.、:：]|[^0-9０-９一二三四五六七八九十百\-－—])"
 )
-_ANY_EXPLICIT = re.compile(rf"[【\[（(]\s*{_KIND}\s*{_NUMBER}\s*[】\]）)]")
+_ANY_EXPLICIT = re.compile(rf"[【\[（(]\s*{_KIND}\s*{_NUMBER}(?:\s*[·•]\s*[^】\]）)\n]{{1,24}})?\s*[】\]）)]")
 _GENERIC = re.compile(r"^(\d{1,3})\s*[．.、]\s*(?!\d)(.*)$", re.DOTALL)
 _QUESTION = re.compile(
     r"[?？]|_{2,}|下列.{0,80}(?:正确|错误|不正确|不合理|属于|的是|有)|"
@@ -54,6 +54,8 @@ _SHARED = re.compile(
 _BACK_REFERENCE = re.compile(
     r"前文|上文|前题|上一题|上述材料|以上材料|根据上述|结合上述|根据上图|根据前图"
 )
+_SCORED_THEME = re.compile(r"^[一二三四五六七八九十]+[、．.]\s*\S.{0,100}[（(]\s*\d+(?:\.\d+)?\s*分\s*[）)]\s*$")
+_PARENTHESIZED_PART = re.compile(r"^[（(]\s*\d{1,2}\s*[）)]")
 
 
 def _digest(value: Any) -> str:
@@ -166,7 +168,7 @@ def _question_label(
         return match.group(1)
     # An introductory stem can continue in the following blocks. Do not let
     # the evidence of the next numbered question turn a knowledge list into one.
-    for block in blocks[position + 1 : position + 13]:
+    for block in blocks[position + 1 : position + 65]:
         following = _GAP.sub("", block.get("text", "")).strip()
         if (
             _marker(following)
@@ -306,6 +308,30 @@ def _build(
 def index_word_questions(preview: dict[str, Any]) -> list[dict[str, Any]]:
     """Detect candidate questions; never turn bare knowledge numbering into one."""
     blocks, _ = _preview(preview)
+    # Shanghai theme papers often number only their embedded tasks with (1),
+    # (2), etc. Keep the whole theme as a selectable unit: all shared materials,
+    # intermediate information and answers remain attached, never flattened
+    # into apparently independent questions. Require scored printed headings
+    # plus actual subparts/answer evidence, not a filename or lesson heading.
+    starts = [i for i, block in enumerate(blocks) if _SCORED_THEME.fullmatch(_clean(block.get("text", "")))]
+    if starts and any("考试时间" in b.get("text", "") and "满分" in b.get("text", "") for b in blocks[:starts[0]]):
+        themes = []
+        for number, start in enumerate(starts):
+            end = starts[number + 1] if number + 1 < len(starts) else len(blocks)
+            selected = blocks[start:end]
+            answer_at = next((i for i, b in enumerate(selected) if _ANSWER.search(b.get("text", ""))), len(selected))
+            subparts = [b["index"] for b in selected[1:answer_at] if _PARENTHESIZED_PART.match(_clean(b.get("text", "")))]
+            if not subparts or answer_at == len(selected):
+                themes = []
+                break
+            global_material = [b for b in blocks[:starts[0]] if "相对原子质量" in b.get("text", "") or "选择类试题" in b.get("text", "")]
+            item = _build(preview, selected, global_material, chapter=_clean(blocks[start]["text"]), origin=blocks[start]["index"])
+            item.update(selection_unit="theme_big_question", printed_subpart_starts=subparts,
+                        shared_material_policy="whole_theme_preserved")
+            item["revision"] = _digest({k: v for k, v in item.items() if k != "revision"})
+            themes.append(item)
+        if themes:
+            return themes
     items = []
     active = None
     chapter = ""
@@ -451,7 +477,7 @@ def apply_question_range(
         if context
         else set()
     )
-    return _build(
+    result = _build(
         preview,
         blocks[start : end + 1],
         context,
@@ -462,3 +488,9 @@ def apply_question_range(
         answer_start=answer_start,
         source_answer_indexes=source_answer_indexes,
     )
+    if item.get("selection_unit") == "theme_big_question":
+        result.update(selection_unit="theme_big_question",
+                      printed_subpart_starts=[b["index"] for b in result["question_blocks"] if _PARENTHESIZED_PART.match(_clean(b.get("text", "")))],
+                      shared_material_policy="teacher_adjusted_theme_range")
+        result["revision"] = _digest({k: v for k, v in result.items() if k != "revision"})
+    return result

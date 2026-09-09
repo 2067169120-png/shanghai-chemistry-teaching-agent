@@ -1,5 +1,6 @@
 import hashlib
 import io
+from pathlib import Path
 
 import pytest
 from docx import Document
@@ -130,3 +131,26 @@ def test_large_reference_is_not_silently_truncated(desktop_paths, tmp_path):
     preview = facade.imported_word_preview(saved.batch_id, sid)
     with pytest.raises(PreparationSourceError, match="未截断"):
         facade.imported_word_reference(saved.batch_id, sid, preview["source_sha256"], 1, 1, preview["revision"])
+
+
+def test_metadata_list_is_lazy_but_opening_checks_selected_archive(desktop_paths, tmp_path, monkeypatch):
+    first, second = tmp_path / "first.docx", tmp_path / "second.docx"
+    first.write_bytes(word_bytes())
+    second.write_bytes(word_bytes(hybrid=True))
+    facade = _facade(desktop_paths, FakeProviderStore(configured=False))
+    saved = facade.save_visual_import_batch(handout_files=(first, second), source_type="完整教案")
+    original_restore = facade._restore_visual_import_sources
+
+    def refuse_restore(*args, **kwargs):
+        raise AssertionError("Listing must not load or parse all original documents")
+
+    monkeypatch.setattr(facade, "_restore_visual_import_sources", refuse_restore)
+    rows = facade.imported_word_sources(saved.batch_id)
+    assert len(rows) == 2
+    monkeypatch.setattr(facade, "_restore_visual_import_sources", original_restore)
+    first_preview = facade.imported_word_preview(saved.batch_id, rows[0]["source_id"])
+    second_path = Path(facade.imported_word_path(saved.batch_id, rows[1]["source_id"]))
+    second_path.write_bytes(b"bad source")
+    assert facade.imported_word_preview(saved.batch_id, rows[0]["source_id"]) == first_preview
+    with pytest.raises(DesktopFacadeError, match="变化"):
+        facade.imported_word_path(saved.batch_id, rows[1]["source_id"])
