@@ -651,7 +651,14 @@ def verify_frozen_word_theme_index(pyz) -> dict:
     code = pyz.extract("integrations.deeptutor_shchem_v1.desktop_word_question_index")
 
     def pure_import(name, globals=None, locals=None, fromlist=(), level=0):
-        if level == 0 and name in {"__future__", "hashlib", "json", "re", "copy", "typing"}:
+        if level == 0 and name in {
+            "__future__",
+            "hashlib",
+            "json",
+            "re",
+            "copy",
+            "typing",
+        }:
             return builtins.__import__(name, globals, locals, fromlist, level)
         raise RuntimeError("Unexpected dependency in frozen pure Word index")
 
@@ -662,7 +669,10 @@ def verify_frozen_word_theme_index(pyz) -> dict:
     exec(code, namespace)  # noqa: S102 - pure frozen index with import allowlist
     if namespace.get("BOUNDARY_REVIEW_REVISION") != WORD_BOUNDARY_REVIEW_REVISION:
         raise RuntimeError("Frozen Word boundary review revision missing")
-    index, apply_range = namespace["index_word_questions"], namespace["apply_question_range"]
+    index, apply_range = (
+        namespace["index_word_questions"],
+        namespace["apply_question_range"],
+    )
 
     def make_preview(texts, assets=()):
         return {
@@ -709,15 +719,26 @@ def verify_frozen_word_theme_index(pyz) -> dict:
         raise RuntimeError("Frozen Word index changed the source preview")
 
     split_asset = {"asset_id": "synthetic-second-question", "block_index": 4}
-    split_preview = make_preview([
-        "【例1】选择____。", "【答案】A",
-        "【说明】（多选）【变式训练3】选择下列合成选项____。",
-        "【待查看原文：图片或图形】", "A．甲 B．乙", "【答案】B",
-    ], [split_asset])
+    split_preview = make_preview(
+        [
+            "【例1】选择____。",
+            "【答案】A",
+            "【说明】（多选）【变式训练3】选择下列合成选项____。",
+            "【待查看原文：图片或图形】",
+            "A．甲 B．乙",
+            "【答案】B",
+        ],
+        [split_asset],
+    )
     split_original = deepcopy(split_preview)
     split_items = index(split_preview)
     if len(split_items) != 2 or [
-        (item["block_start"], item["question_end"], item["answer_start"], item["block_end"])
+        (
+            item["block_start"],
+            item["question_end"],
+            item["answer_start"],
+            item["block_end"],
+        )
         for item in split_items
     ] != [(1, 1, 2, 2), (3, 5, 6, 6)]:
         raise RuntimeError("Frozen Word editorial prefix swallowed a separate question")
@@ -729,52 +750,80 @@ def verify_frozen_word_theme_index(pyz) -> dict:
         or split_preview != split_original
     ):
         raise RuntimeError("Frozen Word split changed source text or image ownership")
-    quoted = index(make_preview([
-        "【例1】选择____。", "【答案】【说明】（多选）【变式训练3】仅在解析中引用。",
-    ]))
+    quoted = index(
+        make_preview(
+            [
+                "【例1】选择____。",
+                "【答案】【说明】（多选）【变式训练3】仅在解析中引用。",
+            ]
+        )
+    )
     if len(quoted) != 1 or quoted[0]["answer_start"] != 2:
-        raise RuntimeError("Frozen Word index mistook an answer quotation for a question")
+        raise RuntimeError(
+            "Frozen Word index mistook an answer quotation for a question"
+        )
 
     cases = {
         "unmarked_answer": [
-            "1．合成条件下哪项正确____。", "A．甲 B．乙 C．丙", "(3)C",
+            "1．合成条件下哪项正确____。",
+            "A．甲 B．乙 C．丙",
+            "(3)C",
             "(3)这是合成原文已有的说明文字，用来解释所选选项的依据。",
         ],
         "nonstandard_label": [
-            "【变式训练3·变题型合成材料如下。", "(1)填写____。", "【答案】合成结果",
+            "【变式训练3·变题型合成材料如下。",
+            "(1)填写____。",
+            "【答案】合成结果",
         ],
         "self_contained_reference": [
-            "【例1】合成材料观点为两个条件共同成立。根据上述观点，选择____。", "【答案】合成结果",
+            "【例1】合成材料观点为两个条件共同成立。根据上述观点，选择____。",
+            "【答案】合成结果",
         ],
     }
     for issue, case in cases.items():
-        source = make_preview(case, [{"asset_id": "synthetic-review-image", "block_index": 1}])
+        source = make_preview(
+            case, [{"asset_id": "synthetic-review-image", "block_index": 1}]
+        )
         source["blocks"][0]["warnings"] = ["合成原图仍需核对。"]
         source_original = deepcopy(source)
         candidates = index(source)
         if len(candidates) != 1 or candidates[0]["export_ready"]:
-            raise RuntimeError("Frozen Word review hold automatically cleared: " + issue)
+            raise RuntimeError(
+                "Frozen Word review hold automatically cleared: " + issue
+            )
         candidate = candidates[0]
         candidate_original = deepcopy(candidate)
-        bounds = {key: candidate[key] for key in ("block_start", "question_end", "answer_start", "block_end")}
+        bounds = {
+            key: candidate[key]
+            for key in ("block_start", "question_end", "answer_start", "block_end")
+        }
         unconfirmed = apply_range(source, candidate, **bounds)
         if unconfirmed["export_ready"] or "boundary_review" in unconfirmed:
-            raise RuntimeError("Frozen Word range alone cleared explicit review: " + issue)
+            raise RuntimeError(
+                "Frozen Word range alone cleared explicit review: " + issue
+            )
         reviewed = apply_range(source, candidate, **bounds, reviewed_issues=[issue])
         if (
             not reviewed["export_ready"]
             or reviewed["key"] != candidate["key"]
             or reviewed["revision"] == candidate["revision"]
-            or reviewed.get("boundary_review") != {
+            or reviewed.get("boundary_review")
+            != {
                 "revision": WORD_BOUNDARY_REVIEW_REVISION,
-                "issues": [issue], "scope": "selected_source_ranges_only",
+                "issues": [issue],
+                "scope": "selected_source_ranges_only",
             }
             or "合成原图仍需核对。" not in reviewed["warnings"]
-            or any(reviewed[role] != candidate[role] for role in
-                   ("question_blocks", "answer_blocks", "context_blocks"))
-            or source != source_original or candidate != candidate_original
+            or any(
+                reviewed[role] != candidate[role]
+                for role in ("question_blocks", "answer_blocks", "context_blocks")
+            )
+            or source != source_original
+            or candidate != candidate_original
         ):
-            raise RuntimeError("Frozen Word explicit review changed source or failed: " + issue)
+            raise RuntimeError(
+                "Frozen Word explicit review changed source or failed: " + issue
+            )
         wrong_issue = next(value for value in cases if value != issue)
         for changed_source, issues in (
             (source, [wrong_issue]),
@@ -785,15 +834,25 @@ def verify_frozen_word_theme_index(pyz) -> dict:
             except ValueError:
                 pass
             else:
-                raise RuntimeError("Frozen Word review accepted wrong issue or stale source")
+                raise RuntimeError(
+                    "Frozen Word review accepted wrong issue or stale source"
+                )
 
-    leakage = make_preview([
-        "【例1】合成材料条件在此。根据上述观点，选择____。【答案】A",
-    ])
+    leakage = make_preview(
+        [
+            "【例1】合成材料条件在此。根据上述观点，选择____。【答案】A",
+        ]
+    )
     leaking_item = index(leakage)[0]
-    still_held = apply_range(leakage, leaking_item, block_start=1, question_end=1,
-                             answer_start=None, block_end=1,
-                             reviewed_issues=["self_contained_reference"])
+    still_held = apply_range(
+        leakage,
+        leaking_item,
+        block_start=1,
+        question_end=1,
+        answer_start=None,
+        block_end=1,
+        reviewed_issues=["self_contained_reference"],
+    )
     if still_held["export_ready"]:
         raise RuntimeError("Frozen Word narrow review cleared answer leakage")
     return {
@@ -815,21 +874,34 @@ def verify_frozen_word_theme_index(pyz) -> dict:
 
 def verify_frozen_word_range_preview_ui(pyz) -> dict:
     """Inspect UI constants and preview-state routes without loading Qt or UI."""
-    code = pyz.extract("integrations.deeptutor_shchem_v1.desktop_workbench.word_question_dialog")
+    code = pyz.extract(
+        "integrations.deeptutor_shchem_v1.desktop_workbench.word_question_dialog"
+    )
     if set(WORD_RANGE_PREVIEW_UI_CONSTANTS) - strings(code):
         raise RuntimeError("Frozen Word range preview UI constants missing")
     dialog = _frozen_function(code, "WordQuestionRangeDialog")
     confirm = _frozen_function(dialog, "_confirm")
     invalidate = _frozen_function(dialog, "_invalidate_range_preview")
     if (
-        not {"_preview_key", "_range_key", "_validated_ranges", "_preview_ranges", "isChecked"}.issubset(confirm.co_names)
+        not {
+            "_preview_key",
+            "_range_key",
+            "_validated_ranges",
+            "_preview_ranges",
+            "isChecked",
+        }.issubset(confirm.co_names)
         or "reviewed_issues" not in strings(confirm)
-        or not {"_preview_key", "_preview_ranges", "setChecked", "setEnabled"}.issubset(invalidate.co_names)
+        or not {"_preview_key", "_preview_ranges", "setChecked", "setEnabled"}.issubset(
+            invalidate.co_names
+        )
     ):
         raise RuntimeError("Frozen Word range preview state route missing")
-    return {"constants_checked": len(WORD_RANGE_PREVIEW_UI_CONSTANTS),
-            "preview_state_routes_static_checked": True, "ui_instantiated": False,
-            "ui_interaction_checked": False}
+    return {
+        "constants_checked": len(WORD_RANGE_PREVIEW_UI_CONSTANTS),
+        "preview_state_routes_static_checked": True,
+        "ui_instantiated": False,
+        "ui_interaction_checked": False,
+    }
 
 
 def verify_frozen_import_binding(pyz) -> dict:
@@ -922,7 +994,9 @@ def main() -> int:
             "按当前课题与课型填入建议结构",
         ],
         "desktop_workbench.preparation_design_widget": [],
-        "desktop_preparation_pedagogy": ["20260912-electron-representation-reference-v5"],
+        "desktop_preparation_pedagogy": [
+            "20260912-electron-representation-reference-v5"
+        ],
         "desktop_preparation_classroom_layout": ["classroom-v2"],
         "desktop_workbench.library_detail": [
             "将这张原图用于备课…",
@@ -1032,7 +1106,8 @@ def main() -> int:
         "word_native_math": [],
         "word_native_text": ["20260909-editable-chemistry-v2"],
         "desktop_word_question_index": [
-            "20260910-word-answer-boundary-index-v4", WORD_BOUNDARY_REVIEW_REVISION,
+            "20260910-word-answer-boundary-index-v4",
+            WORD_BOUNDARY_REVIEW_REVISION,
         ],
         "desktop_word_metafile_preview": [],
         "desktop_word_source_reference": ["reference_issues", "image_references"],
@@ -1043,6 +1118,15 @@ def main() -> int:
         "desktop_import_preview": ["import_preview_changed"],
         "desktop_word_preview_cache": ["20260910-native-word-preview-cache-v1"],
         "desktop_word_question_attributes": ["word-attributes-20260912-v2"],
+        "desktop_word_semantic_tags": [
+            "word-semantic-tags-20260913-v1",
+            "model_image_observation",
+        ],
+        "desktop_workbench.word_semantic_tags_dialog": [
+            "AI补全题目标签 · 先预览再采用",
+            "确认发送并分析",
+            "保存勾选的标签建议",
+        ],
         "desktop_word_question_filters": [],
         "desktop_workbench.word_question_filter_panel": [],
         "desktop_source_quality": [
@@ -1070,6 +1154,7 @@ def main() -> int:
         ],
         "desktop_workbench.word_question_dialog": [
             "Word 逐题浏览与选题",
+            "AI补全已选题标签…",
             "确认带入备课",
             *WORD_RANGE_PREVIEW_UI_CONSTANTS,
         ],
@@ -1086,7 +1171,10 @@ def main() -> int:
             "通读教案",
             "选段与备课",
         ],
-        "desktop_workbench.word_lesson_reader": ["WordLessonReader", "完整教案原文阅读区"],
+        "desktop_workbench.word_lesson_reader": [
+            "WordLessonReader",
+            "完整教案原文阅读区",
+        ],
         "desktop_paper_preparation_sources": [],
         "desktop_workbench.paper_preparation_dialog": ["将当前组卷带入备课"],
         "desktop_workbench.assembly_page": ["将当前组卷带入备课…", "题面显示分数"],

@@ -23,7 +23,9 @@ def test_desktop_entrypoints_exist_and_default_to_native_app() -> None:
     assert 'appname & ".exe"' in start_text
     package_entries = re.findall(r"desktop_package_[0-9.]+(?:-r[0-9]+)?", start_text)
     assert package_entries == [
+        f"desktop_package_{DESKTOP_VERSION}-r2",
         f"desktop_package_{DESKTOP_VERSION}",
+        "desktop_package_0.1.66",
         "desktop_package_0.1.65",
         "desktop_package_0.1.64",
         "desktop_package_0.1.63",
@@ -64,7 +66,7 @@ def test_current_package_launcher_is_codepage_independent_and_shows_native_windo
         WORKSPACE
         / "runtime"
         / "deeptutor_shchem"
-        / f"desktop_package_{DESKTOP_VERSION}"
+        / f"desktop_package_{DESKTOP_VERSION}-r2"
         / "启动沪上化学智研台桌面版.vbs"
     )
     if not launcher.is_file():

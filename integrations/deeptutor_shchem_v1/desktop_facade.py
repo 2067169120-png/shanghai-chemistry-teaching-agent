@@ -2323,6 +2323,30 @@ class DesktopWorkbenchFacade:
     def word_question_catalog(self):
         return self._word_questions().catalog()
 
+    def _word_semantic_tags(self):
+        from .desktop_word_semantic_tags import WordSemanticTagService
+        if not hasattr(self, "_word_semantic_tag_service"):
+            self._word_semantic_tag_service = WordSemanticTagService(self)
+        return self._word_semantic_tag_service
+
+    def word_semantic_tag_preview(self, selections, profile_id, profile_revision):
+        return self._word_semantic_tags().preview(selections, profile_id, profile_revision)
+
+    def word_semantic_tag_run(self, plan_id, revision, *, confirmed, progress=None, cancelled=None):
+        return self._word_semantic_tags().run(plan_id, revision, confirmed=confirmed, progress=progress, cancelled=cancelled)
+
+    def word_semantic_tag_result(self, plan_id):
+        return self._word_semantic_tags().result(plan_id)
+
+    def word_semantic_tag_image(self, plan_id, sha256):
+        return self._word_semantic_tags().image(plan_id, sha256)
+
+    def word_semantic_tag_discard(self, plan_id):
+        return self._word_semantic_tags().discard(plan_id)
+
+    def word_semantic_tag_apply(self, plan_id, keys):
+        return self._word_semantic_tags().apply(plan_id, keys)
+
     def annotate_imported_word_batch(self, batch_id):
         """Save local, source-bound label suggestions for one explicit import."""
         return self._word_questions().annotate_imported_batch(batch_id)

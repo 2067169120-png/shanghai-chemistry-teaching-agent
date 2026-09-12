@@ -791,6 +791,11 @@ class WordQuestionDialog(QDialog):
         )
         self.attributes_button.clicked.connect(self._edit_attributes)
         tools_layout.addWidget(self.attributes_button)
+        self.ai_attributes_button = QPushButton("AI补全已选题标签…")
+        self.ai_attributes_button.setObjectName("QuietButton")
+        self.ai_attributes_button.setVisible(callable(getattr(facade, "word_semantic_tag_preview", None)))
+        self.ai_attributes_button.clicked.connect(self._ai_attributes)
+        tools_layout.addWidget(self.ai_attributes_button)
         self.tabs = QTabWidget()
         self.tabs.setMinimumSize(0, 130)
         self._panels: list[QWidget] = []
@@ -1868,6 +1873,21 @@ class WordQuestionDialog(QDialog):
             self._queue_selection_save()
             self._update_actions()
 
+    def _ai_attributes(self) -> None:
+        if self._attributes_busy or self._range_busy or self._catalog_busy or self._export_busy:
+            return
+        if not self.selections:
+            set_status(self.status, "attention", "请先查看并选中要分析的题目，再进行AI标签补全。")
+            return
+        from .word_semantic_tags_dialog import WordSemanticTagsDialog
+        editor = WordSemanticTagsDialog(self.facade, self.tasks, self.selections, self)
+        editor.exec()
+        saved = editor.saved
+        editor.deleteLater()
+        if saved:
+            self._invalidate_preview()
+            self._load_catalog()
+
     def _edit_attributes(self) -> None:
         value = self._items.get(self._current_key)
         if (
@@ -2420,6 +2440,7 @@ class WordQuestionDialog(QDialog):
         basket_available = callable(getattr(self.facade, "add_word_questions_to_basket", None))
         basket_idle = not (self._basket_busy or self._catalog_busy or self._reference_busy or self._export_busy or self._range_busy or self._attributes_busy)
         basket_ready = count > 0 and all(self._items.get(key, {}).get("export_ready") is True for key in self._selected)
+        self.ai_attributes_button.setEnabled(count > 0 and basket_idle)
         self.basket_preview_button.setEnabled(basket_available and basket_idle and basket_ready)
         self.basket_add_button.setEnabled(basket_available and basket_idle and basket_ready and bool(self._basket_preview_key) and self._basket_preview_key == self._selection_key())
         self.lesson_suggestion_button.setEnabled(

@@ -372,6 +372,7 @@ _EVIDENCE = _object(
                 "shared_context",
                 "source_metadata",
                 "teacher_note",
+                "model_image_observation",
             ]
         },
         "quote": _text(),
@@ -959,7 +960,7 @@ def complete_missing_attributes(existing, proposed):
         result["curriculum_status"] = new["curriculum_status"]
     if result == old:
         return old
-    result["rule_revision"] = RULE_REVISION
+    result["rule_revision"] = new["rule_revision"]
     return validate_attributes(_seal(result))
 
 
@@ -1259,15 +1260,24 @@ class WordQuestionAttributeStore:
                     result[key] = row
         return result
 
-    def save_many(self, rows):
+    def save_many(self, rows, *, expected_revisions=None):
         incoming = [validate_attributes(row) for row in rows]
         if len({row["key"] for row in incoming}) != len(incoming):
             raise WordQuestionAttributeError("同一批题目属性不能重复。")
+        if expected_revisions is not None and (
+            not isinstance(expected_revisions, dict)
+            or set(expected_revisions) != {row["key"] for row in incoming}
+        ):
+            raise WordQuestionAttributeError("本批标签的旧版本绑定不完整。")
         result = []
         with self._lock, self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             for row in incoming:
                 existing = self._existing(connection, row["key"])
+                if expected_revisions is not None and (
+                    (existing["revision"] if existing else None) != expected_revisions[row["key"]]
+                ):
+                    raise WordQuestionAttributeError("标签已被修改，本批未保存；请刷新后重新核对。")
                 if existing and existing["source_sha256"] != row["source_sha256"]:
                     raise WordQuestionAttributeError("题目属性的原文件绑定不能改变。")
                 if existing and existing["annotation_source"] == "teacher_modified":

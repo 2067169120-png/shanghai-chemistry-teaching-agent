@@ -887,6 +887,119 @@ def _cleanup(dialog, tasks):
     dialog.deleteLater()
 
 
+class _SemanticDialogStub:
+    instance = None
+    saved_value: ClassVar[list] = []
+
+    def __init__(self, facade, tasks, selections, parent=None):
+        self.facade = facade
+        self.tasks = tasks
+        self.selections = deepcopy(selections)
+        self.parent = parent
+        self.saved = deepcopy(type(self).saved_value)
+        type(self).instance = self
+
+    def exec(self):
+        return QDialog.DialogCode.Rejected
+
+    def deleteLater(self):
+        return None
+
+
+def _with_semantic_entrypoint(facade, monkeypatch, saved=None):
+    import integrations.deeptutor_shchem_v1.desktop_workbench.word_semantic_tags_dialog as module
+
+    facade.word_semantic_tag_preview = lambda *_args: None
+    _SemanticDialogStub.instance = None
+    _SemanticDialogStub.saved_value = deepcopy(saved or [])
+    monkeypatch.setattr(module, "WordSemanticTagsDialog", _SemanticDialogStub)
+
+
+def test_ai_tag_entrypoint_is_disabled_without_selection_or_while_busy(
+    qt_app, monkeypatch
+):
+    facade = _Facade()
+    _with_semantic_entrypoint(facade, monkeypatch)
+    dialog, _facade, tasks = _loaded(facade)
+    assert not dialog.ai_attributes_button.isEnabled()
+
+    _check(dialog, "Q1")
+    assert dialog.ai_attributes_button.isEnabled()
+    dialog._attributes_busy = True
+    dialog._update_actions()
+    assert not dialog.ai_attributes_button.isEnabled()
+    dialog._attributes_busy = False
+    dialog._update_actions()
+    assert dialog.ai_attributes_button.isEnabled()
+    _cleanup(dialog, tasks)
+
+
+def test_ai_tag_entrypoint_passes_complete_selected_keys_and_revisions(
+    qt_app, monkeypatch
+):
+    facade = _Facade()
+    _with_semantic_entrypoint(facade, monkeypatch)
+    dialog, _facade, tasks = _loaded(facade)
+    _check(dialog, "Q1")
+    dialog.points.setValue(7)
+    _check(dialog, "Q2")
+    expected = deepcopy(dialog.selections)
+
+    dialog._ai_attributes()
+
+    assert _SemanticDialogStub.instance is not None
+    assert _SemanticDialogStub.instance.facade is facade
+    assert _SemanticDialogStub.instance.tasks is tasks
+    assert _SemanticDialogStub.instance.parent is dialog
+    assert _SemanticDialogStub.instance.selections == expected == [
+        {"key": "Q1", "revision": "revision-Q1", "points": 7},
+        {"key": "Q2", "revision": "revision-Q2", "points": 2},
+    ]
+    _cleanup(dialog, tasks)
+
+
+def test_ai_tag_cancel_does_not_refresh_catalog_or_write_selection(
+    qt_app, monkeypatch
+):
+    facade = _Facade()
+    _with_semantic_entrypoint(facade, monkeypatch, saved=[])
+    dialog, _facade, tasks = _loaded(facade)
+    _check(dialog, "Q1")
+    before_selection = deepcopy(dialog.selections)
+    before_catalog_reads = sum(call[0] == "catalog" for call in facade.calls)
+    before_saved = deepcopy(facade.saved)
+
+    dialog._ai_attributes()
+
+    assert dialog.selections == before_selection
+    assert facade.saved == before_saved
+    assert sum(call[0] == "catalog" for call in facade.calls) == before_catalog_reads
+    assert not any(call[0] == "save" for call in facade.calls)
+    _cleanup(dialog, tasks)
+
+
+def test_ai_tag_save_refreshes_catalog_and_retains_current_selection(
+    qt_app, monkeypatch
+):
+    facade = _Facade()
+    saved = [{"key": "Q1", "revision": "revision-Q1", "points": 2}]
+    _with_semantic_entrypoint(facade, monkeypatch, saved=saved)
+    dialog, _facade, tasks = _loaded(facade)
+    _check(dialog, "Q1")
+    _check(dialog, "Q2")
+    before_selection = deepcopy(dialog.selections)
+    before_catalog_reads = sum(call[0] == "catalog" for call in facade.calls)
+
+    dialog._ai_attributes()
+    assert any(job["label"] == "读取 Word 逐题目录" for job in tasks.pending)
+    tasks.finish("读取 Word 逐题目录")
+
+    assert sum(call[0] == "catalog" for call in facade.calls) == before_catalog_reads + 1
+    assert dialog.selections == before_selection
+    assert facade.saved == []
+    _cleanup(dialog, tasks)
+
+
 def test_catalog_is_background_loaded_and_restores_selection_points(qt_app):
     facade = _Facade([{"key": "Q2", "revision": "revision-Q2", "points": 7}])
     tasks = _Tasks()
