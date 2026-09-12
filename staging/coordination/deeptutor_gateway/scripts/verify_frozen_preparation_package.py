@@ -785,6 +785,12 @@ def main() -> int:
         "master_direct_visual_scan": [],
         "songjiang2025_theme2_direct_visual_scan": [],
         "shanghai_high_east2025_theme45_direct_visual_scan": [],
+        "level_exam2025_theme3_fosinopril_direct_visual_scan": [
+            "FORMAL-PENDING-V2-LEVEL-EXAM-2025-S3-FOSINOPRIL-DUAL-SOURCE-A",
+            "source_A",
+            "source_page_backed_candidate_dependency",
+        ],
+        "fosinopril_source_presentation": [],
         "archived_wechat_crop_revision": ["archived-wechat-source-recrop-20260910-r3"],
         "reference_answer_images": [
             "sheast-source-answer-images-20260910-r1",

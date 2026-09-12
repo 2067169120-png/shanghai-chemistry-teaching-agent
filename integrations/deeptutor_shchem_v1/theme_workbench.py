@@ -62,6 +62,80 @@ WAVE1_SCOPE = "wave1"
 MASTER_SCOPE = "master"
 ALLOWED_SCOPES = frozenset({WAVE1_SCOPE, MASTER_SCOPE})
 
+
+def _source_variant_theme_title(entries, direct_by_id, paper_id, theme_id):
+    """Use a selected source title only when every member has the same binding.
+
+    Old Master evidence can leave a dual-source title unknown. A native reader
+    may explicitly choose one frozen source for all of its questions. This is
+    a display projection; no title is inferred from a filename, ID or one part.
+    """
+    bindings = set()
+    for entry in entries:
+        direct = direct_by_id.get(entry["atomic_part_id"])
+        if direct is None:
+            return None
+        record = direct[0]
+        hierarchy = record.get("hierarchy", {})
+        source = record.get("source_identity", {})
+        variant = record.get("source_variant")
+        title = hierarchy.get("theme_title")
+        source_id = source.get("source_id")
+        if (
+            not isinstance(variant, str)
+            or not variant.strip()
+            or not isinstance(title, str)
+            or not title.strip()
+            or not isinstance(source_id, str)
+            or not source_id.strip()
+            or source.get("source_variant") != variant
+            or hierarchy.get("paper_id") != paper_id
+            or hierarchy.get("theme_id") != theme_id
+            or hierarchy.get("atomic_part_id") != entry["atomic_part_id"]
+        ):
+            return None
+        bindings.add((source_id, variant, title))
+    return next(iter(bindings))[2] if len(bindings) == 1 else None
+
+
+def _apply_source_variant_order(entry, record):
+    """Fill absent native display order from an explicitly selected source."""
+    variant = record.get("source_variant")
+    if not isinstance(variant, str) or not variant.strip():
+        return
+    source = record.get("source_identity", {})
+    hierarchy = record.get("hierarchy", {})
+    values = {
+        "printed_sequence": hierarchy.get("printed_sequence"),
+        "atomic_sequence_in_printed": hierarchy.get("atomic_sequence_in_printed"),
+        "printed_question_number": hierarchy.get("printed_question_number"),
+    }
+    if (
+        source.get("source_variant") != variant
+        or hierarchy.get("atomic_part_id") != entry["atomic_part_id"]
+        or hierarchy.get("printed_question_id") != entry["printed_question_id"]
+        or any(
+            type(values[key]) is not int or values[key] < 1
+            for key in ("printed_sequence", "atomic_sequence_in_printed")
+        )
+        or not isinstance(values["printed_question_number"], str)
+        or not values["printed_question_number"].strip()
+        or any(
+            entry.get(key) is not None and entry[key] != value
+            for key, value in values.items()
+        )
+    ):
+        raise ThemeWorkbenchError(
+            "theme_workbench_source_variant_order_invalid",
+            "selected source order conflicts with the native parent binding",
+        )
+    entry.update(values)
+    entry.update(
+        printed_sequence_status="known_explicit",
+        atomic_sequence_status="known_explicit",
+    )
+
+
 AUTHORITY = {
     "candidate_only": True,
     "read_only": True,
@@ -359,11 +433,15 @@ def _scan_labels(record: dict[str, Any]) -> dict[str, Any]:
         candidates = classification.get("knowledge_candidates_K")
         if (
             not isinstance(candidates, list)
-            or any(not isinstance(value, str) or not re.fullmatch(r"K\d{2}", value) for value in candidates)
+            or any(
+                not isinstance(value, str) or not re.fullmatch(r"K\d{2}", value)
+                for value in candidates
+            )
             or len(candidates) != len(set(candidates))
         ):
             raise ThemeWorkbenchError(
-                "theme_workbench_label_invalid", "source knowledge candidates are invalid"
+                "theme_workbench_label_invalid",
+                "source knowledge candidates are invalid",
             )
         result["knowledge_candidates_K"] = list(candidates)
     return result
@@ -1263,6 +1341,7 @@ class ThemeWorkbenchReader:
         label_allowed: bool = True,
     ) -> None:
         node_id = entry["atomic_part_id"]
+        _apply_source_variant_order(entry, record)
         entry["item_type"] = (
             record["classification"]["item_type"] if label_allowed else None
         )
@@ -1533,7 +1612,9 @@ class ThemeWorkbenchReader:
                         # sequence that can validate dependency direction without
                         # being used to guess a Master theme assignment.
                         positions=(
-                            positions if node_id in positions else direct_positions
+                            positions
+                            if node_id in positions and not record.get("source_variant")
+                            else direct_positions
                         ),
                         coverage_kind="direct_new_visual_scan",
                         detail_endpoint=(
@@ -1955,18 +2036,34 @@ class ThemeWorkbenchReader:
             for theme_id, entries in grouped[paper_id].items():
                 theme_row = master.master_nodes[("theme_big_question", theme_id)]
                 entries.sort(key=lambda entry: positions[entry["atomic_part_id"]][1])
+                if all(
+                    type(entry.get("printed_sequence")) is int
+                    and type(entry.get("atomic_sequence_in_printed")) is int
+                    for entry in entries
+                ):
+                    entries.sort(
+                        key=lambda entry: (
+                            entry["printed_sequence"],
+                            entry["atomic_sequence_in_printed"],
+                        )
+                    )
                 pages = set().union(*(entry["_pages"] for entry in entries))
                 pages |= _page_span_from_value(theme_row.get("theme_page_span"))
                 shared_context = _material_context(
                     entries, theme_row.get("theme_context")
                 )
                 sequence = _known_int(_master_order("theme_big_question", theme_row))
+                title = _master_label("theme_big_question", theme_row)
+                if title is None:
+                    title = _source_variant_theme_title(
+                        entries, direct_by_id, paper_id, theme_id
+                    )
                 theme_groups.append(
                     {
                         "paper": deepcopy(paper),
                         "theme": {
                             "id": theme_id,
-                            "title": _master_label("theme_big_question", theme_row),
+                            "title": title,
                             "sequence": sequence,
                             "sequence_status": (
                                 "known_explicit"
