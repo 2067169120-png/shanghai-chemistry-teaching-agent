@@ -1,20 +1,20 @@
 {
   "schema_version": "smartedu.teaching-design-reference.v1",
-  "checked_at": "2026-09-10T02:35:30+08:00",
+  "checked_at": "2026-09-12T17:51:00+08:00",
   "role": "教学组织参考，非教材原文库、题库或正式授课批准",
   "counts": {
-    "course_packages_reviewed": 2,
-    "courseware_previews_reviewed": 3,
-    "presentation_pages_visually_reviewed": 47,
+    "course_packages_reviewed": 3,
+    "courseware_previews_reviewed": 4,
+    "presentation_pages_visually_reviewed": 76,
     "source_courseware_files_downloaded": 0,
-    "derived_design_cards": 3,
+    "derived_design_cards": 4,
     "source_safety_exclusions": 1,
-    "supplementary_documents_text_reviewed": 3,
-    "supplementary_document_pages_text_reviewed": 11
+    "supplementary_documents_text_reviewed": 6,
+    "supplementary_document_pages_text_reviewed": 20
   },
-  "scope_evidence": "公开UI筛选与课程面包屑显示高中、化学、沪科技版、选择性必修1化学反应原理；三份封面显示高二和上海学校。",
+  "scope_evidence": "公开UI筛选与课程面包屑显示高中、化学、沪科技版；先前三份课件属选择性必修1化学反应原理，本次新增属选择性必修2物质结构与性质；四份封面显示高二和上海学校。",
   "access_method": "独立隔离浏览器会话，公开页面点击、快照和视觉阅读；未登录、未读取凭据、未调用隐藏资源接口。",
-  "download_status": "公开匿名详情及全屏授课下拉未见原文件下载按钮；未将截图或规范PDF计为原课件下载。",
+  "download_status": "已查公开匿名页面未见原PPT下载入口或公开加载的原PPT文件；本次全屏授课出现登录提示，已取消，不推断登录后下载权限；截图及在线演示不计作原件下载。",
   "latest_package_ui_check": {
     "checked_at": "2026-09-10T05:00:12+08:00",
     "course_package_id": "f010e1bf-b56c-de08-fa41-adc255b3b572",
@@ -122,6 +122,48 @@
         "safety_reference_url": "https://www.cdc.gov/infection-control/hcp/disinfection-sterilization/chemical-disinfectants.html"
       },
       "limitations": ["源示例安全问题未被平台来源身份豁免", "第7页部分公式叠印", "第11页长分式未经原稿验证", "教学设计与任务单正文未读"]
+    },
+    {
+      "id": "smartedu-electron-configuration-representations",
+      "title": "核外电子排布的表示方法",
+      "course_package_id": "18aa1947-8aac-2411-0633-726953abb358",
+      "resource_id": "0442134f-ff0c-c26d-5533-53fdc816c865",
+      "course_package_url": "https://basic.smartedu.cn/qualityCourse?courseId=18aa1947-8aac-2411-0633-726953abb358&chapterId=1d6b8605-dcbb-38cd-8b5d-1e178d53cfda&teachingmaterialId=c0d887f4-96bc-48cd-a41c-99d739da95ce&classHourId=lesson_1",
+      "courseware_detail_url": "https://basic.smartedu.cn/syncClassroom/prepare/detail?resourceId=0442134f-ff0c-c26d-5533-53fdc816c865&chapterId=1d6b8605-dcbb-38cd-8b5d-1e178d53cfda&teachingmaterialId=c0d887f4-96bc-48cd-a41c-99d739da95ce&fromPrepare=1&classHourId=lesson_1",
+      "ui_selection": "高中化学沪科技版选必2 → 教师备课授课 → 课件 → 详情 → 来自课程包 → 课件",
+      "lecturer": "孙卫中",
+      "school_from_cover": "上海市格致中学",
+      "grade_from_cover": "高二年级",
+      "edition_from_cover": "沪科技版",
+      "list_publication_date": "2026-04-26",
+      "course_package_award_label": "2025年度-部优",
+      "displayed_title": "核外电子排布的表示方法 课件",
+      "displayed_filename": null,
+      "declared_format_from_title": "unknown",
+      "observed_preview_type": "29页在线演示，部分含动画或视频入口",
+      "raw_format_verified": false,
+      "raw_sha256": null,
+      "downloaded": false,
+      "preview_page_count": 29,
+      "visually_reviewed_pages": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29],
+      "design_card": "electron-configuration-design-card.md",
+      "teaching_sequence_summary": "规则回忆→模型和轨道表示→符号简化与比较→信息读取→旧表示再解释→自测与小结",
+      "evidence_pages": {
+        "physical_occupancy_models": [6,7],
+        "representation_conversion": [8,10,16,17,18,23,26],
+        "comparison_tables": [11,12,19,20],
+        "worked_practice": [9,22,25],
+        "textbook_locator_on_slide": [24],
+        "concept_map": [21,27],
+        "homework": [29]
+      },
+      "supplementary_documents": [
+        {"ui_label": "教学设计", "page_count": 3, "text_reviewed_pages": [1,2,3], "downloaded": false},
+        {"ui_label": "学习任务单", "page_count": 2, "text_reviewed_pages": [1,2], "downloaded": false},
+        {"ui_label": "课后练习", "page_count": 4, "text_reviewed_pages": [1,2,3,4], "downloaded": false, "reference_answers_visible": true}
+      ],
+      "use_status": "design_reference_only",
+      "limitations": ["仅静态预览，未播放或验证动画与视频", "第13页动画对象叠印及符号呈现不可直接当知识结论", "第24页教材引文未独立核对原页", "配套9页仅计文本阅读，图式未全页验收", "未做真实课堂可读性测验", "未取得原文件或平台原图再分发授权"]
     }
   ],
   "restored_access_package_review": {
@@ -160,6 +202,19 @@
     ],
     "review_boundary": "11页仅计正文文本阅读，局部截图辅助观察；未完成这些附件的全页图形核验，不计入47页PPT视觉阅读。未取得原PPT或附件原文件，未将其原题、原图导入题库。",
     "derived_design_card": "system-internal-energy-design-card.md"
+  },
+  "latest_new_course_review": {
+    "checked_at": "2026-09-12T17:51:00+08:00",
+    "course_package_id": "18aa1947-8aac-2411-0633-726953abb358",
+    "new_presentation_pages_visually_reviewed": 29,
+    "new_supplementary_document_pages_text_reviewed": 9,
+    "new_source_courseware_files_downloaded": 0,
+    "original_files_downloaded": 0,
+    "access_method": "当前Codex内置浏览器的公开UI；点击课件包内资源，正常分页并读取静态画面与可访问文本",
+    "session_state": "未登录",
+    "full_screen_login_prompt_seen": true,
+    "permission_boundary": "全屏授课登录提示已取消，公开预览仍可读；所查公开界面未见原PPT下载项，不推断登录后权限。",
+    "new_local_screenshots_saved": 0
   },
   "publication_boundary": "仅本目录自述设计卡与此元数据可作为版本管理候选；原文件、过程截图、课件长文和整图不随代码发布。"
 }

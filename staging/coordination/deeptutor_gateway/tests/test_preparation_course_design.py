@@ -9,6 +9,7 @@ from integrations.deeptutor_shchem_v1.desktop_preparation import (
     normalize_preparation_payload,
 )
 from integrations.deeptutor_shchem_v1.desktop_preparation_pedagogy import (
+    COURSE_DESIGN_REVISION,
     course_composition_contract,
     teacher_design_starter,
 )
@@ -247,4 +248,126 @@ def test_ready_made_word_package_reference_reaches_teacher_brief(page):
     assert embedded["materials"] == "教师选定的原教案区块，不以索引代替正文。"
     assert "教学设计7页" in embedded["advanced"]["template_and_delivery"]
     assert "不先将整份教案改写后再备课" in prompt
+    assert not facade.prepare_calls and not facade.generate_calls
+
+
+@pytest.mark.parametrize(
+    "topic",
+    [
+        "核外电子排布的表示方法",
+        "第二节 核外 电子排布",
+        "核外电子的排布及表示",
+        "电子排布的表示方法",
+        "电子排布式",
+        "简化电子排布式与价层电子排布式",
+        "轨道表示",
+        "轨道表示式的读写",
+        "电子轨道表示方法",
+        "轨道式与电子排布式互译",
+    ],
+)
+def test_electron_notation_topic_offers_one_specific_reference(topic):
+    text = teacher_design_starter("复习", topic)
+    assert text.count("18aa1947-8aac-2411-0633-726953abb358") == 1
+    assert "f010e1bf" not in text and "fde67ee1" not in text
+    assert "可修改或删除" in text
+    assert "不把新授课整套重播" in text
+
+
+@pytest.mark.parametrize(
+    "topic",
+    [
+        "原子",
+        "电子",
+        "原子结构",
+        "原子结构示意图",
+        "电子式",
+        "原子核结构与放射性",
+        "电子转移与氧化还原反应",
+        "电解质的电离",
+        "电子对与共价键",
+        "航天器轨道表示与运动",
+        "原子轨道与能级",
+    ],
+)
+def test_broad_atom_or_electron_topics_do_not_receive_notation_course(topic):
+    assert teacher_design_starter("新授", topic) == teacher_design_starter("新授")
+
+
+def test_electron_reference_has_inspected_organization_and_source_boundaries():
+    text = teacher_design_starter("专题", "核外电子排布的表示方法")
+    assert COURSE_DESIGN_REVISION == "20260912-electron-representation-reference-v5"
+    assert "同一对象多种表示互译—例题—独立变式—可记比较表" in text
+    assert "表示法／包含信息／适用问题／易错点" in text
+    assert "第11—12页元素对照表" in text
+    assert "第21页读信息框架接第22页自测" in text
+    assert "第27页小结、第29页作业" in text
+    assert "二维原子结构示意图、轨道占位图和实体教具模型不能混作同一种表示" in text
+    assert "核对本次实际提供的对应教材原页" in text
+    assert "必修一教材P129，仅是课件提供的引文线索" in text
+    assert "尚未核对教材原页" in text
+    assert "静态动画最终叠印未全核验" in text
+    assert "不照抄平台例题" in text
+    assert "未下载原PPT" in text and "没有自动带入原题或图片" in text
+    assert "直接使用本次选定的原文、表格、公式、图片及例题答案" in text
+    assert "出处与采用说明放在教案或教师备注" in text
+    assert "不把这段设计说明直接放到学生PPT上" in text
+    assert "首屏用章节名" in text
+
+
+def test_three_course_topics_preserve_existing_references_and_exclusions():
+    text = teacher_design_starter(
+        "专题", "系统的内能、电离平衡常数与核外电子排布的表示方法"
+    )
+    for course_id in (
+        "f010e1bf-b56c-de08-fa41-adc255b3b572",
+        "fde67ee1-cbbb-4cb2-828f-e5cd813bc64e",
+        "18aa1947-8aac-2411-0633-726953abb358",
+    ):
+        assert text.count(course_id) == 1
+    assert "教学设计7页、学习任务单2页、作业练习2页已读文字" in text
+    assert "不复用原第二课时第5—7页" in text
+    assert "本课若不讲平衡常数，删除相关段落" in text
+
+
+def test_electron_reference_is_removable_and_teacher_edits_survive_topic_switch(page):
+    _app, widget, facade = page
+    widget.topic.setText("核外电子排布的表示方法")
+    widget.audience.setText("高二")
+    widget.objective.setPlainText("依原教案比较本节需要的表示方法")
+    original_materials = "本次所选Word原教案、表格和配套例题，保留原文。"
+    widget.materials.setPlainText(original_materials)
+    widget.design_starter_button.click()
+    starter = widget.template_detail.text()
+    assert "18aa1947-8aac-2411-0633-726953abb358" in starter
+    custom = starter.split("\n\n【与当前课题匹配的平台课例参考", 1)[0]
+    custom += "\n本班调整：只讲已选两种表示，留8分钟独立练习和笔记。"
+    widget.template_detail.setText(custom)
+    widget.topic.setText("化学平衡")
+    widget.route.setCurrentText("复习")
+    assert widget.template_detail.text() == custom
+    payload = normalize_preparation_payload(widget._payload())
+    assert payload["materials"] == original_materials
+    assert payload["advanced"]["template_and_delivery"] == custom
+    prompt = _prompt(payload)
+    assert "18aa1947-8aac-2411-0633-726953abb358" not in prompt
+    assert "本班调整：只讲已选两种表示" in prompt
+    assert not facade.prepare_calls and not facade.generate_calls
+
+
+def test_electron_reference_reaches_brief_without_replacing_word_materials(page):
+    _app, widget, facade = page
+    widget.topic.setText("核外电子排布的表示方法")
+    widget.audience.setText("高二")
+    widget.objective.setPlainText("依照原教案练习表示互译并整理比较表")
+    materials = "本次完整选段与原题答案；不由课例建议替换。"
+    widget.materials.setPlainText(materials)
+    widget.design_starter_button.click()
+    payload = normalize_preparation_payload(widget._payload())
+    assert payload["materials"] == materials
+    assert payload["advanced"]["template_and_delivery"] == widget.template_detail.text()
+    prompt = _prompt(payload)
+    assert "18aa1947-8aac-2411-0633-726953abb358" in prompt
+    assert "表示法／包含信息／适用问题／易错点" in prompt
+    assert "未下载原PPT" in prompt
     assert not facade.prepare_calls and not facade.generate_calls

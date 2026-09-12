@@ -420,7 +420,7 @@ def frozen_course_namespace(pyz):
     exec(code, namespace)  # noqa: S102 - our pure frozen module, import allowlist
     if (
         namespace.get("COURSE_DESIGN_REVISION")
-        != "20260910-course-package-alignment-v4"
+        != "20260912-electron-representation-reference-v5"
     ):
         raise RuntimeError("Frozen classroom course revision missing")
     contract = namespace["course_composition_contract"]("review")
@@ -444,6 +444,15 @@ def frozen_course_namespace(pyz):
         or "未下载原PPT" not in courseware_starter
     ):
         raise RuntimeError("Frozen editable courseware reference incomplete")
+    electron_starter = namespace["teacher_design_starter"](
+        "review", "核外电子排布的表示方法"
+    )
+    if (
+        "18aa1947-8aac-2411-0633-726953abb358" not in electron_starter
+        or "表示法／包含信息／适用问题／易错点" not in electron_starter
+        or "未下载原PPT" not in electron_starter
+    ):
+        raise RuntimeError("Frozen electron notation reference incomplete")
     return namespace
 
 

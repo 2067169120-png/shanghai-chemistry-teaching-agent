@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from .desktop_preparation import _LESSON_ROUTE
 
-COURSE_DESIGN_REVISION = "20260910-course-package-alignment-v4"
+COURSE_DESIGN_REVISION = "20260912-electron-representation-reference-v5"
 
 _ROUTES = {
     "new_lesson": (
@@ -117,6 +117,41 @@ def _courseware_reference(topic: str) -> str:
             "https://basic.smartedu.cn/qualityCourse?courseId=fde67ee1-cbbb-4cb2-828f-e5cd813bc64e\n"
             "排除项：不复用原第二课时第5—7页的清洁产品混配生活示例、操作或配图；"
             "需要例子时从本次教材或讲义中选择条件完整、适合课堂的题目。"
+        )
+    electron_notation_topics = (
+        "核外电子排布",
+        "核外电子的排布",
+        "电子排布式",
+        "电子排布的表示方法",
+        "轨道表示式",
+        "电子轨道表示",
+        "轨道式",
+    )
+    if normalized == "轨道表示" or any(
+        term in normalized for term in electron_notation_topics
+    ):
+        references.append(
+            "《核外电子排布的表示方法》课例参考：以本次教材或Word教案中同一原子"
+            "或离子为对象，先说明各图式约定，再在本课范围内做多种表示互译；"
+            "由教师例题示范读信息和转换过程，随后让学生独立完成改变对象或表示方式的变式，"
+            "反馈后留下可直接记写的比较表。表格列为‘表示法／包含信息／适用问题／易错点’，"
+            "内容来自本次已核对教材与讲义，不照抄平台例题或新增未经核验的知识断言。\n"
+            "组织参照页码：第6—7页实体占位教具、第8页能量分级轨道图到常规轨道式、"
+            "第9页硅自测；第10页轨道式到电子排布式并标注能层、能级、电子数，"
+            "第11—12页元素对照表；第16—20页简化、价层写法及周期表对照；"
+            "第21页读信息框架接第22页自测，第23—26页比较原子结构示意图、电子式、"
+            "轨道式及离子表示，第25页再检查各表示包含的信息；第27页小结、第29页作业。"
+            "可采用‘同一对象多种表示互译—例题—独立变式—可记比较表’的连贯学习段，"
+            "不要求照搬页数或把所有表示法都纳入本课。\n"
+            "图式边界：二维原子结构示意图、轨道占位图和实体教具模型不能混作同一种表示；"
+            "涉及上海课堂图式，须核对本次实际提供的对应教材原页，不凭平台预览或记忆"
+            "宣称统一画法。第24页标注必修一教材P129，仅是课件提供的引文线索，"
+            "尚未核对教材原页，不能当作教材已核验原句或原图。"
+            "第13—15页可参考特殊写法的易错比较组织，但静态动画最终叠印未全核验，"
+            "不复制其中写法作为已核验知识。\n"
+            "来源：国家中小学智慧教育平台，核外电子排布的表示方法，孙卫中，"
+            "上海市格致中学，高二沪科技版；已阅读29页静态预览。\n"
+            "https://basic.smartedu.cn/qualityCourse?courseId=18aa1947-8aac-2411-0633-726953abb358"
         )
     if not references:
         return ""
