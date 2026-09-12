@@ -134,6 +134,7 @@ from .security import (
     validate_identifier,
 )
 from .student_bridge import StudentBridgeError, StudentDomainBridge
+from .student_recommendation_projection import project_visual_recommendation_payload
 from .student_recommendation_workbench import (
     StudentRecommendationWorkbench,
     StudentRecommendationWorkbenchError,
@@ -5176,8 +5177,8 @@ class GatewayService:
     ) -> dict[str, Any]:
         """Derive a read-only, complete-theme recommendation preview.
 
-        Only the latest append-only teacher diagnostic decision for each
-        visual match is projected.  The preview never writes an attempt,
+        Only current-score-bound teacher diagnostic decisions can contribute
+        weakness evidence. The preview never writes an attempt,
         mastery record, recommendation record, or question-bank mutation.
         """
 
@@ -5193,16 +5194,6 @@ class GatewayService:
             student_id,
             submission_id,
         )
-        analysis = review.get("analysis")
-        candidate = analysis.get("candidate") if isinstance(analysis, dict) else None
-        raw_matches = candidate.get("matches") if isinstance(candidate, dict) else None
-        if not isinstance(raw_matches, list) or not raw_matches:
-            raise ApiError(
-                "analysis_not_ready",
-                "student recommendation preview requires a visual candidate",
-                409,
-            )
-
         catalog = self.textbook_catalog(principal)
         release_snapshot_id: str | None = None
         release_runtime = self.config.workbench_release_runtime
@@ -5218,70 +5209,14 @@ class GatewayService:
             }
         )
 
-        scoring_by_id = {
-            str(item.get("decision_id")): item
-            for item in review.get("scoring_decisions", [])
-            if isinstance(item, dict) and isinstance(item.get("decision_id"), str)
-        }
-        projected_decisions: list[dict[str, Any]] = []
-        for item in diagnostic.get("diagnostic_decisions", []):
-            if not isinstance(item, dict):
-                continue
-            scoring = scoring_by_id.get(str(item.get("scoring_decision_id")))
-            if not isinstance(scoring, dict):
-                raise ApiError(
-                    "diagnostic_decision_store_corrupt",
-                    "teacher diagnostic decision is not bound to scoring evidence",
-                    503,
-                )
-            projected_sections = []
-            for section in item.get("curriculum_sections", []):
-                if not isinstance(section, dict):
-                    continue
-                projected_sections.append(
-                    {
-                        "section_key": section.get("section_key"),
-                        "volume_id": section.get("volume_id"),
-                        "volume_title": section.get(
-                            "volume_title", section.get("volume_title_zh")
-                        ),
-                        "chapter_id": section.get("chapter_id"),
-                        "chapter_title": section.get(
-                            "chapter_title", section.get("chapter_title_zh")
-                        ),
-                        "section_number": section.get("section_number"),
-                        "section_title": section.get("section_title"),
-                        "display_label_zh": section.get("display_label_zh"),
-                    }
-                )
-            projected_decisions.append(
-                {
-                    "sequence": item.get("sequence"),
-                    "match_id": item.get("match_id"),
-                    "atomic_part_id": item.get("atomic_part_id"),
-                    "teacher_score": scoring.get("teacher_score"),
-                    "maximum_score": scoring.get("maximum_score"),
-                    "decision": item.get("decision"),
-                    "curriculum_sections": projected_sections,
-                }
-            )
-
-        matches = [
-            {
-                "match_id": item.get("match_id"),
-                "atomic_part_id": item.get("atomic_part_id"),
-                "theme_id": None,
-                "paper_id": None,
-            }
-            for item in raw_matches
-            if isinstance(item, dict)
-        ]
-        atomic_exclusions = sorted(
-            {
-                str(item["atomic_part_id"])
-                for item in matches
-                if isinstance(item.get("atomic_part_id"), str)
-            }
+        payload = self._student_recommendation_call(
+            project_visual_recommendation_payload,
+            submission_id=submission_id,
+            review=review,
+            diagnostic=diagnostic,
+            data_snapshot_id=data_snapshot_id,
+            scopes=("master", "wave1", "supplemental"),
+            limit_per_section=3,
         )
 
         search_cache: dict[str, dict[str, Any]] = {}
@@ -5321,19 +5256,7 @@ class GatewayService:
 
         preview = self._student_recommendation_call(
             self.student_recommendation_workbench.preview,
-            {
-                "submission_id": submission_id,
-                "data_snapshot_id": data_snapshot_id,
-                "matches": matches,
-                "scoring_decisions": projected_decisions,
-                "exclusions": {
-                    "atomic_part_ids": atomic_exclusions,
-                    "theme_ids": [],
-                    "paper_ids": [],
-                },
-                "scopes": ["master", "wave1", "supplemental"],
-                "limit_per_section": 3,
-            },
+            payload,
             curriculum_catalog_loader=lambda: catalog,
             question_search_loader=search_current_snapshot,
         )
@@ -5342,8 +5265,12 @@ class GatewayService:
         preview["diagnostic_chain_head_sha256"] = diagnostic.get(
             "chain_head_sha256"
         )
-        preview["diagnostic_review_status"] = diagnostic.get("review", {}).get(
-            "status"
+        decisions = payload["scoring_decisions"]
+        preview["diagnostic_review_status"] = (
+            "teacher_decisions_recorded"
+            if len(decisions) == len(payload["matches"])
+            and all(item["decision"] != "pending" for item in decisions)
+            else "pending"
         )
         preview["mastery_written"] = False
         preview["recommendation_written"] = False

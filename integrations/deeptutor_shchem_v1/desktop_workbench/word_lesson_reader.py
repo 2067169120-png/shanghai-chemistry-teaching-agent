@@ -29,6 +29,7 @@ from PySide6.QtWidgets import (
 )
 
 from ..desktop_word_metafile_preview import can_attempt_metafile
+from .word_table_layout import word_table_html
 
 
 class _LocalDocument(QTextDocument):
@@ -84,6 +85,9 @@ class WordLessonReader(QWidget):
         self._image_url: str | None = None
         self._matches: list[tuple[int, int]] = []
         self._match_index = -1
+        self._table_grids: dict[int, str] = {}
+        self._table_fallbacks: set[int] = set()
+        self._show_table_grids = True
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
@@ -121,6 +125,13 @@ class WordLessonReader(QWidget):
         self.search_status.setWordWrap(True)
         self.search_status.setAccessibleName("全文查找匹配状态")
         root.addWidget(self.search_status)
+
+        self.table_mode_button = QPushButton("表格：网格预览 · 切换逐格原文")
+        self.table_mode_button.setAccessibleName("切换表格网格预览与逐格原文")
+        self.table_mode_button.setAutoDefault(False)
+        self.table_mode_button.setMinimumWidth(0)
+        self.table_mode_button.clicked.connect(self._toggle_tables)
+        root.addWidget(self.table_mode_button)
 
         self.browser = _LocalBrowser()
         self.browser.setAccessibleName("完整教案原文阅读区")
@@ -172,6 +183,11 @@ class WordLessonReader(QWidget):
         self._block_anchors.clear()
         self._image_anchors.clear()
         self._actions.clear()
+        self._table_grids.clear()
+        self._table_fallbacks.clear()
+        self._show_table_grids = True
+        self.table_mode_button.hide()
+        self.table_mode_button.setText("表格：网格预览 · 切换逐格原文")
         self._reset_image()
         self.search_edit.clear()
         self.section_picker.blockSignals(True)
@@ -205,6 +221,42 @@ class WordLessonReader(QWidget):
         self.browser.verticalScrollBar().setValue(0)
         if invalid:
             raise ValueError("invalid native Word blocks")
+
+    def set_table_previews(self, value: object) -> bool:
+        """Attach verified source geometry without changing text or selection."""
+        if (
+            self._source is None or not isinstance(value, dict)
+            or not isinstance(self._source.get("source_sha256"), str)
+            or not self._source.get("source_sha256")
+            or value.get("source_sha256") != self._source.get("source_sha256")
+            or not isinstance(self._source.get("revision"), str)
+            or not self._source.get("revision")
+            or value.get("source_revision") != self._source.get("revision")
+            or not isinstance(value.get("tables"), dict)
+        ):
+            return False
+        grids, fallbacks = {}, set()
+        for index, rows in value["tables"].items():
+            if type(index) is not int or index not in self._blocks:
+                return False
+            grid = word_table_html(rows, self._blocks[index]["text"])
+            if grid is None:
+                fallbacks.add(index)
+            else:
+                grids[index] = grid
+        self._table_grids = grids
+        self._table_fallbacks = fallbacks
+        self.table_mode_button.setVisible(bool(grids))
+        self._render()
+        return True
+
+    def _toggle_tables(self) -> None:
+        self._show_table_grids = not self._show_table_grids
+        self.table_mode_button.setText(
+            "表格：网格预览 · 切换逐格原文" if self._show_table_grids
+            else "表格：逐格原文 · 切换网格预览"
+        )
+        self._render()
 
     def _collect_assets(self) -> None:
         values = self._source.get("assets", ())
@@ -334,10 +386,24 @@ class WordLessonReader(QWidget):
                 anchor = f"lesson-block-{self._generation}-{index}"
                 self._block_anchors[index] = anchor
                 label = self._label(block.get("label"), f"区块 {index}")
+                if index in self._table_grids:
+                    label = f"{index} · 原文表格"
+                body = '<p class="body">' + escape(block["text"]) + "</p>"
+                if self._show_table_grids and index in self._table_grids:
+                    body = (
+                        '<p class="note">原表行列预览 · 保留明确的合并关系；'
+                        "字体、列宽及表内图片位置请对照原 Word。</p>"
+                        + self._table_grids[index]
+                    )
+                elif index in self._table_fallbacks:
+                    body = (
+                        '<p class="note">此表较宽或含复杂结构，保留逐格原文；'
+                        "请打开原 Word 核对表格版面。</p>" + body
+                    )
                 html.extend(
                     [
                         f'<p class="block-label"><a name="{anchor}"></a>{escape(label)}</p>',
-                        '<p class="body">' + escape(block["text"]) + "</p>",
+                        body,
                         self._warning_html(block.get("warnings")),
                         '<p class="note">'
                         + self._link("选此段备课", "block", index)

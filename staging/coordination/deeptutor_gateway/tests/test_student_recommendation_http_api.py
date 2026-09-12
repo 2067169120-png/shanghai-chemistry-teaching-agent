@@ -4,6 +4,7 @@ import http.client
 import json
 import threading
 from contextlib import contextmanager
+from copy import deepcopy
 from pathlib import Path
 
 from integrations.deeptutor_shchem_v1.config import AppConfig, Principal, token_digest
@@ -13,8 +14,7 @@ WORKSPACE = Path(__file__).resolve().parents[4]
 SHCHEM_ROOT = WORKSPACE / "sh-chem-db"
 OVERLAY = WORKSPACE / "runtime/deeptutor_shchem/overlay"
 FIXTURE = (
-    WORKSPACE
-    / "staging/coordination/deeptutor_gateway/fixtures/mock_gateway_v1.json"
+    WORKSPACE / "staging/coordination/deeptutor_gateway/fixtures/mock_gateway_v1.json"
 )
 TOKEN = "student-recommendation-http-teacher-token"
 STUDENT_ID = "11111111-2222-4333-8444-555555555555"
@@ -101,6 +101,9 @@ def test_http_preview_uses_teacher_section_and_returns_complete_theme_cards(
                 "scoring_decisions": [
                     {
                         "decision_id": SCORING_ID,
+                        "sequence": 1,
+                        "match_id": MATCH_ID,
+                        "atomic_part_id": ATOMIC_ID,
                         "teacher_score": 0.0,
                         "maximum_score": 1.0,
                     }
@@ -156,11 +159,7 @@ def test_http_preview_uses_teacher_section_and_returns_complete_theme_cards(
         assert preview["diagnosis_status"] == "provisional_weakness"
         assert preview["metrics"]["independent_source_count"] == 1
         assert preview["metrics"]["stable_weakness_allowed"] is False
-        cards = [
-            item
-            for group in preview["scope_groups"]
-            for item in group["items"]
-        ]
+        cards = [item for group in preview["scope_groups"] for item in group["items"]]
         assert cards
         assert all(item["group_kind"] == "theme" for item in cards)
         assert all(item["paper"] and item["theme"] for item in cards)
@@ -174,3 +173,57 @@ def test_http_preview_uses_teacher_section_and_returns_complete_theme_cards(
         )
         assert status == 200
         assert envelope["data"] == diagnostic
+
+        # A new scoring journal record must invalidate the older accepted
+        # diagnosis without rewriting that append-only diagnostic history.
+        review = visual.get_review(STUDENT_ID, SUBMISSION_ID)
+        review["scoring_decisions"].append(
+            {
+                "decision_id": "SVDEC-" + "e" * 32,
+                "sequence": 2,
+                "match_id": MATCH_ID,
+                "atomic_part_id": ATOMIC_ID,
+                "teacher_score": 1.0,
+                "maximum_score": 1.0,
+            }
+        )
+        monkeypatch.setattr(visual, "get_review", lambda _student, _submission: review)
+        before = deepcopy((review, diagnostic))
+        status, envelope = request(
+            server,
+            f"/api/v1/submissions/{SUBMISSION_ID}/recommendation-preview",
+        )
+        assert status == 200
+        rescored = envelope["data"]
+        assert rescored["diagnostic_review_status"] == "pending"
+        assert rescored["diagnosis_status"] == "no_weakness_evidence"
+        assert rescored["diagnoses"] == []
+        assert rescored["metrics"]["returned_theme_card_count"] == 0
+        assert rescored["mastery_written"] is False
+        assert rescored["recommendation_written"] is False
+        assert (review, diagnostic) == before
+
+        # Fresh loss scoring alone is not enough; explicitly bind a new
+        # teacher diagnosis to it before recommendations can return.
+        new_score = dict(review["scoring_decisions"][-1])
+        new_score.update(
+            {"decision_id": "SVDEC-" + "f" * 32, "sequence": 3, "teacher_score": 0.0}
+        )
+        review["scoring_decisions"].append(new_score)
+        new_diagnosis = deepcopy(diagnostic["diagnostic_decisions"][0])
+        new_diagnosis.update(
+            {"sequence": 2, "scoring_decision_id": new_score["decision_id"]}
+        )
+        diagnostic["diagnostic_decisions"].append(new_diagnosis)
+        before = deepcopy((review, diagnostic))
+        status, envelope = request(
+            server,
+            f"/api/v1/submissions/{SUBMISSION_ID}/recommendation-preview",
+        )
+        assert status == 200
+        refreshed = envelope["data"]
+        assert refreshed["diagnostic_review_status"] == "teacher_decisions_recorded"
+        assert refreshed["diagnosis_status"] == "provisional_weakness"
+        assert refreshed["metrics"]["supporting_evidence_count"] == 1
+        assert refreshed["metrics"]["returned_theme_card_count"] > 0
+        assert (review, diagnostic) == before

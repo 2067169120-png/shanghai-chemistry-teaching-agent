@@ -39,6 +39,7 @@ from .components import (
     section_title,
     set_status,
 )
+from .student_practice_panel import StudentPracticeDetailDialog, StudentPracticePanel
 from .tasks import DesktopTaskBridge
 
 _FILE_ROLES = (
@@ -870,6 +871,8 @@ class ReviewItemCard(CardFrame):
 class StudentPage(QWidget):
     """Teacher-simple native workflow for one anonymous work submission."""
 
+    basket_changed = Signal(int)
+
     def __init__(
         self,
         facade: DesktopWorkbenchFacade,
@@ -892,6 +895,13 @@ class StudentPage(QWidget):
         self._review_task_id: str | None = None
         self._review_action_task_id: str | None = None
         self._open_task_id: str | None = None
+        self._practice_task_id: str | None = None
+        self._practice_detail_task_id: str | None = None
+        self._practice_add_task_id: str | None = None
+        self._practice_preview: object | None = None
+        self._practice_viewed_keys: set[str] = set()
+        self._practice_dialog: StudentPracticeDetailDialog | None = None
+        self._practice_review_dirty = False
         self._current_summary: object | None = None
         self._current_review: object | None = None
         self._student_profiles: tuple[object, ...] = ()
@@ -1123,6 +1133,13 @@ class StudentPage(QWidget):
         self.review_card.hide()
         self.content_layout.addWidget(self.review_card)
 
+        self.practice_panel = StudentPracticePanel()
+        self.practice_panel.recommend_requested.connect(self._recommend_practice)
+        self.practice_panel.view_requested.connect(self._view_practice_theme)
+        self.practice_panel.add_requested.connect(self._add_practice_theme)
+        self.practice_panel.hide()
+        self.content_layout.addWidget(self.practice_panel)
+
         self.recent_card = CardFrame()
         recent_layout = QVBoxLayout(self.recent_card)
         recent_layout.setContentsMargins(18, 16, 18, 16)
@@ -1332,7 +1349,7 @@ class StudentPage(QWidget):
         the former request must neither clear nor repaint the replacement.
         """
 
-        task_ref: dict[str, str] = {}
+        task_ref: dict[str, Any] = {}
 
         def is_current_task() -> bool:
             task_id = task_ref.get("task_id")
@@ -1347,6 +1364,9 @@ class StudentPage(QWidget):
             )
 
         def succeeded(value: object) -> None:
+            if "task_id" not in task_ref:
+                task_ref["immediate_result"] = (True, value)
+                return
             if not is_current_task():
                 return
             if (
@@ -1364,6 +1384,9 @@ class StudentPage(QWidget):
             on_success(value)
 
         def failed(message: str) -> None:
+            if "task_id" not in task_ref:
+                task_ref["immediate_result"] = (False, message)
+                return
             if is_current_task():
                 on_failure(message)
 
@@ -1375,6 +1398,14 @@ class StudentPage(QWidget):
         )
         task_ref["task_id"] = task_id
         setattr(self, task_attribute, task_id)
+        # Small local/injected bridges may finish inside submit(). Register
+        # the same task/view guards before delivering that synchronous result.
+        immediate = task_ref.pop("immediate_result", None)
+        if immediate is not None:
+            if immediate[0]:
+                succeeded(immediate[1])
+            else:
+                failed(immediate[1])
         return task_id
 
     def _profile_changed(self) -> None:
@@ -1502,6 +1533,9 @@ class StudentPage(QWidget):
 
     def _reset_submission(self, *, clear_files: bool = True) -> None:
         self._advance_view_generation()
+        self._invalidate_practice()
+        self._practice_review_dirty = False
+        self.practice_panel.hide()
         self.poll_timer.stop()
         # The workers may still finish cooperatively.  Release their UI task
         # slots now; task-id plus generation checks prevent those late results
@@ -1546,6 +1580,11 @@ class StudentPage(QWidget):
         self._update_prepare_enabled()
 
     def _render_submission(self, summary: object) -> None:
+        if self._current_summary is not None and (
+            _field(self._current_summary, "submission_id") != _field(summary, "submission_id")
+            or _field(self._current_summary, "revision") != _field(summary, "revision")
+        ):
+            self._invalidate_practice("分析记录已更新，请按当前复核结果重新推荐。")
         self._current_summary = summary
         self._set_intake_enabled(False)
         # Once copied into the private submission store, collapse the large
@@ -1612,6 +1651,7 @@ class StudentPage(QWidget):
             self._load_review()
         else:
             self.review_card.hide()
+            self.practice_panel.hide()
 
     def _render_matching(self, summary: object) -> None:
         matches = tuple(_field(summary, "matches", ()) or ())
@@ -2118,6 +2158,8 @@ class StudentPage(QWidget):
         student = self._selected_student()
         if summary is None or student is None or self._review_task_id is not None:
             return
+        self._invalidate_practice("正在重新读取复核记录；此前推荐已清除。")
+        self.practice_panel.recommend_button.setEnabled(False)
         self.review_card.show()
         self.reload_review_button.setEnabled(False)
         set_status(self.review_status, "info", "正在读取候选与教师决定…")
@@ -2142,6 +2184,9 @@ class StudentPage(QWidget):
         self._review_task_id = None
         self.reload_review_button.setEnabled(True)
         self._current_review = review
+        self._invalidate_practice()
+        self._practice_review_dirty = False
+        self.practice_panel.show()
         _clear_layout(self.review_items)
         self.review_editors.clear()
         blockers = tuple(_field(review, "candidate_blockers_zh", ()) or ())
@@ -2176,20 +2221,28 @@ class StudentPage(QWidget):
             editor.set_compact(self._compact)
             editor.score_requested.connect(self._record_score)
             editor.diagnosis_requested.connect(self._record_diagnosis)
+            for field in (editor.score_edit, editor.score_reason, editor.teacher_note):
+                field.textEdited.connect(self._practice_review_edited)
+            for field in (editor.decision, editor.result, editor.primary_error, editor.secondary_error, editor.section):
+                field.currentIndexChanged.connect(self._practice_review_edited)
             self.review_items.addWidget(editor)
             self.review_editors.append(editor)
+        self._update_practice_enabled()
 
     def _review_failed(self, message: str) -> None:
         self._review_task_id = None
         self.reload_review_button.setEnabled(True)
         set_status(self.review_status, "error", message)
         self.review_status.setFocus(Qt.FocusReason.OtherFocusReason)
+        self.practice_panel.recommend_button.setEnabled(False)
 
     def _record_score(self, payload: Mapping[str, object]) -> None:
         review = self._current_review
         student = self._selected_student()
         if review is None or student is None or self._review_action_task_id is not None:
             return
+        self._invalidate_practice("评分正在更新；完成诊断确认后请重新推荐练习。")
+        self.practice_panel.recommend_button.setEnabled(False)
         self.reload_review_button.setEnabled(False)
         set_status(self.review_status, "info", "正在追加教师评分决定…")
         generation = self._view_generation
@@ -2218,6 +2271,8 @@ class StudentPage(QWidget):
         student = self._selected_student()
         if review is None or student is None or self._review_action_task_id is not None:
             return
+        self._invalidate_practice("诊断正在更新；记录完成后请重新推荐练习。")
+        self.practice_panel.recommend_button.setEnabled(False)
         self.reload_review_button.setEnabled(False)
         set_status(self.review_status, "info", "正在追加教师诊断决定…")
         generation = self._view_generation
@@ -2260,6 +2315,184 @@ class StudentPage(QWidget):
         )
         self.review_status.setFocus(Qt.FocusReason.OtherFocusReason)
 
+    def _invalidate_practice(self, message: str = "先记录教师评分并确认诊断对应的教材章节，再按本次学情推荐。") -> None:
+        """Drop only recommendation work; score/review workers keep their slots."""
+
+        for attribute in ("_practice_task_id", "_practice_detail_task_id", "_practice_add_task_id"):
+            task_id = getattr(self, attribute)
+            setattr(self, attribute, None)
+            cancel = getattr(self.tasks, "cancel", None)
+            if task_id and callable(cancel):
+                cancel(task_id)
+        self._practice_preview = None
+        self._practice_viewed_keys.clear()
+        dialog = self._practice_dialog
+        self._practice_dialog = None
+        if dialog is not None:
+            try:
+                dialog.close()
+            except RuntimeError:
+                pass
+        self.practice_panel.clear(message)
+
+    def _practice_review_edited(self, *_args: object) -> None:
+        self._practice_review_dirty = True
+        self._invalidate_practice("评分或诊断尚有未记录的修改。请先记录决定，或重新读取复核状态后再推荐。")
+        self.practice_panel.recommend_button.setEnabled(False)
+
+    def _update_practice_enabled(self) -> None:
+        supported = all(callable(getattr(self.facade, method, None)) for method in (
+            "student_practice_preview", "student_practice_theme_detail", "add_student_practice_to_basket",
+        ))
+        self.practice_panel.recommend_button.setEnabled(bool(
+            supported and self._current_review is not None and self._current_summary is not None
+            and self._selected_student() is not None and not self._practice_review_dirty
+            and self._review_task_id is None and self._review_action_task_id is None
+            and self._practice_task_id is None and self._practice_detail_task_id is None
+            and self._practice_add_task_id is None
+        ))
+        if not supported:
+            set_status(self.practice_panel.status, "attention", "当前版本暂未提供本次学情推荐接口；可到题库按章节查找完整大题。")
+        busy = self._practice_detail_task_id is not None or self._practice_add_task_id is not None
+        for key, card in self.practice_panel.cards.items():
+            card.view_button.setEnabled(not busy)
+            card.add_button.setEnabled(not busy and key in self._practice_viewed_keys)
+
+    def _recommend_practice(self) -> None:
+        self._update_practice_enabled()
+        if not self.practice_panel.recommend_button.isEnabled():
+            return
+        summary, student = self._current_summary, self._selected_student()
+        if summary is None or student is None:
+            return
+        self._invalidate_practice("正在按本次已记录的评分、诊断与教材章节查找本机题库…")
+        self.practice_panel.recommend_button.setEnabled(False)
+        student_id = str(_field(student, "student_id"))
+        submission_id = str(_field(summary, "submission_id"))
+
+        def loaded(preview: object) -> None:
+            self._practice_task_id = None
+            self._practice_preview = preview
+            self.practice_panel.show_preview(preview)
+            self._update_practice_enabled()
+
+        def failed(message: str) -> None:
+            self._practice_task_id = None
+            set_status(self.practice_panel.status, "error", message + " 未加入任何题目，可检查复核记录后重试。")
+            self._update_practice_enabled()
+
+        self._submit_view_task(
+            "按本次学情推荐练习",
+            lambda: self.facade.student_practice_preview(student_id=student_id, submission_id=submission_id),
+            task_attribute="_practice_task_id", generation=self._view_generation,
+            student_id=student_id, submission_id=submission_id,
+            on_success=loaded, on_failure=failed,
+        )
+
+    def _view_practice_theme(self, candidate_key: str) -> None:
+        preview = self._practice_preview
+        card = self.practice_panel.cards.get(candidate_key)
+        if preview is None or card is None or self._practice_detail_task_id or self._practice_add_task_id:
+            return
+        self._practice_viewed_keys.discard(candidate_key)
+        old_dialog = self._practice_dialog
+        self._practice_dialog = None
+        if old_dialog is not None:
+            try:
+                old_dialog.close()
+            except RuntimeError:
+                pass
+        set_status(card.status, "info", "正在读取完整大题、题图及共同材料…")
+        card.add_button.setEnabled(False)
+
+        def failed(message: str) -> None:
+            self._practice_detail_task_id = None
+            self._practice_viewed_keys.discard(candidate_key)
+            set_status(card.status, "error", message + " 尚未完成预览，未解锁加入题篮。")
+            self._update_practice_enabled()
+
+        def loaded(detail: object) -> None:
+            self._practice_detail_task_id = None
+            image_loader = getattr(self.facade, "library_image", None)
+            if not callable(image_loader):
+                failed("本地题图读取接口暂不可用。")
+                return
+            try:
+                dialog = StudentPracticeDetailDialog(
+                    detail, self.tasks, image_loader, parent=self.window(),
+                    answer_image_loader=getattr(self.facade, "library_answer_image", None),
+                )
+                self._practice_dialog = dialog
+
+                def is_current() -> bool:
+                    return self._practice_preview is preview and self._practice_dialog is dialog
+
+                def ready() -> None:
+                    if is_current():
+                        self._practice_viewed_keys.add(candidate_key)
+                        set_status(card.status, "success", "完整题面与共同材料已显示。核对后可将完整大题加入题篮。")
+                        self._update_practice_enabled()
+
+                def display_failed(message: str) -> None:
+                    if is_current():
+                        self._practice_viewed_keys.discard(candidate_key)
+                        set_status(card.status, "error", message)
+                        self._update_practice_enabled()
+
+                def closed(*_args: object) -> None:
+                    if is_current():
+                        self._practice_dialog = None
+                        if candidate_key not in self._practice_viewed_keys:
+                            set_status(card.status, "attention", "尚未完成完整题面预览，请重新查看后再加入题篮。")
+                        self._update_practice_enabled()
+
+                dialog.preview_ready.connect(ready)
+                dialog.preview_failed.connect(display_failed)
+                dialog.finished.connect(closed)
+                dialog.show()
+            except (DesktopFacadeError, AttributeError, OSError, RuntimeError, TypeError, ValueError) as exc:
+                failed(str(getattr(exc, "message_zh", "完整大题预览暂时无法打开。")))
+                return
+            self._update_practice_enabled()
+
+        self._submit_view_task(
+            "查看推荐完整大题",
+            lambda: self.facade.student_practice_theme_detail(preview, candidate_key),
+            task_attribute="_practice_detail_task_id", generation=self._view_generation,
+            student_id=str(_field(preview, "student_id")), submission_id=str(_field(preview, "submission_id")),
+            on_success=loaded, on_failure=failed,
+        )
+        self._update_practice_enabled()
+
+    def _add_practice_theme(self, candidate_key: str) -> None:
+        preview = self._practice_preview
+        card = self.practice_panel.cards.get(candidate_key)
+        if (preview is None or card is None or candidate_key not in self._practice_viewed_keys
+                or self._practice_add_task_id or self._practice_detail_task_id):
+            return
+        set_status(card.status, "info", "正在核对本次推荐版本并将完整大题加入题篮…")
+
+        def added(value: object) -> None:
+            self._practice_add_task_id = None
+            count = int(value)
+            set_status(card.status, "success", f"已加入完整大题，题篮共 {count} 道大题。可前往“组卷”继续编排。")
+            self._update_practice_enabled()
+            self.basket_changed.emit(count)
+
+        def failed(message: str) -> None:
+            self._invalidate_practice("推荐需要重新核对。")
+            set_status(self.practice_panel.status, "error", message + " 请重新读取复核状态，再推荐与预览。")
+            self.practice_panel.recommend_button.setEnabled(False)
+
+        self._submit_view_task(
+            "加入推荐完整大题",
+            lambda: self.facade.add_student_practice_to_basket(preview, candidate_key),
+            task_attribute="_practice_add_task_id", generation=self._view_generation,
+            student_id=str(_field(preview, "student_id")), submission_id=str(_field(preview, "submission_id")),
+            on_success=added, on_failure=failed,
+        )
+        self._update_practice_enabled()
+
     def _apply_responsive_layouts(self) -> None:
         direction = (
             QBoxLayout.Direction.TopToBottom
@@ -2292,6 +2525,8 @@ class StudentPage(QWidget):
 
     def closeEvent(self, event: object) -> None:
         self.poll_timer.stop()
+        self._advance_view_generation()
+        self._invalidate_practice()
         super().closeEvent(event)  # type: ignore[arg-type]
 
 

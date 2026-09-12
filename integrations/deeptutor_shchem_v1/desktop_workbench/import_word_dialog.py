@@ -382,6 +382,21 @@ class ImportWordDialog(QDialog):
                 self.block_list.addItem(item)
             self._source = deepcopy(value)
             self.reader.set_source(deepcopy(value))
+            table_reader = getattr(self.facade, "imported_word_table_previews", None)
+            if callable(table_reader):
+                try:
+                    tables = table_reader(
+                        self._batch_id, self.source_combo.currentData(),
+                        value["source_sha256"], value["revision"],
+                    )
+                    if not self.reader.set_table_previews(tables):
+                        raise ValueError("table source binding changed")
+                except Exception:  # noqa: BLE001 - optional local facade overlay
+                    # A layout overlay must never remove already-read native text.
+                    # The source/selection validation still runs on confirmation.
+                    self.reader.search_status.setText(
+                        "完整原文已读取；表格网格暂不可用，可查看逐格原文或打开原 Word。"
+                    )
             self.reader_tabs.setCurrentIndex(0)
             for section in value.get("sections", ()):
                 if not isinstance(section, dict):

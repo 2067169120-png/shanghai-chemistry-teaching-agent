@@ -289,6 +289,7 @@ class TeacherWorkbenchWindow(QMainWindow):
 
         self.home_page.navigate_requested.connect(self.navigate)
         self.library_page.basket_changed.connect(self.paper_page.update_basket_count)
+        self.student_page.basket_changed.connect(self.paper_page.update_basket_count)
         self.library_page.preparation_image_requested.connect(
             self._library_image_to_preparation
         )

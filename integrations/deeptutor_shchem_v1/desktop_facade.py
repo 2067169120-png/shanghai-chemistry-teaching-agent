@@ -40,6 +40,11 @@ from .desktop_provider_probe import (
 )
 from .desktop_registry_cache import DesktopRegistryCache
 from .desktop_state import DesktopStateStore, utc_now
+from .desktop_student_practice import (
+    DesktopStudentPractice,
+    StudentPracticeError,
+    StudentPracticePreview,
+)
 from .desktop_visual_import_adapters import (
     LocalPageRendererV2Adapter,
     NativeWordHandoutImporterAdapter,
@@ -160,6 +165,12 @@ _STUDENT_ERROR_MESSAGES = {
     "analysis_not_ready": "模型候选尚未准备好。",
     "scoring_decision_required": "请先记录本题教师评分。",
     "scoring_decision_not_latest": "本题评分已经变化，请刷新后再记录诊断。",
+    "scoring_decision_store_corrupt": "本机评分记录的证据关联不完整，无法据此推荐练习。",
+    "diagnostic_decision_store_corrupt": "本机诊断记录的证据关联不完整，无法据此推荐练习。",
+    "student_recommendation_catalog_invalid": "当前教材目录不完整，暂时无法按章节推荐练习。",
+    "student_recommendation_catalog_unavailable": "教材目录暂时无法读取，请稍后重试。",
+    "student_recommendation_section_not_allowed": "诊断中的教材章节已不在当前目录，请重新确认。",
+    "student_recommendation_section_parent_mismatch": "诊断的教材章节关联已变化，请重新确认。",
     "curriculum_section_unknown": "所选教材章节不在当前目录中，请刷新后重选。",
     "teacher_score_invalid": "教师分数超出本题分值范围。",
     "diagnostic_evidence_required": "确认失分诊断时，请选择错误类型和教材章节。",
@@ -479,6 +490,7 @@ class StudentReviewItem:
     blockers_zh: tuple[str, ...] = ()
     latest_teacher_score: float | None = None
     latest_diagnostic_decision: str | None = None
+    diagnostic_requires_reconfirmation: bool = False
 
 
 @dataclass(frozen=True)
@@ -685,6 +697,7 @@ class DesktopWorkbenchFacade:
         self._curriculum_catalog_cache: dict[str, Any] | None = None
         self._library_views: dict[str, tuple[Any, ...]] = {}
         self._library_view_lock = threading.RLock()
+        self._student_practice = DesktopStudentPractice(self)
 
     @staticmethod
     def _with_presentation_snapshot(catalog: dict[str, Any]) -> dict[str, Any]:
@@ -2201,6 +2214,15 @@ class DesktopWorkbenchFacade:
         except (OSError, ValueError) as exc:
             raise DesktopFacadeError("imported_word_image_invalid", "原图无法预览，请在Word原文件中查看；文字内容仍可使用。") from exc
 
+    def imported_word_table_previews(
+        self, batch_id, source_id, source_sha256, expected_revision
+    ):
+        from .desktop_word_table_preview import WordTablePreviewService
+
+        return WordTablePreviewService(self).preview(
+            batch_id, source_id, source_sha256, expected_revision
+        )
+
     def imported_word_path(self, batch_id: str, source_id: str) -> str:
         """Return the verified local original; opening it requires an explicit UI click."""
         source = self._imported_word_source(batch_id, source_id)
@@ -3433,6 +3455,12 @@ class DesktopWorkbenchFacade:
             diagnostic_item = latest_diagnostic.get(match_id)
             teacher_score = scoring.get("teacher_score") if scoring else None
             decision_id = scoring.get("decision_id") if scoring else None
+            diagnostic_stale = bool(diagnostic_item) and (
+                not decision_id
+                or diagnostic_item.get("scoring_decision_id") != decision_id
+            )
+            if diagnostic_stale:
+                diagnostic_item = None
             decision = diagnostic_item.get("decision") if diagnostic_item else None
             result.append(
                 StudentReviewItem(
@@ -3462,11 +3490,13 @@ class DesktopWorkbenchFacade:
                         if isinstance(decision, str)
                         else None
                     ),
+                    diagnostic_requires_reconfirmation=diagnostic_stale,
                 )
             )
         diagnostic_complete = bool(result) and all(
             item.match_id in latest_diagnostic
             and latest_diagnostic[item.match_id].get("decision") != "pending"
+            and not item.diagnostic_requires_reconfirmation
             for item in result
         )
         scoring_complete = bool(result) and all(
@@ -3482,12 +3512,17 @@ class DesktopWorkbenchFacade:
             message_zh=(
                 "本次候选的教师评分和诊断已逐项记录；仍不会自动写入长期学情。"
                 if scoring_complete and diagnostic_complete
+                else "评分已修订，请重新确认对应诊断；旧诊断不再用于推荐。"
+                if any(item.diagnostic_requires_reconfirmation for item in result)
                 else "AI 候选必须由教师逐项核对；教师分数默认留空。"
             ),
             items=tuple(result),
             candidate_blockers_zh=global_blockers,
             scoring_confirmed_count=len(latest_scoring),
-            diagnostic_confirmed_count=len(latest_diagnostic),
+            diagnostic_confirmed_count=sum(
+                item.match_id in latest_diagnostic and not item.diagnostic_requires_reconfirmation
+                for item in result
+            ),
             review_complete=scoring_complete and diagnostic_complete,
         )
 
@@ -4163,10 +4198,61 @@ class DesktopWorkbenchFacade:
 
         self._reader_stop_event.set()
 
+    def student_practice_preview(
+        self, *, student_id: str, submission_id: str
+    ) -> StudentPracticePreview:
+        """Recommend complete themes from current teacher-reviewed evidence."""
+        try:
+            with read_cancel_scope(self._reader_stop_event):
+                return self._student_practice.preview(
+                    student_id=student_id, submission_id=submission_id
+                )
+        except (DesktopFacadeError, ReadCancelled):
+            raise
+        except StudentPracticeError as exc:
+            raise DesktopFacadeError(exc.code, exc.message_zh) from exc
+        except Exception as exc:
+            raise self._as_student_error(
+                exc, "本次练习推荐暂时无法读取，请确认评分和教材章节后重试。"
+            ) from exc
+
+    def student_practice_theme_detail(
+        self, preview: StudentPracticePreview, candidate_key: str
+    ) -> LibraryThemeDetail:
+        """Open the complete, snapshot-bound theme before teacher selection."""
+        try:
+            with read_cancel_scope(self._reader_stop_event):
+                return self._student_practice.theme_detail(preview, candidate_key)
+        except (DesktopFacadeError, ReadCancelled):
+            raise
+        except StudentPracticeError as exc:
+            raise DesktopFacadeError(exc.code, exc.message_zh) from exc
+        except Exception as exc:
+            raise self._as_student_error(
+                exc, "推荐题目暂时无法预览，请刷新推荐后重试。"
+            ) from exc
+
+    def add_student_practice_to_basket(
+        self, preview: StudentPracticePreview, candidate_key: str
+    ) -> int:
+        """Add only a previously opened, still-current complete theme."""
+        try:
+            with read_cancel_scope(self._reader_stop_event):
+                return self._student_practice.add_to_basket(preview, candidate_key)
+        except (DesktopFacadeError, ReadCancelled):
+            raise
+        except StudentPracticeError as exc:
+            raise DesktopFacadeError(exc.code, exc.message_zh) from exc
+        except Exception as exc:
+            raise self._as_student_error(
+                exc, "推荐题目尚未加入题篮，请刷新并重新预览后重试。"
+            ) from exc
+
     def shutdown(self) -> None:
         """Stop the one facade-owned student executor exactly once."""
 
         self.stop_background_readers()
+        self._student_practice.clear()
         with self._student_analysis_lock:
             if self._student_analysis_closed:
                 return

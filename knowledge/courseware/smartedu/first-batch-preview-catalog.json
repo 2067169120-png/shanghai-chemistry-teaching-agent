@@ -1,6 +1,6 @@
 {
   "schema_version": "smartedu.teaching-design-reference.v1",
-  "checked_at": "2026-09-12T17:51:00+08:00",
+  "checked_at": "2026-09-12T18:43:13+08:00",
   "role": "教学组织参考，非教材原文库、题库或正式授课批准",
   "counts": {
     "course_packages_reviewed": 3,
@@ -16,16 +16,16 @@
   "access_method": "独立隔离浏览器会话，公开页面点击、快照和视觉阅读；未登录、未读取凭据、未调用隐藏资源接口。",
   "download_status": "已查公开匿名页面未见原PPT下载入口或公开加载的原PPT文件；本次全屏授课出现登录提示，已取消，不推断登录后下载权限；截图及在线演示不计作原件下载。",
   "latest_package_ui_check": {
-    "checked_at": "2026-09-10T05:00:12+08:00",
-    "course_package_id": "f010e1bf-b56c-de08-fa41-adc255b3b572",
-    "action": "实际打开对应课程包并点击课件",
-    "visible_preview_page_count": 20,
-    "other_visible_resources": ["教学设计", "学习任务单", "作业练习"],
+    "checked_at": "2026-09-12T18:43:13+08:00",
+    "course_package_id": "18aa1947-8aac-2411-0633-726953abb358",
+    "action": "打开现有对应课程包，确认课件29页，点击同包教学设计并读到3页正文",
+    "visible_preview_page_count": 29,
+    "other_visible_resources": ["教学设计", "学习任务单", "课后练习"],
     "session_state": "未登录",
     "original_presentation_file_in_observed_page_assets": false,
     "original_files_downloaded": 0,
     "new_pages_added_to_review_counts": 0,
-    "boundary": "确认包内有课件且预览可读；当前页面未发现原PPT下载控件或公开加载的原PPT文件，不推断登录后权限。"
+    "boundary": "确认包内确有课件与配套教案，当前访问已恢复；未登录页面未见原PPT下载控件，已观察资源无原PPT/PPTX。未下载、不重复计算已读页数，不推断登录后权限。"
   },
   "download_recheck": {
     "checked_at": "2026-09-10T03:19:04+08:00",
