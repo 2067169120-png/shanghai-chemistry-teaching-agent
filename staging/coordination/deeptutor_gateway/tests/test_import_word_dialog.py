@@ -479,6 +479,7 @@ def test_main_window_navigates_only_after_accepted_successful_append(
 
         def __init__(self, *_args):
             self.preparation_reference = reference
+            self.basket_changed = SimpleNamespace(connect=lambda _slot: None)
 
         def exec(self):
             return self.DialogCode.Accepted if accepted else self.DialogCode.Rejected
@@ -496,6 +497,7 @@ def test_main_window_navigates_only_after_accepted_successful_append(
         facade=object(),
         tasks=object(),
         preparation_page=SimpleNamespace(import_word_reference=append),
+        paper_page=SimpleNamespace(update_basket_count=lambda _count: None),
         navigate=routes.append,
     )
     main_module.TeacherWorkbenchWindow.open_import(shell)

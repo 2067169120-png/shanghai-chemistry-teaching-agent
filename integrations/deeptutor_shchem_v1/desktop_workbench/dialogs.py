@@ -62,6 +62,8 @@ class ImportDialog(QDialog):
         self._saved_visual_receipt: DesktopVisualImportReceipt | None = None
         self.preparation_reference: dict | None = None
         self._word_receipts: dict[str, DesktopVisualImportReceipt] = {}
+        self._pending_word_annotation: str | None = None
+        self._word_annotation_messages: dict[str, str] = {}
         self._import_preview_session: dict | None = None
         self._import_preview_epoch = 0
         self._resumable_receipts: tuple[DesktopVisualImportReceipt, ...] = ()
@@ -220,6 +222,19 @@ class ImportDialog(QDialog):
         self.word_questions_button.setObjectName("PrimaryButton")
         self.word_questions_button.clicked.connect(self._open_word_questions)
         word_history_layout.addWidget(self.word_questions_button)
+        self.word_annotation_status = QLabel()
+        self.word_annotation_status.setObjectName("MutedLabel")
+        self.word_annotation_status.setTextFormat(Qt.TextFormat.PlainText)
+        self.word_annotation_status.setWordWrap(True)
+        word_history_layout.addWidget(self.word_annotation_status)
+        self.word_annotation_button = QPushButton("补全／重试本批题目标签")
+        self.word_annotation_button.setAccessibleName("为当前已保存Word批次补全本地标签建议")
+        self.word_annotation_button.setVisible(
+            callable(getattr(self.facade, "annotate_imported_word_batch", None))
+        )
+        self.word_annotation_button.clicked.connect(self._retry_word_annotation)
+        word_history_layout.addWidget(self.word_annotation_button)
+        self.word_batch_combo.currentIndexChanged.connect(self._show_word_annotation)
         self.word_reference_button = QPushButton("查看 Word 内容并带入备课…")
         self.word_reference_button.setAccessibleName("查看已保存的 Word 内容并带入备课")
         self.word_reference_button.clicked.connect(self._open_word_reference)
@@ -431,6 +446,7 @@ class ImportDialog(QDialog):
             not busy and self.word_batch_combo.count() > 0
         )
         self.word_questions_button.setEnabled(not busy)
+        self.word_annotation_button.setEnabled(not busy and self.word_batch_combo.count() > 0)
         if busy:
             self.generate_button.setEnabled(False)
         else:
@@ -675,6 +691,90 @@ class ImportDialog(QDialog):
         self.progress.setValue(3)
         self.progress.setFormat("第一步已完成：已保存并分流")
         self._show_saved_receipt(receipt)
+        if (
+            callable(getattr(self.facade, "annotate_imported_word_batch", None))
+            and receipt.batch_id in self._word_receipts
+        ):
+            # Start only after the save worker's finished signal. Its cleanup
+            # must not clear the newly started annotation task or preview.
+            if self._active_task_id:
+                self._pending_word_annotation = receipt.batch_id
+            else:
+                self._start_word_annotation(receipt.batch_id)
+
+    def _show_word_annotation(self, *_args) -> None:
+        batch_id = self.word_batch_combo.currentData()
+        self.word_annotation_status.setText(
+            self._word_annotation_messages.get(
+                batch_id,
+                "原Word可逐题查看；本地规则建议与教师标签分开，未确认的属性可在单题中修改。",
+            ) if batch_id else ""
+        )
+
+    def _retry_word_annotation(self) -> None:
+        batch_id = self.word_batch_combo.currentData()
+        if not self._active_task_id and batch_id in self._word_receipts:
+            self._start_word_annotation(batch_id)
+
+    def _start_word_annotation(self, batch_id: str) -> None:
+        annotate = getattr(self.facade, "annotate_imported_word_batch", None)
+        if self._active_task_id or not callable(annotate):
+            return
+        self._word_annotation_messages[batch_id] = "原件已保存，正在整理本批题目及本地标签建议；不调用模型。"
+        self._show_word_annotation()
+        self._begin_task("word_labels", self._word_annotation_messages[batch_id])
+        self.cancel_button.hide()
+        self.cancel_button.setEnabled(False)
+        try:
+            self._active_task_id = self.tasks.submit_progress(
+                "整理已导入Word的题目标签",
+                lambda _report, _cancelled: annotate(batch_id),
+                on_success=lambda result: self._word_annotation_completed(batch_id, result),
+                on_failure=lambda _message: self._word_annotation_failed(batch_id),
+            )
+        except RuntimeError:
+            self._active_task_id = None
+            self._active_task_kind = None
+            self._set_busy(False)
+            self._word_annotation_failed(batch_id)
+
+    def _word_annotation_completed(self, batch_id: str, result: object) -> None:
+        if (
+            not isinstance(result, dict)
+            or result.get("batch_id") != batch_id
+            or result.get("method") != "local_rules"
+            or result.get("model_invoked") is not False
+            or result.get("status") not in {"completed", "completed_with_warnings", "no_questions"}
+            or type(result.get("question_count")) is not int
+            or result["question_count"] < 0
+        ):
+            self._word_annotation_failed(batch_id)
+            return
+        total = result["question_count"]
+        counts = result.get("valid_label_counts", {})
+        valid = counts.get("source_bound_questions") if isinstance(counts, dict) else None
+        if type(valid) is not int or not 0 <= valid <= total:
+            self._word_annotation_failed(batch_id)
+            return
+        message = (
+            f"本批 {total} 道题可逐题查看，{valid} 道有当前来源绑定的标签记录。"
+            "这是本地规则建议，不表示所有属性已确定；教师修改保留，未知信息待核对。"
+            if total else "原件已保存，本批未识别到独立题目；可查看原Word核对题号及分界。"
+        )
+        if result["status"] == "completed_with_warnings":
+            message += " 部分标签或来源需核对，请在逐题预览中查看提示。"
+        self._word_annotation_messages[batch_id] = message
+        self._show_word_annotation()
+        self.progress.setValue(3)
+        self.progress.setFormat("Word题目与标签整理完成")
+        set_status(self.status, "success" if result["status"] == "completed" else "attention", message)
+
+    def _word_annotation_failed(self, batch_id: str) -> None:
+        message = "原件已保存，但本批标签未完成；仍可逐题查看原文，稍后点击“补全／重试本批题目标签”。"
+        self._word_annotation_messages[batch_id] = message
+        self._show_word_annotation()
+        self.progress.setFormat("原件已保存，标签可重试")
+        set_status(self.status, "attention", message)
 
     def _visual_completed(self, receipt: DesktopVisualImportReceipt) -> None:
         self._saved_visual_receipt = receipt
@@ -756,6 +856,9 @@ class ImportDialog(QDialog):
         self.status.setText(message)
 
     def _cancel_active(self) -> None:
+        if self._active_task_kind == "word_labels":
+            set_status(self.status, "info", "原件已保存，正在核对并原子保存本批标签；请等待完成后关闭。")
+            return
         if self._active_task_kind == "commit":
             set_status(self.status, "info", "正在完整保存所选文件，请稍候；本阶段不能撤销。")
             return
@@ -795,6 +898,9 @@ class ImportDialog(QDialog):
         self._active_task_kind = None
         self.cancel_button.setVisible(False)
         self._set_busy(False)
+        batch_id, self._pending_word_annotation = self._pending_word_annotation, None
+        if batch_id:
+            self._start_word_annotation(batch_id)
 
     def reject(self) -> None:
         if self._active_task_id:

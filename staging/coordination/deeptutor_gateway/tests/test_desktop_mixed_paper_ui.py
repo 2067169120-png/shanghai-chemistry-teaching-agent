@@ -14,8 +14,9 @@ pytest.importorskip("PySide6")
 from PySide6.QtCore import QBuffer, QByteArray, QIODevice, Qt
 from PySide6.QtGui import QImage, QPainter
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QLabel
+from PySide6.QtWidgets import QLabel
 from test_word_question_dialog import _Facade as WordFacade
+from test_word_question_dialog import _isolated_qt_app
 from test_word_question_dialog import _Tasks as Tasks
 
 from integrations.deeptutor_shchem_v1.desktop_facade import PaperPreview
@@ -201,7 +202,8 @@ class Facade:
 
 @pytest.fixture
 def qt_app():
-    return QApplication.instance() or QApplication([])
+    with _isolated_qt_app() as app:
+        yield app
 
 
 @pytest.fixture

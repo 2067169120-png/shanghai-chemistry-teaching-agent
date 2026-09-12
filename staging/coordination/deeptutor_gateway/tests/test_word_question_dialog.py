@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from contextlib import contextmanager
 from copy import deepcopy
 from typing import ClassVar
 
@@ -8,9 +9,20 @@ import pytest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
-from PySide6.QtCore import QBuffer, QByteArray, QIODevice, QObject, Qt, Signal
+from PySide6.QtCore import (
+    QBuffer,
+    QByteArray,
+    QCoreApplication,
+    QEvent,
+    QIODevice,
+    QObject,
+    Qt,
+    QTimer,
+    Signal,
+)
 from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication, QDialog, QLabel
+from shiboken6 import isValid
 
 from integrations.deeptutor_shchem_v1.desktop_word_question_attributes import (
     WordQuestionAttributeStore,
@@ -386,11 +398,87 @@ def test_lesson_suggestion_panel_wraps_without_horizontal_overflow(qt_app, width
     dialog.reject()
 
 
+@contextmanager
+def _isolated_qt_app(*, stylesheet=None):
+    app = QApplication.instance() or QApplication([])
+    # Keep existing windows alive and outside this test's cleanup ownership.
+    existing = tuple(app.topLevelWidgets())
+    existing_ids = {id(widget) for widget in existing}
+    if stylesheet is not None and app.styleSheet() != stylesheet:
+        app.setStyleSheet(stylesheet)
+    try:
+        yield app
+    finally:
+        owned = [widget for widget in app.topLevelWidgets() if id(widget) not in existing_ids]
+        queues = {
+            queue
+            for widget in owned
+            for queue in (getattr(widget, "tasks", None), getattr(widget, "_tasks", None))
+            if isinstance(queue, _Tasks)
+        }
+
+        def discard_fake_callbacks():
+            # monkeypatch may already have been restored. Never run a queued
+            # operation here: it could otherwise open an unmocked modal reader.
+            for queue in queues:
+                for pending in queue.pending:
+                    queue.cancel(pending["task_id"])
+                queue.pending.clear()
+
+        discard_fake_callbacks()
+        for widget in owned:
+            if not isValid(widget):
+                continue
+            for timer in widget.findChildren(QTimer):
+                timer.stop()
+            if isinstance(widget, QDialog):
+                widget.reject()
+            else:
+                widget.close()
+            # A deliberately unfinished fake task may refuse normal close.
+            # The test is over; guard late UI callbacks before deleting only
+            # this fixture's own window, without executing any source operation.
+            if type(getattr(widget, "_closed", None)) is bool:
+                widget._closed = True
+            widget.deleteLater()
+        discard_fake_callbacks()
+        for widget in owned:
+            if isValid(widget):
+                QCoreApplication.sendPostedEvents(widget, QEvent.Type.DeferredDelete)
+        app.processEvents()
+        assert all(not isValid(widget) for widget in owned)
+
+
 @pytest.fixture
 def qt_app():
-    app = QApplication.instance() or QApplication([])
-    app.setStyleSheet(WORKBENCH_STYLE)
-    return app
+    with _isolated_qt_app(stylesheet=WORKBENCH_STYLE) as app:
+        yield app
+
+
+def test_qt_cleanup_preserves_existing_windows_and_discards_only_fake_tail(qt_app):
+    previous = QDialog()
+    calls = []
+    with _isolated_qt_app() as app:
+        owned = QDialog()
+        tasks = _Tasks()
+        owned.tasks = tasks
+        timer = QTimer(owned)
+        timer.timeout.connect(lambda: calls.append("timer"))
+        timer.start(0)
+        tasks.submit("unrun synthetic tail", lambda: calls.append("operation"))
+        assert app is qt_app
+    assert isValid(previous)
+    assert not isValid(owned)
+    assert tasks.pending == []
+    assert calls == []
+
+
+def test_qt_fixture_does_not_reinstall_unchanged_stylesheet(qt_app, monkeypatch):
+    calls = []
+    monkeypatch.setattr(qt_app, "setStyleSheet", calls.append)
+    with _isolated_qt_app(stylesheet=WORKBENCH_STYLE):
+        pass
+    assert calls == []
 
 
 class _Tasks(QObject):

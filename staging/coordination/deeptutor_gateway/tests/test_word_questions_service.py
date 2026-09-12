@@ -110,7 +110,11 @@ def test_images_stay_bound_to_their_question_and_reference_warns(
     with pytest.raises(WordQuestionError, match="不属于"):
         facade.word_question_image(second["key"], second["revision"], asset["asset_id"])
     reference = facade.word_question_reference([_choice(first)])
-    assert any("未把原图" in warning for warning in reference["warnings"])
+    assert any(
+        "不调用模型" in warning and "后续是否发送图片像素" in warning
+        and "发送预览" in warning
+        for warning in reference["warnings"]
+    )
 
 
 def test_known_question_reads_only_its_source_but_rechecks_bytes(

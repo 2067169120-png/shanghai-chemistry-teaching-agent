@@ -25,6 +25,7 @@ PUBLIC_DEMO_IMAGES.add("docs/screenshots/student-practice.png")
 PUBLIC_DEMO_IMAGES.add("docs/screenshots/word-range-review.png")
 PUBLIC_DEMO_IMAGES.add("docs/screenshots/mixed-basket.png")
 PUBLIC_DEMO_IMAGES.add("docs/screenshots/mixed-paper-preview.png")
+PUBLIC_DEMO_IMAGES.add("docs/screenshots/word-curriculum-filters.png")
 
 
 def main():

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from collections import OrderedDict
 from copy import deepcopy
 from pathlib import Path
@@ -33,10 +34,17 @@ from PySide6.QtWidgets import (
 from ..desktop_preparation_images import MAX_IMAGES
 from ..desktop_word_metafile_preview import can_attempt_metafile
 from ..desktop_word_question_attributes import EXAM_TYPE_LABELS, validate_attributes
+from ..desktop_word_question_filters import (
+    chapter_filter_id,
+    compile_filter_options,
+    matches_question,
+    section_filter_id,
+)
 from ..desktop_word_question_recommendations import lesson_knowledge_suggestions
 from .components import page_scroll, section_title, set_status
 from .tasks import DesktopTaskBridge
 from .word_question_attributes_dialog import WordQuestionAttributesDialog
+from .word_question_filter_panel import WordQuestionFilterPanel
 
 
 def _label(text: str, *, muted: bool = False) -> QLabel:
@@ -561,6 +569,10 @@ class WordQuestionDialog(QDialog):
         self._loaded_once = False
         self._catalog_revision = ""
         self._items: dict[str, dict] = {}
+        self._curriculum_nodes: dict[str, dict] = {}
+        self._attribute_catalog = None
+        self._current_image_failures: set[tuple] = set()
+        self._current_displayed_images: set[tuple] = set()
         self._selected: dict[str, str] = {}
         self._points: dict[str, int] = {}
         self._range_busy = False
@@ -598,9 +610,16 @@ class WordQuestionDialog(QDialog):
         self.catalog_note.setAccessibleName("Word 来源目录读取提醒")
         self.catalog_note.hide()
         root.addWidget(self.catalog_note)
+        self.filter_host = QWidget()
+        self.filter_host.setMinimumWidth(0)
+        filter_layout = QVBoxLayout(self.filter_host)
+        filter_layout.setContentsMargins(0, 0, 0, 0)
+        filter_layout.setSpacing(6)
+        root.addWidget(self.filter_host)
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
         self.splitter.setChildrenCollapsible(False)
         left = QWidget()
+        self.question_navigation = left
         left.setMinimumWidth(0)
         left_layout = QVBoxLayout(left)
         left_layout.setContentsMargins(0, 0, 0, 0)
@@ -641,7 +660,7 @@ class WordQuestionDialog(QDialog):
         self.lesson_suggestion_button.setEnabled(False)
         lesson_layout.addWidget(self.lesson_suggestion_button)
         self.lesson_suggestion_panel.setVisible(bool(self._lesson_topic))
-        left_layout.addWidget(self.lesson_suggestion_panel)
+        filter_layout.addWidget(self.lesson_suggestion_panel)
         self.source_combo = QComboBox()
         self.source_combo.setAccessibleName("按 Word 来源筛选题目")
         self.source_combo.setMinimumContentsLength(10)
@@ -652,15 +671,25 @@ class WordQuestionDialog(QDialog):
             QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
         )
         self.source_combo.addItem("全部来源", None)
-        left_layout.addWidget(self.source_combo)
+        filter_layout.addWidget(self.source_combo)
+        self.source_combo.hide()
         self.search = QLineEdit()
         self.search.setPlaceholderText("搜索题面、章节、知识点、年级或原考试")
         self.search.setAccessibleName("搜索 Word 题面、章节与教学属性")
-        left_layout.addWidget(self.search)
+        filter_layout.addWidget(self.search)
+        self.multi_filter_panel = WordQuestionFilterPanel()
+        self.multi_filter_panel.selection_changed.connect(self._multi_filters_changed)
+        filter_layout.addWidget(self.multi_filter_panel)
         self.knowledge_filter = QComboBox()
         self.grade_filter = QComboBox()
         self.exam_filter = QComboBox()
+        self.volume_filter = QComboBox()
+        self.chapter_filter = QComboBox()
+        self.section_filter = QComboBox()
         for widget, label in (
+            (self.volume_filter, "按已关联教材版本与册次筛选"),
+            (self.chapter_filter, "按所选教材册的章筛选"),
+            (self.section_filter, "按所选教材章的节筛选"),
             (self.knowledge_filter, "按主辅知识点筛选"),
             (self.grade_filter, "按适用年级筛选，不是原题年级"),
             (self.exam_filter, "按原考试类型筛选"),
@@ -672,16 +701,34 @@ class WordQuestionDialog(QDialog):
                 QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
             )
             widget.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
-            left_layout.addWidget(widget)
+            filter_layout.addWidget(widget)
+            widget.hide()
+        self.volume_filter.addItem("全部教材册", None)
+        self.chapter_filter.addItem("先选择教材册", None)
+        self.section_filter.addItem("先选择教材章", None)
+        self.chapter_filter.setEnabled(False)
+        self.section_filter.setEnabled(False)
         self.knowledge_filter.addItem("全部知识点（含主辅标签）", None)
         self.grade_filter.addItem("全部适用年级", None)
         self.exam_filter.addItem("全部原考试类型", None)
+        self.curriculum_filter_note = _label(
+            "教材、知识点、年级与原考试类型同时满足才显示；筛选不改变勾选。",
+            muted=True,
+        )
+        filter_layout.addWidget(self.curriculum_filter_note)
+        self.curriculum_filter_note.hide()
+        self.reset_filters_button = QPushButton("重置筛选（保留勾选）")
+        self.reset_filters_button.setObjectName("QuietButton")
+        self.reset_filters_button.clicked.connect(self._reset_filters)
+        filter_layout.addWidget(self.reset_filters_button)
+        self.reset_filters_button.hide()
         self.result_count = _label("正在读取题目…", muted=True)
         left_layout.addWidget(self.result_count)
         self.question_list = QListWidget()
         self.question_list.setAccessibleName("Word 逐题列表，可跨来源勾选")
         self.question_list.setMinimumSize(0, 115)
         self.question_list.setWordWrap(True)
+        self.question_list.setStyleSheet("QListWidget::indicator {width:0px; height:0px;}")
         self.question_list.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
@@ -704,9 +751,20 @@ class WordQuestionDialog(QDialog):
         self.detail_note = _label("", muted=True)
         right_layout.addWidget(self.detail_title)
         right_layout.addWidget(self.detail_note)
+        self.question_tools_button = QPushButton("题目设置与标签 ▸")
+        self.question_tools_button.setObjectName("QuietButton")
+        self.question_tools_button.setCheckable(True)
+        right_layout.addWidget(self.question_tools_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.question_tools = QWidget()
+        tools_layout = QVBoxLayout(self.question_tools)
+        tools_layout.setContentsMargins(0, 0, 0, 0)
+        tools_layout.setSpacing(4)
+        self.question_tools.hide()
+        self.question_tools_button.toggled.connect(self.question_tools.setVisible)
+        right_layout.addWidget(self.question_tools)
         self.attribute_note = _label("", muted=True)
         self.attribute_note.setAccessibleName("当前 Word 题目知识点与出处摘要")
-        right_layout.addWidget(self.attribute_note)
+        tools_layout.addWidget(self.attribute_note)
         points_row = QHBoxLayout()
         points_row.addWidget(_label("本次练习分值"))
         self.points = QSpinBox()
@@ -716,7 +774,7 @@ class WordQuestionDialog(QDialog):
         points_row.addWidget(self.points)
         points_row.addWidget(_label("非原卷分值", muted=True))
         points_row.addStretch(1)
-        right_layout.addLayout(points_row)
+        tools_layout.addLayout(points_row)
         self.range_button = QPushButton("调整本题范围")
         self.range_button.setObjectName("QuietButton")
         self.range_button.setVisible(
@@ -724,7 +782,7 @@ class WordQuestionDialog(QDialog):
             and callable(getattr(facade, "word_question_update_range", None))
         )
         self.range_button.clicked.connect(self._adjust_range)
-        right_layout.addWidget(self.range_button)
+        tools_layout.addWidget(self.range_button)
         self.attributes_button = QPushButton("修改教学标签")
         self.attributes_button.setObjectName("QuietButton")
         self.attributes_button.setVisible(
@@ -732,13 +790,15 @@ class WordQuestionDialog(QDialog):
             and callable(getattr(facade, "word_question_save_attributes", None))
         )
         self.attributes_button.clicked.connect(self._edit_attributes)
-        right_layout.addWidget(self.attributes_button)
+        tools_layout.addWidget(self.attributes_button)
         self.tabs = QTabWidget()
         self.tabs.setMinimumSize(0, 130)
         self._panels: list[QWidget] = []
         self._panel_layouts: list[QVBoxLayout] = []
         for title in ("题面", "答案与解析"):
             panel = QWidget()
+            panel.setObjectName("WordQuestionPaper")
+            panel.setStyleSheet("QWidget#WordQuestionPaper {background:#fff;} QLabel {font-size:14px; color:#263b36; background:transparent;}")
             layout = QVBoxLayout(panel)
             layout.setContentsMargins(12, 12, 12, 12)
             layout.setSpacing(10)
@@ -755,13 +815,21 @@ class WordQuestionDialog(QDialog):
         self.attributes_preview.setAccessibleName("当前 Word 题目属性及标注依据")
         self.tabs.addTab(self.attributes_preview, "教学属性与依据")
         right_layout.addWidget(self.tabs, 1)
+        self.current_readiness_note = _label("先阅读完整题面与公共材料，再加入本次选择。", muted=True)
+        right_layout.addWidget(self.current_readiness_note)
+        self.select_current_button = QPushButton("将这道题加入本次选择")
+        self.select_current_button.setObjectName("PrimaryAction")
+        self.select_current_button.clicked.connect(self._select_current)
+        right_layout.addWidget(self.select_current_button)
         self.splitter.addWidget(right)
         self.splitter.setStretchFactor(0, 1)
         self.splitter.setStretchFactor(1, 2)
         self.splitter.setSizes([380, 770])
         root.addWidget(self.splitter, 1)
         self.selection_count = _label("已选 0 题；筛选或切换来源会保留勾选。")
-        root.addWidget(self.selection_count)
+        self.selection_row = QHBoxLayout()
+        self.selection_row.addWidget(self.selection_count, 1)
+        root.addLayout(self.selection_row)
         self.basket_preview_button = QPushButton("查看入篮完整题面与答案")
         self.basket_preview_button.setObjectName("PrimaryAction")
         self.basket_add_button = QPushButton("加入统一题篮")
@@ -771,25 +839,39 @@ class WordQuestionDialog(QDialog):
         for button in (self.basket_preview_button, self.basket_add_button):
             button.setVisible(callable(getattr(facade, "add_word_questions_to_basket", None)))
             root.addWidget(button)
+        self.preparation_toggle = QPushButton("用所选题备课 ▸")
+        self.preparation_toggle.setObjectName("QuietButton")
+        self.preparation_toggle.setCheckable(True)
+        root.addWidget(self.preparation_toggle, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.preparation_controls = QWidget()
+        preparation_layout = QVBoxLayout(self.preparation_controls)
+        preparation_layout.setContentsMargins(0, 0, 0, 0)
+        preparation_layout.setSpacing(6)
+        self.preparation_toggle.toggled.connect(self.preparation_controls.setVisible)
+        self.preparation_toggle.setChecked(bool(self._lesson_topic))
+        self.preparation_controls.setVisible(bool(self._lesson_topic))
+        root.addWidget(self.preparation_controls)
         self.include_images = QCheckBox("同时带入原图（用于本地课件排版）")
         self.include_images.setChecked(True)
         self.include_images.setAccessibleName("带入所选 Word 题目的原图")
         self.include_images.toggled.connect(self._image_mode_changed)
-        root.addWidget(self.include_images)
+        preparation_layout.addWidget(self.include_images)
         self.image_mode_note = _label(
-            "原图随备课保存在本机，模型只收到图注、来源和用途，不会看到图片像素。"
+            "此处只保存本地原图，不调用模型；后续是否发送图片像素，"
+            "由生成时的读图模式及发送预览决定。"
             "如仅需文字，可取消勾选后重新预览。",
             muted=True,
         )
-        root.addWidget(self.image_mode_note)
+        preparation_layout.addWidget(self.image_mode_note)
         self.action_layout = QBoxLayout(QBoxLayout.Direction.LeftToRight)
         self.preview_button = QPushButton("预览选题")
         self.import_button = QPushButton("确认带入备课")
-        self.clear_button = QPushButton("清空勾选")
+        self.clear_button = QPushButton("清空本次选择")
         self.clear_button.setObjectName("QuietButton")
-        for button in (self.preview_button, self.import_button, self.clear_button):
+        self.selection_row.addWidget(self.clear_button)
+        for button in (self.preview_button, self.import_button):
             self.action_layout.addWidget(button)
-        root.addLayout(self.action_layout)
+        preparation_layout.addLayout(self.action_layout)
         self.export_layout = QBoxLayout(QBoxLayout.Direction.LeftToRight)
         self.export_title = QLineEdit("Word 选题练习")
         self.export_title.setAccessibleName("导出练习名称")
@@ -829,9 +911,12 @@ class WordQuestionDialog(QDialog):
         self.close_button.setObjectName("QuietButton")
         self.close_button.clicked.connect(self.reject)
         root.addWidget(self.close_button, alignment=Qt.AlignmentFlag.AlignRight)
-        self.source_combo.currentIndexChanged.connect(self._filter_items)
-        for widget in (self.knowledge_filter, self.grade_filter, self.exam_filter):
-            widget.currentIndexChanged.connect(self._filter_items)
+        self.source_combo.currentIndexChanged.connect(lambda: self._legacy_filter_changed("source"))
+        self.volume_filter.currentIndexChanged.connect(self._curriculum_parent_changed)
+        self.chapter_filter.currentIndexChanged.connect(self._curriculum_parent_changed)
+        self.section_filter.currentIndexChanged.connect(lambda: self._legacy_filter_changed("section"))
+        for group, widget in (("knowledge", self.knowledge_filter), ("grade", self.grade_filter), ("exam", self.exam_filter)):
+            widget.currentIndexChanged.connect(lambda index=0, name=group: self._legacy_filter_changed(name))
         self._search_timer = QTimer(self)
         self._search_timer.setSingleShot(True)
         self._search_timer.setInterval(120)
@@ -989,6 +1074,8 @@ class WordQuestionDialog(QDialog):
             }
             removed = before - len(self._selected)
             self._items = items
+            self._attribute_catalog = deepcopy(catalog.get("attribute_catalog"))
+            self._set_curriculum_catalog(catalog.get("attribute_catalog"))
             self._catalog_revision = _text(catalog.get("revision"))
             selected_source = self.source_combo.currentData()
             if not self._loaded_once:
@@ -1106,7 +1193,199 @@ class WordQuestionDialog(QDialog):
                 widget.addItem(label, current)
             widget.setCurrentIndex(max(0, widget.findData(current)))
             widget.blockSignals(False)
+        self._refresh_curriculum_filters()
+        options = compile_filter_options(list(self._items.values()), self._attribute_catalog)
+        first_filter_load = not self.multi_filter_panel.options
+        self.multi_filter_panel.set_options(options["groups"])
+        if first_filter_load and self.source_combo.currentData():
+            self._legacy_filter_changed("source")
         self._refresh_lesson_suggestions()
+
+    def _multi_filters_changed(self, _selection=None):
+        self._filter_items()
+
+    def _legacy_filter_changed(self, group):
+        widgets = {"source": self.source_combo, "book": self.volume_filter,
+                   "chapter": self.chapter_filter, "section": self.section_filter,
+                   "knowledge": self.knowledge_filter, "grade": self.grade_filter,
+                   "exam": self.exam_filter}
+        value = widgets[group].currentData()
+        if value and group == "chapter":
+            value = chapter_filter_id(*json.loads(value))
+        elif value and group == "section":
+            node = self._curriculum_nodes.get(value)
+            value = section_filter_id(node["volume_id"], node["chapter_id"], value) if node else None
+        selection = dict(self.multi_filter_panel.selection)
+        selection[group] = {value} if value else set()
+        self.multi_filter_panel.set_selection(selection)
+
+    def _set_curriculum_catalog(self, catalog) -> None:
+        """Use explicit directory relationships, never source names or chapter prose."""
+        rows = catalog.get("nodes", []) if isinstance(catalog, dict) else []
+        nodes, conflicts = {}, set()
+        for row in rows if isinstance(rows, list) else []:
+            if not isinstance(row, dict):
+                continue
+            key = _text(row.get("node_key"))
+            if not key or not all(
+                _text(row.get(field)) for field in ("volume_id", "chapter_id")
+            ):
+                continue
+            identity = (row["volume_id"], row["chapter_id"])
+            previous = nodes.get(key)
+            if previous and identity != (previous["volume_id"], previous["chapter_id"]):
+                conflicts.add(key)
+            nodes[key] = deepcopy(row)
+        self._curriculum_nodes = {
+            key: row for key, row in nodes.items() if key not in conflicts
+        }
+
+    @staticmethod
+    def _replace_filter_options(widget, title, options) -> None:
+        current = widget.currentData()
+        widget.blockSignals(True)
+        widget.clear()
+        widget.addItem(title, None)
+        for key, label in options:
+            widget.addItem(label, key)
+        widget.setCurrentIndex(max(0, widget.findData(current)))
+        widget.blockSignals(False)
+
+    @staticmethod
+    def _volume_label(node) -> str:
+        # Only a declared edition may be displayed; a filename is not metadata.
+        return " · ".join(
+            part
+            for part in (
+                _text(node.get("edition_title")),
+                _text(node.get("volume_title")) or "教材册名称待补",
+            )
+            if part
+        )
+
+    @staticmethod
+    def _chapter_key(volume, chapter) -> str:
+        # Scalar QVariant identity: Qt findData does not compare Python tuples.
+        return json.dumps([volume, chapter], ensure_ascii=False, separators=(",", ":"))
+
+    def _refresh_curriculum_filters(self) -> None:
+        volumes = {}
+        for node in self._curriculum_nodes.values():
+            volumes.setdefault(node["volume_id"], self._volume_label(node))
+        labels = list(volumes.values())
+        self._replace_filter_options(
+            self.volume_filter,
+            "全部教材册",
+            [
+                (key, label if labels.count(label) == 1 else f"{label}〔{key}〕")
+                for key, label in volumes.items()
+            ]
+            + [("unknown", "教材未标注 / 目录关联待核对")],
+        )
+        volume = self.volume_filter.currentData()
+        chapters = {}
+        for node in self._curriculum_nodes.values():
+            if node["volume_id"] == volume:
+                chapters.setdefault(
+                    self._chapter_key(volume, node["chapter_id"]),
+                    _text(node.get("chapter_title")) or "教材章名称待补",
+                )
+        self._replace_filter_options(
+            self.chapter_filter,
+            "全部章（所选教材册）" if volume in volumes else "先选择教材册",
+            list(chapters.items()),
+        )
+        self.chapter_filter.setEnabled(bool(chapters))
+        chapter = self.chapter_filter.currentData()
+        sections = [
+            (
+                key,
+                " ".join(
+                    part
+                    for part in (
+                        _text(node.get("section_number")),
+                        _text(node.get("section_title")) or "教材节名称待补",
+                    )
+                    if part
+                ),
+            )
+            for key, node in self._curriculum_nodes.items()
+            if self._chapter_key(node["volume_id"], node["chapter_id"]) == chapter
+        ]
+        self._replace_filter_options(
+            self.section_filter,
+            "全部节（所选教材章）" if chapter else "先选择教材章",
+            sections,
+        )
+        self.section_filter.setEnabled(bool(sections))
+        self.curriculum_filter_note.setText(
+            "教材、知识点、年级与原考试类型须同时满足。教材归属使用已保存标签，"
+            "不按讲义标题推断；自动建议仍待教师确认。"
+            if self._curriculum_nodes
+            else "教材目录暂不可用；原题仍可浏览。可找“教材未标注 / 目录关联待核对”，"
+            "不会根据讲义标题猜测教材归属。"
+        )
+
+    def _curriculum_parent_changed(self, *_args) -> None:
+        self._refresh_curriculum_filters()
+        self._legacy_filter_changed("book")
+        self._legacy_filter_changed("chapter")
+        self._legacy_filter_changed("section")
+
+    def _curriculum_mappings(self, value):
+        attributes = value.get("attributes") or {}
+        mappings = attributes.get("curriculum_candidates", [])
+        result = []
+        for candidate in mappings if isinstance(mappings, list) else []:
+            if not isinstance(candidate, dict):
+                continue
+            node = self._curriculum_nodes.get(_text(candidate.get("section_key")))
+            if node and all(
+                candidate.get(field) == node[field]
+                for field in ("volume_id", "chapter_id")
+            ):
+                result.append((candidate, node))
+        return result
+
+    def _curriculum_summary(self, value) -> str:
+        if not value.get("attributes"):
+            return ""
+        mappings = self._curriculum_mappings(value)
+        if not mappings:
+            return "教材归属：未标注 / 目录关联待核对"
+        return "\n".join(
+            "教材归属："
+            + " / ".join(
+                (
+                    self._volume_label(node),
+                    _text(node.get("chapter_title")) or "章名称待补",
+                    _text(node.get("section_title")) or "节名称待补",
+                )
+            )
+            + "（"
+            + _STATUS_LABELS.get(candidate.get("status"), "待确认")
+            + "）"
+            for candidate, node in mappings
+        )
+
+    def _reset_filters(self) -> None:
+        for widget in (
+            self.source_combo,
+            self.volume_filter,
+            self.chapter_filter,
+            self.section_filter,
+            self.knowledge_filter,
+            self.grade_filter,
+            self.exam_filter,
+        ):
+            widget.blockSignals(True)
+            widget.setCurrentIndex(0)
+            widget.blockSignals(False)
+        self.search.clear()
+        self._search_timer.stop()
+        self._refresh_curriculum_filters()
+        self.multi_filter_panel.set_selection({})
+        self._filter_items()
 
     def _refresh_lesson_suggestions(self) -> None:
         if not self._lesson_topic:
@@ -1192,6 +1471,26 @@ class WordQuestionDialog(QDialog):
 
     def _matches_attribute_filters(self, value):
         attributes = value.get("attributes") or {}
+        volume = self.volume_filter.currentData()
+        if volume:
+            mappings = self._curriculum_mappings(value)
+            if volume == "unknown":
+                if mappings:
+                    return False
+            elif not any(
+                node["volume_id"] == volume
+                and (
+                    not self.chapter_filter.currentData()
+                    or self._chapter_key(volume, node["chapter_id"])
+                    == self.chapter_filter.currentData()
+                )
+                and (
+                    not self.section_filter.currentData()
+                    or node["node_key"] == self.section_filter.currentData()
+                )
+                for _, node in mappings
+            ):
+                return False
         knowledge = self.knowledge_filter.currentData()
         if knowledge:
             points = [attributes.get("primary_knowledge", {})] + attributes.get(
@@ -1212,33 +1511,19 @@ class WordQuestionDialog(QDialog):
 
     def _filter_items(self, *_args) -> None:
         current = self._current_key
-        source = self.source_combo.currentData()
         query = self.search.text().strip().casefold()
         self._rendering_list = True
         self.question_list.blockSignals(True)
         self.question_list.clear()
         row_to_select = 0
         for key, value in self._items.items():
-            if source and value.get("source_id") != source:
-                continue
-            if not self._matches_attribute_filters(value):
+            if not matches_question(value, {**self.multi_filter_panel.matching_selection(), "query": query}, self._attribute_catalog):
                 continue
             question_text = " ".join(
                 _text(block.get("text"))
                 for block in value.get("question_blocks", ())
                 if isinstance(block, dict)
             )
-            searchable = " ".join(
-                [
-                    _text(value.get("title")),
-                    _text(value.get("chapter")),
-                    _text(value.get("source_name")),
-                    question_text,
-                    _attribute_text(value, details=True),
-                ]
-            ).casefold()
-            if query and query not in searchable:
-                continue
             title = _text(value.get("title")) or "原文题目"
             chapter = _text(value.get("chapter")) or "章节待核对"
             source_label = _text(value.get("source_label")) or _text(
@@ -1284,14 +1569,17 @@ class WordQuestionDialog(QDialog):
                 if part
             )
             widget = QListWidgetItem(label)
+            widget.setFlags(widget.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
             widget.setData(Qt.ItemDataRole.UserRole, key)
             if value.get("selection_ready") is True:
-                widget.setFlags(widget.flags() | Qt.ItemFlag.ItemIsUserCheckable)
                 widget.setCheckState(
                     Qt.CheckState.Checked
                     if key in self._selected
                     else Qt.CheckState.Unchecked
                 )
+                widget.setFlags(widget.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
+                if key in self._selected:
+                    widget.setText("已选 · " + widget.text())
             self.question_list.addItem(widget)
             if key == current:
                 row_to_select = self.question_list.count() - 1
@@ -1315,6 +1603,7 @@ class WordQuestionDialog(QDialog):
         while layout.count():
             item = layout.takeAt(0)
             if item.widget() is not None:
+                item.widget().hide()
                 item.widget().deleteLater()
 
     def _show_question(self, key: str | None) -> None:
@@ -1323,6 +1612,8 @@ class WordQuestionDialog(QDialog):
         self._image_task_ids.clear()
         self._detail_epoch += 1
         self._current_key = key
+        self._current_image_failures.clear()
+        self._current_displayed_images.clear()
         self._image_targets = []
         self._loaded_tabs.clear()
         for index in (0, 1):
@@ -1333,10 +1624,25 @@ class WordQuestionDialog(QDialog):
         self.detail_note.setText(
             " · ".join(part for part in (source, _text(value.get("chapter"))) if part)
         )
-        self.attribute_note.setText(_attribute_text(value))
+        self.attribute_note.setText(
+            "\n".join(
+                part
+                for part in (_attribute_text(value), self._curriculum_summary(value))
+                if part
+            )
+        )
         self.attribute_note.setVisible(bool(self.attribute_note.text()))
         self.attributes_preview.setPlainText(
-            _attribute_text(value, details=True) if value else ""
+            "\n".join(
+                part
+                for part in (
+                    _attribute_text(value, details=True),
+                    self._curriculum_summary(value),
+                )
+                if part
+            )
+            if value
+            else ""
         )
         self.points.blockSignals(True)
         self.points.setValue(self._points.get(key, 2))
@@ -1378,9 +1684,8 @@ class WordQuestionDialog(QDialog):
         for block in blocks:
             if not isinstance(block, dict):
                 continue
-            layout.addWidget(
-                _label(f"来源区块 {block.get('index', '待核对')}", muted=True)
-            )
+            if not index and block in value.get("context_blocks", ()):
+                layout.addWidget(_label("公共材料", muted=True))
             layout.addWidget(_label(_text(block.get("text"))))
             for asset in block.get("assets", ()):
                 if not isinstance(asset, dict):
@@ -1422,6 +1727,7 @@ class WordQuestionDialog(QDialog):
         if cache_key in self._image_cache:
             self._image_cache.move_to_end(cache_key)
             self._display_image(widget, self._image_cache[cache_key])
+            self._current_displayed_images.add(cache_key)
             if caption is not None and cache_key in self._derived_image_keys:
                 caption.setText(caption.text() + "\n原 Word 矢量图的本地转换预览")
             return
@@ -1458,10 +1764,15 @@ class WordQuestionDialog(QDialog):
                 evicted, _ = self._image_cache.popitem(last=False)
                 self._derived_image_keys.discard(evicted)
             self._display_image(widget, pixmap)
+            self._current_displayed_images.add(cache_key)
+            self._update_actions()
 
         def failed(_message):
             if epoch == self._detail_epoch and self._current_key == question["key"]:
                 widget.setText("此来源图片暂时无法读取，请重新选题或核对原始 Word。")
+                self._current_image_failures.add(cache_key)
+                self._current_displayed_images.discard(cache_key)
+                self._update_actions()
 
         task_id = self._submit(
             "读取 Word 题目来源图片",
@@ -1475,6 +1786,42 @@ class WordQuestionDialog(QDialog):
     def _display_image(self, widget: QLabel, pixmap: QPixmap) -> None:
         self._image_targets.append((widget, pixmap))
         self._scale_images()
+
+    def current_question_readiness(self) -> tuple[bool, str]:
+        value = self._items.get(self._current_key)
+        if not value or 0 not in self._loaded_tabs:
+            return False, "先打开一道题，查看完整题面与公共材料。"
+        if not value.get("selection_ready"):
+            return False, "题目范围待核对；请先调整完整题目与材料范围。"
+        for block in list(value.get("context_blocks", ())) + list(value.get("question_blocks", ())):
+            warnings = " ".join(str(w) for w in block.get("warnings", ()))
+            if not block.get("assets") and any(word in warnings for word in ("图片", "对象", "图形", "嵌入")):
+                return False, "原文含尚未显示的图形对象，暂不能加入本次选择。"
+            for asset in block.get("assets", ()):
+                key = (value["key"], value["revision"], asset.get("asset_id"))
+                if key in self._current_image_failures:
+                    return False, "题图读取失败；请重新打开本题或核对原 Word。"
+                if not asset.get("asset_id") or not (asset.get("preview_supported") is True or can_attempt_metafile(asset)):
+                    return False, "题面有无法预览的图形对象，暂不能加入本次选择。"
+                if key not in self._current_displayed_images:
+                    return False, "正在加载本题与公共材料原图，完成后可选择。"
+        return True, "题面与公共材料已显示；请核对后明确选择。"
+
+    def _select_current(self):
+        if not self.select_current_button.isEnabled():
+            return
+        value = self._items.get(self._current_key)
+        if not value:
+            return
+        if self._current_key in self._selected:
+            self._selected.pop(self._current_key)
+        elif self.current_question_readiness()[0]:
+            self._selected[self._current_key] = value["revision"]
+        else:
+            return
+        self._invalidate_preview()
+        self._queue_selection_save()
+        self._filter_items()
 
     def _scale_images(self) -> None:
         if self._closed:
@@ -1828,7 +2175,8 @@ class WordQuestionDialog(QDialog):
                 + "\n\n带入方式："
                 + ("文字与原图" if include_images else "仅文字（不带原图）")
                 + f"\n将带入 {len(value['image_assets'])} 张原图；已有图片保留，备课最多 {MAX_IMAGES} 张。"
-                + "\n模型只收到图片说明，不会看到图片像素。"
+                + "\n此处只保存本地图片，不调用模型；后续是否发送图片像素，"
+                "由生成时的读图模式及发送预览决定。"
                 + (
                     "\n图片待处理：\n" + "\n".join(value["image_issues"])
                     if value["image_issues"]
@@ -2063,6 +2411,11 @@ class WordQuestionDialog(QDialog):
             self.question_list.setCurrentRow(index)
 
     def _update_actions(self) -> None:
+        ready, message = self.current_question_readiness()
+        selected = self._current_key in self._selected
+        self.select_current_button.setText("从本次选择移除这道题" if selected else "将这道题加入本次选择")
+        self.select_current_button.setEnabled((ready or selected) and not any((self._catalog_busy, self._range_busy, self._attributes_busy, self._basket_busy, self._export_busy)))
+        self.current_readiness_note.setText(message)
         count = len(self._selected)
         basket_available = callable(getattr(self.facade, "add_word_questions_to_basket", None))
         basket_idle = not (self._basket_busy or self._catalog_busy or self._reference_busy or self._export_busy or self._range_busy or self._attributes_busy)
@@ -2188,6 +2541,9 @@ class WordQuestionDialog(QDialog):
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         narrow = event.size().width() < 760
+        self.question_navigation.setMaximumHeight(150 if narrow else 16777215)
+        self.question_list.setMinimumHeight(55 if narrow else 115)
+        self.tabs.setMinimumHeight(310 if narrow else 400)
         orientation = Qt.Orientation.Vertical if narrow else Qt.Orientation.Horizontal
         if self.splitter.orientation() != orientation:
             self.splitter.setOrientation(orientation)

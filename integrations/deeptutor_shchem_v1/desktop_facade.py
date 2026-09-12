@@ -2310,6 +2310,10 @@ class DesktopWorkbenchFacade:
     def word_question_catalog(self):
         return self._word_questions().catalog()
 
+    def annotate_imported_word_batch(self, batch_id):
+        """Save local, source-bound label suggestions for one explicit import."""
+        return self._word_questions().annotate_imported_batch(batch_id)
+
     def word_question_source(self, key, revision):
         return self._word_questions().source(key, revision)
 

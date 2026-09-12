@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import sqlite3
 import threading
 from copy import deepcopy
 from uuid import uuid4
@@ -211,7 +212,211 @@ class WordQuestionService:
         }, inventory
 
     def catalog(self):
-        return self._catalog()[0]
+        result = self._catalog()[0]
+        try:
+            result["attribute_catalog"] = self._read_attribute_catalog()
+        except (OSError, ValueError, TypeError, KeyError):
+            result["attribute_catalog"] = None
+            result["warnings"].append(
+                "教材标签目录暂时无法读取，教材筛选不可用；原题列表与预览仍可使用。"
+            )
+        return result
+
+    def _read_attribute_catalog(self):
+        catalog = load_attribute_catalog(self.facade.paths.workspace_root)
+        if not isinstance(catalog, dict) or any(
+            not isinstance(catalog.get(name), list)
+            or any(not isinstance(row, dict) for row in catalog[name])
+            for name in ("knowledge_points", "nodes")
+        ):
+            raise WordQuestionAttributeError("教材标签目录结构不完整。")
+        return catalog
+
+    def _annotation_snapshot(self, batch_id, previews):
+        """Read exactly one batch; cold previews stay in memory, never on disk."""
+        descriptor = self.facade._saved_visual_import_batch(batch_id)
+        source_rows = self.facade.imported_word_sources(batch_id)
+        source_ids = {row["source_id"] for row in source_rows}
+        sources = (
+            self.facade._restore_visual_import_sources(
+                descriptor, source_ids=source_ids
+            )
+            if source_ids
+            else ()
+        )
+        if {source.effective_source_file_id for source in sources} != source_ids:
+            raise WordQuestionError(
+                "本批次Word来源不完整，未提交标签；请重新核对导入记录。"
+            )
+        quality = source_quality_notes(self.facade.paths.workspace_root)
+        overrides = (
+            self.state.snapshot()
+            .get("drafts", {})
+            .get(RANGES_DRAFT, {})
+            .get("ranges", {})
+        )
+        rows, bindings, seen, warnings = [], [], set(), []
+        for source in sources:
+            digest = hashlib.sha256(source.content).hexdigest()
+            if digest != source.source_sha256:
+                raise WordQuestionError(
+                    "本批次Word原文件已变化，未提交标签；请重新导入。"
+                )
+            bindings.append((source.effective_source_file_id, source.filename, digest))
+            if digest in seen:
+                continue
+            seen.add(digest)
+            token = (digest, source.filename)
+            if token not in previews:
+                preview = self.preview_cache.load(source.content, source.filename)
+                previews[token] = (
+                    preview
+                    if preview is not None
+                    else self.reader.word_preview_bytes(source.content, source.filename)
+                )
+            preview = previews[token]
+            for item in index_word_questions(preview):
+                override = overrides.get(item["key"])
+                if override:
+                    if override.get("source_revision") != preview["revision"]:
+                        raise WordQuestionError(
+                            "本批次有已失效的题目范围修订，未提交标签；请先核对范围。"
+                        )
+                    item = apply_question_range(preview, item, **override["range"])
+                item.update(source_name=source.filename, batch_id=batch_id)
+                item = apply_source_quality(item, quality)
+                warnings.extend(item.get("warnings", []))
+                rows.append(item)
+        snapshot = {
+            "sources": bindings,
+            "questions": [(row["key"], row["revision"]) for row in rows],
+            "ranges": {row["key"]: overrides.get(row["key"]) for row in rows},
+        }
+        return rows, len(seen), _digest(snapshot), warnings
+
+    def annotate_imported_batch(self, batch_id):
+        """Explicit local-rule annotation, separate from all catalogue reads.
+
+        Counts refer to unique source bytes and their current complete-question
+        rows, not atomic subquestions. Valid-label counts exclude stale teacher
+        records. This method never invokes a model or writes source/cache files.
+        """
+        from .desktop_facade import DesktopFacadeError
+
+        if not isinstance(batch_id, str) or not batch_id.strip():
+            raise WordQuestionError("请选择一个已保存的Word导入批次。")
+        with self._lock:
+            try:
+                previews = {}
+                rows, source_count, revision, warnings = self._annotation_snapshot(
+                    batch_id, previews
+                )
+                catalog = self._read_attribute_catalog()
+                catalog_revision = _digest(catalog)
+                existing = self.attribute_store.get_many([row["key"] for row in rows])
+                proposals = []
+                for row in rows:
+                    old = existing.get(row["key"])
+                    if old and old["source_sha256"] != row["source_sha256"]:
+                        raise WordQuestionError(
+                            "题目标签的原文件绑定不一致，未提交本批标签。"
+                        )
+                    metadata = (
+                        old["source"] if old else {"source_name": row["source_name"]}
+                    )
+                    proposals.append(suggest_attributes(row, metadata, catalog))
+                # Range saves and teacher label edits share this service lock.
+                # Re-open archived bytes and range state immediately before the
+                # store's all-or-nothing transaction; cached bytes are no authority.
+                _, _, current_revision, _ = self._annotation_snapshot(
+                    batch_id, previews
+                )
+                if (
+                    current_revision != revision
+                    or _digest(self._read_attribute_catalog()) != catalog_revision
+                ):
+                    raise WordQuestionError(
+                        "原文件、题目范围或标签目录已变化，未提交标签；请刷新后重试。"
+                    )
+                saved = self.attribute_store.save_many(proposals) if proposals else []
+            except WordQuestionError:
+                raise
+            except DesktopFacadeError as exc:
+                raise WordQuestionError(
+                    "无法核对已保存的Word批次，未提交标签；原资料未改动。"
+                    + exc.message_zh
+                ) from exc
+            except (
+                PreparationSourceError,
+                WordQuestionAttributeError,
+                OSError,
+                ValueError,
+                TypeError,
+                KeyError,
+                sqlite3.DatabaseError,
+            ) as exc:
+                raise WordQuestionError(
+                    "本批次Word题目、范围或标签目录无法完整核对，未提交标签；原资料未改动。"
+                ) from exc
+        current = {row["key"]: row for row in rows}
+        valid = [
+            row
+            for row in saved
+            if row["source_sha256"] == current[row["key"]]["source_sha256"]
+            and row["question_revision"] == current[row["key"]]["revision"]
+        ]
+        stale_count = len(saved) - len(valid)
+        if stale_count:
+            warnings.append(
+                f"{stale_count}道题的原教师标签对应旧范围，已保留教师修改和历史；"
+                "未算作当前有效标签，请逐题核对后重新保存。"
+            )
+        if rows:
+            message = (
+                "本批Word题目的本地规则建议已整理；未知字段仍待确认，本次未调用AI。"
+            )
+        else:
+            message = "本批未识别到可标注的Word题目，未写入标签；请查看原文和题目范围。"
+        warnings = list(dict.fromkeys(warnings))
+        return {
+            "batch_id": batch_id,
+            "batch_count": 1,
+            "source_count": source_count,
+            "question_count": len(rows),
+            "saved_question_count": len(saved),
+            "changed_question_count": sum(
+                row != existing.get(row["key"]) for row in saved
+            ),
+            "preserved_teacher_count": sum(
+                row["annotation_source"] == "teacher_modified" for row in saved
+            ),
+            "stale_teacher_count": stale_count,
+            "valid_label_counts": {
+                "source_bound_questions": len(valid),
+                "primary_knowledge": sum(
+                    row["primary_knowledge"]["id"] != "unknown" for row in valid
+                ),
+                "curriculum_mapped": sum(
+                    bool(row["curriculum_candidates"]) for row in valid
+                ),
+                "applicable_grade": sum(
+                    bool(row["applicable_grades"]["values"]) for row in valid
+                ),
+                "original_exam_type": sum(
+                    row["original_source"]["exam_type"]["value"] != "unknown"
+                    for row in valid
+                ),
+            },
+            "status": "no_questions"
+            if not rows
+            else "completed_with_warnings"
+            if warnings
+            else "completed",
+            "message_zh": message,
+            "warnings": warnings,
+            "method": "local_rules",
+            "model_invoked": False,
+        }
 
     def _resolve(self, selections, *, allow_empty=False):
         if (
