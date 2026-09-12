@@ -1069,6 +1069,7 @@ def test_range_editor_shows_all_source_and_rejects_overlapping_answer(qt_app):
     before = dialog.original.toPlainText()
     dialog.locate_button.click()
     assert dialog.original.toPlainText() == before
+    dialog.preview_button.click()
     dialog.save_button.click()
     assert dialog.result() == QDialog.DialogCode.Accepted
     assert dialog.ranges["answer_start"] is None

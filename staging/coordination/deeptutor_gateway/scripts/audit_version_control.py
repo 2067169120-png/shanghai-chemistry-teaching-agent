@@ -20,6 +20,9 @@ PUBLIC_DEMO_IMAGES.add("docs/screenshots/courseware-reference.png")
 PUBLIC_DEMO_IMAGES.add("docs/screenshots/answer-preview.png")
 PUBLIC_DEMO_IMAGES.add("docs/screenshots/preparation-image-input.png")
 PUBLIC_DEMO_IMAGES.add("docs/screenshots/word-lesson-reader.png")
+PUBLIC_DEMO_IMAGES.add("docs/screenshots/word-tables.png")
+PUBLIC_DEMO_IMAGES.add("docs/screenshots/student-practice.png")
+PUBLIC_DEMO_IMAGES.add("docs/screenshots/word-range-review.png")
 
 
 def main():

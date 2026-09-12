@@ -207,32 +207,73 @@ def _attribute_text(value: dict, *, details: bool = False) -> str:
 
 
 class WordQuestionRangeDialog(QDialog):
-    """Choose an explicit range while the complete extracted source stays visible."""
+    """Preview explicit source-block ranges before recording any teacher review."""
+
+    _REVIEWABLE_WARNINGS = (
+        ("unmarked_answer", "原文未使用答案标记", "已核对无答案标签的原文分界"),
+        ("nonstandard_label", "原文变式题标签缺少闭括号", "已核对非标准题目标记的边界"),
+        ("self_contained_reference", "题目引用前文或前题", "题面本身已包含所引用的全部材料"),
+    )
 
     def __init__(self, item: dict, source: dict, parent=None):
         super().__init__(parent)
         self.ranges: dict | None = None
+        self._preview_key: tuple | None = None
+        self._preview_ranges: dict | None = None
+        blocks = deepcopy(source.get("blocks", []))
+        self._source_valid = isinstance(blocks, list) and bool(blocks)
+        self._blocks = blocks if isinstance(blocks, list) else []
+        self._positions: dict[int, int] = {}
+        previous = 0
+        for position, block in enumerate(self._blocks):
+            if (
+                not isinstance(block, dict)
+                or type(block.get("index")) is not int
+                or block["index"] <= previous
+                or block["index"] in self._positions
+                or not isinstance(block.get("text"), str)
+            ):
+                self._source_valid = False
+                continue
+            self._positions[block["index"]] = position
+            previous = block["index"]
+        self._source_assets: dict[int, list] = {}
+        assets = source.get("assets", [])
+        if isinstance(assets, (list, tuple)):
+            for asset in deepcopy(assets):
+                if isinstance(asset, dict) and type(asset.get("block_index")) is int:
+                    self._source_assets.setdefault(asset["block_index"], []).append(asset)
         self.setWindowTitle("调整本题范围")
         self.resize(800, 780)
         self.setMinimumSize(400, 550)
         outer = QVBoxLayout(self)
         content = QWidget()
         root = QVBoxLayout(content)
+        root.setSpacing(10)
+        heading = _label("核对原文范围，再保存")
+        heading.setObjectName("CardTitle")
+        root.addWidget(heading)
         root.addWidget(
             _label(
-                "根据完整来源核对题面、答案与共同材料的区块范围。此修改会使旧选题预览失效。"
+                "先选择题面、答案与共同材料的区块，再查看本次范围预览。"
+                "任何范围变动都需要重新预览；原 Word 不会被修改。"
             )
         )
         root.addWidget(_label(_text(source.get("source_name"))))
-        blocks = source.get("blocks", [])
-        maximum = max(
-            (
-                block["index"]
-                for block in blocks
-                if isinstance(block, dict) and type(block.get("index")) is int
-            ),
-            default=0,
+        warnings = tuple(
+            warning for warning in item.get("warnings", ())
+            if isinstance(warning, str) and warning.strip()
+        ) if isinstance(item.get("warnings", ()), (list, tuple)) else ()
+        self.warning_label = _label(
+            "当前题目的待核对提示（保存时还会重新检查）：\n"
+            + "\n".join("• " + warning for warning in warnings)
+            if warnings else "当前题目没有已记录的范围提醒；仍请先核对本次预览。",
+            muted=True,
         )
+        self.warning_label.setAccessibleName("当前 Word 题目范围的待核对原因")
+        root.addWidget(self.warning_label)
+        maximum = max(self._positions, default=0)
+        first = next(iter(self._positions), 1)
         self.fields: dict[str, QSpinBox] = {}
         form = QFormLayout()
         form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
@@ -251,48 +292,133 @@ class WordQuestionRangeDialog(QDialog):
             )
             field.setValue(
                 item.get(key)
-                or (0 if key in {"answer_start", "context_start", "context_end"} else 1)
+                or (0 if key in {"answer_start", "context_start", "context_end"} else first)
             )
             field.setAccessibleName(title)
             self.fields[key] = field
             form.addRow(title, field)
         root.addLayout(form)
+        self.preview_button = QPushButton("查看本次范围预览")
+        self.preview_button.setObjectName("PrimaryAction")
+        self.preview_button.setAccessibleName("查看本次待保存的完整题面答案与共同材料")
+        self.preview_button.setEnabled(self._source_valid)
+        self.preview_button.clicked.connect(self._preview_range)
+        root.addWidget(self.preview_button)
+        self.reading_tabs = QTabWidget()
+        self.reading_tabs.setMinimumWidth(0)
+        self.reading_tabs.setAccessibleName("完整来源与本次范围预览")
         self.original = QPlainTextEdit()
         self.original.setReadOnly(True)
         self.original.setAccessibleName("完整 Word 来源区块，用于核对题目范围")
+        self.original.setMinimumWidth(0)
         self.original.setMinimumHeight(230)
-        self.original.setPlainText(
-            "\n\n".join(
-                f"[区块 {block.get('index')}]\n{_text(block.get('text'))}"
-                + (
-                    "\n待核对：" + "；".join(block.get("warnings", []))
-                    if block.get("warnings")
-                    else ""
-                )
-                for block in blocks
-                if isinstance(block, dict)
-            )
-        )
-        root.addWidget(self.original)
+        self.original.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.original.setPlainText(self._block_text(self._blocks))
+        self.reading_tabs.addTab(self.original, "完整来源")
+        self.range_preview = QPlainTextEdit()
+        self.range_preview.setReadOnly(True)
+        self.range_preview.setAccessibleName("本次待保存的完整范围预览")
+        self.range_preview.setMinimumSize(0, 230)
+        self.range_preview.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.range_preview.setPlaceholderText("点击“查看本次范围预览”后，在这里核对完整内容。")
+        self.reading_tabs.addTab(self.range_preview, "本次范围预览")
+        self.reading_tabs.setTabEnabled(1, False)
+        root.addWidget(self.reading_tabs)
         self.locate_button = QPushButton("定位题面开始区块")
         self.locate_button.setObjectName("QuietButton")
         self.locate_button.clicked.connect(self._locate)
         root.addWidget(self.locate_button)
-        outer.addWidget(page_scroll(content), 1)
-        self.status = _label("")
+        self.review_checks: dict[str, QCheckBox] = {}
+        for key, marker, title in self._REVIEWABLE_WARNINGS:
+            if not any(marker in warning for warning in warnings):
+                continue
+            checkbox = QCheckBox(title)
+            checkbox.setAccessibleName(title)
+            checkbox.setMinimumWidth(0)
+            checkbox.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+            checkbox.setChecked(False)
+            checkbox.setEnabled(False)
+            self.review_checks[key] = checkbox
+            root.addWidget(checkbox)
+        self.review_note = _label(
+            "预览后，仅勾选你已核对的事项；未勾选也可保存范围，但对应提醒不会因此解除。"
+            "这些确认只针对所选原文的分界和材料位置，不代表化学正确性或官方答案审核。",
+            muted=True,
+        )
+        self.review_note.setVisible(bool(self.review_checks))
+        root.addWidget(self.review_note)
+        self.scroll = page_scroll(content)
+        outer.addWidget(self.scroll, 1)
+        self.status = _label("请先查看本次范围预览，再保存。")
+        self.status.setAccessibleName("范围预览与保存状态")
         outer.addWidget(self.status)
         buttons = QHBoxLayout()
-        cancel = QPushButton("取消")
-        cancel.setObjectName("QuietButton")
-        cancel.clicked.connect(self.reject)
+        self.cancel_button = QPushButton("取消")
+        self.cancel_button.setObjectName("QuietButton")
+        self.cancel_button.clicked.connect(self.reject)
         self.save_button = QPushButton("保存本题范围")
-        self.save_button.setEnabled(maximum > 0)
+        self.save_button.setEnabled(False)
         self.save_button.clicked.connect(self._confirm)
-        buttons.addWidget(cancel)
+        buttons.addWidget(self.cancel_button)
         buttons.addWidget(self.save_button)
         outer.addLayout(buttons)
+        for field in self.fields.values():
+            field.valueChanged.connect(self._invalidate_range_preview)
+        for button in self.findChildren(QPushButton):
+            button.setAutoDefault(False)
+        if not self._source_valid:
+            set_status(self.status, "error", "完整来源区块无效或缺失，请返回并重新读取原文。")
+
+    def _block_text(self, blocks: list[dict]) -> str:
+        parts = []
+        for block in blocks:
+            if not isinstance(block, dict):
+                continue
+            warnings = block.get("warnings", ())
+            warnings = [w for w in warnings if isinstance(w, str)] if isinstance(warnings, (list, tuple)) else []
+            index = block.get("index")
+            references = list(self._source_assets.get(index, ())) if type(index) is int else []
+            for field in ("asset_refs", "assets"):
+                values = block.get(field, ())
+                if isinstance(values, (list, tuple)):
+                    references.extend(values)
+            asset_ids = set()
+            unnumbered = 0
+            for reference in references:
+                asset_id = reference.get("asset_id") if isinstance(reference, dict) else reference
+                if isinstance(asset_id, str) and asset_id:
+                    asset_ids.add(asset_id)
+                elif reference:
+                    unnumbered += 1
+            image_count = len(asset_ids) + unnumbered
+            parts.append(
+                f"[区块 {block.get('index')}]\n{_text(block.get('text'))}"
+                + ("\n待核对：" + "；".join(warnings) if warnings else "")
+                + (
+                    f"\n原图引用：{image_count} 项。范围页为文字预览，原图请在逐题预览/原Word核对。"
+                    if image_count else ""
+                )
+            )
+        return "\n\n".join(parts)
+
+    def _range_key(self) -> tuple:
+        return tuple(field.value() for field in self.fields.values())
+
+    def _invalidate_range_preview(self, *_args):
+        self.ranges = None
+        self._preview_key = None
+        self._preview_ranges = None
+        self.save_button.setEnabled(False)
+        self.range_preview.clear()
+        self.reading_tabs.setCurrentIndex(0)
+        self.reading_tabs.setTabEnabled(1, False)
+        for checkbox in self.review_checks.values():
+            checkbox.setChecked(False)
+            checkbox.setEnabled(False)
+        set_status(self.status, "attention", "范围已变化；请重新预览，之前的勾选确认已清除。")
 
     def _locate(self):
+        self.reading_tabs.setCurrentIndex(0)
         cursor = self.original.document().find(
             f"[区块 {self.fields['block_start'].value()}]"
         )
@@ -301,35 +427,96 @@ class WordQuestionRangeDialog(QDialog):
             self.original.setTextCursor(cursor)
             self.original.verticalScrollBar().setValue(cursor.block().firstLineNumber())
 
-    def _confirm(self):
+    def _validated_ranges(self) -> dict:
+        if not self._source_valid:
+            raise ValueError("完整来源区块无效，请重新读取原文。")
         ranges = {key: field.value() for key, field in self.fields.items()}
         start, question_end, answer_start, end = (
             ranges[key]
             for key in ("block_start", "question_end", "answer_start", "block_end")
         )
         context_start, context_end = ranges["context_start"], ranges["context_end"]
-        if (
-            not (1 <= start <= question_end <= end)
-            or (answer_start and not question_end < answer_start <= end)
-            or (not answer_start and question_end != end)
-        ):
-            set_status(
-                self.status,
-                "error",
-                "请按先题面、后答案的顺序选择连续范围；无答案时本题结束须等于题面结束。",
-            )
-            return
-        if (bool(context_start) != bool(context_end)) or (
-            context_start and context_start > context_end
-        ):
-            set_status(
-                self.status, "error", "共同材料须同时填写有效的开始与结束，或都设为 0。"
-            )
-            return
+        for value in (start, question_end, end):
+            if value not in self._positions:
+                raise ValueError("题面与本题起止必须选择来源中实际存在的区块。")
+        positions = self._positions
+        if not positions[start] <= positions[question_end] <= positions[end]:
+            raise ValueError("题面与本题起止顺序须与完整来源中的区块顺序一致。")
+        if answer_start:
+            if (answer_start not in positions
+                    or positions[answer_start] != positions[question_end] + 1
+                    or positions[answer_start] > positions[end]):
+                raise ValueError("题面与答案必须按来源顺序紧邻且不能重叠；同一段题答不能用整区块范围拆开。")
+        elif question_end != end:
+            raise ValueError("未选择答案时，本题结束须等于题面结束。")
+        if bool(context_start) != bool(context_end):
+            raise ValueError("共同材料须同时填写有效的开始与结束，或都设为 0。")
+        if context_start:
+            if context_start not in positions or context_end not in positions:
+                raise ValueError("共同材料必须选择来源中实际存在的区块。")
+            cstart, cend = positions[context_start], positions[context_end]
+            if cstart > cend:
+                raise ValueError("共同材料起止须遵守完整来源中的区块顺序。")
+            if not (cend < positions[start] or cstart > positions[end]):
+                raise ValueError("共同材料不能与本题题面或答案区块重叠。")
         for key in ("answer_start", "context_start", "context_end"):
             ranges[key] = ranges[key] or None
+        return ranges
+
+    def _selected_blocks(self, start: int | None, end: int | None) -> list[dict]:
+        if start is None or end is None:
+            return []
+        return self._blocks[self._positions[start]: self._positions[end] + 1]
+
+    def _preview_range(self):
+        try:
+            ranges = self._validated_ranges()
+        except ValueError as exc:
+            self._invalidate_range_preview()
+            set_status(self.status, "error", str(exc))
+            return
+        sections = []
+        for title, start, end in (
+            ("题面 · 学生作答所见", ranges["block_start"], ranges["question_end"]),
+            ("答案与解析 · 教师参考，不进入学生题面", ranges["answer_start"], ranges["block_end"]),
+            ("共同材料 · 随题面保留", ranges["context_start"], ranges["context_end"]),
+        ):
+            blocks = self._selected_blocks(start, end)
+            sections.append(title + "\n" + (self._block_text(blocks) if blocks else "（本次未选择）"))
+        self.range_preview.setPlainText("\n\n────────────────\n\n".join(sections))
+        self._preview_ranges = ranges
+        self._preview_key = self._range_key()
+        self.reading_tabs.setTabEnabled(1, True)
+        self.reading_tabs.setCurrentIndex(1)
+        for checkbox in self.review_checks.values():
+            checkbox.setChecked(False)
+            checkbox.setEnabled(True)
+        self.save_button.setEnabled(True)
+        set_status(self.status, "success", "已列出完整所选文字。请核对题面、答案和共同材料；如需确认提醒，请明确勾选后保存。")
+        self.scroll.ensureWidgetVisible(self.reading_tabs, 0, 10)
+
+    def _confirm(self):
+        if self._preview_key is None or self._preview_key != self._range_key():
+            set_status(self.status, "attention", "请先点击“查看本次范围预览”，核对后再保存。")
+            return
+        try:
+            ranges = self._validated_ranges()
+        except ValueError as exc:
+            self._invalidate_range_preview()
+            set_status(self.status, "error", str(exc))
+            return
+        if ranges != self._preview_ranges:
+            self._invalidate_range_preview()
+            return
+        reviewed = [key for key, checkbox in self.review_checks.items() if checkbox.isChecked()]
+        if reviewed:
+            ranges["reviewed_issues"] = reviewed
         self.ranges = ranges
         self.accept()
+
+    def reject(self):
+        self.ranges = None
+        super().reject()
 
 
 class WordQuestionDialog(QDialog):

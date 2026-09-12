@@ -23,6 +23,21 @@ from urllib.parse import urlsplit
 from PyInstaller.archive.readers import CArchiveReader
 
 PROMPT_REVISION = "20260910-selected-image-pixels-v24"
+WORD_BOUNDARY_REVIEW_REVISION = "20260912-explicit-source-boundary-review-v1"
+WORD_RANGE_PREVIEW_UI_CONSTANTS = (
+    "查看本次范围预览",
+    "本次范围预览",
+    "保存本题范围",
+    "已核对无答案标签的原文分界",
+    "已核对非标准题目标记的边界",
+    "题面本身已包含所引用的全部材料",
+    (
+        "预览后，仅勾选你已核对的事项；未勾选也可保存范围，但对应提醒不会因此解除。"
+        "这些确认只针对所选原文的分界和材料位置，不代表化学正确性或官方答案审核。"
+    ),
+    "范围已变化；请重新预览，之前的勾选确认已清除。",
+    "请先点击“查看本次范围预览”，核对后再保存。",
+)
 
 
 def digest(path: Path) -> str:
@@ -632,10 +647,37 @@ def verify_source_matches_frozen(pyz, module: str, workspace: Path) -> dict:
 
 
 def verify_frozen_word_theme_index(pyz) -> dict:
-    """Exercise the real frozen pure index with synthetic theme material."""
+    """Exercise frozen whole themes and narrow reviews with synthetic material."""
     code = pyz.extract("integrations.deeptutor_shchem_v1.desktop_word_question_index")
-    namespace = {"__name__": "frozen_word_theme_index"}
-    exec(code, namespace)  # noqa: S102 - pure frozen index, no app state or provider
+
+    def pure_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if level == 0 and name in {"__future__", "hashlib", "json", "re", "copy", "typing"}:
+            return builtins.__import__(name, globals, locals, fromlist, level)
+        raise RuntimeError("Unexpected dependency in frozen pure Word index")
+
+    namespace = {
+        "__name__": "frozen_word_theme_index",
+        "__builtins__": dict(vars(builtins), __import__=pure_import),
+    }
+    exec(code, namespace)  # noqa: S102 - pure frozen index with import allowlist
+    if namespace.get("BOUNDARY_REVIEW_REVISION") != WORD_BOUNDARY_REVIEW_REVISION:
+        raise RuntimeError("Frozen Word boundary review revision missing")
+    index, apply_range = namespace["index_word_questions"], namespace["apply_question_range"]
+
+    def make_preview(texts, assets=()):
+        return {
+            "source_name": "synthetic-theme.docx",
+            "source_sha256": "a" * 64,
+            "revision": "synthetic-preview-v1",
+            "extraction_revision": "synthetic-extractor-v1",
+            "blocks": [
+                {"index": i, "text": text, "warnings": []}
+                for i, text in enumerate(texts, 1)
+            ],
+            "assets": list(assets),
+            "sections": [],
+        }
+
     texts = [
         "考试时间：60分钟，满分：100分",
         "可能用到的相对原子质量：H-1",
@@ -650,20 +692,9 @@ def verify_frozen_word_theme_index(pyz) -> dict:
         "（1）解释原因____",
         "【答案】合成示例",
     ]
-    preview = {
-        "source_name": "synthetic-theme.docx",
-        "source_sha256": "a" * 64,
-        "revision": "synthetic-preview-v1",
-        "extraction_revision": "synthetic-extractor-v1",
-        "blocks": [
-            {"index": i, "text": text, "warnings": []}
-            for i, text in enumerate(texts, 1)
-        ],
-        "assets": [],
-        "sections": [],
-    }
+    preview = make_preview(texts)
     original = deepcopy(preview)
-    items = namespace["index_word_questions"](preview)
+    items = index(preview)
     if len(items) != 2 or items[0]["selection_unit"] != "theme_big_question":
         raise RuntimeError("Frozen Word index did not retain whole themes")
     if items[0]["printed_subpart_starts"] != [5, 7]:
@@ -676,12 +707,129 @@ def verify_frozen_word_theme_index(pyz) -> dict:
         raise RuntimeError("Frozen Word theme lost paper context")
     if preview != original:
         raise RuntimeError("Frozen Word index changed the source preview")
+
+    split_asset = {"asset_id": "synthetic-second-question", "block_index": 4}
+    split_preview = make_preview([
+        "【例1】选择____。", "【答案】A",
+        "【说明】（多选）【变式训练3】选择下列合成选项____。",
+        "【待查看原文：图片或图形】", "A．甲 B．乙", "【答案】B",
+    ], [split_asset])
+    split_original = deepcopy(split_preview)
+    split_items = index(split_preview)
+    if len(split_items) != 2 or [
+        (item["block_start"], item["question_end"], item["answer_start"], item["block_end"])
+        for item in split_items
+    ] != [(1, 1, 2, 2), (3, 5, 6, 6)]:
+        raise RuntimeError("Frozen Word editorial prefix swallowed a separate question")
+    if (
+        not all(item["export_ready"] for item in split_items)
+        or split_items[0]["key"] == split_items[1]["key"]
+        or split_items[0]["answer_blocks"][0]["assets"]
+        or split_items[1]["question_blocks"][1]["assets"] != [split_asset]
+        or split_preview != split_original
+    ):
+        raise RuntimeError("Frozen Word split changed source text or image ownership")
+    quoted = index(make_preview([
+        "【例1】选择____。", "【答案】【说明】（多选）【变式训练3】仅在解析中引用。",
+    ]))
+    if len(quoted) != 1 or quoted[0]["answer_start"] != 2:
+        raise RuntimeError("Frozen Word index mistook an answer quotation for a question")
+
+    cases = {
+        "unmarked_answer": [
+            "1．合成条件下哪项正确____。", "A．甲 B．乙 C．丙", "(3)C",
+            "(3)这是合成原文已有的说明文字，用来解释所选选项的依据。",
+        ],
+        "nonstandard_label": [
+            "【变式训练3·变题型合成材料如下。", "(1)填写____。", "【答案】合成结果",
+        ],
+        "self_contained_reference": [
+            "【例1】合成材料观点为两个条件共同成立。根据上述观点，选择____。", "【答案】合成结果",
+        ],
+    }
+    for issue, case in cases.items():
+        source = make_preview(case, [{"asset_id": "synthetic-review-image", "block_index": 1}])
+        source["blocks"][0]["warnings"] = ["合成原图仍需核对。"]
+        source_original = deepcopy(source)
+        candidates = index(source)
+        if len(candidates) != 1 or candidates[0]["export_ready"]:
+            raise RuntimeError("Frozen Word review hold automatically cleared: " + issue)
+        candidate = candidates[0]
+        candidate_original = deepcopy(candidate)
+        bounds = {key: candidate[key] for key in ("block_start", "question_end", "answer_start", "block_end")}
+        unconfirmed = apply_range(source, candidate, **bounds)
+        if unconfirmed["export_ready"] or "boundary_review" in unconfirmed:
+            raise RuntimeError("Frozen Word range alone cleared explicit review: " + issue)
+        reviewed = apply_range(source, candidate, **bounds, reviewed_issues=[issue])
+        if (
+            not reviewed["export_ready"]
+            or reviewed["key"] != candidate["key"]
+            or reviewed["revision"] == candidate["revision"]
+            or reviewed.get("boundary_review") != {
+                "revision": WORD_BOUNDARY_REVIEW_REVISION,
+                "issues": [issue], "scope": "selected_source_ranges_only",
+            }
+            or "合成原图仍需核对。" not in reviewed["warnings"]
+            or any(reviewed[role] != candidate[role] for role in
+                   ("question_blocks", "answer_blocks", "context_blocks"))
+            or source != source_original or candidate != candidate_original
+        ):
+            raise RuntimeError("Frozen Word explicit review changed source or failed: " + issue)
+        wrong_issue = next(value for value in cases if value != issue)
+        for changed_source, issues in (
+            (source, [wrong_issue]),
+            ({**source, "revision": "stale-source-preview"}, [issue]),
+        ):
+            try:
+                apply_range(changed_source, candidate, **bounds, reviewed_issues=issues)
+            except ValueError:
+                pass
+            else:
+                raise RuntimeError("Frozen Word review accepted wrong issue or stale source")
+
+    leakage = make_preview([
+        "【例1】合成材料条件在此。根据上述观点，选择____。【答案】A",
+    ])
+    leaking_item = index(leakage)[0]
+    still_held = apply_range(leakage, leaking_item, block_start=1, question_end=1,
+                             answer_start=None, block_end=1,
+                             reviewed_issues=["self_contained_reference"])
+    if still_held["export_ready"]:
+        raise RuntimeError("Frozen Word narrow review cleared answer leakage")
     return {
         "synthetic_themes": 2,
         "shared_material_preserved": True,
         "answers_separated": True,
         "source_unchanged": True,
+        "editorial_prefix_separate_questions": 2,
+        "editorial_prefix_image_ownership_preserved": True,
+        "answer_quotation_not_split": True,
+        "explicit_review_cases": len(cases),
+        "unconfirmed_ranges_still_held": len(cases),
+        "wrong_issue_and_stale_source_cases_rejected": len(cases) * 2,
+        "explicit_review_cannot_clear_answer_leakage": True,
+        "boundary_review_revision": WORD_BOUNDARY_REVIEW_REVISION,
+        "application_or_provider_loaded": False,
     }
+
+
+def verify_frozen_word_range_preview_ui(pyz) -> dict:
+    """Inspect UI constants and preview-state routes without loading Qt or UI."""
+    code = pyz.extract("integrations.deeptutor_shchem_v1.desktop_workbench.word_question_dialog")
+    if set(WORD_RANGE_PREVIEW_UI_CONSTANTS) - strings(code):
+        raise RuntimeError("Frozen Word range preview UI constants missing")
+    dialog = _frozen_function(code, "WordQuestionRangeDialog")
+    confirm = _frozen_function(dialog, "_confirm")
+    invalidate = _frozen_function(dialog, "_invalidate_range_preview")
+    if (
+        not {"_preview_key", "_range_key", "_validated_ranges", "_preview_ranges", "isChecked"}.issubset(confirm.co_names)
+        or "reviewed_issues" not in strings(confirm)
+        or not {"_preview_key", "_preview_ranges", "setChecked", "setEnabled"}.issubset(invalidate.co_names)
+    ):
+        raise RuntimeError("Frozen Word range preview state route missing")
+    return {"constants_checked": len(WORD_RANGE_PREVIEW_UI_CONSTANTS),
+            "preview_state_routes_static_checked": True, "ui_instantiated": False,
+            "ui_interaction_checked": False}
 
 
 def verify_frozen_import_binding(pyz) -> dict:
@@ -883,7 +1031,9 @@ def main() -> int:
         "desktop_paper_preparation": [],
         "word_native_math": [],
         "word_native_text": ["20260909-editable-chemistry-v2"],
-        "desktop_word_question_index": ["20260910-word-answer-boundary-index-v4"],
+        "desktop_word_question_index": [
+            "20260910-word-answer-boundary-index-v4", WORD_BOUNDARY_REVIEW_REVISION,
+        ],
         "desktop_word_metafile_preview": [],
         "desktop_word_source_reference": ["reference_issues", "image_references"],
         "desktop_word_question_recommendations": ["exact_label_match"],
@@ -911,6 +1061,7 @@ def main() -> int:
         "desktop_workbench.word_question_dialog": [
             "Word 逐题浏览与选题",
             "确认带入备课",
+            *WORD_RANGE_PREVIEW_UI_CONSTANTS,
         ],
         "desktop_workbench.word_question_attributes_dialog": [
             "修改教学标签",
@@ -989,6 +1140,7 @@ def main() -> int:
     image_capacity = verify_frozen_image_limit(pyz)
     catalog_session = verify_catalog_session(pyz.extract(prefix + "desktop_facade"))
     word_theme_index = verify_frozen_word_theme_index(pyz)
+    word_range_preview = verify_frozen_word_range_preview_ui(pyz)
     import_binding = verify_frozen_import_binding(pyz)
 
     original = tree(package)
@@ -1022,6 +1174,7 @@ def main() -> int:
         "frozen_twelve_image_capacity_checked": image_capacity,
         "frozen_catalog_session_checked": catalog_session,
         "frozen_word_theme_index": word_theme_index,
+        "frozen_word_range_preview_static": word_range_preview,
         "frozen_import_loaded_input_binding": import_binding,
         "legacy_web_and_external_icu_absent": True,
         "fresh_extraction": str(fresh),

@@ -268,3 +268,100 @@ def test_new_image_input_module_has_real_source_match_check():
             module_name,
             ROOT,
         )
+
+
+def test_inspector_runs_word_split_and_explicit_review_contract_without_state():
+    result = _inspector().verify_frozen_word_theme_index(_CodeArchive())
+    assert result["synthetic_themes"] == 2
+    assert result["shared_material_preserved"] and result["source_unchanged"]
+    assert result["editorial_prefix_separate_questions"] == 2
+    assert result["editorial_prefix_image_ownership_preserved"]
+    assert result["answer_quotation_not_split"]
+    assert result["explicit_review_cases"] == 3
+    assert result["unconfirmed_ranges_still_held"] == 3
+    assert result["wrong_issue_and_stale_source_cases_rejected"] == 6
+    assert result["explicit_review_cannot_clear_answer_leakage"]
+    assert result["boundary_review_revision"] == "20260912-explicit-source-boundary-review-v1"
+    assert result["application_or_provider_loaded"] is False
+
+
+@pytest.mark.parametrize(
+    "before,after,error",
+    [
+        (
+            "20260912-explicit-source-boundary-review-v1", "old-review-revision",
+            "Frozen Word boundary review revision missing",
+        ),
+        (
+            "tag = _LEADING_TAG.match(text)", "tag = None",
+            "Frozen Word editorial prefix swallowed",
+        ),
+        (
+            "if inferred_answer_at is not None:", "if False:",
+            "Frozen Word review hold automatically cleared: unmarked_answer",
+        ),
+        (
+            'if _BROKEN_VARIANT.match(_GAP.sub("", question_blocks[0].get("text", "")).strip()):',
+            "if False:",
+            "Frozen Word review hold automatically cleared: nonstandard_label",
+        ),
+        (
+            "if not context_blocks and (", "if False and (",
+            "Frozen Word review hold automatically cleared: self_contained_reference",
+        ),
+        (
+            'and "unmarked_answer" in reviewed_issues', "and False",
+            "Frozen Word explicit review changed source or failed: unmarked_answer",
+        ),
+        (
+            '"export_ready": not needs_review,',
+            '"export_ready": not needs_review or bool(reviewed_issues),',
+            "Frozen Word narrow review cleared answer leakage",
+        ),
+    ],
+)
+def test_inspector_rejects_word_boundary_or_review_policy_regressions(before, after, error):
+    with pytest.raises(RuntimeError, match=error):
+        _inspector().verify_frozen_word_theme_index(
+            _MutatedArchive("desktop_word_question_index", before, after)
+        )
+
+
+def test_frozen_word_index_rejects_application_imports_before_execution():
+    archive = _MutatedArchive(
+        "desktop_word_question_index", "from typing import Any",
+        "from typing import Any\nfrom . import desktop_facade",
+    )
+    with pytest.raises(RuntimeError, match="Unexpected dependency in frozen pure Word index"):
+        _inspector().verify_frozen_word_theme_index(archive)
+
+
+def test_inspector_checks_word_range_preview_statically_without_loading_qt():
+    result = _inspector().verify_frozen_word_range_preview_ui(_CodeArchive())
+    assert result["constants_checked"] == 9
+    assert result["preview_state_routes_static_checked"]
+    assert result["ui_instantiated"] is False
+    assert result["ui_interaction_checked"] is False
+
+
+@pytest.mark.parametrize("missing", [
+    "查看本次范围预览",
+    "已核对无答案标签的原文分界",
+    "已核对非标准题目标记的边界",
+    "题面本身已包含所引用的全部材料",
+    "范围已变化；请重新预览，之前的勾选确认已清除。",
+])
+def test_inspector_rejects_missing_word_range_preview_ui_contract(missing):
+    with pytest.raises(RuntimeError, match="Frozen Word range preview UI constants missing"):
+        _inspector().verify_frozen_word_range_preview_ui(
+            _MutatedArchive("desktop_workbench.word_question_dialog", missing, "合成旧界面文案")
+        )
+
+
+def test_inspector_rejects_word_range_confirmation_without_review_forwarding():
+    with pytest.raises(RuntimeError, match="Frozen Word range preview state route missing"):
+        _inspector().verify_frozen_word_range_preview_ui(
+            _MutatedArchive("desktop_workbench.word_question_dialog",
+                            'ranges["reviewed_issues"] = reviewed',
+                            'ranges["ignored_reviews"] = reviewed')
+        )

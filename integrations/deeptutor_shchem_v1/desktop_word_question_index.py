@@ -15,6 +15,10 @@ from copy import deepcopy
 from typing import Any
 
 QUESTION_INDEX_REVISION = "20260910-word-answer-boundary-index-v4"
+BOUNDARY_REVIEW_REVISION = "20260912-explicit-source-boundary-review-v1"
+_REVIEWABLE_ISSUES = frozenset(
+    {"unmarked_answer", "nonstandard_label", "self_contained_reference"}
+)
 _GAP = re.compile(r"【(?:待查看原文：[\s\S]*?|未提取到文字)】")
 _NUMBER = r"[0-9０-９一二三四五六七八九十百]+(?:[-－—][0-9０-９]+)?"
 _KIND = r"(?:即学即练|同步练习|随堂练习|针对训练|典例|例题|例|变式(?:训练|练习)?|练习)"
@@ -27,7 +31,11 @@ _ANY_EXPLICIT = re.compile(rf"[【\[（(]\s*{_KIND}\s*{_NUMBER}{_SUFFIX}\s*[】\
 _BROKEN_VARIANT = re.compile(
     rf"^[【\[]\s*(变式(?:训练|练习)?\s*{_NUMBER})\s*[·•]?\s*变(?:载体|考法|题型)(?=[^】\]\s])"
 )
-_LEADING_TAG = re.compile(r"^【[^】\n]{1,32}】\s*(?=【|\[)")
+_CHOICE_EDITORIAL_TAG = r"[（(](?:单选|多选|不定项选择|单项选择|多项选择)[）)]"
+_LEADING_TAG = re.compile(
+    rf"^(?:【[^】\n]{{1,32}}】|{_CHOICE_EDITORIAL_TAG})\s*"
+    rf"(?=【|\[|{_CHOICE_EDITORIAL_TAG})"
+)
 # A full-width/list delimiter may be followed by a numerical condition (e.g.
 # "24．25 ℃时"). Only an adjacent ASCII dot+digit denotes a decimal value.
 _GENERIC = re.compile(r"^(\d{1,3})(?:\s*[．、]\s*|\s*\.(?!\d)\s*)(.*)$", re.DOTALL)
@@ -174,9 +182,12 @@ def _heading(text: str) -> bool:
     body = numbered.group(2)
     # "判断方法" / "选择原则" are headings, not imperatives. Actual
     # question marks, answer spaces and explicit "请/试" prompts win.
-    if not re.search(r"[?？]|_{2,}|\S[ \t\u3000]{3,}[。；;，,]|请|试(?:写|求|回答)|下列|已知|[（(]\s*(?:20\d{2}|\d{2}-\d{2})", body):
-        if not re.match(r"^(?:写出|求出|回答|计算)", body) and _KNOWLEDGE_TITLE.fullmatch(body):
-            return True
+    if (
+        not re.search(r"[?？]|_{2,}|\S[ \t\u3000]{3,}[。；;，,]|请|试(?:写|求|回答)|下列|已知|[（(]\s*(?:20\d{2}|\d{2}-\d{2})", body)
+        and not re.match(r"^(?:写出|求出|回答|计算)", body)
+        and _KNOWLEDGE_TITLE.fullmatch(body)
+    ):
+        return True
     return bool(not _QUESTION.search(body) and _KNOWLEDGE_NUMBER.match(body))
 
 
@@ -301,6 +312,7 @@ def _build(
     question_end: int | None = None,
     answer_start: int | None = None,
     source_answer_indexes: set[int] | None = None,
+    reviewed_issues: frozenset[str] = frozenset(),
 ) -> dict[str, Any]:
     copied = _copied_blocks(preview, selected)
     context_blocks = _copied_blocks(preview, context)
@@ -354,16 +366,34 @@ def _build(
     question_text = "\n".join(block.get("text", "") for block in question_blocks)
     full_text = "\n".join(block.get("text", "") for block in copied)
     needs_review = split
+    applicable_reviews = set()
     if inferred_answer_at is not None:
-        warnings.add("原文未使用答案标记；已按选项后的独立选项字母及同号说明列出答案候选，须核对后使用。")
-        needs_review = True
+        applicable_reviews.add("unmarked_answer")
+        if (
+            manual
+            and "unmarked_answer" in reviewed_issues
+            and answer_start == copied[inferred_answer_at]["index"]
+        ):
+            warnings.add("原文未使用答案标记；所选题答分界已明确核对，保留原文答案与说明，不补写答案标签或改动原文件。")
+        else:
+            warnings.add("原文未使用答案标记；已按选项后的独立选项字母及同号说明列出答案候选，须核对后使用。")
+            needs_review = True
     if _BROKEN_VARIANT.match(_GAP.sub("", question_blocks[0].get("text", "")).strip()):
-        warnings.add("原文变式题标签缺少闭括号，已保留原文并识别为独立题目候选，请核对题目边界。")
-        needs_review = True
+        applicable_reviews.add("nonstandard_label")
+        if manual and "nonstandard_label" in reviewed_issues:
+            warnings.add("原文变式题标签缺少闭括号；已明确核对所选独立题目边界，保留原文标记，不改写原文件。")
+        else:
+            warnings.add("原文变式题标签缺少闭括号，已保留原文并识别为独立题目候选，请核对题目边界。")
+            needs_review = True
     if split or any(_ANSWER.search(block.get("text", "")) for block in question_blocks):
         warnings.add(
             "题目与答案处于同一来源区块，或题目范围仍含答案标记；须核对范围或内容后才能导出学生版。"
         )
+        needs_review = True
+    if source_answer_indexes and any(
+        block["index"] in source_answer_indexes for block in question_blocks
+    ):
+        warnings.add("题面范围包含来源中已识别的答案或解析区块，须调整分界；范围确认不能把答案改作题面。")
         needs_review = True
     if any(
         _ANSWER.search(block.get("text", ""))
@@ -384,8 +414,14 @@ def _build(
         _BACK_REFERENCE.search(question_blocks[0].get("text", ""))
         or re.search(r"前文|上一题|前题", question_text)
     ):
-        warnings.add("题目引用前文或前题，但未关联明确的共同材料；请核对材料范围。")
-        needs_review = True
+        applicable_reviews.add("self_contained_reference")
+        if manual and "self_contained_reference" in reviewed_issues:
+            warnings.add("已明确核对题面本身包含所引用的全部材料；未借入前题内容，原文字与图片保持不变。")
+        else:
+            warnings.add("题目引用前文或前题，但未关联明确的共同材料；请核对材料范围。")
+            needs_review = True
+    if reviewed_issues - applicable_reviews:
+        raise ValueError("范围确认项与当前所选原文不一致，请重新预览后核对。")
     label = _marker(question_blocks[0].get("text", ""))
     generic = _GENERIC.match(_GAP.sub("", question_blocks[0].get("text", "")).strip())
     label = label or (generic.group(1) if generic else "题目")
@@ -419,6 +455,12 @@ def _build(
         "selection_ready": True,
         "export_ready": not needs_review,
     }
+    if manual and reviewed_issues:
+        item["boundary_review"] = {
+            "revision": BOUNDARY_REVIEW_REVISION,
+            "issues": sorted(reviewed_issues),
+            "scope": "selected_source_ranges_only",
+        }
     item["revision"] = _digest(item)
     return item
 
@@ -544,6 +586,7 @@ def apply_question_range(
     block_end: int,
     context_start: int | None = None,
     context_end: int | None = None,
+    reviewed_issues: list[str] | None = None,
 ) -> dict[str, Any]:
     """Rebuild an explicitly chosen whole-block range without changing its key.
 
@@ -552,6 +595,15 @@ def apply_question_range(
     student export of an original paragraph that still contains answer text.
     """
     blocks, positions = _preview(preview)
+    if reviewed_issues is None:
+        reviewed_issues = []
+    if (
+        not isinstance(reviewed_issues, list)
+        or any(not isinstance(value, str) for value in reviewed_issues)
+        or len(reviewed_issues) != len(set(reviewed_issues))
+        or not set(reviewed_issues) <= _REVIEWABLE_ISSUES
+    ):
+        raise ValueError("范围确认项无效，请重新预览并选择具体需核对的问题。")
     if (
         not isinstance(item, dict)
         or item.get("source_sha256") != preview["source_sha256"].lower()
@@ -610,8 +662,6 @@ def apply_question_range(
             for source_item in index_word_questions(preview)
             for block in source_item["answer_blocks"]
         }
-        if context
-        else set()
     )
     result = _build(
         preview,
@@ -623,6 +673,7 @@ def apply_question_range(
         question_end=question_end,
         answer_start=answer_start,
         source_answer_indexes=source_answer_indexes,
+        reviewed_issues=frozenset(reviewed_issues),
     )
     if item.get("selection_unit") == "theme_big_question":
         result.update(selection_unit="theme_big_question",
