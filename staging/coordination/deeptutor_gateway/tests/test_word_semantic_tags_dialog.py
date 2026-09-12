@@ -59,6 +59,7 @@ class Facade:
             "revision": "plan-r1",
             "model_label": "合成演示模型 / synthetic-model",
             "request_count": 2,
+            "request_policy": {"max_output_tokens": 32000, "timeout_seconds": 300},
             "units": [],
         }
         for i in range(3):
@@ -173,6 +174,9 @@ def test_full_question_images_consent_then_selected_save(qt_app):
     assert any("A. 示例选项" in label.text() for label in labels)
     assert any(not label.pixmap().isNull() for label in labels)
     assert "2次" in dialog.disclosure.text() and "1题不发送" in dialog.disclosure.text()
+    assert "32000 token" in dialog.disclosure.text()
+    assert "300秒" in dialog.disclosure.text()
+    assert "部分模型包含推理" in dialog.disclosure.text()
     assert not dialog.run_button.isEnabled()
     dialog._run()
     assert not tasks.pending

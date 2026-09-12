@@ -222,7 +222,9 @@ class WordSemanticTagsDialog(QDialog):
         self.disclosure.setText(
             f"本次模式：{mode_label}\n接收模型：{value['model_label']}\n将发送{len(ready)}题的原生文字、公共材料及{images}张图片像素（包含图内可见内容和文件元数据）。"
             f"另有{len(value['units']) - len(ready)}题不发送，原因见题目列表。\n"
-            f"最多调用{value['request_count']}次，每题一次；可能产生费用。失败即停止，重试可能再次计费。"
+            f"最多调用{value['request_count']}次，每题一次；可能产生费用。失败即停止，重试可能再次计费。\n"
+            f"单题输出上限{value['request_policy']['max_output_tokens']} token（部分模型包含推理），"
+            f"最长等待{value['request_policy']['timeout_seconds']}秒；保留模型默认推理设置。"
         )
         self._populate()
         set_status(

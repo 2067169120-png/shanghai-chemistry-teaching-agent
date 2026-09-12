@@ -368,6 +368,77 @@ def build_structured_text_request(
     )
 
 
+def structured_response_summary(api_style: str, raw: bytes) -> dict[str, Any]:
+    """Closed, bounded diagnostic fields; never provider text or reasoning."""
+    if api_style not in {"responses", "chat_completions"}:
+        return {}
+    if not isinstance(raw, bytes) or len(raw) > MAX_VISUAL_RESPONSE_BYTES:
+        return {}
+    try:
+        payload = strict_json_loads(raw)
+    except (ValueError, TypeError, RecursionError):
+        return {}
+    if not isinstance(payload, Mapping):
+        return {}
+    summary: dict[str, Any] = {}
+
+    def enum_value(value: Any, allowed: set[str]) -> str:
+        return (
+            value
+            if isinstance(value, str) and value in allowed
+            else "missing_or_unknown"
+        )
+
+    if api_style == "responses":
+        summary["status"] = enum_value(
+            payload.get("status"),
+            {"completed", "incomplete", "failed", "in_progress", "queued", "cancelled"},
+        )
+        details = payload.get("incomplete_details")
+        summary["incomplete_reason"] = enum_value(
+            details.get("reason") if isinstance(details, Mapping) else None,
+            {"max_output_tokens", "content_filter"},
+        )
+    else:
+        choices = payload.get("choices")
+        choice = (
+            choices[0]
+            if isinstance(choices, list)
+            and len(choices) == 1
+            and isinstance(choices[0], Mapping)
+            else {}
+        )
+        summary["finish_reason"] = enum_value(
+            choice.get("finish_reason"),
+            {"stop", "length", "content_filter", "tool_calls", "function_call"},
+        )
+    usage = payload.get("usage")
+    if isinstance(usage, Mapping):
+        summary["usage"] = {
+            k: usage[k]
+            for k in (
+                "input_tokens",
+                "output_tokens",
+                "prompt_tokens",
+                "completion_tokens",
+                "total_tokens",
+            )
+            if type(usage.get(k)) is int and 0 <= usage[k] <= 10_000_000
+        }
+        detail_key = (
+            "output_tokens_details"
+            if api_style == "responses"
+            else "completion_tokens_details"
+        )
+        details = usage.get(detail_key)
+        count = (
+            details.get("reasoning_tokens") if isinstance(details, Mapping) else None
+        )
+        if type(count) is int and 0 <= count <= 10_000_000:
+            summary["reasoning_tokens"] = count
+    return summary
+
+
 def parse_structured_visual_response(
     api_style: str, raw: bytes
 ) -> tuple[Any, dict[str, int] | None]:
@@ -508,4 +579,5 @@ __all__ = [
     "parse_structured_visual_response",
     "prepare_egress_image",
     "strict_json_loads",
+    "structured_response_summary",
 ]

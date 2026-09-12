@@ -98,7 +98,7 @@ def main():
         preview = cache.load(raw, row["source_name"])
         assert preview is not None
         positions = {b["index"] for b in preview["blocks"]}
-        for group in ("methods", "pitfalls", "teaching_flow"):
+        for group in ("knowledge", "methods", "pitfalls", "teaching_flow"):
             existing = {c["summary"]: c for c in row.get(group, [])}
             for claim in entry.get(group, []):
                 assert set(claim) == {"summary", "block_indices"}

@@ -9,6 +9,7 @@ import json
 import threading
 import time
 from copy import deepcopy
+from urllib.parse import urlsplit
 from uuid import uuid4
 
 from jsonschema import Draft202012Validator
@@ -30,9 +31,43 @@ from .visual_provider_runtime import (
     build_structured_text_request,
     build_structured_visual_request,
     parse_structured_visual_response,
+    structured_response_summary,
 )
 
-REVISION = "word-semantic-tags-20260913-v2"
+REVISION = "word-semantic-tags-20260913-v3-output-budget"
+
+
+def tag_request_policy(policy):
+    """Keep reasoning enabled, with a disclosed, provider-specific hard cap.
+
+    DeepSeek Responses counts reasoning inside max_output_tokens:
+    https://api-docs.deepseek.com/api/create-response/
+    Unknown/custom endpoints and models retain the existing small budget.
+    """
+    known_v4 = False
+    try:
+        parsed = urlsplit(policy.get("base_url", ""))
+        known_v4 = (
+            parsed.scheme == "https"
+            and parsed.hostname == "api.deepseek.com"
+            and parsed.port in {None, 443}
+            and parsed.username is None
+            and parsed.password is None
+            and not parsed.query
+            and not parsed.fragment
+            and policy.get("model_id")
+            in (
+                "deepseek-v4-flash",
+                "deepseek-v4-pro",
+                "deepseek-v4-flash-vision-exp",
+            )
+        )
+    except (ValueError, TypeError, AttributeError):
+        pass
+    return {
+        "max_output_tokens": 32000 if known_v4 else 8192,
+        "timeout_seconds": 300 if known_v4 else 180,
+    }
 
 
 class WordSemanticTagError(ValueError):
@@ -227,6 +262,11 @@ class WordSemanticTagService:
     ):
         mode = _mode(mode)
         profile = self.facade._preparation_profile(profile_id, profile_revision)
+        request_policy = tag_request_policy(
+            self.facade._providers.invocation_policy(
+                profile_id, expected_revision=profile_revision
+            )
+        )
         rows, inventory = self.words._resolve(selections)
         catalog = self.words._read_attribute_catalog()
         stored = self.words.attribute_store.get_many([row["key"] for row in rows])
@@ -346,6 +386,8 @@ class WordSemanticTagService:
         if total_bytes > 64 * 1024 * 1024:
             raise WordSemanticTagError("本次选题图片超过64MiB，请减少选题后重新预览。")
         return {
+            "runtime_revision": REVISION,
+            "request_policy": request_policy,
             "mode": mode,
             "profile_id": profile_id,
             "profile_revision": profile_revision,
@@ -390,6 +432,7 @@ class WordSemanticTagService:
     def _public_plan(identifier, plan):
         return {
             "plan_id": identifier,
+            "request_policy": deepcopy(plan["request_policy"]),
             "mode": plan["mode"],
             "revision": plan["revision"],
             "model_label": plan["model_label"],
@@ -448,6 +491,7 @@ class WordSemanticTagService:
                             "message_zh": f"正在分析第{index}/{len(ready)}题；已完成{len(results['items'])}题"
                         }
                     )
+                response_summary = {}
                 try:
                     self.facade._preparation_profile(
                         plan["profile_id"], plan["profile_revision"]
@@ -455,6 +499,18 @@ class WordSemanticTagService:
                     with self.facade._providers.borrow_invocation_context(
                         plan["profile_id"], expected_revision=plan["profile_revision"]
                     ) as context:
+                        if (
+                            tag_request_policy(
+                                {
+                                    "base_url": context.base_url,
+                                    "model_id": context.model_id,
+                                }
+                            )
+                            != plan["request_policy"]
+                        ):
+                            raise WordSemanticTagError(
+                                "模型输出预算已变，请重新预览；本题未调用。"
+                            )
                         if unit["images"]:
                             require_preparation_vision_policy(
                                 self.facade._providers.invocation_policy(
@@ -466,7 +522,9 @@ class WordSemanticTagService:
                             "prompt": tag_prompt(unit, plan["catalog"]),
                             "schema": OUTPUT_SCHEMA,
                             "schema_name": "shchem_word_tags_v1",
-                            "max_output_tokens": 8192,
+                            "max_output_tokens": plan["request_policy"][
+                                "max_output_tokens"
+                            ],
                         }
                         outbound = (
                             build_structured_visual_request(
@@ -482,7 +540,11 @@ class WordSemanticTagService:
                         )
                         transport = getattr(
                             self.facade, "_preparation_transport", None
-                        ) or PinnedVisualTransport(total_timeout_seconds=180)
+                        ) or PinnedVisualTransport(
+                            total_timeout_seconds=plan["request_policy"][
+                                "timeout_seconds"
+                            ]
+                        )
 
                         class CancelView:
                             def is_set(self):
@@ -491,7 +553,8 @@ class WordSemanticTagService:
                         response = transport.send(
                             outbound,
                             cancel_event=CancelView(),
-                            deadline_monotonic=time.monotonic() + 180,
+                            deadline_monotonic=time.monotonic()
+                            + plan["request_policy"]["timeout_seconds"],
                         )
                     if cancelled():
                         break
@@ -502,6 +565,9 @@ class WordSemanticTagService:
                         raise WordSemanticTagError(
                             "模型服务未完成本题分析", "provider_failed"
                         )
+                    response_summary = structured_response_summary(
+                        outbound.api_style, response.body
+                    )
                     decoded, usage = parse_structured_visual_response(
                         outbound.api_style, response.body
                     )
@@ -513,6 +579,7 @@ class WordSemanticTagService:
                         "changed": proposal != unit["attributes"],
                         "note": decoded["note"],
                         "usage": usage,
+                        "response_summary": response_summary,
                     }
                 except Exception as exc:  # noqa: BLE001 - configured transports must not expose raw requests or credentials
                     code = getattr(exc, "code", "word_semantic_tags_failed")
@@ -530,11 +597,20 @@ class WordSemanticTagService:
                         "provider_response_too_large": "模型响应超过安全容量，本题未写入",
                         "provider_response_refused": "模型服务拒绝完成本题分析，本题未写入",
                     }
+                    if code == "provider_response_incomplete" and (
+                        response_summary.get("incomplete_reason") == "max_output_tokens"
+                        or response_summary.get("finish_reason") == "length"
+                    ):
+                        messages[code] = (
+                            f"模型达到本题{plan['request_policy']['max_output_tokens']} token输出上限（可能含推理），"
+                            "尚未完成标签；本题未写入，批次停止，无自动重试。"
+                        )
                     safe_error = isinstance(exc, WordSemanticTagError)
                     item = {
                         "key": unit["key"],
                         "status": "failed",
                         "changed": False,
+                        "response_summary": response_summary,
                         "failure_code": code
                         if code in messages
                         or (safe_error and code == "provider_failed")
