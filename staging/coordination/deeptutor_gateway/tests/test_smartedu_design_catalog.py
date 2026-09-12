@@ -49,6 +49,25 @@ def test_supplementary_text_counts_do_not_increase_presentation_counts():
     assert all(not item["downloaded"] for item in documents)
 
 
+def test_package_recheck_records_loaded_attachments_without_new_downloads():
+    catalog = _catalog()
+    checked = catalog["latest_package_ui_check"]
+    course = next(
+        item
+        for item in catalog["courseware"]
+        if item["course_package_id"] == checked["course_package_id"]
+    )
+    documents = checked["supplementary_preview_recheck"]
+    assert {item["ui_label"]: item["page_count"] for item in documents} == {
+        item["ui_label"]: item["page_count"]
+        for item in course["supplementary_documents"]
+    }
+    assert all(item["body_loaded"] and not item["downloaded"] for item in documents)
+    assert any(item.get("reference_answers_visible") for item in documents)
+    assert checked["original_files_downloaded"] == 0
+    assert checked["new_pages_added_to_review_counts"] == 0
+
+
 def test_new_course_is_not_mislabeled_as_a_download_or_textbook_verification():
     catalog = _catalog()
     course = next(

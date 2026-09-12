@@ -159,7 +159,15 @@ def test_original_teaching_text_tables_and_every_image_position_are_preserved(
         for r in ref["image_references"]
     )
     assert ref["image_issues"] == []
-    assert any("未把原图像素发送给模型" in line for line in ref["warnings"])
+    for content in (ref["materials"], "\n".join(ref["warnings"])):
+        assert "确认导入后仅把原图保存为本地备课素材，不调用模型" in content
+        assert (
+            "后续是否发送图片像素，以生成时的“本地排版/视觉读取”选择及发送预览为准"
+            in content
+        )
+        assert "不能仅凭图注补写图中条件" in content
+        assert "未把原图像素发送给模型" not in content
+        assert "模型仅见图注" not in content
     assert str(tmp_path) not in json.dumps(ref)
     assert "selections" not in ref and "points" not in ref
     assert not _image_root(facade).exists()
@@ -306,6 +314,11 @@ def test_unsupported_image_is_explicit_and_text_only_is_opt_in(
     result = facade.import_word_source_reference(text, [])
     assert result["image_assets"] == []
     assert "明确仅使用文字" in text["materials"]
+    for content in (text["materials"], "\n".join(text["warnings"])):
+        assert "本次已明确选择仅文字：未带入任何原图，也未把原图发送给模型" in content
+        assert "须由教师补充图中必要条件" in content
+        assert "保存为本地备课素材" not in content
+        assert "模型仅见图注" not in content
     assert not _image_root(facade).exists()
 
 

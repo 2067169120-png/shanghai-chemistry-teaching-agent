@@ -1,6 +1,6 @@
 {
   "schema_version": "smartedu.teaching-design-reference.v1",
-  "checked_at": "2026-09-12T19:44:02+08:00",
+  "checked_at": "2026-09-12T20:14:24+08:00",
   "role": "教学组织参考，非教材原文库、题库或正式授课批准",
   "counts": {
     "course_packages_reviewed": 3,
@@ -16,18 +16,23 @@
   "access_method": "独立隔离浏览器会话，公开页面点击、快照和视觉阅读；未登录、未读取凭据、未调用隐藏资源接口。",
   "download_status": "已查公开匿名页面未见原PPT下载入口或公开加载的原PPT文件；本次全屏授课出现登录提示，已取消，不推断登录后下载权限；截图及在线演示不计作原件下载。",
   "latest_package_ui_check": {
-    "checked_at": "2026-09-12T19:44:02+08:00",
+    "checked_at": "2026-09-12T20:14:24+08:00",
     "course_package_id": "18aa1947-8aac-2411-0633-726953abb358",
-    "action": "内置浏览器重新打开对应课程包，点击课件并目视29/29页预览；授课下拉只有全屏授课与H5播放器授课；同包教学设计、学习任务单和课后练习入口可见",
+    "action": "内置浏览器复用对应课程包，核对29页课件预览；依次打开教学设计、学习任务单和课后练习，正文已加载，课后练习末页可见参考答案；不止核对入口名称",
     "visible_preview_page_count": 29,
     "other_visible_resources": ["教学设计", "学习任务单", "课后练习"],
+    "supplementary_preview_recheck": [
+      {"ui_label": "教学设计", "page_count": 3, "body_loaded": true, "downloaded": false},
+      {"ui_label": "学习任务单", "page_count": 2, "body_loaded": true, "downloaded": false},
+      {"ui_label": "课后练习", "page_count": 4, "body_loaded": true, "reference_answers_visible": true, "downloaded": false}
+    ],
     "session_state": "未登录",
     "original_presentation_file_in_observed_page_assets": false,
     "page_assets_checked_this_recheck": true,
     "observed_page_asset_count": 250,
     "original_files_downloaded": 0,
     "new_pages_added_to_review_counts": 0,
-    "boundary": "确认包内确有课件与配套教案入口；未登录页面及授课下拉未见原PPT下载控件。另查看250项当前已观察页面资源的文件元数据，无PPT/PPTX/ZIP线索，8项other均为配置或页面等地址；未下载资源，不据此推断所有资源或登录后权限。本次未重新通读附件，原PPT下载0；不重复计算此前已读页数。初次浏览控制超时和课程主体延迟加载不代表最终访问失败。"
+    "boundary": "确认包内确有课件和可读取的配套教案、任务单及含参考答案的练习；未登录页面未见原PPT下载控件。教学设计打开后另查看250项当前已观察页面资源的文件元数据，无PPT/PPTX/ZIP线索，8项other均为配置或页面等地址；未下载资源，不据此推断所有资源或登录后权限。本次核对附件正文加载与页数，未重新逐页审查全部图形；原PPT下载0，不重复计算此前已读页数。"
   },
   "download_recheck": {
     "checked_at": "2026-09-10T03:19:04+08:00",

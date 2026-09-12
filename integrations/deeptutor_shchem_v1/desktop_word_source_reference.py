@@ -447,7 +447,7 @@ class WordSourceReferenceService:
         image_assets = [normalize_image_assets([asset])[0] for asset in images.values()]
         if has_images:
             warnings.append(
-                "原图将作为本地PPT排版素材带入；未把原图像素发送给模型，模型仅见图注和引用关系，不能据此补写图中条件。"
+                "本步骤确认导入后仅把原图保存为本地备课素材，不调用模型；后续是否发送图片像素，以生成时的“本地排版/视觉读取”选择及发送预览为准；不能仅凭图注补写图中条件。"
                 if include_images
                 else "本次已明确选择仅文字：未带入任何原图，也未把原图发送给模型；须由教师补充图中必要条件。"
             )

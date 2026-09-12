@@ -94,7 +94,15 @@ def test_preview_is_pure_and_supported_exact_bytes_are_imported(
     assert asset["sha256"] == hashlib.sha256(raw).hexdigest()
     assert asset["asset_id"] in ref["materials"]
     assert "题面原文 · 区块3" in ref["materials"]
-    assert "未把原图像素发送给模型" in "".join(ref["warnings"])
+    for content in (ref["materials"], "\n".join(ref["warnings"])):
+        assert "确认导入后仅把原图保存为本地备课素材，不调用模型" in content
+        assert (
+            "后续是否发送图片像素，以生成时的“本地排版/视觉读取”选择及发送预览为准"
+            in content
+        )
+        assert "不能仅凭图注补写图中条件" in content
+        assert "未把原图像素发送给模型" not in content
+        assert "模型仅见图注" not in content
     assert str(tmp_path) not in ref["materials"]
     result = facade.import_word_question_reference(ref, [])
     assert result == {
@@ -218,7 +226,11 @@ def test_unsupported_images_are_not_omitted_and_text_only_is_explicit(
     assert not _store_root(desktop_paths).exists()
     text_ref = facade.word_question_reference(choices, include_images=False)
     assert text_ref["image_assets"] == [] and text_ref["image_issues"] == []
-    assert "明确选择仅文字" in "".join(text_ref["warnings"])
+    for content in (text_ref["materials"], "\n".join(text_ref["warnings"])):
+        assert "本次已明确选择仅文字：未带入任何原图，也未把原图发送给模型" in content
+        assert "图中条件未识别，须由教师补充文字后再用于讲解或解题" in content
+        assert "保存为本地备课素材" not in content
+        assert "模型仅见图注" not in content
     assert text_ref["materials"].count("未附原图，本次仅使用文字") == 2
     result = facade.import_word_question_reference(text_ref, [])
     assert result["image_assets"] == []
