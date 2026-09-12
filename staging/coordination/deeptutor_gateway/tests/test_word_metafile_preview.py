@@ -60,7 +60,7 @@ def _fake_raster(data, size, bbox):
     return image
 
 
-@pytest.mark.parametrize("mime", ["image/emf", "image/x-emf"])
+@pytest.mark.parametrize("mime", ["image/emf", "image/x-emf", "image/wmf", "image/x-wmf"])
 def test_can_attempt_is_metadata_only_not_success(mime):
     assert module.can_attempt_metafile({"mime_type": mime})
     assert module.can_attempt_metafile({"mime_type": mime, "bytes_count": 123})
@@ -68,7 +68,6 @@ def test_can_attempt_is_metadata_only_not_success(mime):
 
 @pytest.mark.parametrize("asset", [None, {}, {"mime_type": "image/png"},
     {"mime_type": "application/octet-stream"}, {"mime_type": "image/wmf", "bytes_count": True},
-    {"mime_type": "image/wmf"}, {"mime_type": "image/x-wmf", "bytes_count": 123},
     {"mime_type": "image/wmf", "bytes_count": 0},
     {"mime_type": "image/emf", "bytes_count": module.MAX_SOURCE_BYTES + 1}])
 def test_can_attempt_refuses_unsupported_metadata(asset):
@@ -249,15 +248,46 @@ def test_windows_native_synthetic_metafiles_are_nonblank(source, mime):
         assert any(low != high for low, high in image.getextrema())
 
 
-@pytest.mark.parametrize("mime", ["image/wmf", "image/x-wmf"])
-def test_valid_wmf_is_explicitly_blocked_after_real_visual_qa(monkeypatch, mime):
-    monkeypatch.setattr(module, "_native_rasterize", lambda *args: pytest.fail("unsafe WMF preview"))
+@pytest.mark.skipif(not hasattr(module.ctypes, "WinDLL"), reason="Windows GDI+ unavailable")
+def test_windows_gdiplus_synthetic_wmf_is_nonblank_and_source_bound():
     source = _wmf()
-    with pytest.raises(module.WordMetafilePreviewError) as exc:
-        module.render_word_metafile(source, mime_type=mime)
-    assert exc.value.code == "metafile_wmf_rendering_unverified"
-    assert "缺字或错位" in exc.value.message_zh and not module._CACHE
+    result = module.render_word_metafile(source, mime_type="image/wmf", display_size=(400, 200))
+    with Image.open(io.BytesIO(result["bytes"])) as raster:
+        assert any(low != high for low, high in raster.getextrema())
+    assert "GDI+" in result["conversion_note"]
+    assert result["original_sha256"] == hashlib.sha256(source).hexdigest()
+
+
+@pytest.mark.parametrize("mime", ["image/wmf", "image/x-wmf"])
+def test_wmf_uses_gdiplus_and_never_classic_gdi(monkeypatch, mime):
+    monkeypatch.setattr(module, "_native_rasterize", lambda *args: pytest.fail("distorted WMF preview"))
+    monkeypatch.setattr(module, "_gdiplus_rasterize", lambda data, size: _fake_raster(data, size, None))
+    source = _wmf()
+    result = module.render_word_metafile(source, mime_type=mime)
+    assert result["derived_preview"] and "GDI+" in result["conversion_note"]
+    assert result["original_sha256"] == hashlib.sha256(source).hexdigest()
     assert source == _wmf()
+
+
+def test_wmf_unknown_control_never_reaches_any_renderer(monkeypatch):
+    monkeypatch.setattr(module, "_native_rasterize", lambda *args: pytest.fail("classic fallback"))
+    monkeypatch.setattr(module, "_gdiplus_rasterize", lambda *args: pytest.fail("unverified WMF"))
+    source = _wmf(extra_record=struct.pack("<IHH", 4, 0x7777, 0))
+    with pytest.raises(module.WordMetafilePreviewError) as exc:
+        module.render_word_metafile(source, mime_type="image/wmf")
+    assert exc.value.code == "metafile_wmf_text_unverified" and not module._CACHE
+
+
+def test_missing_wmf_font_is_a_visible_error_not_a_cached_preview(monkeypatch):
+    from integrations.deeptutor_shchem_v1 import desktop_word_wmf_fonts as fonts
+    def reject(_runs):
+        raise fonts.WmfFontError("metafile_wmf_font_unavailable", "原字体不可用")
+    monkeypatch.setattr(fonts, "verify_wmf_fonts", reject)
+    monkeypatch.setattr(module, "_gdiplus_rasterize", lambda *args: pytest.fail("silent font fallback"))
+    with pytest.raises(module.WordMetafilePreviewError) as exc:
+        module.render_word_metafile(_wmf(), mime_type="image/wmf")
+    assert exc.value.code == "metafile_wmf_font_unavailable"
+    assert "原图仍保留" in exc.value.message_zh and not module._CACHE
 
 
 def _emf_plus():

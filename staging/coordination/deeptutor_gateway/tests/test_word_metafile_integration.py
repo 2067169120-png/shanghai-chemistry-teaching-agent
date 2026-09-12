@@ -2,6 +2,7 @@
 
 import hashlib
 import io
+import struct
 import zipfile
 
 import pytest
@@ -51,6 +52,7 @@ def _document(data, extension):
 @pytest.fixture(autouse=True)
 def mock_raster(monkeypatch):
     monkeypatch.setattr(renderer, "_native_rasterize", _fake_raster)
+    monkeypatch.setattr(renderer, "_gdiplus_rasterize", lambda data, size: _fake_raster(data, size, None))
     with renderer._LOCK:
         renderer._CACHE.clear()
         renderer._cache_bytes = 0
@@ -78,12 +80,13 @@ def test_converted_preview_keeps_original_metadata_and_hash_guard(desktop_paths)
         )
 
 
+@pytest.mark.parametrize("extension", ["emf", "wmf"])
 def test_derived_picture_can_be_previewed_and_imported_with_original_provenance(
-    desktop_paths, tmp_path
+    desktop_paths, tmp_path, extension
 ):
-    raw = _emf()
+    raw = _emf() if extension == "emf" else _wmf()
     source = tmp_path / "矢量测试.docx"
-    document = _document(raw, "emf")
+    document = _document(raw, extension)
     source.write_bytes(document)
     provider = FakeProviderStore(configured=False)
     facade = _facade(desktop_paths, provider)
@@ -115,7 +118,7 @@ def test_unreliable_wmf_does_not_silently_become_a_preparation_picture(
     desktop_paths, tmp_path
 ):
     source = tmp_path / "旧公式测试.docx"
-    document = _document(_wmf(), "wmf")
+    document = _document(_wmf(extra_record=struct.pack("<IHH", 4, 0x7777, 0)), "wmf")
     source.write_bytes(document)
     facade = _facade(desktop_paths, FakeProviderStore(configured=False))
     facade.save_visual_import_batch(handout_files=(source,), source_type="教师讲义")

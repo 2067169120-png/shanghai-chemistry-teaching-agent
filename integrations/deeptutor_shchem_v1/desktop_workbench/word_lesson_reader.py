@@ -416,7 +416,11 @@ class WordLessonReader(QWidget):
                     label = self._label(asset.get("label"), "来源图片")
                     mime = self._label(asset.get("mime_type"), "")
                     if can_attempt_metafile(asset):
-                        status = " · EMF，可尝试本地转换预览"
+                        status = (
+                            " · WMF，核验字体后尝试本地预览"
+                            if mime.lower().strip() in {"image/wmf", "image/x-wmf"}
+                            else " · EMF，可尝试本地转换预览"
+                        )
                     elif mime.lower().strip() in {"image/wmf", "image/x-wmf"}:
                         status = " · WMF 旧式图形，需用 Word 核对"
                     elif not asset.get("preview_supported"):

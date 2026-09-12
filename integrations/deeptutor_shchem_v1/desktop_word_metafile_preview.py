@@ -19,7 +19,7 @@ from contextlib import ExitStack
 
 from PIL import Image
 
-RENDERER_REVISION = "20260910-word-metafile-preview-v4-gdiplus-emfplus"
+RENDERER_REVISION = "20260913-word-metafile-preview-v5-wmf-font-preflight"
 MAX_SOURCE_BYTES = 32 * 1024 * 1024
 MAX_PNG_BYTES = 32 * 1024 * 1024
 MAX_DIMENSION = 8192
@@ -59,7 +59,7 @@ def can_attempt_metafile(asset: Mapping) -> bool:
     size = asset.get("bytes_count")
     return (
         isinstance(mime_type, str)
-        and _MIME_FORMATS.get(mime_type.lower().strip()) == "emf"
+        and mime_type.lower().strip() in _MIME_FORMATS
         and (size is None or (type(size) is int and 0 < size <= MAX_SOURCE_BYTES))
     )
 
@@ -325,11 +325,12 @@ def render_word_metafile(data: bytes, *, mime_type: str, display_size=None) -> d
     ``display_size`` is an optional exact output size in pixels, from known
     source display dimensions, not a guessed page size.  The default uses the
     format's physical frame at 192 dpi, proportionally capped at 2048 pixels.
-    WMF is deliberately blocked: real-source QA found unreliable font placement
-    and missing legacy symbols.  Unknown formats, invalid records and blank
-    renders also fail explicitly.  EMF+ uses Windows GDI+ through an in-memory
-    stream because classic GDI can silently omit its main drawing.  Neither
-    strategy is chemical verification.
+    WMF uses GDI+ only after all text/font records pass a bounded preflight and
+    Windows confirms the requested faces, charsets and glyphs are present.
+    Classic GDI distorted real WMF font placement; it is never a fallback here.
+    Unknown records, missing fonts/symbols, invalid files and blank renders fail
+    explicitly. EMF+ also needs GDI+ because classic GDI can omit its drawing.
+    None of these checks is chemical verification.
     Calls are serialized; the small process-local cache has no disk side effects.
     """
     global _cache_bytes
@@ -345,11 +346,6 @@ def render_word_metafile(data: bytes, *, mime_type: str, display_size=None) -> d
     else:
         bbox, natural_size, has_plus = _emf_header(data)
     size = _render_size(natural_size, display_size)
-    if kind == "wmf":
-        _fail(
-            "metafile_wmf_rendering_unverified",
-            "此WMF的旧字体或坐标映射尚未可靠验证，可能出现缺字或错位；未生成预览或备课图片。",
-        )
     original_sha = hashlib.sha256(data).hexdigest()
     key = (original_sha, mime_type, size, RENDERER_REVISION)
     with _LOCK:
@@ -357,7 +353,19 @@ def render_word_metafile(data: bytes, *, mime_type: str, display_size=None) -> d
             _CACHE.move_to_end(key)
             return dict(_CACHE[key])
         try:
-            with (_gdiplus_rasterize(data, size) if has_plus else _native_rasterize(data, size, bbox)) as raster:
+            if kind == "wmf":
+                from .desktop_word_wmf_fonts import (
+                    WmfFontError,
+                    verify_wmf_fonts,
+                    wmf_font_runs,
+                )
+
+                try:
+                    verify_wmf_fonts(wmf_font_runs(data))
+                except WmfFontError as exc:
+                    _fail(exc.code, exc.message_zh)
+            use_gdiplus = kind == "wmf" or has_plus
+            with (_gdiplus_rasterize(data, size) if use_gdiplus else _native_rasterize(data, size, bbox)) as raster:
                 if raster.size != size or raster.mode != "RGB":
                     _fail("metafile_decode_failed", "旧式图片解码结果尺寸或颜色模式异常。")
                 if all(low == high for low, high in raster.getextrema()):
@@ -384,7 +392,7 @@ def render_word_metafile(data: bytes, *, mime_type: str, display_size=None) -> d
             "width": size[0],
             "height": size[1],
             "conversion_note": (
-                f"由原{kind.upper()}字节经{'Windows GDI+' if has_plus else 'Windows GDI'}在本机转换为PNG预览；原图保留。"
+                f"由原{kind.upper()}字节经{'Windows GDI+' if use_gdiplus else 'Windows GDI'}在本机转换为PNG预览；原图保留。"
                 "仅作图像显示，未进行OCR、化学内容识别或完整性审定；细小符号请结合原教案核对。"
             ),
         }

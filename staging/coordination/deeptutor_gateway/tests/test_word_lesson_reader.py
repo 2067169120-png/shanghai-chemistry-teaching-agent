@@ -298,7 +298,7 @@ def test_many_source_warnings_have_navigation_and_complete_text_at_end(reader, q
     )
 
 
-def test_metafile_status_distinguishes_eligible_emf_from_wmf_without_loading(reader):
+def test_metafile_status_distinguishes_wmf_font_check_from_emf_without_loading(reader):
     source = _source()
     source["assets"].append(
         {**source["assets"][2], "asset_id": "wmf", "mime_type": "image/x-wmf"}
@@ -308,7 +308,7 @@ def test_metafile_status_distinguishes_eligible_emf_from_wmf_without_loading(rea
     reader.set_source(source)
     text = reader.browser.toPlainText()
     assert "EMF，可尝试本地转换预览" in text
-    assert "WMF 旧式图形，需用 Word 核对" in text
+    assert "WMF，核验字体后尝试本地预览" in text
     assert not requested and not _images(reader)
 
 
