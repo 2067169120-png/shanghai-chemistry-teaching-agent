@@ -19,6 +19,13 @@ if ($BuildTag) {
     $SpecRoot = Join-Path $RuntimeRoot "desktop_spec_$BuildTag"
 }
 
+# Rebuilds must use a new tag; do not remove an installed trial or shared cache.
+foreach ($BuildOutputPath in @($DistRoot, $WorkRoot, $SpecRoot)) {
+    if (Test-Path -LiteralPath $BuildOutputPath) {
+        throw "Build output already exists. Choose a fresh -BuildTag; existing files were not changed."
+    }
+}
+
 $OriginalSearchPath = $env:Path
 $BuildSearchPathEntries = @(
     $OriginalSearchPath -split [IO.Path]::PathSeparator |
@@ -41,8 +48,6 @@ try {
 
     $Arguments = @(
         "-m", "PyInstaller",
-        "--noconfirm",
-        "--clean",
         "--windowed",
         "--noupx",
         "--name", "沪上化学智研台",

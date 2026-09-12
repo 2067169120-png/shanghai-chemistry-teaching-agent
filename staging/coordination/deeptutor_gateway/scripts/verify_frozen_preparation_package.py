@@ -774,7 +774,7 @@ def main() -> int:
             "按当前课题与课型填入建议结构",
         ],
         "desktop_workbench.preparation_design_widget": [],
-        "desktop_preparation_pedagogy": ["20260910-course-package-alignment-v4"],
+        "desktop_preparation_pedagogy": ["20260912-electron-representation-reference-v5"],
         "desktop_preparation_classroom_layout": ["classroom-v2"],
         "desktop_workbench.library_detail": [
             "将这张原图用于备课…",
@@ -799,6 +799,9 @@ def main() -> int:
         "question_search_workbench": ["complete_themes_only", "pending_parentage"],
         "theme_workbench": ["partial_source_candidate"],
         "master_direct_visual_scan": [],
+        "fudan2026_april_theme5_zns_direct_visual_scan": [
+            "FORMAL-PENDING-V2-FUDAN-2026-APRIL-S5-ZNS-A",
+        ],
         "songjiang2025_theme2_direct_visual_scan": [],
         "shanghai_high_east2025_theme45_direct_visual_scan": [],
         "level_exam2025_theme3_fosinopril_direct_visual_scan": [
