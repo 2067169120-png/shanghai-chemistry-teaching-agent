@@ -534,9 +534,9 @@ def test_whole_lesson_reader_is_complete_without_reference_size_limit(qt_app):
     facade.imported_word_preview = long_preview
     dialog = ImportWordDialog(facade, "internal-batch")
     dialog.whole_document_button.click()
-    assert (dialog.block_start.value(), dialog.block_end.value()) == (1, 2)
-    assert "原教案正文" * 5000 in dialog.source_preview.toPlainText()
-    assert "最后一个表格：完整末尾" in dialog.source_preview.toPlainText()
+    assert (dialog.block_start.value(), dialog.block_end.value()) == (1, 1)
+    assert "原教案正文" * 5000 in dialog.reader.browser.toPlainText()
+    assert "最后一个表格：完整末尾" in dialog.reader.browser.toPlainText()
     assert not facade.reference_calls
     assert not dialog.import_button.isEnabled()
     assert "未按备课字数限制截断" in dialog.status.text()
@@ -548,26 +548,29 @@ def test_whole_lesson_reader_is_complete_without_reference_size_limit(qt_app):
         raise TooLongReference()
 
     facade.imported_word_reference = reject_large_reference
-    before = dialog.source_preview.toPlainText()
+    dialog._set_range(1, 2)  # Selecting everything is a separate explicit action.
+    before = dialog.reader.browser.toPlainText()
     dialog.preview_button.click()
-    assert dialog.source_preview.toPlainText() == before
+    assert dialog.reader.browser.toPlainText() == before
     assert "20,000" in dialog.status.text()
     assert not dialog.import_button.isEnabled()
     assert dialog.reference is None
     dialog.close()
 
 
-def test_whole_lesson_selection_invalidates_previously_compiled_reference(qt_app):
+def test_whole_lesson_reading_preserves_previously_compiled_selection(qt_app):
     facade = _Facade()
     dialog = ImportWordDialog(facade, "internal-batch")
     dialog.preview_button.click()
     assert dialog.import_button.isEnabled()
+    before = dialog.preview.toPlainText()
     dialog.whole_document_button.click()
-    assert not dialog.import_button.isEnabled()
-    assert not dialog.preview.toPlainText()
+    assert dialog.import_button.isEnabled()
+    assert dialog.preview.toPlainText() == before
+    assert (dialog.block_start.value(), dialog.block_end.value()) == (1, 1)
+    assert dialog.reader_tabs.currentIndex() == 0
     assert len(facade.reference_calls) == 1
-    dialog._confirm()
-    assert dialog.result() != QDialog.DialogCode.Accepted
+    assert dialog.reference is None  # Reading does not silently confirm.
     dialog.close()
 
 
@@ -576,6 +579,13 @@ def test_whole_lesson_actions_fit_narrow_reader(qt_app, width):
     dialog = ImportWordDialog(_Facade(), "internal-batch")
     dialog.resize(width, 800)
     dialog.show()
+    qt_app.processEvents()
+    assert dialog.width() == width
+    assert dialog.reader_tabs.currentIndex() == 0
+    assert dialog.open_word_button.width() <= width
+    # The selection controls now live in a separate tab. Check their geometry
+    # when visible rather than their not-yet-laid-out hidden-tab size.
+    dialog.reader_tabs.setCurrentIndex(1)
     qt_app.processEvents()
     assert dialog.width() == width
     assert dialog.whole_document_button.width() <= width

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
@@ -20,12 +21,14 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QSpinBox,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
 
 from ..desktop_word_metafile_preview import can_attempt_metafile
 from .components import page_scroll, section_title, set_status
+from .word_lesson_reader import WordLessonReader
 
 
 def _safe_message(exc: Exception, fallback: str) -> str:
@@ -119,27 +122,37 @@ class ImportWordDialog(QDialog):
         self._image_pixmap: QPixmap | None = None
         self._image_is_derived = False
         self.setWindowTitle("完整教案原文与图片")
-        self.resize(760, 800)
+        self.resize(900, 820)
         self.setMinimumSize(400, 540)
         root = QVBoxLayout(self)
         root.setContentsMargins(16, 16, 16, 16)
         root.addWidget(
             section_title(
                 "完整教案原文与图片",
-                "已保存原 Word，正文、表格文字和原图可在本机查看，不调用模型。"
-                "知识摘要不替代原文；旧公式或版式请用 Word 打开完整原文件核对。",
+                "先通读原教案，再选择本课需要的段落。文字和原图均来自已保存的 Word，不调用模型。"
+                "知识摘要不替代原文。",
             )
         )
-        content = QWidget()
-        layout = QVBoxLayout(content)
-        layout.setContentsMargins(0, 0, 0, 0)
         source_form = QFormLayout()
         source_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
         self.source_combo = self._combo("选择已保存的 Word 来源")
         source_form.addRow("Word 来源", self.source_combo)
+        root.addLayout(source_form)
+        self.reader_tabs = QTabWidget()
+        self.reader_tabs.setAccessibleName("原教案阅读与备课选段")
+        self.reader = WordLessonReader()
+        self.reader_tabs.addTab(self.reader, "通读教案")
+        self.reader.image_requested.connect(self._reading_image_requested)
+        self.reader.block_requested.connect(self._reading_block_requested)
+        self.reader.image_zoom_requested.connect(self._open_image)
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        selection_form = QFormLayout()
+        selection_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
         self.section_picker = self._combo("按 Word 章节选择区块")
-        source_form.addRow("章节定位", self.section_picker)
-        layout.addLayout(source_form)
+        selection_form.addRow("章节定位", self.section_picker)
+        layout.addLayout(selection_form)
         self.whole_document_button = QPushButton("查看整份教案")
         self.whole_document_button.setAccessibleName(
             "查看整份教案原文，不限备课追加字数"
@@ -148,10 +161,12 @@ class ImportWordDialog(QDialog):
         self.whole_document_button.clicked.connect(self._view_whole_document)
         layout.addWidget(self.whole_document_button)
         self.open_word_button = QPushButton("用 Word 打开完整原文件")
+        self.open_word_button.setObjectName("QuietButton")
         self.open_word_button.setAccessibleName("用默认 Word 文档应用打开已保存原文件")
         self.open_word_button.setEnabled(False)
         self.open_word_button.clicked.connect(self._open_original_word)
-        layout.addWidget(self.open_word_button)
+        # Keep the original-file escape hatch visible in both reading modes.
+        root.addWidget(self.open_word_button)
         self.block_list = QListWidget()
         self.block_list.setAccessibleName("Word 原文区块")
         self.block_list.setMinimumHeight(120)
@@ -225,13 +240,15 @@ class ImportWordDialog(QDialog):
         self.preview.setPlaceholderText("生成预览后，在这里核对将追加的完整内容。")
         self.preview.setMinimumHeight(170)
         layout.addWidget(self.preview)
-        root.addWidget(page_scroll(content), 1)
+        self.reader_tabs.addTab(page_scroll(content), "选段与备课")
+        root.addWidget(self.reader_tabs, 1)
         self.status = QLabel()
         self.status.setWordWrap(True)
         self.status.setAccessibleName("Word 内容导入状态")
         root.addWidget(self.status)
         buttons = QHBoxLayout()
-        self.close_button = QPushButton("取消")
+        self.close_button = QPushButton("关闭")
+        self.close_button.setObjectName("QuietButton")
         self.close_button.clicked.connect(self.reject)
         self.import_button = QPushButton("确认追加到备课")
         self.import_button.setEnabled(False)
@@ -246,6 +263,10 @@ class ImportWordDialog(QDialog):
         self.block_start.valueChanged.connect(self._selection_changed)
         self.block_end.valueChanged.connect(self._selection_changed)
         self.asset_combo.currentIndexChanged.connect(self._asset_selected)
+        # Enter in the reading search field means "find next", not opening
+        # Word or accepting a preparation reference through QDialog defaults.
+        for button in self.findChildren(QPushButton):
+            button.setAutoDefault(False)
         self._load_sources()
 
     @staticmethod
@@ -303,6 +324,7 @@ class ImportWordDialog(QDialog):
 
     def _clear_source(self) -> None:
         self._source = None
+        self.reader.set_source(None)
         self._invalidate_preview()
         self.block_list.clear()
         self.section_picker.clear()
@@ -359,6 +381,8 @@ class ImportWordDialog(QDialog):
                 item.setToolTip(block["text"])
                 self.block_list.addItem(item)
             self._source = deepcopy(value)
+            self.reader.set_source(deepcopy(value))
+            self.reader_tabs.setCurrentIndex(0)
             for section in value.get("sections", ()):
                 if not isinstance(section, dict):
                     continue
@@ -400,8 +424,8 @@ class ImportWordDialog(QDialog):
                 set_status(
                     self.status,
                     "success",
-                    "已读取原教案，默认定位首个区块。点“查看整份教案”可阅读全文；"
-                    "选择图片后可放大，或用 Word 查看完整原版。",
+                    "已打开整份教案。可搜索正文、点击本段原图对照；"
+                    "点“选此段备课”后再预览并确认追加，不会自动带入全文。",
                 )
             else:
                 set_status(
@@ -500,17 +524,49 @@ class ImportWordDialog(QDialog):
             return
         # This is a reader action, not reference compilation: never apply the
         # preparation size limit or shorten the body just to fit that limit.
-        self._set_range(blocks[0]["index"], blocks[-1]["index"])
-        self.source_preview.moveCursor(
-            self.source_preview.textCursor().MoveOperation.Start
-        )
-        self.source_preview.setFocus()
+        self.reader_tabs.setCurrentIndex(0)
+        self.reader.scroll_to_block(blocks[0]["index"])
+        self.reader.browser.setFocus()
         set_status(
             self.status,
             "success",
             f"正在查看整份教案，共 {len(blocks)} 个区块，正文未按备课字数限制截断。"
-            "若要追加到备课，请另点“预览将带入的内容”；超长时可缩小区块范围。",
+            "当前备课选段未改变；需要追加时请在“选段与备课”中调整范围并预览。",
         )
+
+    def _reading_block_requested(self, index: int) -> None:
+        if self._loading or type(index) is not int:
+            return
+        indices = {block["index"] for block in (self._source or {}).get("blocks", ())}
+        if index not in indices:
+            return
+        self._set_range(index, index)
+        for row in range(self.block_list.count()):
+            if self.block_list.item(row).data(Qt.ItemDataRole.UserRole) == index:
+                self.block_list.setCurrentRow(row)
+                break
+        self.reader_tabs.setCurrentIndex(1)
+        self.source_preview.setFocus()
+        set_status(
+            self.status, "info",
+            f"已选择区块 {index}，可调整起止范围，再预览将带入的文字和原图。尚未追加到备课。",
+        )
+
+    def _reading_image_requested(self, asset_id: str) -> None:
+        if self._loading or not isinstance(asset_id, str) or not self._source:
+            return
+        for index in range(1, self.asset_combo.count()):
+            asset = self.asset_combo.itemData(index)
+            if isinstance(asset, dict) and asset.get("asset_id") == asset_id:
+                indices = {block["index"] for block in self._source.get("blocks", ())}
+                if type(asset.get("block_index")) is not int or asset["block_index"] not in indices:
+                    return
+                if self.asset_combo.currentIndex() == index:
+                    # Revalidate a repeated click instead of trusting old pixels.
+                    self._asset_selected()
+                else:
+                    self.asset_combo.setCurrentIndex(index)
+                return
 
     def _open_original_word(self) -> None:
         source_id = self.source_combo.currentData()
@@ -662,10 +718,13 @@ class ImportWordDialog(QDialog):
         self.image_label.hide()
         self.image_note.hide()
         self.zoom_image_button.setEnabled(False)
+        self.reader.clear_image()
         asset = self.asset_combo.currentData()
         if self._loading or not asset:
             return
         if not asset.get("preview_supported") and not can_attempt_metafile(asset):
+            message = "此图片或旧公式格式暂不能预览，请用 Word 打开完整原文件核对。"
+            self.reader.show_image(asset["asset_id"], None, message)
             set_status(
                 self.status,
                 "attention",
@@ -690,6 +749,17 @@ class ImportWordDialog(QDialog):
                 }
             ):
                 raise ValueError("invalid source image")
+            expected_sha = asset.get("sha256")
+            if isinstance(expected_sha, str):
+                actual_sha = sha256(result["bytes"]).hexdigest()
+                if result.get("derived_preview") is True:
+                    if (
+                        result.get("original_sha256") != expected_sha
+                        or result.get("preview_sha256") != actual_sha
+                    ):
+                        raise ValueError("converted image does not match reading source")
+                elif actual_sha != expected_sha:
+                    raise ValueError("image does not match reading source")
             pixmap = QPixmap()
             if not pixmap.loadFromData(result["bytes"]) or pixmap.isNull():
                 raise ValueError("unreadable source image")
@@ -704,12 +774,23 @@ class ImportWordDialog(QDialog):
             self.image_label.show()
             self.image_note.show()
             self.zoom_image_button.setEnabled(True)
+            self.reader.show_image(
+                asset["asset_id"], self._image_pixmap, self.image_note.text(),
+                derived=self._image_is_derived,
+            )
             self._resize_image()
         except Exception as exc:  # noqa: BLE001 - local facade boundary
+            message = _safe_message(exc, "来源图片暂时无法预览，请核对原始 Word。")
+            self._image_pixmap = None
+            self.image_label.clear()
+            self.image_label.hide()
+            self.image_note.hide()
+            self.zoom_image_button.setEnabled(False)
+            self.reader.show_image(asset["asset_id"], None, message)
             set_status(
                 self.status,
                 "error",
-                _safe_message(exc, "来源图片暂时无法预览，请核对原始 Word。"),
+                message,
             )
 
     def _open_image(self) -> None:
