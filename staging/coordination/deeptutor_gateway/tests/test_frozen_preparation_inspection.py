@@ -182,11 +182,12 @@ def test_inspector_executes_frozen_image_modes_bindings_and_manager_adapter():
     assert result["real_model_called"] is False
 
 
-def test_inspector_rejects_old_v23_note_prompt():
+@pytest.mark.parametrize("old_revision", ["20260910-word-image-roles-v23", "20260912-source-studied-guidance-v25"])
+def test_inspector_rejects_old_note_prompt(old_revision):
     archive = _MutatedArchive(
         "desktop_preparation_provider",
-        "20260912-source-studied-guidance-v25",
-        "20260910-word-image-roles-v23",
+        "20260913-lecture-practice-notes-v26",
+        old_revision,
     )
     with pytest.raises(RuntimeError, match="Frozen classroom note contract missing"):
         _inspector().verify_frozen_note_prompt(archive)

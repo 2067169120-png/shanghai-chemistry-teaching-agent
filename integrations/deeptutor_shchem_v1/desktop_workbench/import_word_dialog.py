@@ -231,7 +231,7 @@ class ImportWordDialog(QDialog):
         self.include_guidance = QCheckBox("同时带入知识总结与解题方法")
         self.include_guidance.setAccessibleName("带入对应讲义蒸馏和关联教材知识")
         self.include_guidance.setToolTip(
-            "仅带入所选区块完整支持的知识、方法和易错提醒，以及已明确关联的教材知识候选。"
+            "仅带入所选区块完整支持的知识、方法、易错提醒和讲练笔记建议，以及已明确关联的教材知识候选。"
             "预览中可逐项核对；不增加选段、题目或未经选择的图片。"
         )
         self.include_guidance.setChecked(self._study_reference_supported)

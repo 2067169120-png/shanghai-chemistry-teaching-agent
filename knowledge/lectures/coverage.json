@@ -8,8 +8,9 @@
   "all_chemical_claims_teacher_reviewed": false,
   "source_block_versions_bound_count": 46,
   "knowledge_claims": 262,
-  "method_claims": 54,
-  "pitfall_claims": 60,
+  "method_claims": 66,
+  "pitfall_claims": 66,
+  "teaching_flow_claims": 6,
   "sources": [
     {
       "package_id": "PKG-002",
@@ -18,6 +19,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 2,
+      "teaching_flow_count": 0,
       "claim_count": 9,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -27,9 +29,10 @@
       "title": "氯及其重要化合物",
       "source_sha256": "ef9c0853039d732fc63e24300eedcba43028e62bf61f24090ddc0579ae25ea66",
       "knowledge_count": 6,
-      "method_count": 1,
-      "pitfall_count": 2,
-      "claim_count": 9,
+      "method_count": 5,
+      "pitfall_count": 4,
+      "teaching_flow_count": 2,
+      "claim_count": 17,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
     },
@@ -40,6 +43,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -51,6 +55,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -62,6 +67,7 @@
       "knowledge_count": 6,
       "method_count": 4,
       "pitfall_count": 3,
+      "teaching_flow_count": 0,
       "claim_count": 13,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -73,6 +79,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -84,6 +91,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -95,6 +103,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -106,6 +115,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -117,6 +127,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -128,6 +139,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -139,6 +151,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -150,6 +163,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -161,6 +175,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -172,6 +187,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -183,6 +199,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -192,9 +209,10 @@
       "title": "钠及其重要化合物",
       "source_sha256": "50bd3990d5e3b3e8837a2d6b718a4f8da10f95ae86578a5880670a0635a9e0a6",
       "knowledge_count": 6,
-      "method_count": 1,
-      "pitfall_count": 1,
-      "claim_count": 8,
+      "method_count": 5,
+      "pitfall_count": 3,
+      "teaching_flow_count": 2,
+      "claim_count": 16,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
     },
@@ -205,6 +223,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -216,6 +235,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -227,6 +247,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -238,6 +259,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -249,6 +271,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -260,6 +283,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -269,9 +293,10 @@
       "title": "铁及其重要化合物",
       "source_sha256": "4a68bf425af0d4c1fd128957b3082a8e374a9cbcb97aae8e5be9c68bd1b66d1f",
       "knowledge_count": 6,
-      "method_count": 1,
-      "pitfall_count": 1,
-      "claim_count": 8,
+      "method_count": 5,
+      "pitfall_count": 3,
+      "teaching_flow_count": 2,
+      "claim_count": 16,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
     },
@@ -282,6 +307,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -293,6 +319,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -304,6 +331,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -315,6 +343,7 @@
       "knowledge_count": 6,
       "method_count": 4,
       "pitfall_count": 3,
+      "teaching_flow_count": 0,
       "claim_count": 13,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -326,6 +355,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -337,6 +367,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -348,6 +379,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -359,6 +391,7 @@
       "knowledge_count": 6,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -370,6 +403,7 @@
       "knowledge_count": 5,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 7,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -381,6 +415,7 @@
       "knowledge_count": 5,
       "method_count": 1,
       "pitfall_count": 2,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -392,6 +427,7 @@
       "knowledge_count": 5,
       "method_count": 2,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -403,6 +439,7 @@
       "knowledge_count": 5,
       "method_count": 2,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -414,6 +451,7 @@
       "knowledge_count": 5,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 7,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -425,6 +463,7 @@
       "knowledge_count": 5,
       "method_count": 1,
       "pitfall_count": 2,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -436,6 +475,7 @@
       "knowledge_count": 5,
       "method_count": 1,
       "pitfall_count": 2,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -447,6 +487,7 @@
       "knowledge_count": 5,
       "method_count": 1,
       "pitfall_count": 2,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -458,6 +499,7 @@
       "knowledge_count": 5,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 7,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -469,6 +511,7 @@
       "knowledge_count": 5,
       "method_count": 1,
       "pitfall_count": 1,
+      "teaching_flow_count": 0,
       "claim_count": 7,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -480,6 +523,7 @@
       "knowledge_count": 5,
       "method_count": 1,
       "pitfall_count": 2,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -491,6 +535,7 @@
       "knowledge_count": 5,
       "method_count": 1,
       "pitfall_count": 2,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -502,6 +547,7 @@
       "knowledge_count": 5,
       "method_count": 1,
       "pitfall_count": 2,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
@@ -513,6 +559,7 @@
       "knowledge_count": 5,
       "method_count": 1,
       "pitfall_count": 2,
+      "teaching_flow_count": 0,
       "claim_count": 8,
       "all_block_refs_exist": true,
       "source_block_version_bound": true

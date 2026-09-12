@@ -11,7 +11,13 @@ import re
 from pathlib import Path
 
 INDEX_FILES = ("part-a.jsonl", "part-b.jsonl", "part-c.jsonl")
-GROUP_LABELS = {"knowledge": "知识线索", "methods": "解题方法", "pitfalls": "易错提醒"}
+GROUP_LABELS = {
+    "knowledge": "知识线索",
+    "methods": "解题方法",
+    "pitfalls": "易错提醒",
+    "teaching_flow": "讲练与笔记",
+}
+OPTIONAL_GROUPS = frozenset({"teaching_flow"})
 
 
 def _index_cards(workspace: Path):
@@ -52,6 +58,8 @@ def _index_cards(workspace: Path):
                 ):
                     raise ValueError("invalid source block revision")
                 for group in GROUP_LABELS:
+                    if group in OPTIONAL_GROUPS and group not in row:
+                        continue
                     if not isinstance(row.get(group), list):
                         raise TypeError("invalid claims")
                     for claim in row[group]:
@@ -137,7 +145,7 @@ def lecture_catalog(facade):
                     )
                 lines.append("\nAI 整理的知识线索（待教师核对；不是教材原句）：")
                 for group, label in GROUP_LABELS.items():
-                    for claim in card[group]:
+                    for claim in card.get(group, []):
                         positions = "、".join(str(n) for n in claim["block_indices"])
                         lines.append(
                             f"\n{label} · 原文区块 {positions}\n{claim['summary']}"

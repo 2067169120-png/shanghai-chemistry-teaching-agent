@@ -43,8 +43,8 @@ def validate(state_root: Path):
         if row["human_reviewed"] is not False or row["review_status"] != "ai_distilled_pending_teacher_review":
             raise ValueError("The index must not imply human approval")
         claim_count = 0
-        for group in ("knowledge", "methods", "pitfalls"):
-            for claim in row[group]:
+        for group in ("knowledge", "methods", "pitfalls", "teaching_flow"):
+            for claim in row.get(group, []):
                 if set(claim) != {"summary", "block_indices"} or not isinstance(claim["summary"], str) or not claim["summary"].strip():
                     raise ValueError("Incomplete indexed claim")
                 if not claim["block_indices"] or any(type(i) is not int or i not in positions for i in claim["block_indices"]):
@@ -54,6 +54,7 @@ def validate(state_root: Path):
                 claim_count += 1
         sources.append({"package_id": row["package_id"], "title": row["title"], "source_sha256": row["source_sha256"],
                         "knowledge_count": len(row["knowledge"]), "method_count": len(row["methods"]), "pitfall_count": len(row["pitfalls"]),
+                        "teaching_flow_count": len(row.get("teaching_flow", [])),
                         "claim_count": claim_count, "all_block_refs_exist": True,
                         "source_block_version_bound": row.get("source_preview_revision") == preview["revision"]})
     return {"schema_version": 1, "source_pack_analysis_documents": 98,
@@ -63,7 +64,8 @@ def validate(state_root: Path):
             "source_block_versions_bound_count": sum(s["source_block_version_bound"] for s in sources),
             "knowledge_claims": sum(s["knowledge_count"] for s in sources),
             "method_claims": sum(s["method_count"] for s in sources),
-            "pitfall_claims": sum(s["pitfall_count"] for s in sources), "sources": sources}
+            "pitfall_claims": sum(s["pitfall_count"] for s in sources),
+            "teaching_flow_claims": sum(s["teaching_flow_count"] for s in sources), "sources": sources}
 
 
 def main():

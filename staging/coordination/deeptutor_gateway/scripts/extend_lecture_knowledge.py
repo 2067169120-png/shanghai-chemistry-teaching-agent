@@ -98,9 +98,9 @@ def main():
         preview = cache.load(raw, row["source_name"])
         assert preview is not None
         positions = {b["index"] for b in preview["blocks"]}
-        for group in ("methods", "pitfalls"):
-            existing = {c["summary"]: c for c in row[group]}
-            for claim in entry[group]:
+        for group in ("methods", "pitfalls", "teaching_flow"):
+            existing = {c["summary"]: c for c in row.get(group, [])}
+            for claim in entry.get(group, []):
                 assert set(claim) == {"summary", "block_indices"}
                 assert (
                     isinstance(claim["summary"], str)
@@ -112,7 +112,7 @@ def main():
                 if claim["summary"] in existing:
                     assert claim == existing[claim["summary"]]
                 else:
-                    row[group].append(claim)
+                    row.setdefault(group, []).append(claim)
                     existing[claim["summary"]] = claim
                     additions += 1
                     changed.add(target)
