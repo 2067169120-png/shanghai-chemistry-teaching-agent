@@ -1121,11 +1121,13 @@ def main() -> int:
         "desktop_word_preview_cache": ["20260910-native-word-preview-cache-v1"],
         "desktop_word_question_attributes": ["word-attributes-20260912-v2"],
         "desktop_word_semantic_tags": [
-            "word-semantic-tags-20260913-v1",
+            "word-semantic-tags-20260913-v2",
+            "recheck_automatic",
             "model_image_observation",
         ],
         "desktop_workbench.word_semantic_tags_dialog": [
-            "AI补全题目标签 · 先预览再采用",
+            "AI标签整理 · 先预览再采用",
+            "重新核对自动标签（可替换已有自动分类）",
             "确认发送并分析",
             "保存勾选的标签建议",
         ],
@@ -1156,7 +1158,7 @@ def main() -> int:
         ],
         "desktop_workbench.word_question_dialog": [
             "Word 逐题浏览与选题",
-            "AI补全已选题标签…",
+            "AI补全 / 核对已选题标签…",
             "确认带入备课",
             *WORD_RANGE_PREVIEW_UI_CONSTANTS,
         ],

@@ -1,4 +1,4 @@
-"""Previewed AI completion of missing personal Word tags using existing providers.
+"""Previewed AI completion or explicit recheck of personal automatic Word tags.
 
 Original question/context blocks and their available pixels are the input.
 Answers, exam identity and teacher labels are never rewritten by this route.
@@ -19,7 +19,9 @@ from .desktop_preparation_images import image_info
 from .desktop_word_question_attributes import (
     _digest,
     _seal,
+    automatic_tags_protected,
     complete_missing_attributes,
+    recheck_automatic_attributes,
     suggest_attributes,
     validate_attributes,
 )
@@ -30,7 +32,7 @@ from .visual_provider_runtime import (
     parse_structured_visual_response,
 )
 
-REVISION = "word-semantic-tags-20260913-v1"
+REVISION = "word-semantic-tags-20260913-v2"
 
 
 class WordSemanticTagError(ValueError):
@@ -38,6 +40,12 @@ class WordSemanticTagError(ValueError):
         super().__init__(message)
         self.message_zh = message
         self.code = code
+
+
+def _mode(value):
+    if not isinstance(value, str) or value not in ("missing_only", "recheck_automatic"):
+        raise WordSemanticTagError("请选择只补缺失或重新核对自动标签。")
+    return value
 
 
 def _object(properties):
@@ -95,6 +103,16 @@ def compact_catalog(catalog):
 
 
 def tag_prompt(unit, catalog):
+    mode = _mode(unit.get("mode", "missing_only"))
+    policy = (
+        "本次明确选择重新核对自动标签。已有自动标签仅作待核对信息，可能受干扰选项影响，"
+        "不能把当前标签视为正确答案或分类依据。重新独立判断主考点和教材节；"
+        "不合适的自动标签可以提出替换，合适的仍返回相同ID。"
+        "证据不足时返回unknown或空教材列表，本地会保留原标签，note说明未能核对的字段。"
+        "note简述改动或保留原因及直接考查任务，不必罗列干扰选项中的所有知识点。\n"
+        if mode == "recheck_automatic"
+        else "本次只补缺失主考点或教材映射，已有非空字段由本地保留。\n"
+    )
     return (
         "你为上海高中化学教师整理其个人题库。只返回符合JSON Schema的JSON对象。\n"
         "根据完整题干、所有选项、公共材料以及实际附图判断本题考查的主知识点和教材节。"
@@ -102,7 +120,8 @@ def tag_prompt(unit, catalog):
         "具体提问优先于背景材料中的术语；综合题选择最主要考查主题，无法确定用unknown。"
         "电解质分类不自动等同电离平衡；有机物水解不自动等同盐类水解；"
         "金属制备中有氧化还原背景，不代表主考点一定是电化学。\n"
-        "只补缺失主考点或教材映射；不重写题面、不解答题目、不新增分值、"
+        + policy
+        + "不重写题面、不解答题目、不新增分值、"
         "不推测原考试类型、年份、地区或原题年级，不把使用年级当作原题年级。"
         "目录中的知识名称较宽时仍须与实际任务相符，不能为了消除unknown硬凑分类。\n"
         "每个非unknown结论必须提供本题输入区块依据。文字依据quote逐字摘录短句，"
@@ -119,7 +138,8 @@ def tag_prompt(unit, catalog):
 
 
 def merge_response(decoded, unit, catalog):
-    """Validate real block/pixel bindings, then fill only the requested gaps."""
+    """Validate block/pixel evidence before applying the preview-bound merge mode."""
+    mode = _mode(unit.get("mode", "missing_only"))
     if list(Draft202012Validator(OUTPUT_SCHEMA).iter_errors(decoded)):
         raise WordSemanticTagError("AI返回的标签格式不完整，本题未写入。")
     blocks = {b["index"]: b for b in unit["input"]["blocks"]}
@@ -181,8 +201,15 @@ def merge_response(decoded, unit, catalog):
         raise WordSemanticTagError("AI返回了重复教材章节，本题未写入。")
     proposed["curriculum_candidates"] = mappings
     proposed["curriculum_status"] = "auto_suggested" if mappings else "pending_mapping"
-    proposed["rule_revision"] = REVISION
-    return complete_missing_attributes(unit["attributes"], _seal(proposed))
+    proposed["rule_revision"] = (
+        REVISION + "-recheck" if mode == "recheck_automatic" else REVISION
+    )
+    merge = (
+        recheck_automatic_attributes
+        if mode == "recheck_automatic"
+        else complete_missing_attributes
+    )
+    return merge(unit["attributes"], _seal(proposed))
 
 
 class WordSemanticTagService:
@@ -195,7 +222,10 @@ class WordSemanticTagService:
         self._running = set()
         self._lock = threading.RLock()
 
-    def _compile(self, selections, profile_id, profile_revision):
+    def _compile(
+        self, selections, profile_id, profile_revision, *, mode="missing_only"
+    ):
+        mode = _mode(mode)
         profile = self.facade._preparation_profile(profile_id, profile_revision)
         rows, inventory = self.words._resolve(selections)
         catalog = self.words._read_attribute_catalog()
@@ -212,6 +242,7 @@ class WordSemanticTagService:
                 row, {"source_name": row["source_name"]}, catalog
             )
             unit = {
+                "mode": mode,
                 "key": row["key"],
                 "revision": row["revision"],
                 "source_name": row["source_name"],
@@ -227,18 +258,15 @@ class WordSemanticTagService:
                     "source_sha256": row["source_sha256"],
                 },
             }
-            protected = (
-                attr["annotation_source"] == "teacher_modified"
-                or "pinned" in attr["rule_revision"]
-            )
+            protected = automatic_tags_protected(attr)
             complete = (
                 attr["primary_knowledge"]["id"] != "unknown"
                 and attr["curriculum_candidates"]
             )
-            if protected or complete:
+            if protected or (complete and mode == "missing_only"):
                 unit.update(
                     status="skipped",
-                    reason="已有教师修改或固定修订"
+                    reason="已有教师修改、确认标签或固定修订"
                     if protected
                     else "主考点及教材映射已存在",
                 )
@@ -318,6 +346,7 @@ class WordSemanticTagService:
         if total_bytes > 64 * 1024 * 1024:
             raise WordSemanticTagError("本次选题图片超过64MiB，请减少选题后重新预览。")
         return {
+            "mode": mode,
             "profile_id": profile_id,
             "profile_revision": profile_revision,
             "model_label": profile.provider_name + " / " + profile.model_id,
@@ -326,9 +355,11 @@ class WordSemanticTagService:
             "units": units,
         }, payloads
 
-    def preview(self, selections, profile_id, profile_revision):
+    def preview(self, selections, profile_id, profile_revision, *, mode="missing_only"):
         with self.words._lock:
-            plan, pixels = self._compile(selections, profile_id, profile_revision)
+            plan, pixels = self._compile(
+                selections, profile_id, profile_revision, mode=mode
+            )
         identifier = uuid4().hex
         plan["revision"] = _digest(plan)
         with self._lock:
@@ -359,6 +390,7 @@ class WordSemanticTagService:
     def _public_plan(identifier, plan):
         return {
             "plan_id": identifier,
+            "mode": plan["mode"],
             "revision": plan["revision"],
             "model_label": plan["model_label"],
             "units": deepcopy(plan["units"]),
@@ -389,7 +421,10 @@ class WordSemanticTagService:
         try:
             with self.words._lock:
                 current, images = self._compile(
-                    plan["selections"], plan["profile_id"], plan["profile_revision"]
+                    plan["selections"],
+                    plan["profile_id"],
+                    plan["profile_revision"],
+                    mode=plan["mode"],
                 )
             if _digest(current) != revision:
                 raise WordSemanticTagError(
@@ -481,21 +516,36 @@ class WordSemanticTagService:
                     }
                 except Exception as exc:  # noqa: BLE001 - configured transports must not expose raw requests or credentials
                     code = getattr(exc, "code", "word_semantic_tags_failed")
+                    if not isinstance(code, str):
+                        code = "word_semantic_tags_failed"
                     messages = {
                         "dns_failure": "模型域名解析失败，请检查网络或DNS",
                         "timeout": "模型分析超时，手动重试可能再次计费",
                         "invalid_credentials": "模型密钥不可用，请到模型设置检查",
                         "permission_denied": "模型服务拒绝访问，请检查模型权限",
+                        "provider_response_incomplete": "模型输出未完成，本题未写入；重新分析可能再次计费",
+                        "provider_response_empty": "模型未返回可读取的内容，本题未写入",
+                        "provider_output_invalid": "模型未返回严格JSON标签，本题未写入",
+                        "provider_response_invalid": "模型服务的响应格式不正确，本题未写入",
+                        "provider_response_too_large": "模型响应超过安全容量，本题未写入",
+                        "provider_response_refused": "模型服务拒绝完成本题分析，本题未写入",
                     }
+                    safe_error = isinstance(exc, WordSemanticTagError)
                     item = {
                         "key": unit["key"],
                         "status": "failed",
                         "changed": False,
+                        "failure_code": code
+                        if code in messages
+                        or (safe_error and code == "provider_failed")
+                        else "word_semantic_tags_invalid"
+                        if safe_error
+                        else "word_semantic_tags_failed",
                         "note": messages.get(
                             code,
-                            getattr(
-                                exc, "message_zh", "模型未返回可用的标签，本题未写入"
-                            ),
+                            exc.message_zh
+                            if safe_error
+                            else "模型未返回可用的标签，本题未写入",
                         ),
                     }
                     with self._lock:
@@ -532,7 +582,7 @@ class WordSemanticTagService:
             if i["status"] == "ready" and i["changed"]
         }
         if not set(keys).issubset(candidates):
-            raise WordSemanticTagError("所选结果没有可保存的新标签。")
+            raise WordSemanticTagError("所选结果没有可保存的标签修改。")
         units = {u["key"]: u for u in plan["units"]}
         selections = [s for s in plan["selections"] if s["key"] in keys]
         with self.words._lock:

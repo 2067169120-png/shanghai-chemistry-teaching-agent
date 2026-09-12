@@ -31,6 +31,8 @@
 !/docs/screenshots/lecture-study-reference.png
 !/docs/screenshots/word-multirange-selection.png
 !/docs/screenshots/word-multirange-preview.png
+!/docs/screenshots/word-tag-recheck-source.png
+!/docs/screenshots/word-tag-recheck-compare.png
 # User-authorized distilled references only; original teaching files stay local.
 !/knowledge/
 /knowledge/*

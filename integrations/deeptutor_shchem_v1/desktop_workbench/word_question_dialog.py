@@ -791,7 +791,7 @@ class WordQuestionDialog(QDialog):
         )
         self.attributes_button.clicked.connect(self._edit_attributes)
         tools_layout.addWidget(self.attributes_button)
-        self.ai_attributes_button = QPushButton("AI补全已选题标签…")
+        self.ai_attributes_button = QPushButton("AI补全 / 核对已选题标签…")
         self.ai_attributes_button.setObjectName("QuietButton")
         self.ai_attributes_button.setVisible(callable(getattr(facade, "word_semantic_tag_preview", None)))
         self.ai_attributes_button.clicked.connect(self._ai_attributes)

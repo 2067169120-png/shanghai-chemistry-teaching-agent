@@ -964,6 +964,62 @@ def complete_missing_attributes(existing, proposed):
     return validate_attributes(_seal(result))
 
 
+def automatic_tags_protected(value):
+    """Never replace a teacher-confirmed tag, including imported legacy rows."""
+    return (
+        value["annotation_source"] == "teacher_modified"
+        or "pinned" in value["rule_revision"]
+        or value["curriculum_status"] == "teacher_confirmed"
+        or any(
+            tag["status"] == "teacher_confirmed"
+            for tag in (
+                value["primary_knowledge"],
+                *value["supporting_knowledge"],
+                *value["curriculum_candidates"],
+            )
+        )
+    )
+
+
+def recheck_automatic_attributes(existing, proposed):
+    """Propose changed automatic labels only; this does not save or confirm them.
+
+    Uncertain model results keep the previous labels. A repeated ID or section
+    set is a no-op, even when a model paraphrases its evidence or reorders it.
+    The caller must bind the explicit recheck mode and normal source/CAS checks.
+    """
+    old, new = validate_attributes(existing), validate_attributes(proposed)
+    if any(
+        old[key] != new[key]
+        for key in (
+            "key", "source_sha256", "source_revision", "question_revision",
+            "index_revision", "extraction_revision",
+        )
+    ):
+        raise WordQuestionAttributeError("核对标签前题目范围或来源已变化，请重新核对。")
+    if automatic_tags_protected(old):
+        return old
+    result = deepcopy(old)
+    primary = new["primary_knowledge"]
+    if primary["id"] != UNKNOWN and primary["id"] != old["primary_knowledge"]["id"]:
+        result["primary_knowledge"] = {**deepcopy(primary), "status": "auto_suggested"}
+        result["supporting_knowledge"] = [
+            tag for tag in result["supporting_knowledge"] if tag["id"] != primary["id"]
+        ]
+    sections = new["curriculum_candidates"]
+    if sections and {s["section_key"] for s in sections} != {
+        s["section_key"] for s in old["curriculum_candidates"]
+    }:
+        result["curriculum_candidates"] = [
+            {**deepcopy(section), "status": "auto_suggested"} for section in sections
+        ]
+        result["curriculum_status"] = "auto_suggested"
+    if result == old:
+        return old
+    result["rule_revision"] = new["rule_revision"]
+    return validate_attributes(_seal(result))
+
+
 def build_teacher_updates(attributes, selections, curriculum_entries):
     """Build only changed teaching fields from real catalogue selections.
 

@@ -52,16 +52,23 @@ class WordSemanticTagsDialog(QDialog):
         self._image_preview_failed = False
         self._job, self._phase = None, ""
         self.saved = []
-        self.setWindowTitle("AI补全题目标签 · 先预览再采用")
+        self.setWindowTitle("AI标签整理 · 先预览再采用")
         self.resize(900, 820)
         self.setMinimumSize(360, 520)
         layout = QVBoxLayout(self)
-        layout.addWidget(_label("AI补全缺失标签"))
-        layout.addWidget(
-            _label(
-                "只分析本次选题的题干、公共材料和可读取的原图。原考试出处、已有非空标签和教师修改保留。"
-            )
+        heading = _label("逐题核对 · 标签整理")
+        heading.setObjectName("CardTitle")
+        layout.addWidget(heading)
+        self.introduction = _label(
+            "默认只补缺失主考点与教材映射，已有非空标签保留。分析完整题干、公共材料及可读取原图。"
         )
+        layout.addWidget(self.introduction)
+        self.recheck = QCheckBox("重新核对自动标签（可替换已有自动分类）")
+        self.recheck.setAccessibleName("重新核对自动标签")
+        self.recheck.setToolTip(
+            "核对模式不跳过标签齐全的自动标注题；教师修改、教师确认及固定修订仍受保护。"
+        )
+        layout.addWidget(self.recheck)
         self.profile = QComboBox()
         self.profile.setMinimumContentsLength(10)
         self.profile.setSizeAdjustPolicy(
@@ -121,6 +128,7 @@ class WordSemanticTagsDialog(QDialog):
         self.close_button.clicked.connect(self.reject)
         layout.addWidget(self.close_button)
         self.profile.currentIndexChanged.connect(self._invalidate)
+        self.recheck.toggled.connect(self._invalidate)
         self.tasks.task_finished.connect(self._finished)
         self._submit("profiles", self.facade.preparation_profiles, self._profiles)
 
@@ -167,11 +175,20 @@ class WordSemanticTagsDialog(QDialog):
         )
 
     def _invalidate(self):
-        if self._job:
+        if self._job or self.analysis_result:
             return
         self._discard()
         self.plan, self.analysis_result = None, None
         self.allow_send.setChecked(False)
+        self._image_preview_failed = False
+        self.introduction.setText(
+            "核对已有自动分类，先对照修改再逐题勾选保存。教师修改、教师确认、固定修订和原考试出处均保留。"
+            if self.recheck.isChecked()
+            else "默认只补缺失主考点与教材映射，已有非空标签保留。分析完整题干、公共材料及可读取原图。"
+        )
+        self.disclosure.setText(
+            "模式或模型已变，请重新预览。预览不调用API；结果出来后关闭窗口可重新选择模式。"
+        )
         self.questions.clear()
         self.tags.clear()
         self._show_question(-1)
@@ -182,10 +199,11 @@ class WordSemanticTagsDialog(QDialog):
         if not profile or self._job:
             return
         self.allow_send.setChecked(False)
+        options = {"mode": "recheck_automatic"} if self.recheck.isChecked() else {}
         self._submit(
             "preview",
             lambda: self.facade.word_semantic_tag_preview(
-                self.selections, profile.profile_id, profile.revision
+                self.selections, profile.profile_id, profile.revision, **options
             ),
             self._prepared,
         )
@@ -196,8 +214,13 @@ class WordSemanticTagsDialog(QDialog):
         self._image_preview_failed = False
         ready = [u for u in value["units"] if u["status"] == "ready"]
         images = sum(len(u["images"]) for u in ready)
+        mode_label = (
+            "重新核对自动标签 · 允许建议替换"
+            if value.get("mode") == "recheck_automatic"
+            else "只补缺失 · 已有非空标签保留"
+        )
         self.disclosure.setText(
-            f"接收模型：{value['model_label']}\n将发送{len(ready)}题的原生文字、公共材料及{images}张图片像素（包含图内可见内容和文件元数据）。"
+            f"本次模式：{mode_label}\n接收模型：{value['model_label']}\n将发送{len(ready)}题的原生文字、公共材料及{images}张图片像素（包含图内可见内容和文件元数据）。"
             f"另有{len(value['units']) - len(ready)}题不发送，原因见题目列表。\n"
             f"最多调用{value['request_count']}次，每题一次；可能产生费用。失败即停止，重试可能再次计费。"
         )
@@ -215,6 +238,7 @@ class WordSemanticTagsDialog(QDialog):
         candidates = {
             i["key"]: i for i in (self.analysis_result or {}).get("items", [])
         }
+        recheck = self.plan.get("mode") == "recheck_automatic"
         for number, unit in enumerate(self.plan["units"], 1):
             candidate = candidates.get(unit["key"])
             state = unit["reason"] or (
@@ -222,7 +246,11 @@ class WordSemanticTagsDialog(QDialog):
             )
             if candidate:
                 state = (
-                    ("新增标签可采用" if candidate.get("changed") else "没有新增标签")
+                    (
+                        ("标签修改待勾选" if recheck else "新增标签可采用")
+                        if candidate.get("changed")
+                        else ("没有标签变更" if recheck else "没有新增标签")
+                    )
                     if candidate["status"] == "ready"
                     else candidate["note"]
                 )
@@ -230,7 +258,9 @@ class WordSemanticTagsDialog(QDialog):
             item.setData(Qt.ItemDataRole.UserRole, unit["key"])
             if candidate and candidate["status"] == "ready" and candidate["changed"]:
                 item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-                item.setCheckState(Qt.CheckState.Checked)
+                item.setCheckState(
+                    Qt.CheckState.Unchecked if recheck else Qt.CheckState.Checked
+                )
             self.questions.addItem(item)
         self.questions.blockSignals(False)
         self.questions.setCurrentRow(max(0, min(current, self.questions.count() - 1)))
@@ -282,6 +312,25 @@ class WordSemanticTagsDialog(QDialog):
             None,
         )
         if candidate:
+            recheck = self.plan.get("mode") == "recheck_automatic"
+            if recheck and candidate["status"] == "ready":
+                old, new = unit["attributes"], candidate["proposed"]
+                text = (
+                    "修改对照 · 尚未保存\n"
+                    f"主考点：{old['primary_knowledge']['label']} → {new['primary_knowledge']['label']}\n"
+                    "教材："
+                    + (
+                        "、".join(m["label"] for m in old["curriculum_candidates"])
+                        or "待映射"
+                    )
+                    + " → "
+                    + (
+                        "、".join(m["label"] for m in new["curriculum_candidates"])
+                        or "待映射"
+                    )
+                    + "\n\n"
+                    + text
+                )
             text += "\n\nAI建议合并后的标签（未作教师审核）\n" + (
                 _tags(candidate["proposed"])
                 if candidate["status"] == "ready"
@@ -296,10 +345,15 @@ class WordSemanticTagsDialog(QDialog):
                     )
                     if candidate["proposed"][field] != unit["attributes"][field]
                 ]
-                text += "\n本次补全：" + (
-                    "、".join(changed) if changed else "无新增字段"
+                text += ("\n本次修改：" if recheck else "\n本次补全：") + (
+                    "、".join(changed) if changed else "无字段变化"
                 )
-                text += "\n已有非空字段保持原值；题面选项引文不是知识结论。"
+                text += (
+                    "\n仅核对自动标签；证据不足的字段保留原值。原考试出处与教师标记不变。"
+                    if recheck
+                    else "\n已有非空字段保持原值。"
+                )
+                text += "\n题面选项引文是定位依据，不代表选项陈述正确。"
                 text += "\n\n模型原始说明（可能包含未采用的建议）：\n"
             else:
                 text += "\n"
@@ -336,7 +390,11 @@ class WordSemanticTagsDialog(QDialog):
         set_status(
             self.status,
             "info",
-            "分析已停止或完成。可逐题查看建议与依据，取消不合适的勾选，再保存；尚未写入标签。",
+            (
+                "分析已停止或完成。修改默认不勾选；逐题对照原标签、建议与依据，再勾选保存。尚未写入标签。"
+                if self.plan.get("mode") == "recheck_automatic"
+                else "分析已停止或完成。可逐题查看建议与依据，取消不合适的勾选，再保存；尚未写入标签。"
+            ),
         )
 
     def _apply(self):
@@ -346,6 +404,19 @@ class WordSemanticTagsDialog(QDialog):
             if self.questions.item(i).checkState() == Qt.CheckState.Checked
         ]
         if self._job or not keys or not self.plan:
+            return
+        if (
+            self.plan.get("mode") == "recheck_automatic"
+            and QMessageBox.question(
+                self,
+                "保存核对后的自动标签？",
+                f"将保存已勾选的{len(keys)}题标签修改，可能替换已有自动主考点或教材映射。\n"
+                "原题、答案、原考试出处和教师标记不变；修改保留本机历史，采用后仍标为AI建议。是否保存？",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            != QMessageBox.StandardButton.Yes
+        ):
             return
         self._submit(
             "apply",
@@ -358,7 +429,7 @@ class WordSemanticTagsDialog(QDialog):
         set_status(
             self.status,
             "success",
-            f"已保存{len(values)}题的标签建议，原题和已有标签保持不变。",
+            f"已保存{len(values)}题的标签建议，原题、出处和教师标记保持不变。",
         )
 
     def _failed(self, message):
@@ -380,6 +451,7 @@ class WordSemanticTagsDialog(QDialog):
     def _actions(self, *_):
         busy = bool(self._job)
         self.profile.setEnabled(not busy and not self.analysis_result)
+        self.recheck.setEnabled(not busy and not self.analysis_result)
         self.prepare.setEnabled(
             not busy and bool(self.profile.currentData()) and not self.analysis_result
         )

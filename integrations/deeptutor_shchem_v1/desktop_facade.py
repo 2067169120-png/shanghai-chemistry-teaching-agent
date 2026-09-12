@@ -2347,8 +2347,8 @@ class DesktopWorkbenchFacade:
             self._word_semantic_tag_service = WordSemanticTagService(self)
         return self._word_semantic_tag_service
 
-    def word_semantic_tag_preview(self, selections, profile_id, profile_revision):
-        return self._word_semantic_tags().preview(selections, profile_id, profile_revision)
+    def word_semantic_tag_preview(self, selections, profile_id, profile_revision, *, mode="missing_only"):
+        return self._word_semantic_tags().preview(selections, profile_id, profile_revision, mode=mode)
 
     def word_semantic_tag_run(self, plan_id, revision, *, confirmed, progress=None, cancelled=None):
         return self._word_semantic_tags().run(plan_id, revision, confirmed=confirmed, progress=progress, cancelled=cancelled)
