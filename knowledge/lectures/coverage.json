@@ -8,9 +8,9 @@
   "all_chemical_claims_teacher_reviewed": false,
   "source_block_versions_bound_count": 46,
   "knowledge_claims": 262,
-  "method_claims": 76,
-  "pitfall_claims": 70,
-  "teaching_flow_claims": 12,
+  "method_claims": 82,
+  "pitfall_claims": 73,
+  "teaching_flow_claims": 14,
   "sources": [
     {
       "package_id": "PKG-002",
@@ -53,10 +53,10 @@
       "title": "氧化还原反应",
       "source_sha256": "66c478f2f9545fed5c0f1ce4b39877cd046dcf6e09a9f3bcd65c756f19b4d74c",
       "knowledge_count": 6,
-      "method_count": 1,
-      "pitfall_count": 1,
-      "teaching_flow_count": 0,
-      "claim_count": 8,
+      "method_count": 7,
+      "pitfall_count": 4,
+      "teaching_flow_count": 2,
+      "claim_count": 19,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
     },
