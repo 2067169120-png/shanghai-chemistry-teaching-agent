@@ -8,9 +8,9 @@
   "all_chemical_claims_teacher_reviewed": false,
   "source_block_versions_bound_count": 46,
   "knowledge_claims": 262,
-  "method_claims": 66,
+  "method_claims": 68,
   "pitfall_claims": 66,
-  "teaching_flow_claims": 6,
+  "teaching_flow_claims": 8,
   "sources": [
     {
       "package_id": "PKG-002",
@@ -65,10 +65,10 @@
       "title": "原子结构与核外电子排布",
       "source_sha256": "32048ea76e40a7bc186811d4e2bcca17954ae0f80908d87f22adddc2266a7056",
       "knowledge_count": 6,
-      "method_count": 4,
+      "method_count": 6,
       "pitfall_count": 3,
-      "teaching_flow_count": 0,
-      "claim_count": 13,
+      "teaching_flow_count": 2,
+      "claim_count": 17,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
     },

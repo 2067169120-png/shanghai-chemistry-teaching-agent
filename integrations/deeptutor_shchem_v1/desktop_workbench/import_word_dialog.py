@@ -5,7 +5,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import Qt, QUrl
+from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -25,10 +25,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from shiboken6 import isValid
 
 from ..desktop_word_metafile_preview import can_attempt_metafile
 from .components import page_scroll, section_title, set_status
 from .word_lesson_reader import WordLessonReader
+from .word_range_selection import WordRangeSelection
 
 
 def _safe_message(exc: Exception, fallback: str) -> str:
@@ -117,6 +119,7 @@ class ImportWordDialog(QDialog):
         self._study_reference_supported = self._image_reference_supported and callable(
             getattr(facade, "imported_word_study_reference", None)
         )
+        self._multirange_supported = callable(getattr(facade, "imported_word_multirange_reference", None))
         self.reference: dict[str, Any] | None = None
         self._preview_reference: dict[str, Any] | None = None
         self._preview_key: tuple | None = None
@@ -189,10 +192,15 @@ class ImportWordDialog(QDialog):
             range_layout.addWidget(QLabel(label))
             range_layout.addWidget(widget, 1)
         layout.addLayout(range_layout)
+        self.range_selection = WordRangeSelection()
+        self.range_selection.setVisible(self._multirange_supported)
+        self.range_selection.changed.connect(self._selection_changed)
+        self.range_selection.range_requested.connect(self._set_range)
+        layout.addWidget(self.range_selection)
         self.block_hint = QLabel("正在读取已保存的 Word…")
         self.block_hint.setWordWrap(True)
         layout.addWidget(self.block_hint)
-        layout.addWidget(QLabel("教案原文（含表格文字；可滚动阅读全文）"))
+        layout.addWidget(QLabel("当前查看的原文（含表格文字；可滚动阅读全文）"))
         self.source_preview = QPlainTextEdit()
         self.source_preview.setReadOnly(True)
         self.source_preview.setAccessibleName("所选 Word 原文与缺失提示")
@@ -345,6 +353,7 @@ class ImportWordDialog(QDialog):
 
     def _clear_source(self) -> None:
         self._source = None
+        self.range_selection.reset()
         self.reader.set_source(None)
         self._invalidate_preview()
         self.block_list.clear()
@@ -484,11 +493,17 @@ class ImportWordDialog(QDialog):
             self.source_combo.currentData(),
             source.get("source_sha256"),
             source.get("revision"),
-            self.block_start.value(),
-            self.block_end.value(),
+            None if self.range_selection.enabled.isChecked() else self.block_start.value(),
+            None if self.range_selection.enabled.isChecked() else self.block_end.value(),
             self.include_images.isChecked(),
             self.include_guidance.isChecked(),
+            tuple((r["start"], r["end"]) for r in self.range_selection.ranges()) if self.range_selection.enabled.isChecked() else None,
         )
+
+    def _valid_selection(self) -> bool:
+        if self.range_selection.enabled.isChecked():
+            return self._multirange_supported and bool(self._source) and bool(self.range_selection.ranges())
+        return self._valid_range()
 
     def _valid_range(self) -> bool:
         indices = {block["index"] for block in (self._source or {}).get("blocks", ())}
@@ -508,13 +523,15 @@ class ImportWordDialog(QDialog):
     def _selection_changed(self, *_args: Any) -> None:
         if self._loading:
             return
-        self._invalidate_preview()
+        if self._preview_key != self._selection_key():
+            self._invalidate_preview()
         valid = self._valid_range()
-        self.preview_button.setEnabled(valid)
+        self.preview_button.setEnabled(self._valid_selection())
         start, end = self.block_start.value(), self.block_end.value()
         blocks = (self._source or {}).get("blocks", ())
+        self.range_selection.set_current(start, end, valid, blocks)
         self.block_hint.setText(
-            f"共 {len(blocks)} 个区块；当前选择 {start}—{end}。"
+            f"共 {len(blocks)} 个区块；当前查看 {start}—{end}。"
             if blocks
             else "没有可选区块。"
         )
@@ -638,10 +655,17 @@ class ImportWordDialog(QDialog):
         )
 
     def _compile_reference(self) -> dict[str, Any]:
-        if not self._source or not self._valid_range():
+        if not self._source or not self._valid_selection():
             raise ValueError("invalid selection")
-        source_id, sha256, revision, start, end, include_images, include_guidance = self._selection_key()
-        if self._study_reference_supported:
+        source_id, sha256, revision, start, end, include_images, include_guidance, ranges = self._selection_key()
+        if ranges is not None:
+            value = self.facade.imported_word_multirange_reference(
+                self._batch_id, source_id, sha256,
+                [{"start": start, "end": end} for start, end in ranges],
+                expected_revision=revision, include_images=include_images,
+                include_guidance=include_guidance,
+            )
+        elif self._study_reference_supported:
             value = self.facade.imported_word_study_reference(
                 self._batch_id, source_id, sha256, start, end,
                 expected_revision=revision, include_images=include_images,
@@ -699,6 +723,18 @@ class ImportWordDialog(QDialog):
                 f"{study['textbook_concept_count']} 条教材知识候选，均可在下方核对。"
             )
         set_status(self.status, "attention" if notes else "success", message)
+        # Let wrapping/status height settle before moving the outer scroll area.
+        # The editable range controls are no longer the target after previewing.
+        QTimer.singleShot(0, self._reveal_preview)
+
+    def _reveal_preview(self) -> None:
+        if not isValid(self) or self._preview_reference is None:
+            return
+        self.reader_tabs.setCurrentIndex(1)
+        area = self.reader_tabs.widget(1)
+        if isinstance(area, QScrollArea):
+            area.verticalScrollBar().setValue(area.verticalScrollBar().maximum())
+        self.preview.setFocus()
 
     def _show_reference(self, reference: dict[str, Any]) -> None:
         materials = reference["materials"]
@@ -731,7 +767,9 @@ class ImportWordDialog(QDialog):
             self.preview.setFocus()
 
     def _body_marker(self) -> str:
-        return f"[Word区块{self.block_start.value()}]"
+        ranges = self.range_selection.ranges() if self.range_selection.enabled.isChecked() else []
+        start = ranges[0]["start"] if ranges else self.block_start.value()
+        return f"[Word区块{start}]"
 
     def _locate_reference_body(self) -> None:
         cursor = self.preview.document().find(self._body_marker())

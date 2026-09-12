@@ -2307,6 +2307,24 @@ class DesktopWorkbenchFacade:
             include_guidance=include_guidance,
         )
 
+    def imported_word_multirange_reference(
+        self, batch_id: str, source_id: str, source_sha256: str,
+        block_ranges: list[dict[str, int]], expected_revision: str,
+        *, include_images: bool = True, include_guidance: bool = True,
+    ) -> dict[str, Any]:
+        """Read exactly the selected disjoint original segments and their images."""
+        from .desktop_word_source_reference import WordSourceReferenceService
+
+        return WordSourceReferenceService(self).reference(
+            {
+                "batch_id": batch_id, "source_id": source_id,
+                "source_sha256": source_sha256, "revision": expected_revision,
+                "block_ranges": block_ranges,
+            },
+            include_images=include_images,
+            include_guidance=include_guidance,
+        )
+
     def import_word_source_reference(self, reference, existing_assets):
         """Revalidate all selected original content, then commit its local images."""
         from .desktop_word_source_reference import WordSourceReferenceService

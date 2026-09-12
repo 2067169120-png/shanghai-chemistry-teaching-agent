@@ -29,6 +29,8 @@
 !/docs/screenshots/mixed-paper-preview.png
 !/docs/screenshots/word-curriculum-filters.png
 !/docs/screenshots/lecture-study-reference.png
+!/docs/screenshots/word-multirange-selection.png
+!/docs/screenshots/word-multirange-preview.png
 # User-authorized distilled references only; original teaching files stay local.
 !/knowledge/
 /knowledge/*

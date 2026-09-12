@@ -34,6 +34,7 @@ from .desktop_preparation_sources import (
     _local,
 )
 from .desktop_source_quality import source_quality_notes
+from .desktop_word_ranges import normalize_word_ranges, word_range_label
 
 _SELECTION_FIELDS = {
     "batch_id",
@@ -43,6 +44,7 @@ _SELECTION_FIELDS = {
     "block_start",
     "block_end",
 }
+_MULTIRANGE_FIELDS = (_SELECTION_FIELDS - {"block_start", "block_end"}) | {"block_ranges"}
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _COMMIT_LOCK = threading.RLock()
 _VISUAL_CONTAINERS = {"drawing", "pict", "object", "AlternateContent"}
@@ -62,7 +64,7 @@ def _digest(value):
 
 
 def _selection(value):
-    if not isinstance(value, dict) or set(value) != _SELECTION_FIELDS:
+    if not isinstance(value, dict) or set(value) not in (_SELECTION_FIELDS, _MULTIRANGE_FIELDS):
         raise WordSourceReferenceError("原教案选择记录不完整，请重新预览。")
     if any(
         not isinstance(value[key], str)
@@ -75,6 +77,12 @@ def _selection(value):
         for key in ("source_sha256", "revision")
     ):
         raise WordSourceReferenceError("原教案来源标识不正确，请重新预览。")
+    if "block_ranges" in value:
+        try:
+            ranges = normalize_word_ranges(value["block_ranges"])
+        except ValueError as exc:
+            raise WordSourceReferenceError(str(exc)) from exc
+        return {**value, "block_ranges": ranges}
     if (
         type(value["block_start"]) is not int
         or type(value["block_end"]) is not int
@@ -117,7 +125,7 @@ def _quality_warnings(workspace, preview, blocks):
     ], True
 
 
-def _visual_occurrences(data, preview, start, end):
+def _visual_occurrences(data, preview, selected_indices):
     """Retain each XML image reference without changing the shared preview.
 
     The old preview intentionally deduplicates a relationship within a block.
@@ -132,7 +140,7 @@ def _visual_occurrences(data, preview, start, end):
     catalogue = {asset["asset_id"]: asset for asset in preview["assets"]}
     by_block, gaps, warnings = {}, {}, []
     for index, element in enumerate(elements, 1):
-        if not start <= index <= end:
+        if index not in selected_indices:
             continue
         relationships, bound = {}, {}
         for node in element.iter():
@@ -298,9 +306,11 @@ class WordSourceReferenceService:
             raise WordSourceReferenceError(
                 "Word原文或提取结果已变化，请重新预览后再确认。"
             )
-        if chosen["block_end"] > len(preview["blocks"]):
+        ranges = chosen.get("block_ranges") or [{"start": chosen["block_start"], "end": chosen["block_end"]}]
+        if ranges[-1]["end"] > len(preview["blocks"]):
             raise WordSourceReferenceError("Word区块范围不正确。")
-        blocks = preview["blocks"][chosen["block_start"] - 1 : chosen["block_end"]]
+        blocks = [block for bounds in ranges for block in preview["blocks"][bounds["start"] - 1:bounds["end"]]]
+        selected_indices = {block["index"] for block in blocks}
         warnings, quality_hold = _quality_warnings(
             self.facade.paths.workspace_root, preview, blocks
         )
@@ -313,15 +323,23 @@ class WordSourceReferenceService:
             f"讲义来源：{source.filename}",
             "原文件SHA-256：" + chosen["source_sha256"],
             "原文提取版本：" + chosen["revision"],
-            f"选定原文范围：区块{chosen['block_start']}至{chosen['block_end']}（包含首尾）",
+            ("选定原文范围：区块 " + word_range_label(ranges) + "（各段包含首尾，按原文顺序）")
+            if "block_ranges" in chosen
+            else f"选定原文范围：区块{chosen['block_start']}至{chosen['block_end']}（包含首尾）",
         ]
+        if len(ranges) > 1:
+            lines.append("本次明确选择多个分散段落，段落之间未选的原文和图片不带入，也不能据此补写。请保留所用例题的完整题干、公共材料及对应答案，不把两段之间的省略当成原文连续关系。")
         images, payloads, extracted, references, issues = {}, {}, {}, [], []
         assets_by_block, visual_gaps, visual_warnings = _visual_occurrences(
-            source.content, preview, chosen["block_start"], chosen["block_end"]
+            source.content, preview, selected_indices
         )
         warnings.extend(visual_warnings)
         has_images = False
+        starts = {bounds["start"]: (position, bounds) for position, bounds in enumerate(ranges, 1)}
         for block in blocks:
+            if len(ranges) > 1 and block["index"] in starts:
+                position, bounds = starts[block["index"]]
+                lines.append(f"\n【所选第{position}段 · 原文区块 {word_range_label([bounds])}】")
             lines.append(
                 f"\n[Word区块{block['index']}]\n" + (block["text"] or "（空白段落）")
             )
