@@ -385,7 +385,7 @@ def audit_archived(
         (frozen_native,) = snapshot_reader_graph((native,))
         (legacy,) = snapshot_reader_graph((MasterDirectVisualScanReader(evidence),))
         native_catalog, legacy_catalog = frozen_native.catalog(), legacy.catalog()
-        _check(native_catalog["count"] == 253, "native direct record count is not 253")
+        _check(native_catalog["count"] == 262, "native direct record count is not 262")
         _check(legacy_catalog["count"] == 224, "legacy direct contract changed")
         native_ids, legacy_ids = (
             set(native_catalog["master_node_ids"]),
@@ -393,15 +393,18 @@ def audit_archived(
         )
         _check(
             native_ids - legacy_ids
-            == EXPECTED_ATOMS | {f"LE2025-S3-Q{number:02}-P1" for number in range(1, 10)},
-            "native delta is not the intended original 20 plus fosinopril 9 atoms",
+            == EXPECTED_ATOMS
+            | {f"LE2025-S3-Q{number:02}-P1" for number in range(1, 10)}
+            | {f"FD2026-APR-S5-Q{number}-P1" for number in range(40, 48)}
+            | {"FD2026-APR-S5-Q41-P2"},
+            "native delta is not the original 20 plus fosinopril 9 and ZnS 9 atoms",
         )
         _check(
             legacy_ids <= native_ids, "a legacy source disappeared from native catalog"
         )
         report["counts"] = {
             "legacy_direct": 224,
-            "native_direct": 253,
+            "native_direct": native_catalog["count"],
             "new_atomic_parts": 20,
             "new_theme_count": 3,
             "legacy_products": len(legacy_catalog["products"]),

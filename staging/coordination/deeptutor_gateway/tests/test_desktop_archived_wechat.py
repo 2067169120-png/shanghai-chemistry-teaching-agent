@@ -27,10 +27,10 @@ def audited(tmp_path_factory):
 
 
 def test_native_delta_20_and_legacy_224_contract_stay_separate(audited):
-    assert audited["counts"]["native_direct"] == 253
+    assert audited["counts"]["native_direct"] == 262
     assert audited["counts"]["legacy_direct"] == 224
     assert audited["counts"]["legacy_products"] == 10
-    assert audited["counts"]["native_products"] == 13
+    assert audited["counts"]["native_products"] == 14
     assert {
         part["atomic_id"] for theme in audited["themes"] for part in theme["parts"]
     } == EXPECTED_ATOMS

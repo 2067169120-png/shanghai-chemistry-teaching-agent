@@ -1280,6 +1280,9 @@ class MasterDirectVisualScanReader:
         # The frozen ten-product HTTP projection stays unchanged by default;
         # these adapters do not manufacture new formal scan manifests.
         if include_archived_candidates:
+            from .fudan2026_april_theme5_zns_direct_visual_scan import (
+                Fudan2026AprilTheme5ZnsDirectVisualScanReader,
+            )
             from .level_exam2025_theme3_fosinopril_direct_visual_scan import (
                 LevelExam2025Theme3FosinoprilDirectVisualScanReader,
             )
@@ -1303,10 +1306,16 @@ class MasterDirectVisualScanReader:
                     self.shchem_root, master_workbench=self.master_workbench
                 )
             )
+            self.fudan2026_april_theme5_zns = (
+                Fudan2026AprilTheme5ZnsDirectVisualScanReader(
+                    self.shchem_root, master_workbench=self.master_workbench
+                )
+            )
             self._reader_registrations += (
                 _DirectReaderRegistration("songjiang2025_theme2", 9),
                 _DirectReaderRegistration("shanghai_high_east2025_theme45", 11),
                 _DirectReaderRegistration("level_exam2025_theme3_fosinopril", 9),
+                _DirectReaderRegistration("fudan2026_april_theme5_zns", 9),
             )
 
     @staticmethod

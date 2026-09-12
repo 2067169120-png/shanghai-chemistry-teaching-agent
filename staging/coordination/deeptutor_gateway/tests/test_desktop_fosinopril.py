@@ -144,10 +144,10 @@ def _blueprint(catalog, selection):
     )
 
 
-def test_native_253_thirteen_products_keep_legacy_224_ten_and_master_identity(native):
+def test_native_262_fourteen_products_keep_legacy_224_ten_and_master_identity(native):
     catalog = native.direct.catalog()
     legacy = native.legacy.catalog()
-    assert catalog["count"] == 253 and len(catalog["products"]) == 13
+    assert catalog["count"] == 262 and len(catalog["products"]) == 14
     assert legacy["count"] == 224 and len(legacy["products"]) == 10
     assert set(legacy["master_node_ids"]) < set(catalog["master_node_ids"])
     assert set(fosinopril.EXPECTED_ATOMIC_IDS) <= set(catalog["master_node_ids"])
@@ -156,9 +156,9 @@ def test_native_253_thirteen_products_keep_legacy_224_ten_and_master_identity(na
         item for item in catalog["products"] if item["product_id"] == fosinopril.PRODUCT_ID
     )
     assert product["count"] == 9 and product["paper_id"] == fosinopril.PAPER_ID
-    assert catalog["coverage"]["direct_master_visual_scanned"] == 253
-    assert catalog["coverage"]["visual_scanned_master_atomic"] == 169 + 253
-    assert catalog["coverage"]["remaining_unscanned"] == 470 - 169 - 253
+    assert catalog["coverage"]["direct_master_visual_scanned"] == 262
+    assert catalog["coverage"]["visual_scanned_master_atomic"] == 169 + 262
+    assert catalog["coverage"]["remaining_unscanned"] == 470 - 169 - 262
     assert native.catalog["counts"]["atomic_parts"] == 470
     assert native.catalog["counts"]["display_atomic_units"] == 480
     assert native.facade._themes.direct_scans is native.direct
