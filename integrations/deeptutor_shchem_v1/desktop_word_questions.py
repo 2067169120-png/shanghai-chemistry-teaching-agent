@@ -27,6 +27,7 @@ from .desktop_word_preview_cache import WordPreviewCache
 from .desktop_word_question_attributes import (
     WordQuestionAttributeError,
     WordQuestionAttributeStore,
+    complete_missing_attributes,
     load_attribute_catalog,
     suggest_attributes,
 )
@@ -294,7 +295,7 @@ class WordQuestionService:
         }
         return rows, len(seen), _digest(snapshot), warnings
 
-    def annotate_imported_batch(self, batch_id):
+    def annotate_imported_batch(self, batch_id, *, only_missing=False):
         """Explicit local-rule annotation, separate from all catalogue reads.
 
         Counts refer to unique source bytes and their current complete-question
@@ -305,6 +306,8 @@ class WordQuestionService:
 
         if not isinstance(batch_id, str) or not batch_id.strip():
             raise WordQuestionError("请选择一个已保存的Word导入批次。")
+        if type(only_missing) is not bool:
+            raise WordQuestionError("补标签模式须为明确的布尔值。")
         with self._lock:
             try:
                 previews = {}
@@ -324,7 +327,10 @@ class WordQuestionService:
                     metadata = (
                         old["source"] if old else {"source_name": row["source_name"]}
                     )
-                    proposals.append(suggest_attributes(row, metadata, catalog))
+                    proposal = suggest_attributes(row, metadata, catalog)
+                    if only_missing and old:
+                        proposal = complete_missing_attributes(old, proposal)
+                    proposals.append(proposal)
                 # Range saves and teacher label edits share this service lock.
                 # Re-open archived bytes and range state immediately before the
                 # store's all-or-nothing transaction; cached bytes are no authority.

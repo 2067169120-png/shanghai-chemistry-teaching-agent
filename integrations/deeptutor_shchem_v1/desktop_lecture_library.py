@@ -63,6 +63,30 @@ def _index_cards(workspace: Path):
                             )
                         ):
                             raise ValueError("invalid block locator")
+                for link in row.get("textbook_links", []):
+                    if (
+                        not isinstance(link, dict)
+                        or link.get("human_reviewed") is not False
+                        or link.get("review_method") != "page_images_read_by_model"
+                        or not re.fullmatch(
+                            r"TB-(?:M[12]|E[123])", str(link.get("volume_id", ""))
+                        )
+                        or not str(link.get("section_key", "")).startswith(
+                            link["volume_id"] + "-"
+                        )
+                        or not re.fullmatch(
+                            r"[0-9a-f]{64}", str(link.get("source_sha256", ""))
+                        )
+                    ):
+                        raise ValueError("invalid textbook link")
+                    for key in ("pdf_pages", "printed_pages"):
+                        pages = link.get(key)
+                        if (
+                            not isinstance(pages, list)
+                            or not pages
+                            or any(type(p) is not int or p < 1 for p in pages)
+                        ):
+                            raise ValueError("invalid textbook page locator")
                 checked[sha] = row
             cards.update(checked)
         except (OSError, ValueError, TypeError, KeyError):
@@ -94,6 +118,13 @@ def lecture_catalog(facade):
                 "打开后会重新核对原 Word；这里的索引只帮助定位，不替代原教案。",
             ]
             if card:
+                for link in card.get("textbook_links", []):
+                    pages = "、".join(map(str, link["pdf_pages"]))
+                    printed = "、".join(map(str, link["printed_pages"]))
+                    lines.append(
+                        f"\n教材对照 · {link['section_key']} · PDF文件页序 {pages} · 印刷页码 {printed}"
+                        "\n这些教材页已由AI读图核对，尚未教师审核；教材版本以关联SHA为准，不替代原页。"
+                    )
                 lines.append("\nAI 整理的知识线索（待教师核对；不是教材原句）：")
                 for group, label in GROUP_LABELS.items():
                     for claim in card[group]:

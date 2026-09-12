@@ -1041,7 +1041,7 @@ def main() -> int:
         "desktop_workbench.lecture_library_dialog": ["查找原教案"],
         "desktop_import_preview": ["import_preview_changed"],
         "desktop_word_preview_cache": ["20260910-native-word-preview-cache-v1"],
-        "desktop_word_question_attributes": ["word-attributes-20260910-v1"],
+        "desktop_word_question_attributes": ["word-attributes-20260912-v2"],
         "desktop_word_question_filters": [],
         "desktop_workbench.word_question_filter_panel": [],
         "desktop_source_quality": [

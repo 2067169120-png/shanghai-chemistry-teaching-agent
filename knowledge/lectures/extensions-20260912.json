@@ -1,0 +1,35 @@
+{
+  "schema_version": "shchem.lecture-source-extension.v1",
+  "purpose": "把本次已读教材和讲义转为课堂笔记与解题方法导航，仍以原Word和原教材为正文来源。",
+  "human_reviewed": false,
+  "entries": [
+    {
+      "package_id": "PKG-010",
+      "source_sha256": "32048ea76e40a7bc186811d4e2bcca17954ae0f80908d87f22adddc2266a7056",
+      "textbook_links": [{"volume_id": "TB-E2", "section_key": "TB-E2-C1:1.2", "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848", "pdf_pages": [16,17,18,19,20], "printed_pages": [12,13,14,15,16], "review_method": "page_images_read_by_model", "human_reviewed": false}],
+      "methods": [
+        {"summary": "微粒计数题先固定质子数，再用质量数减质子数求中子数，最后按离子电荷调整电子数；把中性原子、阳离子、阴离子列为三行比较，防止只记一个等式。", "block_indices": [35,40,48,49]},
+        {"summary": "用同一个硫原子做表示方法互译：先核对电子总数，再依次写完整电子排布式、简化式和价层排布式，最后画带能级标签的轨道图；保留原表作学生补全与讲评对照。", "block_indices": [204,207,225,256,258]},
+        {"summary": "判断排布错误时分三栏检查：是否按能量最低原则填充、同一轨道是否超员或同向配对、等能轨道是否先单占且自旋平行。每个错误都对应具体规则，而不只核对电子总数。", "block_indices": [168,171,173,179,212]}
+      ],
+      "pitfalls": [
+        {"summary": "先分清所求是电子总数、占有的轨道数还是未成对电子数；原子中不同电子的完整运动状态不同，不等于每个电子都独占一个轨道。", "block_indices": [171,182,204]},
+        {"summary": "元素、核素、同位素关系和同素异形体的讨论对象不同；判断前先区分原子与单质，避免把同位素关系写成两种单质之间的关系。", "block_indices": [51,52,128]}
+      ]
+    },
+    {
+      "package_id": "PKG-056",
+      "source_sha256": "8cda068028bafa475614cd124effaf56caea133084813b9609926af8e325bfb2",
+      "textbook_links": [{"volume_id": "TB-E1", "section_key": "TB-E1-C3:3.2", "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05", "pdf_pages": [70,71,72,73], "printed_pages": [64,65,66,67], "review_method": "page_images_read_by_model", "human_reviewed": false}],
+      "methods": [
+        {"summary": "分析外界条件影响时，把平衡移动、n(H⁺)、c(H⁺)、电离度和Ka分别列栏，再逐栏说明依据。恒温稀释醋酸时，不能由平衡右移直接推出氢离子浓度增大。", "block_indices": [44,49,52,53,55,137,152]},
+        {"summary": "单一一元弱酸忽略水电离贡献时，由三段式得到Ka=c₀α²/(1−α)。先保留分母，确认α很小才用Ka≈c₀α²；求出的α还应回代检查近似是否合理。", "block_indices": [146,147,148,149,150,203,205,206,207]},
+        {"summary": "恒温浓度比题先把比值改写为电离常数关系：一元弱酸有c(A⁻)/c(HA)=Ka/c(H⁺)。再结合稀释导致c(H⁺)减小判断比值变化，不用“右移所以所有离子浓度增大”代替推理。", "block_indices": [49,52,55,122,130,132]}
+      ],
+      "pitfalls": [
+        {"summary": "比较两种酸之前先圈出控制条件是同浓度还是同pH，以及体积是否相同；酸的强弱、起始氢离子浓度和可消耗碱的总量不是同一个比较对象。", "block_indices": [67,68]},
+        {"summary": "用盐溶液酸碱性证明弱酸时，应明确所用的是相应的钠盐等强碱弱酸盐，并核对温度；不能把任意盐溶液呈碱性都当作指定酸为弱酸的证据。", "block_indices": [67,68]}
+      ]
+    }
+  ]
+}

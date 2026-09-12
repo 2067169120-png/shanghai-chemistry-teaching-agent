@@ -22,7 +22,7 @@ from jsonschema import Draft202012Validator
 from .question_search_workbench import VALUE_LABELS_ZH
 
 SCHEMA_VERSION = "shchem.personal-word-question-attributes.v1"
-RULE_REVISION = "word-attributes-20260910-v1"
+RULE_REVISION = "word-attributes-20260912-v2"
 UNKNOWN = "unknown"
 EXAM_TYPE_LABELS = {
     "unknown": "原考试待确认",
@@ -148,6 +148,161 @@ _TERMS = {
     "K17": ("醇和酚", "醛和酮", "羧酸", "酯化", "含氧衍生物", "官能团转化"),
     "K18": ("糖类", "蛋白质", "核酸", "油脂", "高分子", "加聚", "缩聚"),
     "K19": ("合成路线", "有机合成", "官能团保护", "波谱", "核磁共振", "红外光谱"),
+}
+# Explicit subject language only. Generic words such as "实验", "水解" and
+# "电子" cannot identify a chapter without the qualifying chemical context.
+_MORE_TERMS = {
+    "K01": (
+        "阿伏加德罗",
+        "摩尔质量",
+        "分离和提纯",
+        "分离与提纯",
+        "蒸馏",
+        "萃取",
+        "重结晶",
+        "容量瓶",
+        "丁达尔",
+        "物质的检验",
+    ),
+    "K02": ("次氯酸", "漂白粉", "溴和碘", "卤离子"),
+    "K03": ("浓硫酸", "硫化氢", "氮氧化物", "铵盐", "氨气"),
+    "K04": (
+        "同位素",
+        "核素",
+        "质量数",
+        "质子数",
+        "中子数",
+        "电子式",
+        "离子化合物",
+        "共价化合物",
+    ),
+    "K05": (
+        "过氧化钠",
+        "氢氧化铝",
+        "氧化铝",
+        "氢氧化铁",
+        "氢氧化亚铁",
+        "铁离子",
+        "亚铁离子",
+        "铝热反应",
+    ),
+    "K06": ("勒夏特列", "勒沙特列", "平衡标志"),
+    "K08": ("中和热", "反应的热效应", "反应热效应", "燃烧焓"),
+    "K09": ("活化能", "反应机理", "反应历程", "平衡转化率", "反应商", "分压平衡常数"),
+    "K10": (
+        "强弱电解质",
+        "电离常数",
+        "电离度",
+        "同离子效应",
+        "溶液的酸碱性",
+        "溶液酸碱性",
+        "质子守恒",
+        "水解常数",
+        "沉淀转化",
+        "酸碱滴定",
+    ),
+    "K11": (
+        "氧化性",
+        "还原性",
+        "电子守恒",
+        "放电顺序",
+        "氧化剂",
+        "还原剂",
+        "氧化产物",
+        "还原产物",
+        "双线桥",
+        "单线桥",
+        "氧化反应",
+        "还原反应",
+        "电解反应",
+        "电化学腐蚀",
+        "牺牲阳极",
+    ),
+    "K12": (
+        "电负性",
+        "电离能",
+        "泡利",
+        "洪特",
+        "构造原理",
+        "未成对电子",
+        "价层电子",
+        "价电子排布",
+        "能级",
+        "电子云",
+    ),
+    "K13": (
+        "氢键",
+        "范德华力",
+        "手性",
+        "σ键",
+        "π键",
+        "键角",
+        "配体",
+        "配位数",
+        "超分子",
+        "价层电子对互斥",
+    ),
+    "K14": ("晶体密度", "堆积方式"),
+    "K15": ("同分异构体", "官能团的名称", "官能团名称"),
+    "K16": ("脂肪烃", "苯的同系物", "消去反应"),
+    "K17": ("银镜反应", "醛基", "酚羟基", "醇羟基", "酯基", "酰胺", "羧基"),
+    "K18": ("多糖", "氨基酸", "肽键", "聚合反应", "合成纤维", "合成橡胶"),
+    "K19": ("质谱", "核磁共振氢谱", "元素分析", "有机物的分离"),
+}
+
+# A target must exist with this exact title in the supplied directory. These
+# aliases are curriculum-navigation suggestions, not inferred source identity.
+_SECTION_ALIASES = {
+    "物质的分类": ("胶体", "分散系", "丁达尔"),
+    "物质的量": ("阿伏加德罗", "摩尔质量", "气体摩尔体积"),
+    "化学中常用的实验方法": ("蒸馏", "萃取", "重结晶", "容量瓶"),
+    "海水中的氯": ("氯气", "次氯酸", "漂白粉"),
+    "氧化还原反应和离子反应": ("离子方程式", "离子共存"),
+    "硫及其重要化合物": ("二氧化硫", "浓硫酸", "硫化氢"),
+    "氮及其重要化合物": ("氨气", "铵盐", "硝酸", "氮氧化物"),
+    "原子结构": ("核素", "同位素", "质量数", "质子数", "中子数"),
+    "化学键": ("离子键", "共价键", "电子式"),
+    "重要的金属化合物": ("过氧化钠", "氢氧化铝", "氢氧化铁", "氢氧化亚铁"),
+    "反应热的测量和计算": ("盖斯定律", "中和热", "燃烧热", "热化学方程式"),
+    "化学反应的方向": ("熵变", "自发反应", "反应的自发性"),
+    "化学反应的限度": ("平衡常数", "平衡转化率", "反应商"),
+    "化学反应的速率": ("活化能", "反应机理", "反应历程"),
+    "弱电解质的电离平衡": ("弱电解质", "电离常数", "电离度", "同离子效应"),
+    "酸碱中和与盐类水解": (
+        "中和滴定",
+        "酸碱滴定",
+        "盐类水解",
+        "盐类的水解",
+        "水解常数",
+    ),
+    "难溶电解质的沉淀溶解平衡": ("溶度积", "沉淀溶解平衡", "沉淀转化"),
+    "氧化还原反应": ("氧化剂", "还原剂", "氧化产物", "还原产物", "双线桥", "单线桥"),
+    "原电池和化学电源": ("原电池", "燃料电池", "充放电"),
+    "电解池": ("电解反应", "电解原理"),
+    "金属的电化学腐蚀与防护": ("电化学腐蚀", "牺牲阳极", "外加电流的阴极保护"),
+    "多电子原子核外电子的排布": (
+        "电子排布式",
+        "轨道表示式",
+        "泡利",
+        "洪特",
+        "构造原理",
+        "未成对电子",
+    ),
+    "元素周期律": ("电负性", "电离能"),
+    "共价分子的空间结构": ("杂化", "VSEPR", "价层电子对互斥", "键角"),
+    "分子结构与物质的性质": ("氢键", "范德华力", "分子极性", "分子的极性", "手性"),
+    "配位化合物和超分子": ("配位", "配体", "超分子"),
+    "有机化合物的结构": ("同分异构", "官能团名称", "官能团的名称"),
+    "有机化合物的命名": ("系统命名",),
+    "脂肪烃": ("烷烃", "烯烃", "炔烃"),
+    "芳香烃": ("苯的同系物",),
+    "醇和酚": ("醇羟基", "酚羟基"),
+    "醛和酮": ("醛基", "银镜反应"),
+    "羧酸及其衍生物": ("羧基", "酯基", "酯化", "酰胺"),
+    "生物大分子": ("氨基酸", "肽键", "蛋白质", "核酸"),
+    "合成高分子": ("加聚", "缩聚", "合成纤维", "合成橡胶"),
+    "有机合成初步": ("合成路线", "官能团保护"),
+    "研究有机化合物的一般方法": ("核磁共振", "红外光谱", "质谱", "元素分析"),
 }
 _FORMS = (
     (
@@ -391,13 +546,20 @@ def _segments(question):
 def _find(term, segments):
     found = []
     for kind, text, index in segments:
-        match = re.search(re.escape(term), text, re.IGNORECASE)
-        if match:
+        for match in re.finditer(re.escape(term), text, re.IGNORECASE):
+            before = text[max(0, match.start() - 12) : match.start()]
+            if term == "饱和烃" and before.endswith("不"):
+                continue
+            if term == "平衡常数" and before.endswith(
+                ("电离", "水解", "溶解", "络合", "配位")
+            ):
+                continue
             found.append(
                 _evidence(
                     kind, text[max(0, match.start() - 25) : match.end() + 35], index
                 )
             )
+            break
     return found[:20]
 
 
@@ -443,23 +605,52 @@ def _catalog_entries(value):
 
 def _knowledge(segments, taxonomy):
     candidates = []
+    # Options are useful supporting search tags, but an incidental distractor
+    # alone is not enough to decide the question's primary knowledge point.
+    prompt_segments = []
+    for kind, content, index in segments:
+        if kind == "question_text":
+            content = re.split(
+                r"(?:^|\n)\s*[A-D][.．、:：]|\s{2,}[A-D][.．、:：]",
+                content,
+                maxsplit=1,
+            )[0]
+        prompt_segments.append((kind, content, index))
     by_id = {row.get("id"): row for row in taxonomy if isinstance(row, Mapping)}
     for identifier, terms in _TERMS.items():
         node = by_id.get(identifier, {})
-        phrases = set(terms) | {
-            p for p in node.get("subtopics", []) if isinstance(p, str) and len(p) >= 3
-        }
+        phrases = (
+            set(terms)
+            | set(_MORE_TERMS.get(identifier, ()))
+            | {
+                p
+                for p in node.get("subtopics", [])
+                if isinstance(p, str) and len(p) >= 3
+            }
+        )
+        if identifier == "K02":
+            phrases.discard("氧化还原")
+        if identifier == "K19":
+            phrases.discard("分离提纯")
         matches = [(term, _find(term, segments)) for term in sorted(phrases)]
         matches = [(term, evidence) for term, evidence in matches if evidence]
         if matches:
             evidence = list(
                 {_digest(e): e for _, found in matches for e in found}.values()
             )[:20]
-            score = sum(len(term) for term, _ in matches) + 100 * any(
-                e["kind"] == "source_chapter" for e in evidence
+            priorities = {"question_text": 3, "shared_context": 2, "source_chapter": 1}
+            prompt_hits = [
+                e for term, _ in matches for e in _find(term, prompt_segments)
+            ]
+            priority = max((priorities[e["kind"]] for e in prompt_hits), default=0)
+            score = sum(
+                len(term)
+                for term, found in matches
+                if not priority or any(priorities[e["kind"]] == priority for e in found)
             )
             candidates.append(
                 (
+                    priority,
                     score,
                     {
                         "id": identifier,
@@ -469,8 +660,15 @@ def _knowledge(segments, taxonomy):
                     },
                 )
             )
-    candidates.sort(key=lambda item: (-item[0], item[1]["id"]))
-    values = [item[1] for item in candidates]
+    candidates.sort(key=lambda item: (-item[0], -item[1], item[2]["id"]))
+    values = [item[2] for item in candidates]
+    if candidates and candidates[0][0] == 0:
+        return {
+            "id": UNKNOWN,
+            "label": "仅选项含知识线索，主考点待确认",
+            "status": UNKNOWN,
+            "evidence": [],
+        }, values
     if not values:
         # Basic electrolyte language alone does not establish advanced ionic
         # equilibrium or a particular canonical textbook chapter.
@@ -589,6 +787,13 @@ def suggest_attributes(question, source_metadata, curriculum_entries=None):
         if not isinstance(title, str) or len(title) < 3:
             continue
         evidence = _find(title, segments)
+        # Alias evidence is only allowed in this question/shared material.
+        # A broad lecture heading alone cannot attach a more specific section.
+        for term in _SECTION_ALIASES.get(title, ()):
+            evidence.extend(
+                _find(term, [s for s in segments if s[0] != "source_chapter"])
+            )
+        evidence = list({_digest(e): e for e in evidence}.values())[:20]
         key = node.get("node_key") or node.get("section_key")
         if evidence and key and node.get("chapter_id") and node.get("volume_id"):
             mappings.append(
@@ -712,6 +917,50 @@ def suggest_attributes(question, source_metadata, curriculum_entries=None):
         "edit_version": 0,
     }
     return validate_attributes(_seal(row))
+
+
+def complete_missing_attributes(existing, proposed):
+    """Fill only empty knowledge/mapping fields; keep teacher and pinned rows.
+
+    No answers, original exam facts, existing labels or source locators change.
+    Callers must revalidate sources and hold their normal transaction boundary.
+    """
+    old, new = validate_attributes(existing), validate_attributes(proposed)
+    if any(
+        old[key] != new[key]
+        for key in (
+            "key",
+            "source_sha256",
+            "source_revision",
+            "question_revision",
+            "index_revision",
+            "extraction_revision",
+        )
+    ):
+        raise WordQuestionAttributeError("补标签前题目范围或来源已变化，请重新核对。")
+    if (
+        old["annotation_source"] == "teacher_modified"
+        or "pinned" in old["rule_revision"]
+    ):
+        return old
+    result = deepcopy(old)
+    if (
+        old["primary_knowledge"]["id"] == UNKNOWN
+        and new["primary_knowledge"]["id"] != UNKNOWN
+    ):
+        result["primary_knowledge"] = deepcopy(new["primary_knowledge"])
+        result["supporting_knowledge"] = [
+            row
+            for row in result["supporting_knowledge"]
+            if row["id"] != new["primary_knowledge"]["id"]
+        ]
+    if not old["curriculum_candidates"] and new["curriculum_candidates"]:
+        result["curriculum_candidates"] = deepcopy(new["curriculum_candidates"])
+        result["curriculum_status"] = new["curriculum_status"]
+    if result == old:
+        return old
+    result["rule_revision"] = RULE_REVISION
+    return validate_attributes(_seal(result))
 
 
 def build_teacher_updates(attributes, selections, curriculum_entries):

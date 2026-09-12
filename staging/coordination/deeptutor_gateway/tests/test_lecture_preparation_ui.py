@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 
 import pytest
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QApplication, QDialog
 from test_import_word_dialog import _Facade
 from test_word_preparation_images_ui import asset, page_for, reference
@@ -260,10 +261,12 @@ def test_preparation_entry_passes_topic_and_preserves_other_form_fields(
     before = deepcopy(page._payload())
     topics = []
 
-    class Picker:
+    class Picker(QDialog):
+        basket_changed = Signal(int)
         DialogCode = QDialog.DialogCode
 
         def __init__(self, facade, tasks, parent, *, lesson_topic):
+            super().__init__(parent)
             self.preparation_reference = {"materials": "所选原题", "warnings": []}
             topics.append(lesson_topic)
 
