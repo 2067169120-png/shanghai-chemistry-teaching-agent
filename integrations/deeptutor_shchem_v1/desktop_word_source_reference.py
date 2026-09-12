@@ -268,13 +268,17 @@ class WordSourceReferenceService:
         self.facade = facade
         self.reader = PreparationSourcesService(facade.paths.workspace_root)
 
-    def reference(self, selection, *, include_images=True):
-        return self._compile(selection, include_images=include_images)[0]
+    def reference(self, selection, *, include_images=True, include_guidance=False):
+        return self._compile(
+            selection, include_images=include_images, include_guidance=include_guidance
+        )[0]
 
-    def _compile(self, selection, *, include_images):
+    def _compile(self, selection, *, include_images, include_guidance=False):
         chosen = _selection(selection)
         if type(include_images) is not bool:
             raise WordSourceReferenceError("请选择带入原图或明确仅使用文字。")
+        if type(include_guidance) is not bool:
+            raise WordSourceReferenceError("请选择是否带入对应的知识与解题方法。")
         from .desktop_facade import DesktopFacadeError
 
         try:
@@ -462,6 +466,21 @@ class WordSourceReferenceService:
         warnings = list(dict.fromkeys(warnings))
         if warnings:
             lines.extend(["", "原文缺口与待核对提醒", *warnings])
+        study = None
+        if include_guidance:
+            from .desktop_lecture_study import lecture_study_reference
+
+            try:
+                study = lecture_study_reference(
+                    self.facade.paths.workspace_root,
+                    preview,
+                    [block["index"] for block in blocks],
+                )
+            except (PreparationSourceError, OSError, ValueError, TypeError, KeyError) as exc:
+                raise WordSourceReferenceError(
+                    "对应知识或教材来源暂不能核对；请检查来源，或取消带入知识方法后重新预览原教案。"
+                ) from exc
+            lines.extend(["", study["materials"]])
         materials = "\n".join(lines)
         if len(materials) > MAX_MATERIALS:
             raise WordSourceReferenceError(
@@ -480,6 +499,7 @@ class WordSourceReferenceService:
                 "image_issues": list(dict.fromkeys(issues)),
                 "image_references": references,
                 "reference_issues": reference_issues,
+                **({"include_guidance": True, "lecture_study": study} if include_guidance else {}),
             },
             payloads,
             quality_hold,
@@ -494,6 +514,7 @@ class WordSourceReferenceService:
         compiled, payloads, quality_hold = self._compile(
             reference.get("source_selection"),
             include_images=reference["include_images"],
+            include_guidance=reference.get("include_guidance", False),
         )
         try:
             unchanged = _digest(reference) == _digest(compiled)

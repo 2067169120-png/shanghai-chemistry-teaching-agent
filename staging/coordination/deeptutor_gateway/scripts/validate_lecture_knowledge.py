@@ -37,6 +37,8 @@ def validate(state_root: Path):
         preview = cache.load(data, path.name)
         if preview is None:
             raise ValueError("Missing verified lecture text")
+        if row.get("source_preview_revision", preview["revision"]) != preview["revision"]:
+            raise ValueError("Lecture source block version mismatch: " + row["package_id"])
         positions = {b["index"] for b in preview["blocks"]}
         if row["human_reviewed"] is not False or row["review_status"] != "ai_distilled_pending_teacher_review":
             raise ValueError("The index must not imply human approval")
@@ -52,11 +54,13 @@ def validate(state_root: Path):
                 claim_count += 1
         sources.append({"package_id": row["package_id"], "title": row["title"], "source_sha256": row["source_sha256"],
                         "knowledge_count": len(row["knowledge"]), "method_count": len(row["methods"]), "pitfall_count": len(row["pitfalls"]),
-                        "claim_count": claim_count, "all_block_refs_exist": True})
+                        "claim_count": claim_count, "all_block_refs_exist": True,
+                        "source_block_version_bound": row.get("source_preview_revision") == preview["revision"]})
     return {"schema_version": 1, "source_pack_analysis_documents": 98,
             "lecture_index_count": 46, "other_exercise_and_test_documents": 52,
             "purpose": "辅助查找原教案知识与方法，不替代98份完整原文、表格、图片及答案。",
             "source_hashes_and_block_refs_verified": True, "all_chemical_claims_teacher_reviewed": False,
+            "source_block_versions_bound_count": sum(s["source_block_version_bound"] for s in sources),
             "knowledge_claims": sum(s["knowledge_count"] for s in sources),
             "method_claims": sum(s["method_count"] for s in sources),
             "pitfall_claims": sum(s["pitfall_count"] for s in sources), "sources": sources}

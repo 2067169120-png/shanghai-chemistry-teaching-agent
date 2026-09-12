@@ -6,6 +6,7 @@
   "purpose": "辅助查找原教案知识与方法，不替代98份完整原文、表格、图片及答案。",
   "source_hashes_and_block_refs_verified": true,
   "all_chemical_claims_teacher_reviewed": false,
+  "source_block_versions_bound_count": 46,
   "knowledge_claims": 262,
   "method_claims": 54,
   "pitfall_claims": 60,
@@ -18,7 +19,8 @@
       "method_count": 1,
       "pitfall_count": 2,
       "claim_count": 9,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-004",
@@ -28,7 +30,8 @@
       "method_count": 1,
       "pitfall_count": 2,
       "claim_count": 9,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-006",
@@ -38,7 +41,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-008",
@@ -48,7 +52,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-010",
@@ -58,7 +63,8 @@
       "method_count": 4,
       "pitfall_count": 3,
       "claim_count": 13,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-012",
@@ -68,7 +74,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-014",
@@ -78,7 +85,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-016",
@@ -88,7 +96,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-018",
@@ -98,7 +107,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-020",
@@ -108,7 +118,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-022",
@@ -118,7 +129,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-024",
@@ -128,7 +140,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-026",
@@ -138,7 +151,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-028",
@@ -148,7 +162,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-030",
@@ -158,7 +173,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-032",
@@ -168,7 +184,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-034",
@@ -178,7 +195,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-036",
@@ -188,7 +206,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-038",
@@ -198,7 +217,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-040",
@@ -208,7 +228,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-042",
@@ -218,7 +239,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-044",
@@ -228,7 +250,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-046",
@@ -238,7 +261,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-048",
@@ -248,7 +272,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-050",
@@ -258,7 +283,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-052",
@@ -268,7 +294,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-054",
@@ -278,7 +305,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-056",
@@ -288,7 +316,8 @@
       "method_count": 4,
       "pitfall_count": 3,
       "claim_count": 13,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-058",
@@ -298,7 +327,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-060",
@@ -308,7 +338,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-062",
@@ -318,7 +349,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-064",
@@ -328,7 +360,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-066",
@@ -338,7 +371,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 7,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-068",
@@ -348,7 +382,8 @@
       "method_count": 1,
       "pitfall_count": 2,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-070",
@@ -358,7 +393,8 @@
       "method_count": 2,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-072",
@@ -368,7 +404,8 @@
       "method_count": 2,
       "pitfall_count": 1,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-074",
@@ -378,7 +415,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 7,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-076",
@@ -388,7 +426,8 @@
       "method_count": 1,
       "pitfall_count": 2,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-078",
@@ -398,7 +437,8 @@
       "method_count": 1,
       "pitfall_count": 2,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-081",
@@ -408,7 +448,8 @@
       "method_count": 1,
       "pitfall_count": 2,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-082",
@@ -418,7 +459,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 7,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-084",
@@ -428,7 +470,8 @@
       "method_count": 1,
       "pitfall_count": 1,
       "claim_count": 7,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-086",
@@ -438,7 +481,8 @@
       "method_count": 1,
       "pitfall_count": 2,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-088",
@@ -448,7 +492,8 @@
       "method_count": 1,
       "pitfall_count": 2,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-090",
@@ -458,7 +503,8 @@
       "method_count": 1,
       "pitfall_count": 2,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     },
     {
       "package_id": "PKG-092",
@@ -468,7 +514,8 @@
       "method_count": 1,
       "pitfall_count": 2,
       "claim_count": 8,
-      "all_block_refs_exist": true
+      "all_block_refs_exist": true,
+      "source_block_version_bound": true
     }
   ]
 }

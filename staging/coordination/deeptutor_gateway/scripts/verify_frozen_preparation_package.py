@@ -22,7 +22,7 @@ from urllib.parse import urlsplit
 
 from PyInstaller.archive.readers import CArchiveReader
 
-PROMPT_REVISION = "20260910-selected-image-pixels-v24"
+PROMPT_REVISION = "20260912-source-studied-guidance-v25"
 WORD_BOUNDARY_REVIEW_REVISION = "20260912-explicit-source-boundary-review-v1"
 WORD_RANGE_PREVIEW_UI_CONSTANTS = (
     "查看本次范围预览",
@@ -1038,6 +1038,7 @@ def main() -> int:
         "desktop_word_source_reference": ["reference_issues", "image_references"],
         "desktop_word_question_recommendations": ["exact_label_match"],
         "desktop_lecture_library": ["ai_distilled_pending_teacher_review"],
+        "desktop_lecture_study": ["source_preview_revision", "lecture_block_indices"],
         "desktop_workbench.lecture_library_dialog": ["查找原教案"],
         "desktop_import_preview": ["import_preview_changed"],
         "desktop_word_preview_cache": ["20260910-native-word-preview-cache-v1"],

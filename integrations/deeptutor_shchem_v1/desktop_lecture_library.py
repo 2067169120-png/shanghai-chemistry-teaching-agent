@@ -47,6 +47,10 @@ def _index_cards(workspace: Path):
                     or sha in cards
                 ):
                     raise ValueError("invalid source identity")
+                if "source_preview_revision" in row and not re.fullmatch(
+                    r"[0-9a-f]{64}", str(row["source_preview_revision"])
+                ):
+                    raise ValueError("invalid source block revision")
                 for group in GROUP_LABELS:
                     if not isinstance(row.get(group), list):
                         raise TypeError("invalid claims")
@@ -87,6 +91,12 @@ def _index_cards(workspace: Path):
                             or any(type(p) is not int or p < 1 for p in pages)
                         ):
                             raise ValueError("invalid textbook page locator")
+                    if "lecture_block_indices" in link and (
+                        not isinstance(link["lecture_block_indices"], list)
+                        or not link["lecture_block_indices"]
+                        or any(type(p) is not int or p < 1 for p in link["lecture_block_indices"])
+                    ):
+                        raise ValueError("invalid textbook lecture locator")
                 checked[sha] = row
             cards.update(checked)
         except (OSError, ValueError, TypeError, KeyError):

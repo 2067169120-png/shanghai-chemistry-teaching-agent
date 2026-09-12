@@ -2280,7 +2280,7 @@ class DesktopWorkbenchFacade:
     def imported_word_image_reference(
         self, batch_id: str, source_id: str, source_sha256: str,
         block_start: int, block_end: int, expected_revision: str,
-        *, include_images: bool = True,
+        *, include_images: bool = True, include_guidance: bool = False,
     ) -> dict[str, Any]:
         """Read the selected original blocks and pixels without saving or a model."""
         from .desktop_word_source_reference import WordSourceReferenceService
@@ -2292,6 +2292,19 @@ class DesktopWorkbenchFacade:
                 "block_start": block_start, "block_end": block_end,
             },
             include_images=include_images,
+            include_guidance=include_guidance,
+        )
+
+    def imported_word_study_reference(
+        self, batch_id: str, source_id: str, source_sha256: str,
+        block_start: int, block_end: int, expected_revision: str,
+        *, include_images: bool = True, include_guidance: bool = True,
+    ) -> dict[str, Any]:
+        """Preview original content with optional source-bound teaching guidance."""
+        return self.imported_word_image_reference(
+            batch_id, source_id, source_sha256, block_start, block_end,
+            expected_revision, include_images=include_images,
+            include_guidance=include_guidance,
         )
 
     def import_word_source_reference(self, reference, existing_assets):

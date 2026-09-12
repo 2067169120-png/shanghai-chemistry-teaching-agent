@@ -114,6 +114,9 @@ class ImportWordDialog(QDialog):
         self._batch_id = batch_id
         self._initial_source_id = initial_source_id
         self._image_reference_supported = callable(getattr(facade, "imported_word_image_reference", None))
+        self._study_reference_supported = self._image_reference_supported and callable(
+            getattr(facade, "imported_word_study_reference", None)
+        )
         self.reference: dict[str, Any] | None = None
         self._preview_reference: dict[str, Any] | None = None
         self._preview_key: tuple | None = None
@@ -225,6 +228,16 @@ class ImportWordDialog(QDialog):
         self.include_images.setVisible(self._image_reference_supported)
         self.include_images.toggled.connect(self._selection_changed)
         layout.addWidget(self.include_images)
+        self.include_guidance = QCheckBox("同时带入知识总结与解题方法")
+        self.include_guidance.setAccessibleName("带入对应讲义蒸馏和关联教材知识")
+        self.include_guidance.setToolTip(
+            "仅带入所选区块完整支持的知识、方法和易错提醒，以及已明确关联的教材知识候选。"
+            "预览中可逐项核对；不增加选段、题目或未经选择的图片。"
+        )
+        self.include_guidance.setChecked(self._study_reference_supported)
+        self.include_guidance.setVisible(self._study_reference_supported)
+        self.include_guidance.toggled.connect(self._selection_changed)
+        layout.addWidget(self.include_guidance)
         self.preview_button = QPushButton("预览将带入的内容")
         self.preview_button.clicked.connect(self._compile_preview)
         layout.addWidget(self.preview_button)
@@ -233,7 +246,15 @@ class ImportWordDialog(QDialog):
         self.preview_body_button.setObjectName("QuietButton")
         self.preview_body_button.setEnabled(False)
         self.preview_body_button.clicked.connect(self._locate_reference_body)
-        layout.addWidget(self.preview_body_button)
+        preview_navigation = QHBoxLayout()
+        preview_navigation.addWidget(self.preview_body_button)
+        self.preview_study_button = QPushButton("定位到知识与方法")
+        self.preview_study_button.setObjectName("QuietButton")
+        self.preview_study_button.setEnabled(False)
+        self.preview_study_button.setVisible(self._study_reference_supported)
+        self.preview_study_button.clicked.connect(self._locate_study_reference)
+        preview_navigation.addWidget(self.preview_study_button)
+        layout.addLayout(preview_navigation)
         self.preview = QPlainTextEdit()
         self.preview.setReadOnly(True)
         self.preview.setAccessibleName("将追加到备课的完整参考预览")
@@ -466,6 +487,7 @@ class ImportWordDialog(QDialog):
             self.block_start.value(),
             self.block_end.value(),
             self.include_images.isChecked(),
+            self.include_guidance.isChecked(),
         )
 
     def _valid_range(self) -> bool:
@@ -477,6 +499,7 @@ class ImportWordDialog(QDialog):
         self.reference = None
         self._preview_reference = None
         self._preview_key = None
+        self.preview_study_button.setEnabled(False)
         self.import_button.setEnabled(False)
         self.preview_body_button.setEnabled(False)
         if clear:
@@ -617,8 +640,14 @@ class ImportWordDialog(QDialog):
     def _compile_reference(self) -> dict[str, Any]:
         if not self._source or not self._valid_range():
             raise ValueError("invalid selection")
-        source_id, sha256, revision, start, end, include_images = self._selection_key()
-        if self._image_reference_supported:
+        source_id, sha256, revision, start, end, include_images, include_guidance = self._selection_key()
+        if self._study_reference_supported:
+            value = self.facade.imported_word_study_reference(
+                self._batch_id, source_id, sha256, start, end,
+                expected_revision=revision, include_images=include_images,
+                include_guidance=include_guidance,
+            )
+        elif self._image_reference_supported:
             value = self.facade.imported_word_image_reference(
                 self._batch_id, source_id, sha256, start, end,
                 expected_revision=revision, include_images=include_images,
@@ -663,6 +692,12 @@ class ImportWordDialog(QDialog):
             message += " 所选内容有待处理事项，暂不能追加；详见下方预览。"
         elif self._image_reference_supported:
             message += f" 本次带入 {len(reference['image_assets'])} 张图片。"
+        if reference.get("include_guidance") is True:
+            study = reference["lecture_study"]
+            message += (
+                f" 另附 {study['note_count']} 条讲义知识/方法和 "
+                f"{study['textbook_concept_count']} 条教材知识候选，均可在下方核对。"
+            )
         set_status(self.status, "attention" if notes else "success", message)
 
     def _show_reference(self, reference: dict[str, Any]) -> None:
@@ -682,6 +717,18 @@ class ImportWordDialog(QDialog):
         self.preview_body_button.setEnabled(
             not self.preview.document().find(self._body_marker()).isNull()
         )
+        self.preview_study_button.setEnabled(
+            not self.preview.document().find("【讲义研读参考").isNull()
+        )
+
+    def _locate_study_reference(self) -> None:
+        cursor = self.preview.document().find("【讲义研读参考")
+        if not cursor.isNull():
+            cursor.setPosition(cursor.selectionStart())
+            self.preview.setTextCursor(cursor)
+            self.preview.ensureCursorVisible()
+            self.preview.verticalScrollBar().setValue(cursor.block().firstLineNumber())
+            self.preview.setFocus()
 
     def _body_marker(self) -> str:
         return f"[Word区块{self.block_start.value()}]"

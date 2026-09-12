@@ -41,7 +41,7 @@ from .visual_provider_runtime import (
 # Pedagogy synthesis and source limits are documented in
 # staging/coordination/deeptutor_gateway/teacher_preparation_research_20260909/README.md.
 # This is a design revision, not a claim of award-winning or reviewed output.
-PREPARATION_PROMPT_REVISION = "20260910-selected-image-pixels-v24"
+PREPARATION_PROMPT_REVISION = "20260912-source-studied-guidance-v25"
 PREPARATION_REQUEST_POLICY_REVISION = "20260909-deepseek-v4-output-budget-v12"
 
 # Distilled from the inspected v15 live lesson, not additional source facts.
@@ -273,6 +273,13 @@ def _prompt(payload: Mapping[str, Any]) -> str:
         "对应知识点、采用方式（原题、明确改编或知识归纳）及本页用途；"
         "对于本课核心内容的遗漏，说明来源缺口、超出课时或移至后续课的具体原因。"
         "这是来源采用摘要，不要求输出内部推理，不新增Schema字段。"
+        "若附有‘讲义研读参考’，把其中知识、方法、易错提醒逐项对照同份Word的原文区块，"
+        "按本课目标建立‘知识表达—主讲例题—独立练习—笔记归纳’对应；仅采用当前资料支持的内容。"
+        "研读条目是AI改述，不能当作教材原句，也不能用它填补未识别的原图或旧公式。"
+        "关联教材知识候选仍保留其未审核状态，页码线索不表示本次已经附有原页。"
+        "所选题附带的教学标签可帮助对应知识点和安排用途，但不代表所有标签均已教师确认，"
+        "适用年级不等于原题年级，未知原考试类型不得改填。题干、公共材料与原答案优先，"
+        "不可只凭标签生成一题并冒充所选原题，也不能仅凭标签声称已完成智能选题。"
         "讲义中的好例题优先于自行拼凑题目；但来源有缺字、科学性错误或条件不完整时，"
         "不得仅因出自讲义而照抄。允许改编时明确标注改编及补充条件，否则留下具体待补事项。"
         "常考知识总结以讲义明确的考向和知识归纳为依据，没有频次统计就不宣称高频次数或命中率。"

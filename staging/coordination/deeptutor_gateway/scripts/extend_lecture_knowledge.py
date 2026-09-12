@@ -22,6 +22,7 @@ def main():
     parser.add_argument("--state-root", type=Path, required=True)
     parser.add_argument("--extensions", type=Path, required=True)
     parser.add_argument("--apply", action="store_true")
+    parser.add_argument("--bind-source-revisions", action="store_true")
     args = parser.parse_args()
     validate(args.state_root)
     extension = json.loads(args.extensions.read_text(encoding="utf-8"))
@@ -54,6 +55,25 @@ def main():
         ]
     additions = 0
     changed = set()
+    bound = 0
+    if args.bind_source_revisions:
+        # Source hashes and all claim locators were checked by validate above.
+        # Freeze the current extraction identity, never silently replace an old
+        # identity after the parser or source changes.
+        for target, rows in files.items():
+            for row in rows:
+                source = sources[row["package_id"]]
+                raw = (inventory.parent / source["output_relative_path"]).read_bytes()
+                preview = cache.load(raw, row["source_name"])
+                if preview is None:
+                    raise ValueError("Missing source preview for revision binding")
+                previous = row.get("source_preview_revision")
+                if previous not in (None, preview["revision"]):
+                    raise ValueError("Source block revision changed; review before rebinding")
+                if previous is None:
+                    row["source_preview_revision"] = preview["revision"]
+                    bound += 1
+                    changed.add(target)
     seen = set()
     for entry in extension["entries"]:
         package = entry["package_id"]
@@ -111,6 +131,10 @@ def main():
                 for p in link["pdf_pages"]
             )
             assert len(link["pdf_pages"]) == len(link["printed_pages"])
+            if "lecture_block_indices" in link:
+                assert link["lecture_block_indices"] and all(
+                    type(i) is int and i in positions for i in link["lecture_block_indices"]
+                )
         if row.get("textbook_links") != entry["textbook_links"]:
             row["textbook_links"] = entry["textbook_links"]
             changed.add(target)
@@ -136,7 +160,8 @@ def main():
                 "mode": "apply" if args.apply else "preview",
                 "lecture_sources": len(seen),
                 "new_note_count": additions,
-                "textbook_pages_reviewed": sum(
+                "source_revisions_bound": bound,
+                "textbook_pages_referenced": sum(
                     len(r["pdf_pages"])
                     for e in extension["entries"]
                     for r in e["textbook_links"]

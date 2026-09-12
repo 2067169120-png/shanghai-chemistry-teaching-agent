@@ -6,7 +6,7 @@
     {
       "package_id": "PKG-010",
       "source_sha256": "32048ea76e40a7bc186811d4e2bcca17954ae0f80908d87f22adddc2266a7056",
-      "textbook_links": [{"volume_id": "TB-E2", "section_key": "TB-E2-C1:1.2", "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848", "pdf_pages": [16,17,18,19,20], "printed_pages": [12,13,14,15,16], "review_method": "page_images_read_by_model", "human_reviewed": false}],
+      "textbook_links": [{"volume_id": "TB-E2", "section_key": "TB-E2-C1:1.2", "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848", "pdf_pages": [16,17,18,19,20], "printed_pages": [12,13,14,15,16], "lecture_block_indices": [168,171,173,179,182,204,207,212,225,256,258], "review_method": "page_images_read_by_model", "human_reviewed": false}],
       "methods": [
         {"summary": "微粒计数题先固定质子数，再用质量数减质子数求中子数，最后按离子电荷调整电子数；把中性原子、阳离子、阴离子列为三行比较，防止只记一个等式。", "block_indices": [35,40,48,49]},
         {"summary": "用同一个硫原子做表示方法互译：先核对电子总数，再依次写完整电子排布式、简化式和价层排布式，最后画带能级标签的轨道图；保留原表作学生补全与讲评对照。", "block_indices": [204,207,225,256,258]},
@@ -20,7 +20,7 @@
     {
       "package_id": "PKG-056",
       "source_sha256": "8cda068028bafa475614cd124effaf56caea133084813b9609926af8e325bfb2",
-      "textbook_links": [{"volume_id": "TB-E1", "section_key": "TB-E1-C3:3.2", "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05", "pdf_pages": [70,71,72,73], "printed_pages": [64,65,66,67], "review_method": "page_images_read_by_model", "human_reviewed": false}],
+      "textbook_links": [{"volume_id": "TB-E1", "section_key": "TB-E1-C3:3.2", "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05", "pdf_pages": [70,71,72,73], "printed_pages": [64,65,66,67], "lecture_block_indices": [44,49,52,53,55,67,68,122,130,132,137,146,147,148,149,150,152,203,205,206,207], "review_method": "page_images_read_by_model", "human_reviewed": false}],
       "methods": [
         {"summary": "分析外界条件影响时，把平衡移动、n(H⁺)、c(H⁺)、电离度和Ka分别列栏，再逐栏说明依据。恒温稀释醋酸时，不能由平衡右移直接推出氢离子浓度增大。", "block_indices": [44,49,52,53,55,137,152]},
         {"summary": "单一一元弱酸忽略水电离贡献时，由三段式得到Ka=c₀α²/(1−α)。先保留分母，确认α很小才用Ka≈c₀α²；求出的α还应回代检查近似是否合理。", "block_indices": [146,147,148,149,150,203,205,206,207]},

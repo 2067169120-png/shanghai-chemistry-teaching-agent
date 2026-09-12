@@ -645,6 +645,8 @@ class WordQuestionService:
 
     def _compile_reference(self, selections, *, include_images):
         """Compile a preview and verified bytes, without writing or calling a model."""
+        from .desktop_lecture_study import question_teaching_tags
+
         if type(include_images) is not bool:
             raise WordQuestionError("请选择带入原图或明确仅使用文字。")
         rows, inventory = self._resolve(selections)
@@ -667,6 +669,7 @@ class WordQuestionService:
                     f"来源：{row['source_name']}；区块{row['block_start']}至{row['block_end']}",
                     "原文件SHA-256：" + row["source_sha256"],
                     f"本次练习分值：{row['points']:g}分（教师设定，非原卷分值）",
+                    question_teaching_tags(row),
                 ]
             )
             for group, title in (
