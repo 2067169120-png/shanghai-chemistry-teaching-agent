@@ -8,12 +8,14 @@ current-item inspector are independent, keyboard-focusable widgets that share
 the pure :class:`PaperComposerModel` projection.
 """
 
+import hashlib
 from copy import deepcopy
 from dataclasses import replace
-from typing import Any, Callable, Mapping
+from pathlib import Path
+from typing import Any, Mapping
 
-from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QAction, QKeyEvent, QResizeEvent
+from PySide6.QtCore import QSize, Qt, QUrl, Signal
+from PySide6.QtGui import QAction, QDesktopServices, QKeyEvent, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QBoxLayout,
@@ -22,6 +24,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
+    QDoubleSpinBox,
     QFormLayout,
     QFrame,
     QGridLayout,
@@ -41,6 +44,7 @@ from PySide6.QtWidgets import (
     QSpinBox,
     QSplitter,
     QStackedWidget,
+    QTabWidget,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -52,6 +56,7 @@ from .paper_composer import (
     ANSWER_STATUS_LABELS,
     ComposerQuestion,
     ComposerTheme,
+    MixedPaperComposerModel,
     PaperComposerModel,
     answer_status,
     difficulty_label,
@@ -62,6 +67,7 @@ from .tasks import DesktopTaskBridge
 
 def _label(text: str, object_name: str | None = None) -> QLabel:
     value = QLabel(text)
+    value.setTextFormat(Qt.TextFormat.PlainText)
     if object_name:
         value.setObjectName(object_name)
     value.setWordWrap(True)
@@ -1504,6 +1510,848 @@ class PaperPreviewDialog(QDialog):
         self.confirm_button.setEnabled(not getattr(self, "_structural_blockers", []))
 
 
+class MixedPaperPreviewDialog(QDialog):
+    """Actual frozen text and raster pictures; viewing is not chemical approval."""
+
+    preview_confirmed = Signal()
+
+    def __init__(self, data, tasks, image_loader, parent=None):
+        super().__init__(parent)
+        self._closed = False
+        self._tasks = tasks
+        self._jobs = []
+        self._images = {}
+        self._pixmaps = {}
+        self._pending = set()
+        self._failed = False
+        self._teacher_viewed = False
+        self.confirmed = False
+        self.resize(900, 800)
+        self.setMinimumSize(360, 520)
+        self.setWindowTitle("完整图文预览")
+        root = QVBoxLayout(self)
+        root.addWidget(_label(str(data.get("title") or "本次选题预览"), "CardTitle"))
+        self.notice = _label(
+            "题面、共同材料与答案按当前来源显示。表格为可读文字，不是原表分页排版还原；查看两版后再确认，这不是化学正确性或成品排版审校。",
+            "MutedLabel",
+        )
+        root.addWidget(self.notice)
+        blockers = data.get("blockers", [])
+        if blockers:
+            self._failed = True
+            root.addWidget(
+                _label(
+                    "待处理：\n" + "\n".join(str(value) for value in blockers),
+                    "StatusAttention",
+                )
+            )
+        notices = data.get("notices", [])
+        if isinstance(notices, list) and notices:
+            root.addWidget(
+                _label("\n".join(str(value) for value in notices), "MutedLabel")
+            )
+        self.tabs = QTabWidget()
+        self.tabs.setMinimumWidth(0)
+        root.addWidget(self.tabs, 1)
+        sections = data.get("sections", [])
+        if not isinstance(sections, list) or not sections:
+            self._failed = True
+            sections = []
+        for teacher, title in (
+            (False, "学生版 · 题面与共同材料"),
+            (True, "教师版 · 答案与分值"),
+        ):
+            body = QWidget()
+            layout = QVBoxLayout(body)
+            for number, section in enumerate(sections, 1):
+                if not isinstance(section, Mapping):
+                    self._failed = True
+                    continue
+                card = CardFrame()
+                content = QVBoxLayout(card)
+                content.addWidget(
+                    _label(
+                        f"{number}　{section.get('title_zh', '完整题目')}", "CardTitle"
+                    )
+                )
+                content.addWidget(
+                    _label(str(section.get("source_zh", "来源待核对")), "MutedLabel")
+                )
+                if teacher or data.get("show_question_scores") is True:
+                    content.addWidget(
+                        _label(
+                            f"本次练习分值：{section.get('points') if section.get('points') is not None else '见逐题评分'}"
+                        )
+                    )
+                blocks = section.get("teacher_blocks" if teacher else "student_blocks")
+                if not isinstance(blocks, list) or not blocks:
+                    self._failed = True
+                    content.addWidget(
+                        _label("完整内容缺失，请返回核对来源。", "StatusAttention")
+                    )
+                    blocks = []
+                for block in blocks:
+                    if not isinstance(block, Mapping):
+                        self._failed = True
+                    elif block.get("kind") == "text" and isinstance(
+                        block.get("text"), str
+                    ):
+                        content.addWidget(_label(block["text"]))
+                    elif block.get("kind") == "image" and isinstance(
+                        block.get("image_id"), str
+                    ):
+                        image_id = block["image_id"]
+                        content.addWidget(
+                            _label(
+                                str(block.get("caption_zh") or "来源原图"), "MutedLabel"
+                            )
+                        )
+                        label = _label("正在读取原图…", "MutedLabel")
+                        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                        content.addWidget(label)
+                        self._images.setdefault(image_id, []).append(label)
+                    else:
+                        self._failed = True
+                        content.addWidget(
+                            _label(
+                                "此来源对象不能完整显示，请核对原始文件。",
+                                "StatusAttention",
+                            )
+                        )
+                layout.addWidget(card)
+            layout.addStretch(1)
+            self.tabs.addTab(page_scroll(body), title)
+        self.status = _label("正在准备完整预览…", "MutedLabel")
+        root.addWidget(self.status)
+        buttons = QHBoxLayout()
+        self.back_button = _quiet_button("返回")
+        self.back_button.clicked.connect(self.reject)
+        self.confirm_button = QPushButton("确认已查看本次题面与答案")
+        self.confirm_button.setEnabled(False)
+        self.confirm_button.clicked.connect(self._confirm)
+        buttons.addWidget(self.back_button)
+        buttons.addWidget(self.confirm_button)
+        root.addLayout(buttons)
+        self.tabs.currentChanged.connect(self._edition_changed)
+        self._pending = set(self._images)
+        for image_id in tuple(self._pending):
+            try:
+                task_id = tasks.submit(
+                    "读取本次预览原图",
+                    lambda key=image_id: image_loader(key),
+                    on_success=lambda value, key=image_id: self._image_ready(
+                        key, value
+                    ),
+                    on_failure=lambda message, key=image_id: self._image_failed(
+                        key, message
+                    ),
+                )
+                if task_id:
+                    self._jobs.append(task_id)
+            except Exception:
+                self._image_failed(image_id, "原图读取未启动。")
+        self._update_confirmation()
+
+    def _image_ready(self, key, value):
+        if self._closed:
+            return
+        raw = (
+            value.get("data", value.get("bytes"))
+            if isinstance(value, Mapping)
+            else None
+        )
+        mime = (
+            value.get("content_type", value.get("mime_type"))
+            if isinstance(value, Mapping)
+            else None
+        )
+        pixmap = QPixmap()
+        if (
+            not isinstance(raw, bytes)
+            or mime
+            not in {
+                "image/png",
+                "image/jpeg",
+                "image/webp",
+                "image/gif",
+                "image/bmp",
+                "image/tiff",
+            }
+            or (
+                value.get("sha256") is not None
+                and value["sha256"] != hashlib.sha256(raw).hexdigest()
+            )
+            or not pixmap.loadFromData(raw)
+            or pixmap.isNull()
+        ):
+            self._image_failed(key, "此原图格式暂不可显示（包括未转换的 WMF/EMF）。")
+            return
+        self._pixmaps[key] = pixmap
+        self._pending.discard(key)
+        self._fit_images()
+        self._update_confirmation()
+
+    def _image_failed(self, key, _message):
+        if self._closed:
+            return
+        self._failed = True
+        self._pending.discard(key)
+        for label in self._images.get(key, []):
+            label.setText(
+                "原图未能完整显示，请核对原文件后重试；本次不能确认图文预览。"
+            )
+        self._update_confirmation()
+
+    def _fit_images(self):
+        for key, pixmap in self._pixmaps.items():
+            for label in self._images[key]:
+                width = max(
+                    40, min(label.width() or self.width() - 70, self.width() - 70)
+                )
+                scaled = pixmap.scaledToWidth(
+                    width, Qt.TransformationMode.SmoothTransformation
+                )
+                label.setPixmap(scaled)
+                label.setFixedHeight(scaled.height())
+
+    def _edition_changed(self, index):
+        if index == 1:
+            self._teacher_viewed = True
+        self._fit_images()
+        self._update_confirmation()
+
+    def _update_confirmation(self):
+        ready = not self._failed and not self._pending and self._teacher_viewed
+        self.confirm_button.setEnabled(ready)
+        self.status.setText(
+            "原图或内容不完整，请返回核对；未确认。"
+            if self._failed
+            else "正在读取原图，完成后才可确认。"
+            if self._pending
+            else "请切换到教师版，核对答案与本次分值。"
+            if not self._teacher_viewed
+            else "两版内容已显示。确认仅针对本次图文预览，不改变来源审核状态。"
+        )
+
+    def _confirm(self):
+        if self.confirm_button.isEnabled():
+            self.confirm_button.setEnabled(False)
+            self.preview_confirmed.emit()
+
+    def mark_confirmed(self):
+        self.confirmed = True
+        self.status.setText("已确认本次预览；返回后可继续下一步。")
+
+    def mark_confirmation_failed(self, message):
+        self._update_confirmation()
+        self.status.setText(str(message))
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._fit_images()
+
+    def reject(self):
+        self._closed = True
+        cancel = getattr(self._tasks, "cancel", None)
+        if callable(cancel):
+            for task_id in self._jobs:
+                cancel(task_id)
+        super().reject()
+
+
+class MixedPaperPanel(QWidget):
+    """Edit the ordered sections of the existing basket without flattening sources."""
+
+    def __init__(self, facade, tasks, legacy_model, parent=None):
+        super().__init__(parent)
+        self.facade, self.tasks = facade, tasks
+        self.model = MixedPaperComposerModel()
+        self._legacy_model = legacy_model
+        self._generation = 0
+        self._load_epoch = 0
+        self._rendering = False
+        self._busy = False
+        self._closed = False
+        self._preview = None
+        self._preview_dialog = None
+        self._approved = False
+        self._loaded_once = False
+        self._restore_failed = False
+        self._artifact_paths = {}
+        self.setMinimumWidth(0)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        body = QWidget()
+        root = QVBoxLayout(body)
+        root.addWidget(
+            section_title(
+                "组卷工作台",
+                "同一个题篮：完整原卷主题与 Word 原生题按这里的顺序编排，共同材料不拆散。",
+            )
+        )
+        self.title = QLineEdit(legacy_model.title or "化学巩固练习")
+        self.subtitle = QLineEdit(legacy_model.subtitle)
+        self.mode = QComboBox()
+        self.mode.addItem("平时练习", "daily_practice")
+        self.mode.addItem("模拟考试", "mock_exam")
+        self.mode.setCurrentIndex(1 if legacy_model.mode == "mock_exam" else 0)
+        self.duration = QSpinBox()
+        self.duration.setRange(1, 300)
+        self.duration.setValue(legacy_model.duration_minutes)
+        self.duration.setSuffix(" 分钟")
+        form = QFormLayout()
+        form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
+        for caption, field in (
+            ("练习或试卷名称", self.title),
+            ("范围说明（可选）", self.subtitle),
+            ("用途", self.mode),
+            ("时长", self.duration),
+        ):
+            field.setMinimumWidth(0)
+            field.setAccessibleName(caption)
+            form.addRow(caption, field)
+        root.addLayout(form)
+        self.show_scores = QCheckBox("学生题面额外显示分数")
+        self.show_scores.setChecked(legacy_model.show_question_scores)
+        root.addWidget(self.show_scores)
+        root.addWidget(
+            _label(
+                "默认不额外标分；教师版每题有分。原题自带的分数和答题区域保持原样。",
+                "MutedLabel",
+            )
+        )
+        self.summary = _label("正在读取统一题篮…", "CardTitle")
+        root.addWidget(self.summary)
+        self.sections = QListWidget()
+        self.sections.setAccessibleName("当前卷完整题目顺序")
+        self.sections.setWordWrap(True)
+        self.sections.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.sections.setMinimumSize(0, 180)
+        root.addWidget(self.sections)
+        row = QHBoxLayout()
+        self.up_button, self.down_button = _quiet_button("上移"), _quiet_button("下移")
+        self.remove_button = _quiet_button("从本卷移除")
+        for button in (self.up_button, self.down_button, self.remove_button):
+            row.addWidget(button)
+        root.addLayout(row)
+        self.restore_button = _quiet_button("恢复本卷移除项")
+        root.addWidget(self.restore_button)
+        self.settings_note = _label(
+            "选中一道完整题，调整本次练习的分值。", "MutedLabel"
+        )
+        root.addWidget(self.settings_note)
+        self.points = QDoubleSpinBox()
+        self.points.setDecimals(1)
+        self.points.setRange(0.1, 100)
+        self.points.setAccessibleName("当前题本次练习分值")
+        self.space = QSpinBox()
+        self.space.setRange(0, 20)
+        self.space.setAccessibleName("额外答题行数，默认零行")
+        settings_form = QFormLayout()
+        settings_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
+        settings_form.addRow("本题分值／主题内每个作答单元分值", self.points)
+        settings_form.addRow("原卷题额外答题行数（默认 0）", self.space)
+        root.addLayout(settings_form)
+        self.preview_button = QPushButton("查看完整学生版与教师版")
+        self.preview_button.setObjectName("PrimaryAction")
+        self.export_button = QPushButton("导出两版 DOCX")
+        root.addWidget(self.preview_button)
+        root.addWidget(self.export_button)
+        self.status = _label(
+            "请先查看完整题面、答案与共同材料，再确认导出。", "MutedLabel"
+        )
+        root.addWidget(self.status)
+        self.artifact_buttons = {}
+        for key, title in (
+            ("student_docx", "打开学生版 DOCX"),
+            ("teacher_docx", "打开教师版 DOCX"),
+        ):
+            button = _quiet_button(title)
+            button.clicked.connect(
+                lambda _checked=False, name=key: self._open_artifact(name)
+            )
+            button.hide()
+            root.addWidget(button)
+            self.artifact_buttons[key] = button
+        root.addWidget(
+            _label(
+                "混合组卷本阶段生成学生、教师两版 DOCX；PDF 尚未生成。预览不代表已完成人工化学审核。",
+                "MutedLabel",
+            )
+        )
+        self.scroll = page_scroll(body)
+        outer.addWidget(self.scroll)
+        self.sections.currentRowChanged.connect(self._selection_changed)
+        self.up_button.clicked.connect(lambda: self._move(-1))
+        self.down_button.clicked.connect(lambda: self._move(1))
+        self.remove_button.clicked.connect(self._remove)
+        self.restore_button.clicked.connect(self._restore)
+        self.points.valueChanged.connect(self._settings_changed)
+        self.space.valueChanged.connect(self._settings_changed)
+        self.title.textChanged.connect(self._edited)
+        self.subtitle.textChanged.connect(self._edited)
+        self.mode.currentIndexChanged.connect(self._edited)
+        self.duration.valueChanged.connect(self._edited)
+        self.show_scores.toggled.connect(self._edited)
+        self.preview_button.clicked.connect(self._preview_request)
+        self.export_button.clicked.connect(self._export_request)
+        self._update_actions()
+
+    def _current_key(self):
+        item = self.sections.currentItem()
+        return item.data(Qt.ItemDataRole.UserRole) if item else None
+
+    def _save(self):
+        if self._restore_failed:
+            return False
+        store = getattr(self.facade, "state_store", None)
+        if store is not None and self._loaded_once:
+            try:
+                store.save_draft(
+                    "paper-mixed-current",
+                    {
+                        "kind": "paper",
+                        "status": "draft",
+                        "payload": {
+                            **self.model.draft(),
+                            "settings_ui": self._request_settings(),
+                        },
+                    },
+                )
+            except Exception:
+                self.status.setText("当前编排保留在窗口中，草稿暂未保存；请稍后重试。")
+                return False
+        return True
+
+    def _request_settings(self):
+        return {
+            "title": self.title.text().strip(),
+            "subtitle": self.subtitle.text().strip(),
+            "mode": self.mode.currentData(),
+            "duration_minutes": self.duration.value(),
+            "show_question_scores": self.show_scores.isChecked(),
+        }
+
+    def request(self):
+        return {
+            "schema_version": "shchem.desktop-mixed-paper-request.v1",
+            **self._request_settings(),
+            "basket_sha256": self.model.basket_sha256,
+            "section_order": list(self.model.order),
+            "settings_by_key": {
+                key: deepcopy(self.model.settings[key]) for key in self.model.order
+            },
+        }
+
+    def load(self):
+        self._load_epoch += 1
+        epoch = self._load_epoch
+        self._restore_failed = False
+        self._edited()
+        self._busy = True
+        self._update_actions()
+        self.status.setText("正在读取同一题篮的完整来源…")
+
+        def ready(value):
+            if self._closed or epoch != self._load_epoch:
+                return
+            self._busy = False
+            try:
+                self.model.merge(value)
+                if not self._loaded_once:
+                    if not self._restore_initial():
+                        self._restore_failed = True
+                        self._render()
+                        self.status.setText("旧草稿无法恢复，原稿未覆盖；请重新打开后重试。")
+                        self._update_actions()
+                        return
+                self._loaded_once = True
+                self._render()
+                if self._save():
+                    self.status.setText("完整来源已读取；调整顺序后请查看两版图文预览。")
+            except (TypeError, ValueError, KeyError):
+                self.status.setText("题篮投影不完整，未覆盖当前编排；请刷新后重试。")
+            self._update_actions()
+
+        def failed(message):
+            if self._closed or epoch != self._load_epoch:
+                return
+            self._busy = False
+            self.status.setText(str(message))
+            self._update_actions()
+
+        try:
+            self.tasks.submit(
+                "读取混合题篮",
+                self.facade.paper_basket_projection,
+                on_success=ready,
+                on_failure=failed,
+            )
+        except Exception:
+            failed("题篮读取未启动，请重试。")
+
+    def _restore_initial(self):
+        legacy = self._legacy_model
+        known_core = {
+            key
+            for key, item in self.model.items.items()
+            if item["kind"] == "core_theme"
+        }
+        old_ids = set(legacy.basket_signature_value)
+        ordered = []
+        for theme in legacy.themes:
+            key = theme.source_identity_sha256
+            if key not in known_core:
+                continue
+            ordered.append(key)
+            if (
+                legacy.revision > 0
+                and theme.questions
+                and all(not q.key.startswith("pending-") for q in theme.questions)
+            ):
+                self.model.settings[key] = {
+                    "atomic_settings": {
+                        q.key: {
+                            "score": q.score or 2,
+                            "answer_space_lines": q.answer_space or 0,
+                        }
+                        for q in theme.questions
+                    }
+                }
+        # Lightweight legacy rows do not yet have a source identity.  They
+        # are unread, not teacher-deleted: never infer a removal from them.
+        deleted = (
+            (known_core & old_ids) - set(ordered)
+            if all(theme.source_identity_sha256 for theme in legacy.themes)
+            else set()
+        )
+        self.model.excluded.update(deleted)
+        self.model.order = ordered + [
+            key for key in self.model.order if key not in ordered and key not in deleted
+        ]
+        store = getattr(self.facade, "state_store", None)
+        if store is not None:
+            try:
+                record = store.snapshot().get("drafts", {}).get("paper-mixed-current")
+                if record is None:
+                    return True
+                if not isinstance(record, dict):
+                    return False
+                payload = record.get("payload")
+                if not isinstance(payload, dict):
+                    return False
+                values = payload.get("settings_ui", {})
+                if (not isinstance(values, dict)
+                        or type(values.get("duration_minutes", 40)) is not int
+                        or not 1 <= values.get("duration_minutes", 40) <= 300
+                        or type(values.get("show_question_scores", False)) is not bool
+                        or values.get("mode", "daily_practice") not in {"daily_practice", "mock_exam"}
+                        or not all(isinstance(values.get(field, ""), str) for field in ("title", "subtitle"))
+                        or not self.model.restore(payload)):
+                    return False
+                self._rendering = True
+                self.title.setText(str(values.get("title", self.title.text())))
+                self.subtitle.setText(str(values.get("subtitle", self.subtitle.text())))
+                self.duration.setValue(
+                    int(values.get("duration_minutes", self.duration.value()))
+                )
+                self.mode.setCurrentIndex(
+                    max(
+                        0,
+                        self.mode.findData(values.get("mode", self.mode.currentData())),
+                    )
+                )
+                self.show_scores.setChecked(
+                    values.get("show_question_scores", self.show_scores.isChecked())
+                    is True
+                )
+            except Exception:  # noqa: BLE001 - protect a saved draft from any read/restore failure
+                return False
+            finally:
+                self._rendering = False
+        return True
+
+    def _render(self, selected=None):
+        selected = selected or self._current_key()
+        self.sections.blockSignals(True)
+        self.sections.clear()
+        for number, key in enumerate(self.model.order, 1):
+            value = self.model.items[key]
+            kind = "Word 完整题" if value["kind"] == "word_question" else "原卷完整主题"
+            item = QListWidgetItem(
+                f"{number}　{value.get('title_zh', '完整题目')}\n{kind} · {value.get('source_zh', '来源待核对')}"
+            )
+            item.setData(Qt.ItemDataRole.UserRole, key)
+            self.sections.addItem(item)
+        self.sections.blockSignals(False)
+        index = self.model.order.index(selected) if selected in self.model.order else 0
+        self.sections.setCurrentRow(index if self.model.order else -1)
+        self.summary.setText(
+            f"本卷 {len(self.model.order)} 个完整题目段 · 统一题篮 {len(self.model.items)} 项"
+        )
+        self._selection_changed()
+        self._update_actions()
+
+    def _selection_changed(self, *_args):
+        key = self._current_key()
+        self._rendering = True
+        try:
+            value = self.model.items.get(key, {})
+            settings = self.model.settings.get(key, {})
+            word = value.get("kind") == "word_question"
+            self.points.setRange(0.1 if word else 1, 100 if word else 30)
+            self.points.setDecimals(1 if word else 0)
+            self.points.setValue(
+                float(settings.get("points" if word else "score_per_atomic", 2))
+            )
+            self.space.setValue(int(settings.get("answer_space_lines", 0)))
+            self.space.setEnabled(bool(key) and not word and not self._busy)
+            self.points.setEnabled(bool(key) and not self._busy)
+            self.settings_note.setText(
+                "Word 原题文字、图表和已有答题区域整体保留，不额外补线。"
+                if word
+                else "原卷主题保持完整；修改这里的分值会统一应用于主题内各作答单元。已有逐题设置在未修改时保留。"
+            )
+        finally:
+            self._rendering = False
+        self._update_actions()
+
+    def _settings_changed(self, *_args):
+        key = self._current_key()
+        if self._rendering or not key:
+            return
+        self.model.settings[key] = (
+            {"points": self.points.value()}
+            if self.model.items[key]["kind"] == "word_question"
+            else {
+                "score_per_atomic": int(self.points.value()),
+                "answer_space_lines": self.space.value(),
+                "atomic_settings": {},
+            }
+        )
+        self._edited()
+
+    def _move(self, direction):
+        key = self._current_key()
+        if self.model.move(key, direction):
+            self._edited()
+            self._render(key)
+
+    def _remove(self):
+        self.model.remove(self._current_key())
+        self._edited()
+        self._render()
+
+    def _restore(self):
+        self.model.restore_excluded()
+        self._edited()
+        self._render()
+
+    def _edited(self, *_args):
+        if self._rendering:
+            return
+        self._generation += 1
+        self._busy = False
+        self._preview = None
+        self._approved = False
+        self._artifact_paths = {}
+        for button in self.artifact_buttons.values():
+            button.hide()
+        if self._preview_dialog is not None:
+            self._preview_dialog.reject()
+            self._preview_dialog = None
+        self.status.setText("编排已改变；请重新查看并确认两版图文预览。")
+        self._update_actions()
+        self._save()
+
+    def _update_actions(self):
+        enabled = not self._busy and not self._restore_failed
+        for field in (
+            self.title,
+            self.subtitle,
+            self.mode,
+            self.duration,
+            self.show_scores,
+            self.sections,
+        ):
+            field.setEnabled(enabled)
+        self.preview_button.setEnabled(enabled and bool(self.model.order))
+        self.export_button.setEnabled(
+            enabled and self._approved and self._preview is not None
+        )
+        row = self.sections.currentRow()
+        self.up_button.setEnabled(enabled and row > 0)
+        self.down_button.setEnabled(enabled and 0 <= row < len(self.model.order) - 1)
+        self.remove_button.setEnabled(enabled and row >= 0)
+        self.restore_button.setEnabled(enabled and bool(self.model.excluded))
+
+    def _preview_request(self):
+        if self._busy or self._restore_failed or not self.model.order:
+            return
+        self._edited()
+        request, generation = self.request(), self._generation
+        self._busy = True
+        self.status.setText("正在冻结本次完整图文，未修改原始资料…")
+        self._update_actions()
+
+        def ready(value):
+            if self._closed or generation != self._generation:
+                return
+            self._busy = False
+            data = getattr(value, "preview_model", None)
+            if (
+                not isinstance(data, Mapping)
+                or data.get("schema_version") != "shchem.desktop-mixed-paper-preview.v1"
+            ):
+                failed("未收到混合图文预览，未解锁导出。")
+                return
+            if [
+                section.get("key")
+                for section in data.get("sections", [])
+                if isinstance(section, Mapping)
+            ] != request["section_order"]:
+                failed("预览题目顺序与当前选择不一致，请重新预览。")
+                return
+            self._preview = value
+            dialog = MixedPaperPreviewDialog(
+                data,
+                self.tasks,
+                lambda key: self.facade.paper_preview_image(value.preview_id, key),
+                self,
+            )
+            self._preview_dialog = dialog
+            dialog.preview_confirmed.connect(
+                lambda: self._approve(dialog, generation, value)
+            )
+            dialog.show()
+            self._update_actions()
+
+        def failed(message):
+            if self._closed or generation != self._generation:
+                return
+            self._busy = False
+            self.status.setText(str(message))
+            self._update_actions()
+
+        try:
+            self.tasks.submit(
+                "生成混合整卷预览",
+                lambda: self.facade.create_paper_preview(request),
+                on_success=ready,
+                on_failure=failed,
+            )
+        except Exception:
+            failed("预览任务未启动，请重试。")
+
+    def _approve(self, dialog, generation, preview):
+        def ready(result):
+            if (
+                self._closed
+                or dialog._closed
+                or generation != self._generation
+                or self._preview_dialog is not dialog
+            ):
+                return
+            if not isinstance(result, Mapping) or result.get("status") != "approved":
+                failed("本次预览确认未被接受，请重试。")
+                return
+            self._approved = True
+            dialog.mark_confirmed()
+            self.status.setText("已确认本次图文预览，可导出两版 DOCX；PDF 尚未生成。")
+            self._update_actions()
+
+        def failed(message):
+            if not self._closed and generation == self._generation:
+                dialog.mark_confirmation_failed(message)
+
+        try:
+            self.tasks.submit(
+                "确认混合整卷预览",
+                lambda: self.facade.approve_paper_preview(
+                    preview.preview_id, preview.preview_hash
+                ),
+                on_success=ready,
+                on_failure=failed,
+            )
+        except Exception:
+            failed("预览确认未保存，请重试。")
+
+    def _export_request(self):
+        if self._busy or not self._approved or self._preview is None:
+            return
+        value, generation, draft = (
+            self._preview,
+            self._generation,
+            deepcopy(self.model.draft()),
+        )
+        self._busy = True
+        self._update_actions()
+        self.status.setText("正在本机生成学生、教师两版 DOCX…")
+
+        def ready(result):
+            if self._closed or generation != self._generation:
+                return
+            self._busy = False
+            artifacts = (
+                result.get("artifacts", []) if isinstance(result, Mapping) else []
+            )
+            paths = {
+                item.get("artifact_id"): item.get("path")
+                for item in artifacts
+                if isinstance(item, Mapping)
+            }
+            if not all(
+                isinstance(paths.get(key), str)
+                and Path(paths[key]).suffix.lower() == ".docx"
+                for key in self.artifact_buttons
+            ):
+                failed("两版 DOCX 的导出结果不完整，请重试；未提供打开按钮。")
+                return
+            self._artifact_paths = paths
+            for button in self.artifact_buttons.values():
+                button.show()
+            self.status.setText(
+                str(result.get("message_zh") or "已生成学生、教师两版 DOCX。")
+                + "\nPDF 尚未生成，请检查两版 Word 的图文与答案。"
+            )
+            self._update_actions()
+
+        def failed(message):
+            if not self._closed and generation == self._generation:
+                self._busy = False
+                self.status.setText(str(message))
+                self._update_actions()
+
+        try:
+            self.tasks.submit(
+                "导出混合组卷 DOCX",
+                lambda: self.facade.export_paper_preview(
+                    value.preview_id, value.preview_hash, draft
+                ),
+                on_success=ready,
+                on_failure=failed,
+            )
+        except Exception:
+            failed("导出任务未启动，请重试。")
+
+    def _open_artifact(self, key):
+        path = self._artifact_paths.get(key)
+        if not path or not Path(path).is_file():
+            self.status.setText("该版 Word 暂时不可用，请重新导出。")
+            return
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(Path(path).resolve())))
+
+    def closeEvent(self, event):
+        self._closed = True
+        self._load_epoch += 1
+        self._generation += 1
+        if self._preview_dialog is not None:
+            self._preview_dialog.reject()
+        super().closeEvent(event)
+
+
 class PaperPage(QWidget):
     """Three-pane native assembly page used by ``TeacherWorkbenchWindow``."""
 
@@ -1519,8 +2367,11 @@ class PaperPage(QWidget):
         self.facade = facade
         self.tasks = tasks
         basket = facade.basket()
+        self._mixed_panel = None
+        self._mixed_basket = None
+        legacy_basket = tuple(row for row in basket if row.get("item_kind") != "word_question")
         self._basket_signature = PaperComposerModel.basket_signature(basket)
-        self.model = PaperComposerModel.from_basket(basket, mode="mock_exam")
+        self.model = PaperComposerModel.from_basket(legacy_basket, mode="mock_exam")
         self._restored_draft = False
         state_store = getattr(facade, "state_store", None)
         if state_store is not None and callable(getattr(state_store, "snapshot", None)):
@@ -1528,7 +2379,7 @@ class PaperPage(QWidget):
                 snapshot = state_store.snapshot()
                 draft = snapshot.get("drafts", {}).get("paper-current") if isinstance(snapshot, Mapping) else None
                 payload = draft.get("payload") if isinstance(draft, Mapping) else None
-                restored = PaperComposerModel.from_draft_payload(payload, basket) if isinstance(payload, Mapping) else None
+                restored = PaperComposerModel.from_draft_payload(payload, legacy_basket) if isinstance(payload, Mapping) else None
                 if restored is not None:
                     self.model = restored
                     self._restored_draft = True
@@ -1547,13 +2398,19 @@ class PaperPage(QWidget):
         self.setObjectName("PaperPage")
         self.setMinimumWidth(0)
         self._build_ui()
+        if self._activate_mixed(basket):
+            return
         self._render_all()
         if self._restored_draft:
             self.preview_state.setText("已恢复上次编排；请重新打开整卷预览后导出")
         self._load_catalog_if_available()
 
     def _build_ui(self) -> None:
-        root = QVBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        self._legacy_body = QWidget()
+        outer.addWidget(self._legacy_body)
+        root = QVBoxLayout(self._legacy_body)
         root.setContentsMargins(20, 16, 20, 18)
         root.setSpacing(10)
         root.addWidget(
@@ -1750,6 +2607,22 @@ class PaperPage(QWidget):
         self.setTabOrder(self.directory, self.continuous_preview)
         self.setTabOrder(self.continuous_preview, self.inspector)
 
+    def _activate_mixed(self, basket):
+        scopes = {row.get("scope", "master") for row in basket if row.get("item_kind") != "word_question"}
+        required = any(row.get("item_kind") == "word_question" for row in basket) or len(scopes) > 1
+        required = required or (self._mixed_panel is not None and bool(basket))
+        if not required or not callable(getattr(self.facade, "paper_basket_projection", None)):
+            return False
+        if self._mixed_panel is None:
+            self._mixed_panel = MixedPaperPanel(self.facade, self.tasks, self.model, self)
+            self.layout().addWidget(self._mixed_panel)
+        self._legacy_body.hide()
+        self._mixed_panel.show()
+        if self._mixed_basket != basket:
+            self._mixed_basket = deepcopy(basket)
+            self._mixed_panel.load()
+        return True
+
     def _load_catalog_if_available(self) -> None:
         loader = getattr(self.facade, "paper_theme_catalog", None)
         basket = self.facade.basket()
@@ -1786,6 +2659,8 @@ class PaperPage(QWidget):
 
     def _catalog_loaded(self, catalog: Any) -> None:
         self._catalog_loading = False
+        if self._mixed_panel is not None and self._mixed_panel.isVisible():
+            return
         if isinstance(catalog, Mapping) and "catalog" in catalog:
             if catalog.get("signature") != PaperComposerModel.basket_signature(self.facade.basket()):
                 # The basket changed while the reader was running; discard the
@@ -1793,8 +2668,6 @@ class PaperPage(QWidget):
                 self._catalog_request_signature = None
                 return
             catalog = catalog.get("catalog")
-        old_themes = list(self.model.themes)
-        old_selected_key = self.model.selected_theme_key
         rebuilt = PaperComposerModel.from_basket(
             self.facade.basket(),
             catalog=catalog if isinstance(catalog, Mapping) else None,
@@ -1808,81 +2681,10 @@ class PaperPage(QWidget):
         rebuilt.duration_minutes = self.model.duration_minutes
         if not rebuilt.themes:
             return
-        # The first lightweight render uses hashed fallback keys; once the
-        # catalogue arrives, replace those rows with source-backed keys while
-        # preserving the teacher's current order and edits.  Matching by an
-        # opaque source digest is preferred; a title is accepted only when it
-        # is unique, otherwise the row stays visibly pending.
-        rebuilt_by_identity = {
-            theme.source_identity_sha256: theme
-            for theme in rebuilt.themes
-            if theme.source_identity_sha256
-        }
-        rebuilt_by_title: dict[str, list[ComposerTheme]] = {}
-        for theme in rebuilt.themes:
-            rebuilt_by_title.setdefault(theme.title, []).append(theme)
-        used_rebuilt: set[int] = set()
-        ordered: list[ComposerTheme] = []
-        selected_new_key: str | None = None
-        for old in old_themes:
-            theme = (
-                rebuilt_by_identity.get(old.source_identity_sha256)
-                if old.source_identity_sha256
-                else None
-            )
-            if theme is None:
-                matches = rebuilt_by_title.get(old.title, [])
-                theme = matches[0] if len(matches) == 1 else None
-            if theme is None or id(theme) in used_rebuilt:
-                continue
-            used_rebuilt.add(id(theme))
-            old_is_fallback = old.key.startswith("theme-") or all(
-                question.key.startswith("pending-")
-                for question in old.questions
-            )
-            if not old_is_fallback:
-                for field_name in (
-                    "title",
-                    "source",
-                    "chapter",
-                    "difficulty",
-                    "time_minutes",
-                    "shared_summary",
-                    "shared_text",
-                    "shared_materials",
-                    "match_status",
-                ):
-                    setattr(theme, field_name, deepcopy(getattr(old, field_name)))
-                for q_index, question in enumerate(theme.questions):
-                    if q_index < len(old.questions):
-                        previous = old.questions[q_index]
-                        for field_name in (
-                            "response_type",
-                            "score",
-                            "section",
-                            "difficulty",
-                            "answer_status",
-                            "stem",
-                            "answer",
-                            "analysis",
-                            "answer_space",
-                            "dependency",
-                        ):
-                            setattr(question, field_name, deepcopy(getattr(previous, field_name)))
-            ordered.append(theme)
-            if old.key == old_selected_key:
-                selected_new_key = theme.key
-        ordered.extend(theme for theme in rebuilt.themes if id(theme) not in used_rebuilt)
-        if ordered:
-            rebuilt.themes = ordered
-            rebuilt.revision = self.model.revision
-            rebuilt.basket_signature_value = list(self._basket_signature)
-            rebuilt.selected_theme_key = selected_new_key or ordered[0].key
-            rebuilt.selected_question_key = None
-            rebuilt.expanded_theme_keys = set(self.model.expanded_theme_keys)
-            rebuilt.expanded_question_keys = set(self.model.expanded_question_keys)
-            self.model = rebuilt
-            self._render_all()
+        self.model, unmatched = self.model.preserve_into(rebuilt)
+        self._render_all()
+        if unmatched:
+            self.preview_state.setText("部分旧编排无法精确对应当前来源，未按同名题替换；请核对后重新设置。")
 
     def _catalog_failed(self) -> None:
         self._catalog_loading = False
@@ -2341,6 +3143,14 @@ class PaperPage(QWidget):
 
     def update_basket_count(self, _count: int | None = None) -> None:
         basket = self.facade.basket()
+        if self._activate_mixed(basket):
+            return
+        if self._mixed_panel is not None and not basket:
+            self._mixed_panel._load_epoch += 1
+            self._mixed_panel._edited()
+            self._mixed_panel.hide()
+            self._mixed_basket = None
+            self._legacy_body.show()
         incoming_signature = PaperComposerModel.basket_signature(basket)
         current_signature = list(self._basket_signature)
         if not basket:
@@ -2360,7 +3170,7 @@ class PaperPage(QWidget):
                 self._render_all()
             return
         if incoming_signature != current_signature:
-            self.model = PaperComposerModel.from_basket(
+            rebuilt = PaperComposerModel.from_basket(
                 basket,
                 mode=self.model.mode,
                 title=self.model.title,
@@ -2368,12 +3178,15 @@ class PaperPage(QWidget):
                 hot_topic=self.model.hot_topic,
                 show_question_scores=self.model.show_question_scores,
             )
-            self.model.subtitle = self.subtitle.text().strip()
-            self.model.duration_minutes = int(self.duration.value())
+            rebuilt.subtitle = self.subtitle.text().strip()
+            rebuilt.duration_minutes = int(self.duration.value())
+            self.model, unmatched = self.model.preserve_into(rebuilt)
             self._basket_signature = incoming_signature
             self._mark_dirty()
             self._render_all()
             self._load_catalog_if_available()
+            if unmatched:
+                self.preview_state.setText("部分旧编排无法精确对应当前来源，未按同名题替换；请重新核对。")
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         width = event.size().width()

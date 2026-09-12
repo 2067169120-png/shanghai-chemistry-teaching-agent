@@ -23,6 +23,8 @@ PUBLIC_DEMO_IMAGES.add("docs/screenshots/word-lesson-reader.png")
 PUBLIC_DEMO_IMAGES.add("docs/screenshots/word-tables.png")
 PUBLIC_DEMO_IMAGES.add("docs/screenshots/student-practice.png")
 PUBLIC_DEMO_IMAGES.add("docs/screenshots/word-range-review.png")
+PUBLIC_DEMO_IMAGES.add("docs/screenshots/mixed-basket.png")
+PUBLIC_DEMO_IMAGES.add("docs/screenshots/mixed-paper-preview.png")
 
 
 def main():

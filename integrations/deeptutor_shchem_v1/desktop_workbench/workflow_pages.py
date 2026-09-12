@@ -3,7 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from math import isfinite
 
-from PySide6.QtCore import QSignalBlocker, QTimer, QUrl
+from PySide6.QtCore import QSignalBlocker, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QResizeEvent
 from PySide6.QtWidgets import (
     QBoxLayout,
@@ -95,6 +95,8 @@ class PaperPage(QWidget):
 
 
 class PreparationPage(QWidget):
+    basket_changed = Signal(int)
+
     def __init__(
         self,
         facade: DesktopWorkbenchFacade,
@@ -547,6 +549,7 @@ class PreparationPage(QWidget):
         from .word_question_dialog import WordQuestionDialog
 
         dialog = WordQuestionDialog(self.facade, self.tasks, self, lesson_topic=self.topic.text())
+        dialog.basket_changed.connect(self.basket_changed)
         if dialog.exec() == dialog.DialogCode.Accepted and dialog.preparation_reference is not None:
             self.import_word_reference(dialog.preparation_reference)
 

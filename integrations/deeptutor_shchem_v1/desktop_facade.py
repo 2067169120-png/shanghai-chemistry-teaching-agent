@@ -1263,6 +1263,35 @@ class DesktopWorkbenchFacade:
     def basket(self) -> tuple[dict[str, Any], ...]:
         return tuple(self._state.basket())
 
+    def _mixed_paper_call(self, method: str, *args: Any) -> Any:
+        from .desktop_mixed_paper_service import MixedPaperError, MixedPaperService
+        from .desktop_state import DesktopStateError
+
+        try:
+            with read_cancel_scope(self._reader_stop_event):
+                return getattr(MixedPaperService(self), method)(*args)
+        except (DesktopFacadeError, ReadCancelled):
+            raise
+        except (MixedPaperError, DesktopStateError) as exc:
+            raise DesktopFacadeError(
+                getattr(exc, "code", "mixed_paper_invalid"),
+                getattr(exc, "message_zh", str(exc)),
+            ) from exc
+        except Exception as exc:
+            raise DesktopFacadeError(
+                "mixed_paper_unavailable", "统一题篮的来源或预览暂时无法读取，请检查选定资料后重试。"
+            ) from exc
+
+    def add_word_questions_to_basket(self, selections: list[dict[str, Any]]) -> int:
+        """Atomically add source-bound native Word selections to the main basket."""
+        return self._mixed_paper_call("add_word_questions", selections)
+
+    def paper_basket_projection(self) -> dict[str, Any]:
+        return self._mixed_paper_call("projection")
+
+    def paper_preview_image(self, preview_id: str, image_id: str) -> dict[str, Any]:
+        return self._mixed_paper_call("image", preview_id, image_id)
+
     def paper_theme_catalog(self, scope: str = "master") -> dict[str, Any]:
         """Return the read-only complete theme projection for the composer.
 
@@ -1461,8 +1490,9 @@ class DesktopWorkbenchFacade:
                     "atomic_total": card.atomic_total,
                 }
             )
-        return self._state.add_to_basket(
-            {
+        return self._state.add_many_to_basket(
+            [{
+                "item_kind": "core_theme",
                 "key": identity,
                 "scope": card.scope,
                 "title_zh": card.title_zh,
@@ -1474,7 +1504,7 @@ class DesktopWorkbenchFacade:
                 "source_identity_sha256": identity,
                 "data_snapshot_id": card.data_snapshot_id,
                 "added_at": utc_now(),
-            }
+            }]
         )
 
     def clear_basket(self) -> None:
@@ -4662,6 +4692,10 @@ class DesktopWorkbenchFacade:
         )
 
     def create_paper_preview(self, payload: Mapping[str, Any]) -> PaperPreview:
+        from .desktop_mixed_paper_service import REQUEST_SCHEMA
+
+        if payload.get("schema_version") == REQUEST_SCHEMA:
+            return self._mixed_paper_call("create_preview", payload)
         mode = payload.get("mode")
         if mode not in {"mock_exam", "daily_practice"}:
             raise DesktopFacadeError("paper_mode_invalid", "请选择组卷模式。")
@@ -4821,6 +4855,11 @@ class DesktopWorkbenchFacade:
     ) -> dict[str, Any]:
         """Persist the native confirmation for the exact current preview."""
 
+        from .desktop_mixed_paper_service import is_mixed_preview_id
+
+        if is_mixed_preview_id(preview_id):
+            return self._mixed_paper_call("approve", preview_id, preview_hash)
+
         if not isinstance(preview_id, str) or not preview_id:
             raise DesktopFacadeError("paper_preview_invalid", "整卷预览标识不正确。")
         if not isinstance(preview_hash, str) or not _SHA256.fullmatch(preview_hash):
@@ -4879,6 +4918,10 @@ class DesktopWorkbenchFacade:
         """
 
         del payload  # An approved export consumes only the frozen facade draft.
+        from .desktop_mixed_paper_service import is_mixed_preview_id
+
+        if is_mixed_preview_id(preview_id):
+            return self._mixed_paper_call("export", preview_id, preview_hash)
         if (
             not isinstance(preview_id, str)
             or not preview_id

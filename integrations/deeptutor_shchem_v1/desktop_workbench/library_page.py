@@ -68,6 +68,7 @@ class LibraryPage(QWidget):
         self._detail_task_id: str | None = None
         self._selected_detail: LibraryThemeDetail | None = None
         self._selected_detail_key: str | None = None
+        self._previewed_detail_key: str | None = None
         self._detail_dialog: LibraryDetailDialog | None = None
         self._handout_candidate_dialog = None
 
@@ -573,8 +574,8 @@ class LibraryPage(QWidget):
         )
         self.detail_source.setText(f"来源信息：{card.source_zh}")
         self.detail_context.setText(f"共同材料：{card.shared_context_zh}")
-        self.add_button.setEnabled(True)
-        self.add_button.setText("加入题篮")
+        self.add_button.setEnabled(False)
+        self.add_button.setText("先预览题面，再加入题篮")
         if card.scope == PERSONAL_HANDOUT_SCOPE:
             self.detail_view_button.setText("讲义详情暂未接入")
             self.detail_view_button.setEnabled(False)
@@ -615,6 +616,8 @@ class LibraryPage(QWidget):
         self._detail_task_id = None
         self._selected_detail = None
         self._selected_detail_key = None
+        self._previewed_detail_key = None
+        self.add_button.setEnabled(False)
         self.detail_view_button.setText("查看题面与答案")
         self.detail_view_button.setEnabled(False)
         if close_dialog and self._detail_dialog is not None:
@@ -645,6 +648,8 @@ class LibraryPage(QWidget):
             )
             return
         self._selected_detail = value
+        self._previewed_detail_key = None
+        self.add_button.setEnabled(False)
         self.preparation_button.setEnabled(bool(value.parts))
         self.detail_view_button.setText("查看题面与答案")
         self.detail_view_button.setEnabled(True)
@@ -665,13 +670,15 @@ class LibraryPage(QWidget):
             return
         self._detail_task_id = None
         self._selected_detail = None
+        self._previewed_detail_key = None
+        self.add_button.setEnabled(False)
         self.preparation_button.setEnabled(False)
         self.detail_view_button.setText("题面详情暂不可用")
         self.detail_view_button.setEnabled(False)
         set_status(
             self.detail_context,
             "attention",
-            f"题面详情读取失败：{message}。仍可将完整大题加入题篮。",
+            f"题面详情读取失败：{message}。请重新读取并预览后加入题篮。",
         )
 
     def _send_preparation_reference(self) -> None:
@@ -688,35 +695,94 @@ class LibraryPage(QWidget):
 
     def _open_detail(self) -> None:
         detail = self._selected_detail
-        if detail is None:
+        row = self.results.currentRow()
+        if (
+            detail is None
+            or not 0 <= row < len(self._cards)
+            or detail.key != self._cards[row].key
+            or detail.key != self._selected_detail_key
+            or detail.scope != self._cards[row].scope
+        ):
             return
         image_loader = getattr(self.facade, "library_image", None)
-        if not callable(image_loader):
+        needs_images = bool(detail.shared_images) or any(
+            part.question_images for part in detail.parts
+        )
+        if needs_images and not callable(image_loader):
+            self._previewed_detail_key = None
+            self.add_button.setEnabled(False)
             set_status(self.detail_context, "attention", "本地题图读取接口暂不可用。")
             return
         if self._detail_dialog is not None:
             try:
-                self._detail_dialog.raise_()
-                self._detail_dialog.activateWindow()
-                return
+                if self._detail_dialog.detail is detail and self._detail_dialog.isVisible():
+                    self._detail_dialog.raise_()
+                    self._detail_dialog.activateWindow()
+                    return
+                self._detail_dialog.close()
             except RuntimeError:
-                self._detail_dialog = None
+                pass
+            self._detail_dialog = None
+        self._previewed_detail_key = None
+        self.add_button.setEnabled(False)
+        self.add_button.setText("等题面加载完成后加入")
+        generation = self._detail_generation
         dialog = LibraryDetailDialog(
-            detail, self.tasks, image_loader, parent=self.window(),
+            detail, self.tasks, image_loader if callable(image_loader) else lambda _image: b"",
+            parent=self.window(),
             answer_image_loader=getattr(self.facade, "library_answer_image", None),
         )
         self._detail_dialog = dialog
+        dialog.preview_readiness_changed.connect(
+            lambda ready, message: self._preview_readiness_changed(
+                generation, detail, dialog, ready, message
+            )
+        )
         dialog.preparation_image_requested.connect(self.preparation_image_requested)
-        dialog.destroyed.connect(lambda: setattr(self, "_detail_dialog", None))
+        dialog.destroyed.connect(lambda: self._detail_dialog_destroyed(dialog))
         dialog.show()
+        # A synchronous task bridge or a text-only source may already be ready
+        # before the signal is connected. Consume that same explicit state.
+        self._preview_readiness_changed(
+            generation, detail, dialog, *dialog.preview_readiness
+        )
+
+    def _detail_dialog_destroyed(self, dialog: LibraryDetailDialog) -> None:
+        if self._detail_dialog is dialog:
+            self._detail_dialog = None
+
+    def _preview_readiness_changed(
+        self, generation: int, detail: LibraryThemeDetail,
+        dialog: LibraryDetailDialog, ready: bool, message: str,
+    ) -> None:
+        row = self.results.currentRow()
+        if (
+            generation != self._detail_generation
+            or self._detail_dialog is not dialog
+            or self._selected_detail is not detail
+            or not 0 <= row < len(self._cards)
+            or detail.key != self._cards[row].key
+            or detail.key != self._selected_detail_key
+            or detail.scope != self._cards[row].scope
+        ):
+            return
+        self._previewed_detail_key = detail.key if ready else None
+        self.add_button.setEnabled(ready)
+        self.add_button.setText("加入题篮" if ready else "题面尚未完整预览")
+        set_status(self.detail_context, "success" if ready else "attention", message)
 
     def _open_word_questions(self) -> None:
         from .word_question_dialog import WordQuestionDialog
 
         dialog = WordQuestionDialog(self.facade, self.tasks, self.window())
+        dialog.basket_changed.connect(self._word_basket_changed)
         if dialog.exec() == dialog.DialogCode.Accepted and dialog.preparation_reference is not None:
             self.word_reference_requested.emit(dialog.preparation_reference)
         dialog.deleteLater()
+
+    def _word_basket_changed(self, count: int) -> None:
+        self._refresh_basket_label()
+        self.basket_changed.emit(count)
 
     def _open_handout_candidates(self) -> None:
         from .handout_candidate_dialog import HandoutCandidateDialog
@@ -734,6 +800,13 @@ class LibraryPage(QWidget):
     def _add_current(self) -> None:
         row = self.results.currentRow()
         if not 0 <= row < len(self._cards):
+            return
+        detail = self._selected_detail
+        card = self._cards[row]
+        if (detail is None or not detail.parts or detail.scope != card.scope
+                or detail.key != card.key or self._selected_detail_key != card.key
+                or self._previewed_detail_key != card.key):
+            set_status(self.detail_context, "attention", "请先完整读取当前大题的题面与公共材料预览，再加入题篮。")
             return
         try:
             count = self.facade.add_theme_to_basket(self._cards[row])

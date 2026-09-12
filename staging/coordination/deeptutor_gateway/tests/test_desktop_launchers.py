@@ -24,6 +24,7 @@ def test_desktop_entrypoints_exist_and_default_to_native_app() -> None:
     package_entries = re.findall(r"desktop_package_[0-9.]+(?:-r[0-9]+)?", start_text)
     assert package_entries == [
         f"desktop_package_{DESKTOP_VERSION}",
+        "desktop_package_0.1.62",
         "desktop_package_0.1.61",
         "desktop_package_0.1.60-r2",
         "desktop_package_0.1.59",

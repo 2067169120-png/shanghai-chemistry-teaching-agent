@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import threading
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QCloseEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -42,6 +42,8 @@ from .tasks import DesktopTaskBridge
 
 
 class ImportDialog(QDialog):
+    basket_changed = Signal(int)
+
     def __init__(
         self,
         facade: DesktopWorkbenchFacade,
@@ -555,6 +557,7 @@ class ImportDialog(QDialog):
         if self._active_task_id:
             return
         dialog = WordQuestionDialog(self.facade, self.tasks, self, batch_id=self.word_batch_combo.currentData())
+        dialog.basket_changed.connect(self.basket_changed)
         if dialog.exec() == dialog.DialogCode.Accepted and dialog.preparation_reference is not None:
             self.preparation_reference = dialog.preparation_reference
             self.accept()

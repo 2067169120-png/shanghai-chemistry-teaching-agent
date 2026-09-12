@@ -542,11 +542,21 @@ class _Writer:
                 _fail(f"第 {index} 段图片未内嵌到 Word，请重新插入图片。")
 
     def _shapes(self, clone, source: _Source) -> None:
+        # Other renderers may append pictures between native Word blocks.
+        # Synchronize on every append, not just when this writer is created.
+        for node in self.document.element.body.iter():
+            if node.tag in {f"{{{WP}}}docPr", f"{{{PIC}}}cNvPr"}:
+                value = node.get("id", "")
+                if value.isdecimal():
+                    self.shape_counter = max(self.shape_counter, int(value))
         for node in clone.iter():
             if node.tag in {f"{{{WP}}}docPr", f"{{{PIC}}}cNvPr"}:
                 self.shape_counter += 1
                 node.set("id", str(self.shape_counter))
-            if node.tag == f"{{{V}}}shape":
+            if node.tag in {f"{{{V}}}{name}" for name in (
+                "shape", "rect", "roundrect", "oval", "line", "polyline",
+                "arc", "curve", "image", "group",
+            )}:
                 self.shape_counter += 1
                 node.set("id", f"wq_shape_{self.shape_counter}")
                 node.attrib.pop(f"{{{O}}}spid", None)

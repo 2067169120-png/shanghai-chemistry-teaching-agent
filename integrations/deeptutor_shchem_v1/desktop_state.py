@@ -6,11 +6,11 @@ import json
 import os
 import tempfile
 import threading
+from collections.abc import Callable
 from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable
-
+from typing import Any
 
 STATE_SCHEMA = "shchem.desktop-state.v1"
 _SENSITIVE_FIELD_PARTS = ("api_key", "secret_value", "credential_value")
@@ -139,19 +139,38 @@ class DesktopStateStore:
         ]
 
     def add_to_basket(self, item: dict[str, Any]) -> int:
-        key = item.get("key")
-        if not isinstance(key, str) or not key:
-            raise DesktopStateError("题篮项目缺少有效标识。")
-
-        def operation(value: dict[str, Any]) -> None:
-            basket = [entry for entry in value["basket"] if entry.get("key") != key]
-            basket.append(deepcopy(item))
-            value["basket"] = basket[-100:]
-
-        return len(self._update(operation)["basket"])
+        return self.add_many_to_basket([item])
 
     def clear_basket(self) -> None:
         self._update(lambda value: value.__setitem__("basket", []))
+
+    def add_many_to_basket(self, items: list[dict[str, Any]]) -> int:
+        """Add a validated batch atomically, without dropping older selections."""
+        if not isinstance(items, list) or not items or len(items) > 100:
+            raise DesktopStateError("请一次加入 1 至 100 个题篮项目。")
+        keys: set[str] = set()
+        for item in items:
+            key = item.get("key") if isinstance(item, dict) else None
+            if not isinstance(key, str) or not key or key in keys:
+                raise DesktopStateError("题篮项目标识缺失或重复。")
+            keys.add(key)
+        incoming = deepcopy(items)
+        _reject_sensitive_fields(incoming)
+
+        def operation(value: dict[str, Any]) -> None:
+            if any(not isinstance(entry, dict) for entry in value["basket"]):
+                raise DesktopStateError("现有题篮记录不完整，未加入本批题目。")
+            basket = [
+                entry for entry in value["basket"] if entry.get("key") not in keys
+            ]
+            basket.extend(incoming)
+            if len(basket) > 100:
+                raise DesktopStateError(
+                    "题篮最多保留 100 个项目，请先移除部分题目；现有题目未删减。"
+                )
+            value["basket"] = basket
+
+        return len(self._update(operation)["basket"])
 
     def save_draft(self, draft_id: str, payload: dict[str, Any]) -> None:
         if not draft_id or not isinstance(draft_id, str):
@@ -167,8 +186,8 @@ class DesktopStateStore:
 
 
 __all__ = [
+    "STATE_SCHEMA",
     "DesktopStateError",
     "DesktopStateStore",
-    "STATE_SCHEMA",
     "utc_now",
 ]

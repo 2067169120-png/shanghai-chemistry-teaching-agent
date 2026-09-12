@@ -120,6 +120,8 @@ class ImageZoomDialog(QDialog):
 class FitWidthImage(QLabel):
     """Loads verified bytes asynchronously and fits the reading column."""
 
+    load_state_changed = Signal()
+
     def __init__(
         self,
         image: LibraryImage,
@@ -131,6 +133,7 @@ class FitWidthImage(QLabel):
         self.descriptor = image
         self._tasks = tasks
         self._source = QPixmap()
+        self.load_state = "loading"
         self.loaded_bytes: bytes | None = None
         self._task_id: str | None = None
         self._generation = 1
@@ -167,9 +170,11 @@ class FitWidthImage(QLabel):
             return
         self._source = pixmap
         self.loaded_bytes = value
+        self.load_state = "ready"
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip("点击查看大图并缩放")
         self._fit()
+        self.load_state_changed.emit()
 
     def _failed(self, generation: int, message: str) -> None:
         if generation != self._generation:
@@ -177,6 +182,7 @@ class FitWidthImage(QLabel):
         self._task_id = None
         self._source = QPixmap()
         self.loaded_bytes = None
+        self.load_state = "failed"
         self.setMinimumHeight(72)
         self.setMaximumHeight(16777215)
         set_status(
@@ -184,6 +190,7 @@ class FitWidthImage(QLabel):
             "attention",
             f"{self.descriptor.caption_zh}暂时无法显示：{message}。请以来源记录为准。",
         )
+        self.load_state_changed.emit()
 
     def _fit(self) -> None:
         if self._source.isNull():
@@ -236,12 +243,17 @@ class FitWidthImage(QLabel):
             if callable(cancel):
                 cancel(self._task_id)
         self._task_id = None
+        if self.load_state == "loading":
+            self.load_state = "cancelled"
+            self.load_state_changed.emit()
 
 
 class LibraryDetailDialog(QDialog):
     """Theme-first reader: question, answer/analysis, and source stay distinct."""
 
     preparation_image_requested = Signal(dict)
+    # This certifies readable question/material bytes, not answer correctness.
+    preview_readiness_changed = Signal(bool, str)
 
     def __init__(
         self,
@@ -255,6 +267,8 @@ class LibraryDetailDialog(QDialog):
         super().__init__(parent)
         self.detail = detail
         self._image_widgets: list[FitWidthImage] = []
+        self._question_image_widgets: list[FitWidthImage] = []
+        self.preview_readiness = (False, "正在读取题面与公共材料。")
         self._preparation_buttons: list[QPushButton] = []
         self.setObjectName("LibraryDetailDialog")
         self.setWindowTitle(f"查看大题 · {detail.title_zh}")
@@ -290,6 +304,28 @@ class LibraryDetailDialog(QDialog):
         buttons.addStretch(1)
         buttons.addWidget(close_button)
         root.addLayout(buttons)
+        self._update_preview_readiness()
+
+    def _update_preview_readiness(self) -> None:
+        if not self.detail.parts:
+            state = (False, "当前大题没有可读取的作答单元，不能加入题篮。")
+        elif any(
+            not part.question_images and not part.question_text_zh.strip()
+            for part in self.detail.parts
+        ):
+            state = (False, "部分题面缺少原图或原文；摘要不能代替原题，暂不能加入题篮。")
+        elif any(
+            widget.load_state in {"failed", "cancelled"}
+            for widget in self._question_image_widgets
+        ):
+            state = (False, "题面或公共材料图片读取失败，请重新打开预览后再加入题篮。")
+        elif any(not widget.has_image for widget in self._question_image_widgets):
+            state = (False, "正在读取题面与公共材料图片，加载完成前不能加入题篮。")
+        else:
+            state = (True, "题面与公共材料已可读取，可加入题篮；不代表参考答案已核验。")
+        if state != self.preview_readiness:
+            self.preview_readiness = state
+            self.preview_readiness_changed.emit(*state)
 
     def _image(
         self,
@@ -304,6 +340,8 @@ class LibraryDetailDialog(QDialog):
         layout.setSpacing(6)
         widget = FitWidthImage(descriptor, tasks, image_loader)
         self._image_widgets.append(widget)
+        self._question_image_widgets.append(widget)
+        widget.load_state_changed.connect(self._update_preview_readiness)
         layout.addWidget(widget)
         button = QPushButton("将这张原图用于备课…")
         button.setObjectName("QuietButton")
@@ -408,7 +446,12 @@ class LibraryDetailDialog(QDialog):
         title = _text_label(part.label_zh, "CardTitle")
         title.setAccessibleName(f"作答单元 {part.label_zh}")
         layout.addWidget(title)
-        layout.addWidget(_text_label(part.summary_zh))
+        if part.question_text_zh.strip():
+            original_text = _text_label(part.question_text_zh, "LibraryOriginalQuestionText")
+            original_text.setTextFormat(Qt.TextFormat.PlainText)
+            layout.addWidget(original_text)
+        else:
+            layout.addWidget(_text_label(part.summary_zh))
         layout.addWidget(_text_label(f"作答要求：{part.requirement_zh}"))
         layout.addWidget(_text_label(f"材料依赖：{part.dependency_zh}", "MutedLabel"))
         if part.availability_zh:
@@ -416,7 +459,7 @@ class LibraryDetailDialog(QDialog):
         if part.question_images:
             for image in part.question_images:
                 layout.addWidget(self._image(image, tasks, image_loader, part.label_zh))
-        else:
+        elif not part.question_text_zh.strip():
             layout.addWidget(
                 _text_label(
                     "本作答单元没有可核验的题面裁图；摘要不是原题替代品。",

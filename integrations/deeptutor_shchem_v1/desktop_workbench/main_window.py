@@ -126,11 +126,11 @@ QPushButton#QuietButton:hover {{ background: {tokens["brand_soft"]}; border-colo
 QPushButton#LinkButton {{ background: transparent; color: {tokens["brand_dark"]}; border: 0; padding: 3px 0; }}
 QPushButton#LinkButton:hover {{ color: {tokens["brand"]}; text-decoration: underline; }}
 QPushButton#ThemeTitleButton {{ background: transparent; color: {tokens["ink"]}; border: 0; }}
-QLineEdit, QComboBox, QPlainTextEdit, QSpinBox, QListWidget {{
+QLineEdit, QComboBox, QPlainTextEdit, QSpinBox, QDoubleSpinBox, QListWidget {{
     background: {tokens["surface_panel"]}; color: {tokens["ink"]}; border: 1px solid {tokens["line"]};
     border-radius: 6px; padding: 7px;
 }}
-QLineEdit:focus, QComboBox:focus, QPlainTextEdit:focus, QSpinBox:focus, QListWidget:focus {{
+QLineEdit:focus, QComboBox:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QListWidget:focus {{
     border: 2px solid {tokens["line_focus"]}; padding: 6px;
 }}
 QListWidget::item {{ padding: 9px 8px; border-bottom: 1px solid {tokens["surface_subtle"]}; }}
@@ -289,6 +289,7 @@ class TeacherWorkbenchWindow(QMainWindow):
 
         self.home_page.navigate_requested.connect(self.navigate)
         self.library_page.basket_changed.connect(self.paper_page.update_basket_count)
+        self.preparation_page.basket_changed.connect(self.paper_page.update_basket_count)
         self.student_page.basket_changed.connect(self.paper_page.update_basket_count)
         self.library_page.preparation_image_requested.connect(
             self._library_image_to_preparation
@@ -379,6 +380,7 @@ class TeacherWorkbenchWindow(QMainWindow):
 
     def open_import(self) -> None:
         dialog = ImportDialog(self.facade, self.tasks, self)
+        dialog.basket_changed.connect(self.paper_page.update_basket_count)
         if (
             dialog.exec() == dialog.DialogCode.Accepted
             and dialog.preparation_reference is not None

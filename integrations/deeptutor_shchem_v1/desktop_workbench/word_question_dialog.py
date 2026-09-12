@@ -7,7 +7,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import Qt, QTimer, QUrl
+from PySide6.QtCore import Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QCloseEvent, QDesktopServices, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
     QBoxLayout,
@@ -522,6 +522,8 @@ class WordQuestionRangeDialog(QDialog):
 class WordQuestionDialog(QDialog):
     """Browse source questions, persist choices, and confirm an exact reference."""
 
+    basket_changed = Signal(int)
+
     def __init__(
         self,
         facade: Any,
@@ -550,6 +552,10 @@ class WordQuestionDialog(QDialog):
         self._catalog_busy = False
         self._reference_busy = False
         self._export_busy = False
+        self._basket_busy = False
+        self._unified_basket_available = callable(getattr(facade, "add_word_questions_to_basket", None))
+        self._basket_preview_key: tuple = ()
+        self._basket_preview_dialog = None
         self._selection_save_busy = False
         self._selection_to_save: list[dict] | None = None
         self._loaded_once = False
@@ -756,6 +762,15 @@ class WordQuestionDialog(QDialog):
         root.addWidget(self.splitter, 1)
         self.selection_count = _label("已选 0 题；筛选或切换来源会保留勾选。")
         root.addWidget(self.selection_count)
+        self.basket_preview_button = QPushButton("查看入篮完整题面与答案")
+        self.basket_preview_button.setObjectName("PrimaryAction")
+        self.basket_add_button = QPushButton("加入统一题篮")
+        self.basket_add_button.setEnabled(False)
+        self.basket_preview_button.clicked.connect(self._preview_for_basket)
+        self.basket_add_button.clicked.connect(self._add_to_basket)
+        for button in (self.basket_preview_button, self.basket_add_button):
+            button.setVisible(callable(getattr(facade, "add_word_questions_to_basket", None)))
+            root.addWidget(button)
         self.include_images = QCheckBox("同时带入原图（用于本地课件排版）")
         self.include_images.setChecked(True)
         self.include_images.setAccessibleName("带入所选 Word 题目的原图")
@@ -791,6 +806,10 @@ class WordQuestionDialog(QDialog):
         )
         self.show_student_scores.toggled.connect(self._invalidate_preview)
         root.addWidget(self.show_student_scores)
+        for control in (self.export_title, self.export_button, self.show_student_scores):
+            control.setVisible(not self._unified_basket_available)
+        if self._unified_basket_available:
+            root.addWidget(_label("导出统一到组卷页：先预览并加入同一题篮，再调整顺序、分数并确认两版 DOCX。备课引用仍可单独使用。", muted=True))
         self.export_result_layout = QHBoxLayout()
         self.student_button = QPushButton("打开学生版")
         self.teacher_button = QPushButton("打开教师版")
@@ -1701,6 +1720,10 @@ class WordQuestionDialog(QDialog):
         )
 
     def _invalidate_preview(self) -> None:
+        self._basket_preview_key = ()
+        if self._basket_preview_dialog is not None:
+            self._basket_preview_dialog.reject()
+            self._basket_preview_dialog = None
         self._reference_epoch += 1
         self._reference_busy = False
         self.reference = None
@@ -1887,6 +1910,89 @@ class WordQuestionDialog(QDialog):
             lambda message: self._reference_failed(epoch, message),
         )
 
+    def _preview_for_basket(self) -> None:
+        if not self.basket_preview_button.isEnabled():
+            return
+        from .assembly_page import MixedPaperPreviewDialog
+
+        self._basket_preview_key = ()
+        if self._basket_preview_dialog is not None:
+            self._basket_preview_dialog.reject()
+        selection_key = self._selection_key()
+        sections, images, blockers = [], {}, []
+
+        def blocks_for(question, blocks):
+            result = []
+            for block in blocks:
+                result.append({"kind": "text", "text": _text(block.get("text"))})
+                if not block.get("assets") and any(marker in _text(block.get("text")) for marker in (
+                    "【待查看原文：图片或图形】", "【待查看原文：图片或旧式图形】", "【待查看原文：嵌入对象或旧公式】"
+                )):
+                    blockers.append("所选原文有未能显示的图片或旧式对象，请先核对并修订来源。")
+                for warning in block.get("warnings", []):
+                    if isinstance(warning, str):
+                        result.append({"kind": "text", "text": "原文提示：" + warning})
+                for asset in block.get("assets", []):
+                    token = f"selected-image-{len(images)}"
+                    images[token] = (question["key"], question["revision"], asset.get("asset_id"))
+                    result.append({"kind": "image", "image_id": token, "caption_zh": _text(asset.get("label")) or "Word 来源原图"})
+            return result
+
+        for chosen in self.selections:
+            question = deepcopy(self._items[chosen["key"]])
+            student = blocks_for(question, list(question.get("context_blocks", [])) + list(question.get("question_blocks", [])))
+            answers = blocks_for(question, question.get("answer_blocks", []))
+            sections.append({
+                "kind": "word_question", "title_zh": question.get("title_zh") or question.get("title") or "Word 完整题",
+                "source_zh": question.get("source_name", "Word 原文"), "points": chosen["points"],
+                "student_blocks": student,
+                "teacher_blocks": student + [{"kind": "text", "text": "参考答案与解析（来源原文）"}] + answers,
+            })
+        facade = self.facade
+        dialog = MixedPaperPreviewDialog(
+            {"title": "Word 选题 · 入统一题篮前预览", "sections": sections, "show_question_scores": False, "blockers": blockers},
+            self.tasks, lambda key: facade.word_question_image(*images[key]), self,
+        )
+        self._basket_preview_dialog = dialog
+
+        def confirmed():
+            if self._closed or selection_key != self._selection_key() or self._basket_preview_dialog is not dialog:
+                return
+            self._basket_preview_key = selection_key
+            dialog.mark_confirmed()
+            set_status(self.status, "success", "已查看本次完整图文；返回后可明确点击加入统一题篮。")
+            self._update_actions()
+
+        dialog.preview_confirmed.connect(confirmed)
+        dialog.show()
+        self._update_actions()
+
+    def _add_to_basket(self) -> None:
+        if not self.basket_add_button.isEnabled() or self._basket_preview_key != self._selection_key():
+            return
+        selections, selection_key = deepcopy(self.selections), self._selection_key()
+        self._basket_busy = True
+        self._update_actions()
+        facade = self.facade
+
+        def ready(count):
+            self._basket_busy = False
+            if type(count) is not int or count < 0:
+                failed("题篮保存结果无法确认，请刷新统一题篮。")
+                return
+            self.basket_changed.emit(count)
+            if selection_key == self._selection_key():
+                set_status(self.status, "success", f"已加入统一题篮（共 {count} 项）；跨来源勾选保留，可到组卷页编排。")
+            self._update_actions()
+
+        def failed(message):
+            self._basket_busy = False
+            self._basket_preview_key = ()
+            set_status(self.status, "error", message)
+            self._update_actions()
+
+        self._submit("加入统一题篮", lambda: facade.add_word_questions_to_basket(selections), ready, failed)
+
     def _export(self) -> None:
         if not self.export_button.isEnabled():
             return
@@ -1958,6 +2064,11 @@ class WordQuestionDialog(QDialog):
 
     def _update_actions(self) -> None:
         count = len(self._selected)
+        basket_available = callable(getattr(self.facade, "add_word_questions_to_basket", None))
+        basket_idle = not (self._basket_busy or self._catalog_busy or self._reference_busy or self._export_busy or self._range_busy or self._attributes_busy)
+        basket_ready = count > 0 and all(self._items.get(key, {}).get("export_ready") is True for key in self._selected)
+        self.basket_preview_button.setEnabled(basket_available and basket_idle and basket_ready)
+        self.basket_add_button.setEnabled(basket_available and basket_idle and basket_ready and bool(self._basket_preview_key) and self._basket_preview_key == self._selection_key())
         self.lesson_suggestion_button.setEnabled(
             bool(self._lesson_suggestions)
             and not self._catalog_busy
@@ -2012,6 +2123,7 @@ class WordQuestionDialog(QDialog):
         )
         self.export_button.setEnabled(
             exportable
+            and not self._unified_basket_available
             and not self._export_busy
             and not self._catalog_busy
             and not self._reference_busy
@@ -2027,6 +2139,9 @@ class WordQuestionDialog(QDialog):
         row = self.question_list.currentRow()
         self.previous_button.setEnabled(row > 0)
         self.next_button.setEnabled(0 <= row < self.question_list.count() - 1)
+        if self._basket_busy:
+            for control in (self.question_list, self.points, self.reload_button, self.range_button, self.attributes_button, self.clear_button, self.preview_button, self.import_button, self.export_button):
+                control.setEnabled(False)
 
     def _finish_dialog(self, result: QDialog.DialogCode) -> None:
         if self._closed:
@@ -2038,6 +2153,9 @@ class WordQuestionDialog(QDialog):
             set_status(self.status, "info", "正在保存本次勾选…")
             return
         self._closed = True
+        if self._basket_preview_dialog is not None:
+            self._basket_preview_dialog.reject()
+            self._basket_preview_dialog = None
         self._search_timer.stop()
         self._save_timer.stop()
         self._detail_epoch += 1
@@ -2047,7 +2165,7 @@ class WordQuestionDialog(QDialog):
         self.done(result)
 
     def reject(self) -> None:
-        if self._export_busy or self._range_busy or self._attributes_busy:
+        if self._export_busy or self._range_busy or self._attributes_busy or self._basket_busy:
             set_status(
                 self.status,
                 "attention",
@@ -2057,7 +2175,7 @@ class WordQuestionDialog(QDialog):
         self._finish_dialog(QDialog.DialogCode.Rejected)
 
     def closeEvent(self, event: QCloseEvent) -> None:
-        if self._export_busy or self._range_busy or self._attributes_busy:
+        if self._export_busy or self._range_busy or self._attributes_busy or self._basket_busy:
             event.ignore()
             set_status(
                 self.status,

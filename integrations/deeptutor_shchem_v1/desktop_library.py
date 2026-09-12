@@ -93,6 +93,8 @@ class LibraryPartDetail:
     quality_notes_zh: tuple[str, ...] = ()
     availability_zh: str = ""
     answer_images: tuple[LibraryImage, ...] = ()
+    # Explicit, source-bound original text only; never populated from a summary.
+    question_text_zh: str = ""
 
 
 @dataclass(frozen=True)

@@ -18,6 +18,130 @@ from typing import Any, Iterable, Mapping, Sequence
 from ..datong_answer_bindings import EXISTING_ANSWER_AREA_NODE_IDS
 from ..paper_export_alias_projection import project_explicit_alias_units
 
+
+class MixedPaperComposerModel:
+    """Ordered teacher settings over one source-bound basket, not a second basket."""
+
+    def __init__(self):
+        self.basket_sha256 = ""
+        self.items: dict[str, dict] = {}
+        self.order: list[str] = []
+        self.excluded: set[str] = set()
+        self.settings: dict[str, dict] = {}
+
+    def merge(self, projection: Mapping[str, Any]) -> None:
+        if projection.get("schema_version") != "shchem.desktop-mixed-basket.v1":
+            raise ValueError("题篮版本无法读取，请刷新。")
+        checksum, rows = projection.get("basket_sha256"), projection.get("items")
+        if (
+            not isinstance(checksum, str)
+            or len(checksum) != 64
+            or not isinstance(rows, list)
+        ):
+            raise ValueError("题篮快照不完整，请刷新。")
+        incoming = {}
+        for row in rows:
+            if (
+                not isinstance(row, dict)
+                or not isinstance(row.get("key"), str)
+                or not row["key"]
+                or row["key"] in incoming
+                or row.get("kind") not in {"core_theme", "word_question"}
+                or not isinstance(row.get("content"), dict)
+            ):
+                raise ValueError("题篮条目无法对应完整来源，请刷新。")
+            incoming[row["key"]] = deepcopy(row)
+        old_keys = set(self.items)
+        self.order = [key for key in self.order if key in incoming]
+        self.order.extend(
+            key for key in incoming if key not in old_keys and key not in self.excluded
+        )
+        self.excluded.intersection_update(incoming)
+        self.settings = {
+            key: value for key, value in self.settings.items() if key in incoming
+        }
+        for key, row in incoming.items():
+            if key not in self.settings:
+                self.settings[key] = deepcopy(
+                    row.get("settings")
+                    or (
+                        {"points": 2}
+                        if row["kind"] == "word_question"
+                        else {
+                            "score_per_atomic": 2,
+                            "answer_space_lines": 0,
+                            "atomic_settings": {},
+                        }
+                    )
+                )
+        self.items = incoming
+        self.basket_sha256 = checksum
+
+    def move(self, key: str, direction: int) -> bool:
+        if key not in self.order:
+            return False
+        position = self.order.index(key)
+        target = position + direction
+        if not 0 <= target < len(self.order):
+            return False
+        self.order[position], self.order[target] = (
+            self.order[target],
+            self.order[position],
+        )
+        return True
+
+    def remove(self, key: str) -> None:
+        if key in self.order:
+            self.order.remove(key)
+            self.excluded.add(key)
+
+    def restore_excluded(self) -> None:
+        self.order.extend(key for key in self.items if key in self.excluded)
+        self.excluded.clear()
+
+    def draft(self) -> dict:
+        return {
+            "schema_version": "shchem.desktop-mixed-ui-draft.v1",
+            "order": list(self.order),
+            "excluded": sorted(self.excluded),
+            "settings": deepcopy(self.settings),
+        }
+
+    def restore(self, draft: Mapping[str, Any]) -> bool:
+        if draft.get("schema_version") != "shchem.desktop-mixed-ui-draft.v1":
+            return False
+        order, excluded, settings = (
+            draft.get("order"),
+            draft.get("excluded"),
+            draft.get("settings"),
+        )
+        if (
+            not isinstance(order, list)
+            or not isinstance(excluded, list)
+            or not isinstance(settings, dict)
+        ):
+            return False
+        if any(not isinstance(key, str) for key in order + excluded) or len(
+            set(order)
+        ) != len(order):
+            return False
+        if any(not isinstance(value, dict) for value in settings.values()):
+            return False
+        self.excluded = set(excluded) & self.items.keys()
+        self.order = [
+            key for key in order if key in self.items and key not in self.excluded
+        ]
+        self.order.extend(
+            key
+            for key in self.items
+            if key not in self.order and key not in self.excluded
+        )
+        for key in self.items:
+            if isinstance(settings.get(key), dict):
+                self.settings[key] = deepcopy(settings[key])
+        return True
+
+
 ANSWER_STATUS_LABELS: dict[str, tuple[str, str]] = {
     "available": ("参考答案可用", "good"),
     "present_part_aligned": ("参考答案可用", "good"),
@@ -617,7 +741,7 @@ def build_themes_from_basket(
                 # A digest collision is exceptionally unlikely, but fail closed
                 # if a malformed catalog ever presents one.
                 group = None
-            if not isinstance(group, Mapping):
+            if not isinstance(group, Mapping) and not source_key:
                 candidates = [
                     candidate
                     for candidate in rows
@@ -688,6 +812,7 @@ def build_themes_from_basket(
                     for n in range(1, max(1, count) + 1)
                 ],
                 match_status=("ambiguous" if rows and raw.get("title_zh") else "pending"),
+                source_identity_sha256=PaperComposerModel.basket_signature([raw])[0],
             )
         # Persisted keys can collide after a source refresh; the displayed
         # order remains stable while internal draft keys stay unique.
@@ -747,6 +872,48 @@ class PaperComposerModel:
             selected_theme_key=selected,
             basket_signature_value=cls.basket_signature(basket),
         )
+
+    def preserve_into(self, rebuilt: "PaperComposerModel") -> tuple["PaperComposerModel", bool]:
+        """Keep exact-source order, edits and omitted themes during a basket refresh."""
+        by_identity = {theme.source_identity_sha256: theme for theme in rebuilt.themes if theme.source_identity_sha256}
+        previous_ids = set(self.basket_signature_value)
+        selected_ids = {theme.source_identity_sha256 for theme in self.themes if theme.source_identity_sha256}
+        excluded = previous_ids - selected_ids if all(theme.source_identity_sha256 for theme in self.themes) else set()
+        ordered = []
+        used = set()
+        unmatched = False
+        selected_key = None
+        for old in self.themes:
+            theme = by_identity.get(old.source_identity_sha256)
+            if theme is None:
+                unmatched = unmatched or bool(old.questions and self.revision)
+                continue
+            identity = theme.source_identity_sha256
+            if identity in used:
+                continue
+            if theme.questions and all(question.key.startswith("pending-") for question in theme.questions):
+                theme = deepcopy(old)
+            else:
+                previous = {question.key: question for question in old.questions}
+                for question in theme.questions:
+                    source = previous.get(question.key)
+                    if source is not None:
+                        if source.score is not None:
+                            question.score = source.score
+                        if source.answer_space is not None:
+                            question.answer_space = source.answer_space
+            ordered.append(theme)
+            used.add(identity)
+            if old.key == self.selected_theme_key:
+                selected_key = theme.key
+        ordered.extend(theme for theme in rebuilt.themes if theme.source_identity_sha256 not in used and theme.source_identity_sha256 not in excluded)
+        rebuilt.themes = ordered
+        rebuilt.revision = self.revision
+        rebuilt.selected_theme_key = selected_key or (ordered[0].key if ordered else None)
+        rebuilt.selected_question_key = self.selected_question_key
+        rebuilt.expanded_theme_keys = set(self.expanded_theme_keys)
+        rebuilt.expanded_question_keys = set(self.expanded_question_keys)
+        return rebuilt, unmatched
 
     @staticmethod
     def basket_signature(basket: Sequence[Mapping[str, Any]] | None) -> list[str]:

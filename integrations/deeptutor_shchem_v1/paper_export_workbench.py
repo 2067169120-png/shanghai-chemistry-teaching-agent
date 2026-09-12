@@ -1177,6 +1177,239 @@ def _compact_solution_explanation(solution: Any) -> str | None:
     return "\n".join(meaningful) or None
 
 
+def build_core_export_bundle(
+    payload: Mapping[str, Any],
+    *,
+    theme_catalog_loader: Callable[[str], Mapping[str, Any]],
+    detail_loader: Callable[[str, str], Mapping[str, Any]],
+    crop_loader: Callable[[str, str, str], Any],
+    answer_crop_loader: Callable[[str, str, str], Any] | None = None,
+    asset_root: Path,
+    bundle_id: str,
+) -> dict[str, Any]:
+    """Build a source-bound core theme bundle without jobs or document rendering.
+
+    Accept the same raw request as :meth:`PaperExportJobManager.start`. The
+    caller owns the asset directory; only hash-checked source images are written
+    there. Catalogs and details retain their source, dependency, answer-role and
+    preflight checks. No task state, toolchain, provider or renderer is opened.
+    """
+    request = _validated_request(payload)
+    if not isinstance(bundle_id, str) or not re.fullmatch(
+        r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,159}", bundle_id
+    ):
+        raise PaperExportWorkbenchError(
+            "render_bundle_invalid", "渲染包标识不正确。"
+        )
+    if not isinstance(asset_root, Path):
+        raise PaperExportWorkbenchError(
+            "paper_export_asset_root_invalid", "导出题图目录格式不正确。"
+        )
+    raw_catalog = theme_catalog_loader(request["scope"])
+    # Direct callers must retain the queue's dependency-expanded resource limits.
+    # Reuse this one catalog read, so all checks bind to the same snapshot.
+    _enforce_prequeue_expanded_limits(
+        request, theme_catalog_loader=lambda _scope: raw_catalog
+    )
+    wrapper = _prepare_catalog(
+        raw_catalog,
+        scope=request["scope"],
+        snapshot_id=request["data_snapshot_id"],
+    )
+    projection = _alias_projection(
+        wrapper["catalog"],
+        request["selections"],
+        scope=request["scope"],
+    )
+    wrapper["catalog"] = projection.catalog
+    theme_ids = {selection["theme_id"] for selection in request["selections"]}
+    all_theme_rows = _theme_rows(
+        wrapper["catalog"],
+        theme_ids,
+        content_bindings=projection.content_bindings,
+    )
+    initial_preset = _preset_for_request(
+        request,
+        theme_count=len(theme_ids),
+        total_score=max(
+            1.0,
+            float(
+                sum(
+                    setting["score"]
+                    for setting in (
+                        request.get("atomic_settings") or {}
+                    ).values()
+                )
+                if request.get("atomic_settings") is not None
+                else request["score_per_atomic"]
+            ),
+        ),
+    )
+
+    def loader(scope: str, expected_data_snapshot_id: str) -> Mapping[str, Any]:
+        if (
+            scope != request["scope"]
+            or expected_data_snapshot_id != request["data_snapshot_id"]
+        ):
+            raise PaperExportWorkbenchError(
+                "theme_snapshot_stale", "题篮数据快照已变化。", 409
+            )
+        return deepcopy(wrapper)
+
+    blueprint = build_assembly_blueprint(
+        projection.selections,
+        theme_loader=loader,
+        expected_data_snapshot_id=request["data_snapshot_id"],
+        preset=initial_preset,
+    )
+    if blueprint.get("status") != "ready_for_content_resolution":
+        blockers = blueprint.get("blockers", [])
+        raise PaperExportWorkbenchError(
+            "paper_export_blueprint_blocked",
+            "题篮依赖或分项尚不完整，当前不能导出。",
+            409,
+            details={"blockers": blockers},
+        )
+    final_ids = {
+        atomic_id
+        for bundle in blueprint["theme_bundles"]
+        for atomic_id in bundle["final_atomic_ids"]
+    }
+    atomic_settings = _atomic_settings_for_final_ids(request, final_ids)
+    total_score = _total_score_for_final_ids(request, final_ids)
+    preset = _preset_for_request(
+        request,
+        theme_count=blueprint["counts"]["theme_count"],
+        total_score=total_score,
+    )
+    details: dict[str, Mapping[str, Any]] = {}
+    for row in all_theme_rows:
+        node_id = row.get("atomic_part_id")
+        if isinstance(node_id, str) and node_id in final_ids:
+            source_scope = row.get("_export_content_scope", request["scope"])
+            source_node_id = row.get("_export_content_node_id", node_id)
+            if not isinstance(source_scope, str) or not isinstance(
+                source_node_id, str
+            ):
+                raise PaperExportWorkbenchError(
+                    "paper_export_alias_binding_invalid",
+                    "拆分作答单元的内容读取绑定不完整。",
+                    409,
+                    details={"atomic_part_id": node_id},
+                )
+            detail = detail_loader(source_scope, source_node_id)
+            source_unit_node_id = row.get("_export_content_unit_node_id")
+            if source_unit_node_id is not None:
+                if not isinstance(source_unit_node_id, str):
+                    raise PaperExportWorkbenchError(
+                        "paper_export_alias_binding_invalid",
+                        "拆分作答单元的分项读取绑定不完整。",
+                        409,
+                        details={"atomic_part_id": node_id},
+                    )
+                try:
+                    detail = project_direct_unit_scan(
+                        detail, source_unit_node_id
+                    )
+                except PaperExportAliasProjectionError as exc:
+                    raise PaperExportWorkbenchError(
+                        exc.code,
+                        str(exc),
+                        exc.status,
+                        details=exc.details,
+                    ) from exc
+            details[node_id] = detail
+    missing = sorted(final_ids - set(details))
+    if missing:
+        raise PaperExportWorkbenchError(
+            "paper_export_question_missing",
+            "题篮中有题目尚无可导出的逐图详情。",
+            409,
+            details={"missing_atomic_ids": missing},
+        )
+    blueprint = _bind_blueprint_shared_materials_to_selected_details(
+        blueprint, details
+    )
+    rows_by_id = {str(row.get("atomic_part_id")): row for row in all_theme_rows}
+
+    def routed_crop_loader(node_id: str, crop_id: str) -> Any:
+        row = rows_by_id.get(node_id, {})
+        source_scope = row.get("_export_content_scope", request["scope"])
+        source_node_id = row.get("_export_content_node_id", node_id)
+        if not isinstance(source_scope, str) or not isinstance(
+            source_node_id, str
+        ):
+            raise PaperExportWorkbenchError(
+                "paper_export_alias_binding_invalid",
+                "拆分作答单元的题图读取绑定不完整。",
+                409,
+                details={"atomic_part_id": node_id},
+            )
+        return crop_loader(source_scope, source_node_id, crop_id)
+
+    def routed_answer_crop_loader(node_id: str, crop_id: str) -> Any:
+        row = rows_by_id.get(node_id, {})
+        source_scope = row.get("_export_content_scope", request["scope"])
+        source_node_id = row.get("_export_content_node_id", node_id)
+        if not isinstance(source_scope, str) or not isinstance(source_node_id, str):
+            raise PaperExportWorkbenchError(
+                "paper_export_alias_binding_invalid", "来源答案图读取绑定不完整。", 409
+            )
+        assert answer_crop_loader is not None
+        return answer_crop_loader(source_scope, source_node_id, crop_id)
+
+    resolver = _WorkbenchContentResolver(
+        scope=request["scope"],
+        rows=all_theme_rows,
+        details=details,
+        crop_loader=routed_crop_loader,
+        asset_root=asset_root,
+        score_per_atomic=float(request["score_per_atomic"]),
+        default_answer_lines=request["answer_space_lines"],
+        atomic_settings=atomic_settings,
+        answer_crop_loader=routed_answer_crop_loader if answer_crop_loader is not None else None,
+    )
+    plans = build_document_plans(
+        blueprint,
+        preset=preset,
+        paper_metadata={
+            "title_zh": request["title_zh"],
+            "subtitle_zh": request["subtitle_zh"],
+            "version_label_zh": "本地题篮导出 · 题目来源见教师版 · 不可发布",
+        },
+        content_resolver=resolver,
+    )
+    preflight = run_export_preflight(
+        preset=preset,
+        blueprint=blueprint,
+        student_plan=plans["student"],
+        teacher_plan=plans["teacher"],
+    )
+    render_request = build_render_request(
+        preset=preset,
+        student_plan=plans["student"],
+        teacher_plan=plans["teacher"],
+        preflight_report=preflight,
+    )
+    bundle = {
+        "renderer_schema_version": RENDERER_SCHEMA_VERSION,
+        "contract_kind": RENDER_BUNDLE_KIND,
+        "bundle_id": bundle_id,
+        "claim_boundary_zh": (
+            "教师本地备课导出；题目来源见卷内教师版来源标签；"
+            "来源参考答案与 AI 补充解答分别标注；不可发布。"
+        ),
+        "preset": preset,
+        "blueprint": blueprint,
+        "student_plan": plans["student"],
+        "teacher_plan": plans["teacher"],
+        "preflight_report": preflight,
+        "render_request": render_request,
+        "publication_allowed": False,
+    }
+    return bundle
+
+
 def _locate_toolchain() -> RendererToolchain:
     home = Path.home()
     runtime = (
@@ -1391,211 +1624,41 @@ class PaperExportJobManager:
             self._progress(
                 job, "loading_theme_catalog", 8, "正在读取题篮对应的完整主题与依赖。"
             )
-            raw_catalog = theme_catalog_loader(request["scope"])
-            wrapper = _prepare_catalog(
-                raw_catalog,
-                scope=request["scope"],
-                snapshot_id=request["data_snapshot_id"],
-            )
-            projection = _alias_projection(
-                wrapper["catalog"],
-                request["selections"],
-                scope=request["scope"],
-            )
-            wrapper["catalog"] = projection.catalog
-            theme_ids = {selection["theme_id"] for selection in request["selections"]}
-            all_theme_rows = _theme_rows(
-                wrapper["catalog"],
-                theme_ids,
-                content_bindings=projection.content_bindings,
-            )
-            initial_preset = _preset_for_request(
-                request,
-                theme_count=len(theme_ids),
-                total_score=max(
-                    1.0,
-                    float(
-                        sum(
-                            setting["score"]
-                            for setting in (
-                                request.get("atomic_settings") or {}
-                            ).values()
-                        )
-                        if request.get("atomic_settings") is not None
-                        else request["score_per_atomic"]
-                    ),
-                ),
-            )
-
-            def loader(scope: str, expected_data_snapshot_id: str) -> Mapping[str, Any]:
-                if (
-                    scope != request["scope"]
-                    or expected_data_snapshot_id != request["data_snapshot_id"]
-                ):
-                    raise PaperExportWorkbenchError(
-                        "theme_snapshot_stale", "题篮数据快照已变化。", 409
-                    )
-                return deepcopy(wrapper)
-
-            blueprint = build_assembly_blueprint(
-                projection.selections,
-                theme_loader=loader,
-                expected_data_snapshot_id=request["data_snapshot_id"],
-                preset=initial_preset,
-            )
-            if blueprint.get("status") != "ready_for_content_resolution":
-                blockers = blueprint.get("blockers", [])
-                raise PaperExportWorkbenchError(
-                    "paper_export_blueprint_blocked",
-                    "题篮依赖或分项尚不完整，当前不能导出。",
-                    409,
-                    details={"blockers": blockers},
-                )
-            final_ids = {
-                atomic_id
-                for bundle in blueprint["theme_bundles"]
-                for atomic_id in bundle["final_atomic_ids"]
-            }
-            atomic_settings = _atomic_settings_for_final_ids(request, final_ids)
-            total_score = _total_score_for_final_ids(request, final_ids)
-            preset = _preset_for_request(
-                request,
-                theme_count=blueprint["counts"]["theme_count"],
-                total_score=total_score,
-            )
-            self._progress(
-                job,
-                "loading_question_assets",
-                22,
-                "正在读取精确题面裁片和逐题参考答案。",
-            )
-            details: dict[str, Mapping[str, Any]] = {}
-            for row in all_theme_rows:
-                node_id = row.get("atomic_part_id")
-                if isinstance(node_id, str) and node_id in final_ids:
-                    source_scope = row.get("_export_content_scope", request["scope"])
-                    source_node_id = row.get("_export_content_node_id", node_id)
-                    if not isinstance(source_scope, str) or not isinstance(
-                        source_node_id, str
-                    ):
-                        raise PaperExportWorkbenchError(
-                            "paper_export_alias_binding_invalid",
-                            "拆分作答单元的内容读取绑定不完整。",
-                            409,
-                            details={"atomic_part_id": node_id},
-                        )
-                    detail = detail_loader(source_scope, source_node_id)
-                    source_unit_node_id = row.get("_export_content_unit_node_id")
-                    if source_unit_node_id is not None:
-                        if not isinstance(source_unit_node_id, str):
-                            raise PaperExportWorkbenchError(
-                                "paper_export_alias_binding_invalid",
-                                "拆分作答单元的分项读取绑定不完整。",
-                                409,
-                                details={"atomic_part_id": node_id},
-                            )
-                        try:
-                            detail = project_direct_unit_scan(
-                                detail, source_unit_node_id
-                            )
-                        except PaperExportAliasProjectionError as exc:
-                            raise PaperExportWorkbenchError(
-                                exc.code,
-                                str(exc),
-                                exc.status,
-                                details=exc.details,
-                            ) from exc
-                    details[node_id] = detail
-            missing = sorted(final_ids - set(details))
-            if missing:
-                raise PaperExportWorkbenchError(
-                    "paper_export_question_missing",
-                    "题篮中有题目尚无可导出的逐图详情。",
-                    409,
-                    details={"missing_atomic_ids": missing},
-                )
-            blueprint = _bind_blueprint_shared_materials_to_selected_details(
-                blueprint, details
-            )
             job_root = self._job_root(job_id)
             asset_root = job_root / "assets"
-            rows_by_id = {str(row.get("atomic_part_id")): row for row in all_theme_rows}
-
-            def routed_crop_loader(node_id: str, crop_id: str) -> Any:
-                row = rows_by_id.get(node_id, {})
-                source_scope = row.get("_export_content_scope", request["scope"])
-                source_node_id = row.get("_export_content_node_id", node_id)
-                if not isinstance(source_scope, str) or not isinstance(
-                    source_node_id, str
-                ):
-                    raise PaperExportWorkbenchError(
-                        "paper_export_alias_binding_invalid",
-                        "拆分作答单元的题图读取绑定不完整。",
-                        409,
-                        details={"atomic_part_id": node_id},
-                    )
-                return crop_loader(source_scope, source_node_id, crop_id)
-
-            def routed_answer_crop_loader(node_id: str, crop_id: str) -> Any:
-                row = rows_by_id.get(node_id, {})
-                source_scope = row.get("_export_content_scope", request["scope"])
-                source_node_id = row.get("_export_content_node_id", node_id)
-                if not isinstance(source_scope, str) or not isinstance(source_node_id, str):
-                    raise PaperExportWorkbenchError(
-                        "paper_export_alias_binding_invalid", "来源答案图读取绑定不完整。", 409
-                    )
-                assert answer_crop_loader is not None
-                return answer_crop_loader(source_scope, source_node_id, crop_id)
-
-            resolver = _WorkbenchContentResolver(
-                scope=request["scope"],
-                rows=all_theme_rows,
-                details=details,
-                crop_loader=routed_crop_loader,
-                asset_root=asset_root,
-                score_per_atomic=float(request["score_per_atomic"]),
-                default_answer_lines=request["answer_space_lines"],
-                atomic_settings=atomic_settings,
-                answer_crop_loader=routed_answer_crop_loader if answer_crop_loader is not None else None,
-            )
-            plans = build_document_plans(
-                blueprint,
-                preset=preset,
-                paper_metadata={
-                    "title_zh": request["title_zh"],
-                    "subtitle_zh": request["subtitle_zh"],
-                    "version_label_zh": "本地题篮导出 · 题目来源见教师版 · 不可发布",
-                },
-                content_resolver=resolver,
-            )
-            preflight = run_export_preflight(
-                preset=preset,
-                blueprint=blueprint,
-                student_plan=plans["student"],
-                teacher_plan=plans["teacher"],
-            )
-            render_request = build_render_request(
-                preset=preset,
-                student_plan=plans["student"],
-                teacher_plan=plans["teacher"],
-                preflight_report=preflight,
-            )
-            bundle = {
-                "renderer_schema_version": RENDERER_SCHEMA_VERSION,
-                "contract_kind": RENDER_BUNDLE_KIND,
-                "bundle_id": f"paper_export_{job_id}",
-                "claim_boundary_zh": (
-                    "教师本地备课导出；题目来源见卷内教师版来源标签；"
-                    "来源参考答案与 AI 补充解答分别标注；不可发布。"
-                ),
-                "preset": preset,
-                "blueprint": blueprint,
-                "student_plan": plans["student"],
-                "teacher_plan": plans["teacher"],
-                "preflight_report": preflight,
-                "render_request": render_request,
-                "publication_allowed": False,
+            # Persisted jobs hold the normalized request (including derived
+            # scope/snapshot and a float score). Reconstruct only its raw fields
+            # so the shared public builder applies the original strict contract.
+            payload = {
+                key: deepcopy(value)
+                for key, value in request.items()
+                if key not in {"scope", "data_snapshot_id"}
             }
+            score = payload.get("score_per_atomic")
+            if type(score) is float and score.is_integer():
+                payload["score_per_atomic"] = int(score)
+
+            def progress_detail_loader(scope: str, node_id: str) -> Mapping[str, Any]:
+                if job["progress"]["stage"] != "loading_question_assets":
+                    self._progress(
+                        job,
+                        "loading_question_assets",
+                        22,
+                        "正在读取精确题面裁片和逐题参考答案。",
+                    )
+                return detail_loader(scope, node_id)
+
+            bundle = build_core_export_bundle(
+                payload,
+                theme_catalog_loader=theme_catalog_loader,
+                detail_loader=progress_detail_loader,
+                crop_loader=crop_loader,
+                answer_crop_loader=answer_crop_loader,
+                asset_root=asset_root,
+                bundle_id=f"paper_export_{job_id}",
+            )
+            blueprint = bundle["blueprint"]
+            total_score = float(bundle["preset"]["per_paper"]["total_score"]["value"])
             bundle_path = job_root / "render_bundle.json"
             _atomic_write_json(bundle_path, bundle)
             self._progress(job, "rendering", 42, "正在生成学生版与教师版 DOCX/PDF。")

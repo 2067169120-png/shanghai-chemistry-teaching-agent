@@ -1058,6 +1058,13 @@ def main() -> int:
             "20260909-native-selected-blocks-v1",
             "当前选定范围未识别到本题答案，请核对原教案与题答边界；这不表示原文没有答案。",
         ],
+        "desktop_mixed_paper_export": [
+            "每个原卷条目必须保留一个完整主题及公共材料。",
+        ],
+        "desktop_mixed_paper_service": [
+            "shchem.desktop-mixed-paper-request.v1",
+            "not_generated",
+        ],
         "desktop_workbench.word_question_dialog": [
             "Word 逐题浏览与选题",
             "确认带入备课",
