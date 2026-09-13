@@ -231,7 +231,7 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.top_title.setText(PAGE_TITLES.get(route, "教师工作台"))
         if route == "paper":
             self.paper_page.update_basket_count()
-        if route == "library" and self.library_page.results.count() == 0:
+        if route == "library" and not self.library_page.cards and not self.library_page._loading:
             self.library_page.search()
 
     def open_template(self, key: str, topic: str = "") -> None:
