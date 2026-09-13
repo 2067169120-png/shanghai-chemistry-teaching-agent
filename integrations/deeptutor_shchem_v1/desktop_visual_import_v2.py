@@ -51,6 +51,7 @@ try:  # The tests import this module both as a package and by file path.
         MultiFileVisualIntakeV2,
         PixelPageRenderer,
         RenderedPixelPage,
+        StoredVisualFragmentRecoveryV2,
         VisualPixelPage,
         VisualShardRequest,
         candidate_sha256,
@@ -66,6 +67,7 @@ except ImportError:  # pragma: no cover - exercised by an isolated file loader
         MultiFileVisualIntakeV2,
         PixelPageRenderer,
         RenderedPixelPage,
+        StoredVisualFragmentRecoveryV2,
         VisualPixelPage,
         VisualShardRequest,
         candidate_sha256,
@@ -1382,7 +1384,7 @@ class DesktopImportCoordinatorV2:
             )
         if (
             visual_runner is not None
-            and not isinstance(visual_runner, MultiFileVisualIntakeV2)
+            and not isinstance(visual_runner, (MultiFileVisualIntakeV2, StoredVisualFragmentRecoveryV2))
             and not callable(visual_runner)
         ):
             raise DesktopImportBridgeError(
@@ -1403,7 +1405,7 @@ class DesktopImportCoordinatorV2:
         # cannot receive raw document bytes, but callers should use the core
         # path when they need CAS-backed production persistence.
         self._visual_requires_archive = visual_provider_supplied or isinstance(
-            visual_runner, MultiFileVisualIntakeV2
+            visual_runner, (MultiFileVisualIntakeV2, StoredVisualFragmentRecoveryV2)
         )
         self.max_pages_per_shard = max_pages_per_shard
         self.archive = PixelArchive(archive_root) if archive_root is not None else None
@@ -1755,7 +1757,7 @@ class DesktopImportCoordinatorV2:
         runner = self.visual_runner
         archive_renderer: _ArchivingRenderer | None = None
         try:
-            if isinstance(runner, MultiFileVisualIntakeV2):
+            if isinstance(runner, (MultiFileVisualIntakeV2, StoredVisualFragmentRecoveryV2)):
                 renderer: PixelPageRenderer | None = self.renderer
                 if self.archive is not None and renderer is not None:
                     archive_renderer = _ArchivingRenderer(

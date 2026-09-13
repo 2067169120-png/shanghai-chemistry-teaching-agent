@@ -27,6 +27,17 @@ from .desktop_personal_visual_attributes import (
     attribute_catalog,
     initial_attributes,
 )
+from .desktop_personal_visual_crops import (
+    COPY_WARNING,
+    PersonalVisualCropError,
+    PersonalVisualCropStore,
+    crop_bytes,
+    pixel_bounds,
+    preview_registry,
+    resolved_crop,
+    source_binding,
+    validate_bbox,
+)
 from .desktop_preparation_images import (
     PreparationImageStore,
     image_info,
@@ -209,6 +220,8 @@ class PersonalVisualQuestionService:
         self.root = facade.paths.state_root / "visual-import-v2"
         self.state = facade.state_store
         self.attribute_store = PersonalVisualAttributeStore(facade.paths.state_root)
+        self.crop_store = PersonalVisualCropStore(facade.paths.state_root)
+        self.crop_previews = preview_registry(facade)
 
     def _file(self, relative, limit=32 * 1024 * 1024):
         path = self.root / relative
@@ -270,8 +283,21 @@ class PersonalVisualQuestionService:
                 raise PersonalVisualQuestionError("题目引用的原始页面不完整，不能省略图片继续。")
         return snapshot, pages
 
+    def _effective_evidence(self, batch_id, snapshot, pages, records=None):
+        records = self.crop_store.get_batch(batch_id) if records is None else records
+        effective, states = {}, {}
+        for evidence in snapshot["candidate"]["evidence"]:
+            page = pages[(evidence["source_file_id"], evidence["page_number"], evidence["page_sha256"])]
+            state = resolved_crop(source_binding(batch_id, snapshot, evidence, page),
+                                  evidence["bbox"], records.get(evidence["evidence_id"]))
+            effective[evidence["evidence_id"]] = deepcopy(evidence)
+            if state["active"]:
+                effective[evidence["evidence_id"]]["bbox"] = deepcopy(state["bbox"])
+            states[evidence["evidence_id"]] = state
+        return effective, states
+
     @staticmethod
-    def _images(refs, role, evidence, pages):
+    def _images(refs, role, evidence, pages, crop_states=None):
         result = []
         for ref in dict.fromkeys(refs):
             source = evidence[ref]
@@ -279,23 +305,28 @@ class PersonalVisualQuestionService:
                 raise PersonalVisualQuestionError("题面与答案图片角色冲突，请先核对识别范围。")
             page = pages[(source["source_file_id"], source["page_number"], source["page_sha256"])]
             box = source["bbox"]
-            left, top = math.floor(box["x"] * page["width"]), math.floor(box["y"] * page["height"])
-            right = math.ceil((box["x"] + box["width"]) * page["width"])
-            bottom = math.ceil((box["y"] + box["height"]) * page["height"])
+            state = (crop_states or {}).get(ref, {})
+            bounds = pixel_bounds(box, page["width"], page["height"], snap_roundoff=bool(state.get("active")))
+            subject = {"evidence": source, "role": role}
+            if state.get("active"):
+                subject["crop_revision"] = state["crop_revision"]
             result.append({
-                "image_id": "PVIMG-" + _digest({"evidence": source, "role": role}),
+                "image_id": "PVIMG-" + _digest(subject),
                 "evidence_id": ref, "role": role,
                 "caption": {"question": "题面", "shared_material": "共同材料", "answer": "参考答案"}[role]
                            + f" · 第{source['page_number']}页 · AI识别范围待核对",
-                "width": right - left,
-                "height": bottom - top,
+                "width": bounds["right"] - bounds["left"],
+                "height": bounds["bottom"] - bounds["top"],
                 "page_number": source["page_number"],
             })
+            if state.get("active"):
+                result[-1]["crop_revision"] = state["crop_revision"]
+                result[-1]["caption"] = result[-1]["caption"].replace("AI识别范围待核对", "个人裁剪范围·未作化学审核")
         return result
 
-    def _rows(self, batch_id, snapshot, pages):
+    def _rows(self, batch_id, snapshot, pages, crop_records=None):
         candidate = snapshot["candidate"]
-        evidence = {row["evidence_id"]: row for row in candidate["evidence"]}
+        evidence, crop_states = self._effective_evidence(batch_id, snapshot, pages, crop_records)
         paper = candidate["paper"]
         taxonomy = load_attribute_catalog(self.facade.paths.workspace_root)
         known_knowledge = {row["id"] for row in taxonomy["knowledge_points"]}
@@ -311,7 +342,7 @@ class PersonalVisualQuestionService:
                     _text(expression["raw"]) for expression in row.get("chemical_expressions", [])
                 ])) for row in theme["shared_materials"]
             ]))
-            shared_images = self._images(shared_refs, "shared_material", evidence, pages)
+            shared_images = self._images(shared_refs, "shared_material", evidence, pages, crop_states)
             for printed in theme["printed_questions"]:
                 atomics = printed["atomic_parts"]
                 refs, visual_refs = _evidence_and_visuals([printed, *atomics])
@@ -320,8 +351,8 @@ class PersonalVisualQuestionService:
                          if visual["visual_object_id"] in visual_refs for ref in visual["evidence_refs"]]
                 answers = [row["answer"] for row in atomics if row["answer"]["status"] != "missing"]
                 answer_refs, _ = _evidence_and_visuals(answers)
-                question_images = self._images(refs, "question", evidence, pages)
-                answer_images = self._images(answer_refs, "answer", evidence, pages)
+                question_images = self._images(refs, "question", evidence, pages, crop_states)
+                answer_images = self._images(answer_refs, "answer", evidence, pages, crop_states)
                 knowledge = sorted({tag for row in atomics for name in ("primary_knowledge_K", "supporting_knowledge_K")
                                     for tag in row["classification"][name] if tag in known_knowledge})
                 source_names = list(dict.fromkeys(pages[(evidence[ref]["source_file_id"], evidence[ref]["page_number"], evidence[ref]["page_sha256"])]["source_name"] for ref in refs))
@@ -372,6 +403,8 @@ class PersonalVisualQuestionService:
                 # Teaching labels are not recognition content. Seal the source
                 # projection before adding the independent local-label overlay.
                 item["revision"] = _digest(item)
+                stale_crop = any(crop_states[image["evidence_id"]]["stale"] for image in item["images"])
+                item["crop_warning"] = ("识别来源已变化，旧个人裁剪未套用；修订历史保留，请重新核对范围。" if stale_crop else "")
                 item["facets"]["teaching_use"] = [_UNKNOWN]
                 item["attributes"] = initial_attributes(item, snapshot, pages, printed, taxonomy)
                 result.append(item)
@@ -526,14 +559,18 @@ class PersonalVisualQuestionService:
         row, snapshot, pages = self._matched_row(batch_id, key, revision)
         return self._image_for_row(row, snapshot, pages, image_id, original=original)
 
-    def _image_for_row(self, row, snapshot, pages, image_id, original=False, raw_pages=None):
+    def _image_for_row(self, row, snapshot, pages, image_id, original=False, raw_pages=None, crop_records=None):
         descriptors = [item for item in row["images"] if item["image_id"] == image_id]
         if len(descriptors) != 1 or type(original) is not bool:
             raise PersonalVisualQuestionError("未找到本题对应的图片。")
         descriptor = descriptors[0]
         if snapshot["revision_token"] != row["candidate_revision"]:
             raise PersonalVisualQuestionError("图片题目已变化，请刷新预览。")
-        evidence = next(item for item in snapshot["candidate"]["evidence"] if item["evidence_id"] == descriptor["evidence_id"])
+        effective, states = self._effective_evidence(row["batch_id"], snapshot, pages, crop_records)
+        evidence = effective[descriptor["evidence_id"]]
+        current = self._images([descriptor["evidence_id"]], descriptor["role"], effective, pages, states)[0]
+        if current != descriptor:
+            raise PersonalVisualQuestionError("个人裁剪范围已变化，请刷新预览后重新使用。")
         page = pages[(evidence["source_file_id"], evidence["page_number"], evidence["page_sha256"])]
         expected_suffix = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}.get(page["mime_type"])
         expected_path = f"pages/{page['page_sha256']}{expected_suffix}"
@@ -552,6 +589,8 @@ class PersonalVisualQuestionService:
         if original:
             return {"bytes": raw, "caption": descriptor["caption"] + " · 完整原页（可能含其他题或答案）"}
         box = evidence["bbox"]
+        if states[descriptor["evidence_id"]]["active"]:
+            return {"bytes": crop_bytes(raw, box, page["width"], page["height"]), "caption": descriptor["caption"]}
         bounds = (math.floor(box["x"] * page["width"]), math.floor(box["y"] * page["height"]),
                   math.ceil((box["x"] + box["width"]) * page["width"]),
                   math.ceil((box["y"] + box["height"]) * page["height"]))
@@ -560,6 +599,116 @@ class PersonalVisualQuestionService:
             stream = io.BytesIO()
             cropped.save(stream, "PNG")
         return {"bytes": stream.getvalue(), "caption": descriptor["caption"]}
+
+    def _crop_context(self, batch_id, key, revision, image_id):
+        snapshot, pages = self._batch(batch_id)
+        records = self.crop_store.get_batch(batch_id)
+        rows = self._rows(batch_id, snapshot, pages, records)
+        matches = [row for row in rows if row["key"] == key and row["revision"] == revision]
+        if len(matches) != 1:
+            raise PersonalVisualQuestionError("图片题目或裁剪版本已变化，请刷新后重新核对。")
+        row = matches[0]
+        descriptors = [image for image in row["images"] if image["image_id"] == image_id]
+        if len(descriptors) != 1:
+            raise PersonalVisualQuestionError("未找到本题对应的裁剪图片。")
+        descriptor = descriptors[0]
+        evidence = next(item for item in snapshot["candidate"]["evidence"] if item["evidence_id"] == descriptor["evidence_id"])
+        page = pages[(evidence["source_file_id"], evidence["page_number"], evidence["page_sha256"])]
+        state = resolved_crop(source_binding(batch_id, snapshot, evidence, page), evidence["bbox"], records.get(evidence["evidence_id"]))
+        raw_pages = {}
+        original = self._image_for_row(row, snapshot, pages, image_id, original=True, raw_pages=raw_pages, crop_records=records)
+        current = self._image_for_row(row, snapshot, pages, image_id, raw_pages=raw_pages, crop_records=records)
+        affected = [{"key": item["key"], "title": item["title"], "revision": item["revision"]}
+                    for item in rows if any(image["evidence_id"] == evidence["evidence_id"] for image in item["images"])]
+        options = {
+            "batch_id": batch_id, "key": key, "revision": revision, "image_id": image_id,
+            "evidence_id": evidence["evidence_id"], "source_role": evidence["source_role"],
+            "role": descriptor["role"], "role_label": {"question": "题面", "shared_material": "共同材料", "answer": "参考答案"}[descriptor["role"]],
+            "source_label": page["source_name"], "theme_title": row["theme_title"],
+            "page_number": page["page_number"], "page_sha256": page["page_sha256"],
+            "width": page["width"], "height": page["height"],
+            "original_bbox": state["original_bbox"], "current_bbox": state["bbox"],
+            "pixel_bounds": pixel_bounds(state["bbox"], page["width"], page["height"], snap_roundoff=state["active"]),
+            "crop_revision": state["crop_revision"], "source_binding": state["binding"],
+            "crop_active": state["active"],
+            "original_image": original, "current_image": current,
+            "affected_questions": affected, "affected_question_keys": [item["key"] for item in affected],
+            "history": self.crop_store.history(batch_id, evidence["evidence_id"]),
+            "warning": (row["crop_warning"] + " " + COPY_WARNING).strip(),
+        }
+        return options, state, self.crop_store.batch_revision(records)
+
+    def crop_options(self, batch_id, key, revision, image_id):
+        try:
+            return self._crop_context(batch_id, key, revision, image_id)[0]
+        except PersonalVisualCropError as exc:
+            raise PersonalVisualQuestionError(exc.message_zh) from exc
+
+    def preview_crop(self, batch_id, key, revision, image_id, bbox, *, expected_crop_revision):
+        try:
+            bbox = validate_bbox(bbox)
+            options, state, batch_revision = self._crop_context(batch_id, key, revision, image_id)
+            if state["crop_revision"] != expected_crop_revision:
+                raise PersonalVisualCropError("裁剪版本已变化，请重新打开范围编辑。")
+            if pixel_bounds(bbox, options["width"], options["height"]) == options["pixel_bounds"]:
+                raise PersonalVisualCropError("裁剪后的像素范围没有变化，无需保存。")
+            rendered = crop_bytes(options["original_image"]["bytes"], bbox, options["width"], options["height"])
+            frozen = self.crop_previews.add({
+                "identity": {field: options[field] for field in ("batch_id", "key", "revision", "image_id")},
+                "state": state, "batch_overlay_revision": batch_revision,
+                "affected_questions": options["affected_questions"], "bbox": bbox,
+                "original_sha256": hashlib.sha256(options["original_image"]["bytes"]).hexdigest(),
+                "current_sha256": hashlib.sha256(options["current_image"]["bytes"]).hexdigest(),
+                "preview_sha256": hashlib.sha256(rendered).hexdigest(),
+            })
+            return {**options, "preview_id": frozen["preview_id"], "preview_revision": frozen["preview_revision"],
+                    "old_bbox": options["current_bbox"], "new_bbox": bbox,
+                    "preview_image": {"bytes": rendered, "caption": options["role_label"] + " · 新裁剪范围预览（尚未保存）"}}
+        except PersonalVisualCropError as exc:
+            raise PersonalVisualQuestionError(exc.message_zh) from exc
+
+    def save_crop(self, preview_id, preview_revision, *, confirmed=False, edit_origin="teacher"):
+        from .intake_batches_v2 import _cas_write_lock
+
+        try:
+            if confirmed is not True:
+                raise PersonalVisualCropError("请先查看新旧裁片并明确确认，再保存个人范围。")
+            if not isinstance(edit_origin, str) or edit_origin not in {"teacher", "ai_source_review"}:
+                raise PersonalVisualCropError("裁剪修订来源不正确。")
+            with self.crop_previews.lock:
+                frozen = self.crop_previews.get(preview_id, preview_revision)
+                options, state, batch_revision = self._crop_context(**frozen["identity"])
+                rendered = crop_bytes(options["original_image"]["bytes"], frozen["bbox"], options["width"], options["height"])
+                if (state != frozen["state"] or batch_revision != frozen["batch_overlay_revision"]
+                        or options["affected_questions"] != frozen["affected_questions"]
+                        or hashlib.sha256(options["original_image"]["bytes"]).hexdigest() != frozen["original_sha256"]
+                        or hashlib.sha256(options["current_image"]["bytes"]).hexdigest() != frozen["current_sha256"]
+                        or hashlib.sha256(rendered).hexdigest() != frozen["preview_sha256"]):
+                    raise PersonalVisualCropError("原页、裁剪范围或预览内容已变化，请重新预览。")
+                cas_root = self.root / "candidates" / options["batch_id"]
+                # Recheck the immutable CAS head under its existing lock. The
+                # only mutation below is the independent local crop database.
+                with _cas_write_lock(cas_root):
+                    current = CandidateCAS.open(cas_root)._snapshot_unlocked()
+                    if (current["revision_token"] != state["binding"]["candidate_revision"]
+                            or current["candidate_sha256"] != state["binding"]["candidate_sha256"]):
+                        raise PersonalVisualCropError("识别版本已变化，请重新预览裁剪范围。")
+                    stored = self.crop_store.save(state, frozen["bbox"], expected_batch_revision=batch_revision, edit_origin=edit_origin)
+                self.crop_previews.discard(preview_id)
+            snapshot, pages = self._batch(options["batch_id"])
+            affected_keys = set(options["affected_question_keys"])
+            affected = [row for row in self._rows(options["batch_id"], snapshot, pages) if row["key"] in affected_keys]
+            previous = {row["key"]: row["revision"] for row in options["affected_questions"]}
+            detail = next(row for row in affected if row["key"] == options["key"])
+            return {"batch_id": options["batch_id"], "detail": detail, "affected_rows": affected,
+                    "revision_changes": [{"key": row["key"], "old_revision": previous[row["key"]], "new_revision": row["revision"]} for row in affected],
+                    "crop_revision": stored["revision"],
+                    "warnings": ["本次只保存个人裁剪范围；未修改原页、答案文字、识别CAS或教师化学审核状态。", COPY_WARNING]}
+        except PersonalVisualCropError as exc:
+            raise PersonalVisualQuestionError(exc.message_zh) from exc
+
+    def discard_crop(self, preview_id):
+        return self.crop_previews.discard(preview_id)
 
     def _resolve(self, selections):
         if not isinstance(selections, list) or not 1 <= len(selections) <= 100:
@@ -588,13 +737,15 @@ class PersonalVisualQuestionService:
     def _compile_reference(self, selections):
         selected, normalized = self._resolve(selections)
         themes = {(row["batch_id"], row["theme_key"]) for row in selected}
-        rows, contexts = [], {}
+        rows, contexts, crop_heads = [], {}, {}
         for batch in dict.fromkeys(row["batch_id"] for row in selected):
             snapshot, pages = self._batch(batch)
             if any(row["candidate_revision"] != snapshot["revision_token"] for row in selected if row["batch_id"] == batch):
                 raise PersonalVisualQuestionError("图片题目版本已变化，请重新预览。")
             contexts[batch] = (snapshot, pages)
-            rows.extend(row for row in self._rows(batch, snapshot, pages) if (batch, row["theme_key"]) in themes)
+            crops = self.crop_store.get_batch(batch)
+            crop_heads[batch] = self.crop_store.batch_revision(crops)
+            rows.extend(row for row in self._rows(batch, snapshot, pages, crops) if (batch, row["theme_key"]) in themes)
         if any(not row["selection_ready"] for row in rows):
             raise PersonalVisualQuestionError("所选主题存在拼接冲突或缺少题面，请先核对原页。")
         texts = ["【个人图片题备课参考：AI识别候选，须对照原图】",
@@ -632,6 +783,8 @@ class PersonalVisualQuestionService:
             current, _ = self._batch(batch)
             if current["revision_token"] != snapshot["revision_token"]:
                 raise PersonalVisualQuestionError("图片题目版本已变化，请重新预览。")
+            if self.crop_store.batch_revision(self.crop_store.get_batch(batch)) != crop_heads[batch]:
+                raise PersonalVisualQuestionError("个人裁剪范围已变化，请重新预览完整主题。")
         warnings = list(dict.fromkeys(warnings))
         materials = "\n\n".join(filter(None, texts)) + "\n\n待核对提醒：\n" + "\n".join(warnings)
         if len(materials) > MAX_MATERIALS:

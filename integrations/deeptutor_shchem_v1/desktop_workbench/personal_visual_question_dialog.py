@@ -175,6 +175,7 @@ class PersonalVisualQuestionDialog(QDialog):
         self._reference_busy = False
         self._attributes_busy = False
         self._attributes_saving = False
+        self._crop_busy = False
         self._rendering_list = False
         self._rows: dict[tuple[str, str, str], dict[str, Any]] = {}
         self._visible_tokens: list[tuple[str, str, str]] = []
@@ -191,6 +192,7 @@ class PersonalVisualQuestionDialog(QDialog):
         self._image_previews: dict[tuple[tuple[str, str, str], str, str], _LocalImagePreview] = {}
         self._image_original_buttons: dict[tuple[tuple[str, str, str], str, str], QPushButton] = {}
         self._image_crop_buttons: dict[tuple[tuple[str, str, str], str, str], QPushButton] = {}
+        self._image_edit_crop_buttons: dict[tuple[tuple[str, str, str], str, str], QPushButton] = {}
         self._rendered_tabs: set[int] = set()
         self._reference_preview: dict[str, Any] | None = None
         self._reference_selection_key: tuple = ()
@@ -409,7 +411,7 @@ class PersonalVisualQuestionDialog(QDialog):
         return task_id
 
     def _load_catalog(self) -> None:
-        if self._catalog_busy or self._attributes_busy or self._closed:
+        if self._catalog_busy or self._attributes_busy or self._crop_busy or self._closed:
             return
         self._catalog_generation += 1
         generation = self._catalog_generation
@@ -485,6 +487,7 @@ class PersonalVisualQuestionDialog(QDialog):
             self._image_previews.clear()
             self._image_original_buttons.clear()
             self._image_crop_buttons.clear()
+            self._image_edit_crop_buttons.clear()
             self._populate_batches()
             self.filter_panel.set_options(
                 _normalise_filter_groups(value.get("filter_options"), list(rows.values()))
@@ -648,6 +651,7 @@ class PersonalVisualQuestionDialog(QDialog):
             self._image_previews,
             self._image_original_buttons,
             self._image_crop_buttons,
+            self._image_edit_crop_buttons,
         ):
             for image_key in tuple(mapping):
                 if image_key[0] != token:
@@ -804,6 +808,17 @@ class PersonalVisualQuestionDialog(QDialog):
         self._image_previews[image_key] = preview
         self._image_original_buttons[image_key] = original_button
         self._image_crop_buttons[image_key] = crop_button
+        edit_button = QPushButton("调整这张裁片…")
+        edit_button.setObjectName("QuietButton")
+        edit_button.setAccessibleName("调整个人图文题当前这张裁片：" + caption)
+        edit_button.setEnabled(False)
+        edit_button.setVisible(all(callable(getattr(self.facade, name, None)) for name in (
+            "personal_visual_question_crop_options", "personal_visual_question_preview_crop",
+            "personal_visual_question_save_crop", "personal_visual_question_discard_crop",
+        )))
+        frame_layout.addWidget(edit_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self._image_edit_crop_buttons[image_key] = edit_button
+        edit_button.clicked.connect(lambda: self._edit_crop(token, image))
         self._load_image(
             token,
             image,
@@ -1082,7 +1097,7 @@ class PersonalVisualQuestionDialog(QDialog):
         self.reference_image_note.clear()
 
     def _update_actions(self) -> None:
-        busy = self._catalog_busy or self._detail_busy or self._save_busy or self._reference_busy or self._attributes_busy
+        busy = self._catalog_busy or self._detail_busy or self._save_busy or self._reference_busy or self._attributes_busy or self._crop_busy
         has_selection = bool(self._selected)
         ref_ready = (
             self._reference_preview is not None
@@ -1093,20 +1108,139 @@ class PersonalVisualQuestionDialog(QDialog):
         self.save_button.setEnabled(not busy and not self._closed)
         self.preview_reference_button.setEnabled(has_selection and not busy)
         self.accept_preparation_button.setEnabled(ref_ready and not busy)
-        self.reload_button.setEnabled(not self._catalog_busy and not self._attributes_busy and not self._closed)
-        self.question_list.setEnabled(not self._catalog_busy and not self._attributes_busy and not self._closed)
+        self.reload_button.setEnabled(not self._catalog_busy and not self._attributes_busy and not self._crop_busy and not self._closed)
+        self.question_list.setEnabled(not self._catalog_busy and not self._attributes_busy and not self._crop_busy and not self._closed)
         for control in (self.batch_combo, self.search, self.filter_panel):
-            control.setEnabled(not self._attributes_busy and not self._closed)
+            control.setEnabled(not self._attributes_busy and not self._crop_busy and not self._closed)
+        for image_key, button in self._image_edit_crop_buttons.items():
+            button.setEnabled(not busy and not self._closed and image_key[0] == self._current_token
+                              and self._current_detail is not None
+                              and self._image_states.get(image_key) == "ready")
         token = self._current_token
         self.attributes_button.setEnabled(
             not busy and not self._closed and self._current_detail is not None
             and token is not None and token not in self._detail_failures
             and self._required_images_ready(token)
         )
-        self.cancel_button.setEnabled(not self._attributes_saving)
+        self.cancel_button.setEnabled(not self._attributes_saving and not self._crop_busy)
         self.selection_count.setText(
             f"已选 {len(self._selected)} 题；勾选不会自动保存，答案默认隐藏。"
         )
+
+    def _edit_crop(self, token, image) -> None:
+        image_id, role = _text(image.get("image_id")), _text(image.get("role"))
+        button = self._image_edit_crop_buttons.get((token, image_id, role))
+        if token != self._current_token or button is None or not button.isEnabled():
+            return
+        from .personal_visual_crop_dialog import PersonalVisualCropDialog
+
+        generation = self._detail_generation
+        self._crop_busy = True
+        self._update_actions()
+        set_status(self.status, "info", "正在本机读取这张裁片的原页、当前范围及关联题目…")
+
+        def failed(_message):
+            self._crop_busy = False
+            set_status(self.status, "error", "这张裁片的原页或关联范围暂时无法核对，尚未保存。请刷新后重试。")
+            self._update_actions()
+
+        def ready(options):
+            if token != self._current_token or generation != self._detail_generation:
+                failed(None)
+                return
+            try:
+                if (not isinstance(options, Mapping)
+                        or tuple(options.get(key) for key in ("batch_id", "key", "revision")) != token
+                        or options.get("image_id") != image_id or options.get("role") != role):
+                    raise ValueError("Crop target changed")
+                editor = PersonalVisualCropDialog(self.facade, self.tasks, options, self)
+            except (KeyError, TypeError, ValueError, RuntimeError):
+                failed(None)
+                return
+            accepted = editor.exec() == QDialog.DialogCode.Accepted
+            result = deepcopy(editor.saved_result)
+            editor.deleteLater()
+            self._crop_busy = False
+            if accepted and result is not None:
+                self._crop_saved(token, options, result)
+            else:
+                set_status(self.status, "info", "已取消裁剪调整；来源原页、裁片与本窗口选题均未改动。")
+                self._update_actions()
+
+        self._submit(
+            "读取个人图片题裁剪范围",
+            lambda: self.facade.personal_visual_question_crop_options(*token, image_id),
+            ready, failed,
+        )
+
+    def _crop_saved(self, token, options, result) -> None:
+        # The backend freezes the full dependency scope, including questions
+        # hidden by current filters. Never invalidate an unrelated basket entry.
+        affected_keys = set(options["affected_question_keys"])
+        removed = sum(1 for entry in self._selected if entry[0] == token[0] and entry[1] in affected_keys)
+        self._selected = {entry: choice for entry, choice in self._selected.items()
+                          if entry[0] != token[0] or entry[1] not in affected_keys}
+        self._invalidate_reference()
+        self._detail_generation += 1
+        affected_tokens = [entry for entry in self._rows if entry[0] == token[0] and entry[1] in affected_keys]
+        for entry in affected_tokens:
+            self._detail_cache.pop(entry, None)
+            self._detail_failures.add(entry)
+            self._rows[entry]["selection_ready"] = False
+            self._rows[entry]["warnings"] = ["裁剪已修订；请刷新并重新核对题面。"]
+        self._clear_current_detail()
+        try:
+            if result["batch_id"] != token[0]:
+                raise ValueError("Changed batch")
+            changes = result["revision_changes"]
+            rows = [_normalise_row(row, default_batch_id=token[0]) for row in result["affected_rows"]]
+            if (not isinstance(changes, list) or len(changes) != len(affected_keys)
+                    or {item["key"] for item in changes} != affected_keys
+                    or len(rows) != len(affected_keys) or any(row is None for row in rows)):
+                raise ValueError("Changed affected scope")
+            row_map = {row["key"]: row for row in rows}
+            if set(row_map) != affected_keys:
+                raise ValueError("Changed affected rows")
+            for change in changes:
+                row = row_map[change["key"]]
+                if (row["batch_id"] != token[0] or row["revision"] != change["new_revision"]
+                        or not change["new_revision"] or change["new_revision"] == change["old_revision"]):
+                    raise ValueError("Changed crop revision")
+                if change["key"] == token[1] and change["old_revision"] != token[2]:
+                    raise ValueError("Changed original question")
+            for entry in affected_tokens:
+                self._rows.pop(entry, None)
+            for row in rows:
+                self._rows[_row_token(row)] = row
+            self._current_token = _row_token(row_map[token[1]])
+        except (KeyError, TypeError, ValueError):
+            self._apply_filters()
+            set_status(self.status, "attention", "裁剪保存结果暂时无法完整核对。受影响题已取消选择，请刷新后重核；其他未保存选题仍保留。")
+            self._update_actions()
+            return
+        selections = deepcopy(self.selections)
+        self._catalog_generation += 1
+        generation = self._catalog_generation
+        self._catalog_busy = self._crop_busy = True
+        self._update_actions()
+
+        def refreshed(value):
+            self._crop_busy = False
+            if not isinstance(value, Mapping):
+                refresh_failed(None)
+                return
+            self._catalog_ready(generation, {**value, "selection": selections})
+            if self.status.objectName() != "StatusError":
+                set_status(self.status, "success", f"裁剪已保存，影响 {len(affected_keys)} 道题；其中 {removed} 道已取消勾选，请重新看图选用。旧标签保留待重核；其他选题保留。已带入备课的副本请重新带入。")
+            self._update_actions()
+
+        def refresh_failed(_message):
+            self._crop_busy = self._catalog_busy = False
+            self._apply_filters()
+            set_status(self.status, "attention", "裁剪已保存，但目录刷新暂时失败。受影响题已取消选择，旧标签保留待重核；其他选题保留。请刷新；备课副本需重新带入。")
+            self._update_actions()
+
+        self._submit("刷新裁剪修订后的图片题", lambda: self.facade.personal_visual_questions(self.batch_id), refreshed, refresh_failed)
 
     def _edit_attributes(self) -> None:
         token = self._current_token
@@ -1335,8 +1469,8 @@ class PersonalVisualQuestionDialog(QDialog):
     def reject(self) -> None:
         if self._closed:
             return
-        if self._attributes_saving:
-            set_status(self.status, "attention", "正在保存本题标签，请稍候完成后再关闭。")
+        if self._attributes_saving or self._crop_busy:
+            set_status(self.status, "attention", "请先完成或取消当前标签、裁剪操作，再关闭题库。")
             return
         self._closed = True
         self._catalog_generation += 1

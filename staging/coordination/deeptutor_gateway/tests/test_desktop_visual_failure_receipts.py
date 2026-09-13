@@ -74,6 +74,7 @@ def _failed_result(code: str) -> SimpleNamespace:
         "provider_output_role_invalid",
         "visual_provider_output_invalid",
         "visual_candidate_schema_invalid",
+        "candidate_parent_chain_invalid",
     ),
 )
 def test_failed_result_exposes_only_stable_teacher_guidance(code: str) -> None:

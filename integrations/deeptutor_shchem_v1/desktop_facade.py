@@ -206,6 +206,10 @@ _VISUAL_FAILURE_GUIDANCE = {
         "模型把题目、答案或讲义的内容角色混在了一起，本次没有入库。",
         "核对文件分类并修正识别规则后重新预览；不会把答案内容当成题目。",
     ),
+    "candidate_parent_chain_invalid": (
+        "本地整理时发现主题、小题或作答单元的顺序或关联不一致，本次没有入库。",
+        "保留原文件与已返回结果，核对所选主题范围及整理规则；这不是网络错误，不要连续重试。",
+    ),
     "visual_candidate_invalid": (
         "视觉识别结果未通过本机格式校验，本次未生成候选。",
         "保留原文件并核对模型返回格式后再手动重试。",
@@ -2870,6 +2874,30 @@ class DesktopWorkbenchFacade:
         return self._personal_visual_question_call(
             "image", batch_id, key, revision, image_id, original=original
         )
+
+    def personal_visual_question_crop_options(self, batch_id, key, revision, image_id):
+        return self._personal_visual_question_call(
+            "crop_options", batch_id, key, revision, image_id
+        )
+
+    def personal_visual_question_preview_crop(
+        self, batch_id, key, revision, image_id, bbox, *, expected_crop_revision,
+    ):
+        return self._personal_visual_question_call(
+            "preview_crop", batch_id, key, revision, image_id, bbox,
+            expected_crop_revision=expected_crop_revision,
+        )
+
+    def personal_visual_question_save_crop(
+        self, preview_id, preview_revision, *, confirmed=False, edit_origin="teacher",
+    ):
+        return self._personal_visual_question_call(
+            "save_crop", preview_id, preview_revision,
+            confirmed=confirmed, edit_origin=edit_origin,
+        )
+
+    def personal_visual_question_discard_crop(self, preview_id):
+        return self._personal_visual_question_call("discard_crop", preview_id)
 
     def save_personal_visual_selection(self, selections):
         return self._personal_visual_question_call("save_selection", selections)

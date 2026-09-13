@@ -2278,6 +2278,10 @@ def _build_candidate(
         "paper": {
             "paper_id": f"PAPER-{batch_sha256[:24]}",
             **identity,
+            # An upload can contain only a later complete theme from a paper.
+            # Keep its observed paper position; do not renumber it as theme 1
+            # or claim that the selected pages form the complete source paper.
+            "source_scope": "uploaded_selection",
             "identity_conflicts": identity_conflicts,
             "theme_big_questions": themes,
         },
@@ -2745,8 +2749,13 @@ def validate_candidate_v2(candidate: Mapping[str, Any]) -> dict[str, Any]:
             "identity_conflicts",
             "theme_big_questions",
         },
+        optional={"source_scope"},
         code="candidate_schema_invalid",
     )
+    if "source_scope" in paper and paper["source_scope"] != "uploaded_selection":
+        raise IntakeBatchV2Error(
+            "candidate_schema_invalid", "candidate source scope is invalid", 409
+        )
     _require_safe_id(paper["paper_id"], field="paper_id")
     for key in ("title", "source_region_or_school", "paper_type"):
         _require_text(paper[key], field=key, maximum=1000)
@@ -2771,11 +2780,16 @@ def validate_candidate_v2(candidate: Mapping[str, Any]) -> dict[str, Any]:
         raise IntakeBatchV2Error(
             "candidate_schema_invalid", "theme hierarchy is invalid", 409
         )
-    if [theme.get("sequence_in_paper") for theme in themes] != list(
-        range(1, len(themes) + 1)
-    ):
+    positions = [theme.get("sequence_in_paper") if isinstance(theme, Mapping) else None
+                 for theme in themes]
+    valid_positions = all(type(position) is int and position > 0 for position in positions)
+    if valid_positions:
+        valid_positions = (positions == sorted(set(positions))
+                           if paper.get("source_scope") == "uploaded_selection"
+                           else positions == list(range(1, len(themes) + 1)))
+    if not valid_positions:
         raise IntakeBatchV2Error(
-            "candidate_parent_chain_invalid", "theme sequence is not contiguous", 409
+            "candidate_parent_chain_invalid", "theme source positions are invalid or duplicated", 409
         )
     theme_ids: set[str] = set()
     printed_ids: set[str] = set()
@@ -3067,6 +3081,107 @@ def validate_candidate_v2(candidate: Mapping[str, Any]) -> dict[str, Any]:
                 "candidate_schema_invalid", "teacher operation revision is invalid", 409
             )
     return deepcopy(row)
+
+
+def recover_visual_candidate_from_fragments(
+    *,
+    question_files: Sequence[IntakeBatchFile | Mapping[str, Any]],
+    answer_files: Sequence[IntakeBatchFile | Mapping[str, Any]] = (),
+    handout_files: Sequence[IntakeBatchFile | Mapping[str, Any]] = (),
+    stored_fragments: Mapping[str, Mapping[str, Any]],
+    expected_fragment_sha256: Mapping[str, str],
+    expected_source_subject_sha256: str,
+    batch_id: str,
+    renderer: PixelPageRenderer | None = None,
+    max_pages_per_shard: int = 2,
+) -> dict[str, Any]:
+    """Rebuild from retained observations, explicitly without a provider call.
+
+    The caller owns the provenance of the stored responses. This internal
+    recovery path validates their frozen hashes and every current source/page
+    relationship again; it is not a live-provider substitute or an approval.
+    """
+    _require_safe_id(batch_id, field="batch_id")
+    if type(max_pages_per_shard) is not int or not 1 <= max_pages_per_shard <= 20:
+        raise IntakeBatchV2Error("shard_page_limit_invalid", "visual shard page limit is invalid")
+    source_records, pages = _prepare_sources(
+        question_files=question_files, answer_files=answer_files,
+        handout_files=handout_files, renderer=renderer,
+    )
+    source_subject_sha256 = sha256_bytes(canonical_json_bytes(_batch_subject(source_records)))
+    if source_subject_sha256 != _require_sha256(
+        expected_source_subject_sha256, field="source_subject_sha256"
+    ):
+        raise IntakeBatchV2Error(
+            "stored_visual_sources_changed", "stored source/page scope has changed", 409
+        )
+    requests = _make_shards(pages, batch_id=batch_id, max_pages_per_shard=max_pages_per_shard)
+    required = {request.shard_id for request in requests}
+    if (not isinstance(stored_fragments, Mapping) or not isinstance(expected_fragment_sha256, Mapping)
+            or set(stored_fragments) != required or set(expected_fragment_sha256) != required):
+        raise IntakeBatchV2Error("stored_visual_fragments_incomplete", "stored observations do not match all current shards", 409)
+    fragments = []
+    for request in requests:
+        raw = deepcopy(stored_fragments[request.shard_id])
+        expected = _require_sha256(expected_fragment_sha256[request.shard_id], field="fragment_sha256")
+        if sha256_bytes(canonical_json_bytes(raw)) != expected:
+            raise IntakeBatchV2Error("stored_visual_fragment_changed", "stored observation hash changed", 409)
+        fragments.append(_validate_fragment(raw, request=request))
+    candidate = _build_candidate(
+        batch_id=batch_id,
+        batch_sha256=source_subject_sha256,
+        source_records=source_records, requests=requests, fragments=fragments,
+    )
+    candidate["review_blockers"].append({
+        "code": "stored_visual_fragments_recovered",
+        "message": "Rebuilt locally from retained visual observations; no new model call or teacher approval.",
+        "target_id": batch_id, "evidence_refs": [],
+    })
+    return validate_candidate_v2(candidate)
+
+
+class StoredVisualFragmentRecoveryV2:
+    """An explicit offline runner for already retained, source-bound observations.
+
+    Unlike a provider runner, this object has no transport or credentials. The
+    desktop coordinator still archives the verified source pages and persists
+    the recovered candidate through its normal CAS boundary.
+    """
+
+    def __init__(
+        self,
+        *,
+        stored_fragments: Mapping[str, Mapping[str, Any]],
+        expected_fragment_sha256: Mapping[str, str],
+        expected_source_subject_sha256: str,
+        renderer: PixelPageRenderer | None = None,
+        max_pages_per_shard: int = 2,
+    ) -> None:
+        self._stored_fragments = deepcopy(stored_fragments)
+        self._expected_fragment_sha256 = deepcopy(expected_fragment_sha256)
+        self._expected_source_subject_sha256 = expected_source_subject_sha256
+        self.renderer = renderer
+        self.max_pages_per_shard = max_pages_per_shard
+
+    def process(
+        self,
+        *,
+        question_files: Sequence[IntakeBatchFile | Mapping[str, Any]],
+        answer_files: Sequence[IntakeBatchFile | Mapping[str, Any]] = (),
+        handout_files: Sequence[IntakeBatchFile | Mapping[str, Any]] = (),
+        batch_id: str,
+    ) -> dict[str, Any]:
+        return recover_visual_candidate_from_fragments(
+            question_files=question_files,
+            answer_files=answer_files,
+            handout_files=handout_files,
+            stored_fragments=self._stored_fragments,
+            expected_fragment_sha256=self._expected_fragment_sha256,
+            expected_source_subject_sha256=self._expected_source_subject_sha256,
+            batch_id=batch_id,
+            renderer=self.renderer,
+            max_pages_per_shard=self.max_pages_per_shard,
+        )
 
 
 class MultiFileVisualIntakeV2:
