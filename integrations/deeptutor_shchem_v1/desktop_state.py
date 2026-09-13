@@ -79,17 +79,11 @@ class DesktopStateStore:
         value["updated_at"] = utc_now()
         self.root.mkdir(parents=True, exist_ok=True)
         encoded = json.dumps(
-            value,
-            ensure_ascii=False,
-            sort_keys=True,
-            indent=2,
-            allow_nan=False,
+            value, ensure_ascii=False, sort_keys=True, indent=2, allow_nan=False,
         ).encode("utf-8")
         temporary: Path | None = None
         try:
-            descriptor, name = tempfile.mkstemp(
-                prefix=".desktop-state-", suffix=".tmp", dir=self.root
-            )
+            descriptor, name = tempfile.mkstemp(prefix=".desktop-state-", suffix=".tmp", dir=self.root)
             temporary = Path(name)
             with os.fdopen(descriptor, "wb") as handle:
                 handle.write(encoded)
@@ -119,24 +113,16 @@ class DesktopStateStore:
 
     def window_state(self) -> dict[str, str]:
         value = self.snapshot().get("window")
-        return {
-            key: item
-            for key, item in value.items()
-            if key in {"geometry", "layout"} and isinstance(item, str)
-        }
+        return {key: item for key, item in value.items()
+                if key in {"geometry", "layout"} and isinstance(item, str)}
 
     def save_window_state(self, *, geometry: str, layout: str) -> None:
         def operation(value: dict[str, Any]) -> None:
             value["window"] = {"geometry": geometry, "layout": layout}
-
         self._update(operation)
 
     def basket(self) -> list[dict[str, Any]]:
-        return [
-            deepcopy(item)
-            for item in self.snapshot().get("basket", [])
-            if isinstance(item, dict)
-        ]
+        return [deepcopy(item) for item in self.snapshot().get("basket", []) if isinstance(item, dict)]
 
     def add_to_basket(self, item: dict[str, Any]) -> int:
         return self.add_many_to_basket([item])
@@ -156,38 +142,34 @@ class DesktopStateStore:
             keys.add(key)
         incoming = deepcopy(items)
         _reject_sensitive_fields(incoming)
-
         def operation(value: dict[str, Any]) -> None:
             if any(not isinstance(entry, dict) for entry in value["basket"]):
                 raise DesktopStateError("现有题篮记录不完整，未加入本批题目。")
-            basket = [
-                entry for entry in value["basket"] if entry.get("key") not in keys
-            ]
+            basket = [entry for entry in value["basket"] if entry.get("key") not in keys]
             basket.extend(incoming)
             if len(basket) > 100:
-                raise DesktopStateError(
-                    "题篮最多保留 100 个项目，请先移除部分题目；现有题目未删减。"
-                )
+                raise DesktopStateError("题篮最多保留 100 个项目，请先移除部分题目；现有题目未删减。")
             value["basket"] = basket
-
         return len(self._update(operation)["basket"])
+
+    def save_studio_favorites(self, keys: list[str]) -> None:
+        if not isinstance(keys, list) or any(not isinstance(key, str) or len(key) > 60 for key in keys):
+            raise DesktopStateError("模板收藏标识不正确。")
+        def operation(value):
+            studio = dict(value.get("studio", {}))
+            studio["favorites"] = sorted(set(keys))
+            value["studio"] = studio
+        self._update(operation)
 
     def save_draft(self, draft_id: str, payload: dict[str, Any]) -> None:
         if not draft_id or not isinstance(draft_id, str):
             raise DesktopStateError("草稿标识不正确。")
         _reject_sensitive_fields(payload)
-
         def operation(value: dict[str, Any]) -> None:
             drafts = dict(value["drafts"])
             drafts[draft_id] = deepcopy(payload)
             value["drafts"] = drafts
-
         self._update(operation)
 
 
-__all__ = [
-    "STATE_SCHEMA",
-    "DesktopStateError",
-    "DesktopStateStore",
-    "utc_now",
-]
+__all__ = ["STATE_SCHEMA", "DesktopStateError", "DesktopStateStore", "utc_now"]
