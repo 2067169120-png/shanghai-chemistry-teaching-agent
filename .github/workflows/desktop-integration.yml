@@ -25,7 +25,7 @@ jobs:
       - name: Check Python syntax
         run: python -m compileall -q integrations
       - name: Run desktop regression tests
-        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_desktop_first_run.py staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py staging/coordination/deeptutor_gateway/tests/test_desktop_preparation_provider.py staging/coordination/deeptutor_gateway/tests/test_teacher_source_prompt_rules.py --junitxml=desktop-qa/pytest.xml
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_desktop_first_run.py staging/coordination/deeptutor_gateway/tests/test_desktop_library_progress.py staging/coordination/deeptutor_gateway/tests/test_desktop_teaching_design_contract.py staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py staging/coordination/deeptutor_gateway/tests/test_desktop_preparation_provider.py staging/coordination/deeptutor_gateway/tests/test_teacher_source_prompt_rules.py --junitxml=desktop-qa/pytest.xml
       - name: Exercise native Windows Qt routes and capture real screenshots
         run: python runtime/deeptutor_shchem/desktop_ci_smoke.py
       - name: Archive exact tracked source
