@@ -1,3 +1,3 @@
-"""Version of the native Windows trial build, independent of data revisions."""
+"""Native desktop source version, independent of local material revisions."""
 
-DESKTOP_VERSION = "0.1.83"
+DESKTOP_VERSION = "0.1.84"

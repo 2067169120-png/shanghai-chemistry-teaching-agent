@@ -50,6 +50,9 @@ def create_application(argv: list[str] | None = None) -> QApplication:
     application.setOrganizationName("ShanghaiChem")
     application.setApplicationVersion(DESKTOP_VERSION)
     application.setQuitOnLastWindowClosed(True)
+    # Qt's Fusion indicators remain legible under the shared stylesheet,
+    # including combobox arrows and spin controls on Windows CI and desktops.
+    application.setStyle("Fusion")
     application.setFont(QFont("Microsoft YaHei UI", 10))
     application.setStyleSheet(WORKBENCH_STYLE)
     return application
@@ -83,9 +86,7 @@ def run_desktop_workbench(
             facade = build_default_facade(paths)
         except Exception:  # noqa: BLE001 - native startup safety boundary
             QMessageBox.critical(
-                None,
-                "无法启动",
-                "本地工作台初始化失败，请检查资料目录与个人数据目录。",
+                None, "无法启动", "本地工作台初始化失败，请检查资料目录与个人数据目录。",
             )
             return 3
         window = TeacherWorkbenchWindow(facade)

@@ -18,14 +18,11 @@ if ($BuildTag) {
     $WorkRoot = Join-Path $RuntimeRoot "desktop_build_$BuildTag"
     $SpecRoot = Join-Path $RuntimeRoot "desktop_spec_$BuildTag"
 }
-
-# Rebuilds must use a new tag; do not remove an installed trial or shared cache.
 foreach ($BuildOutputPath in @($DistRoot, $WorkRoot, $SpecRoot)) {
     if (Test-Path -LiteralPath $BuildOutputPath) {
         throw "Build output already exists. Choose a fresh -BuildTag; existing files were not changed."
     }
 }
-
 $OriginalSearchPath = $env:Path
 $BuildSearchPathEntries = @(
     $OriginalSearchPath -split [IO.Path]::PathSeparator |
@@ -34,47 +31,31 @@ $BuildSearchPathEntries = @(
             $entry -and $entry -notmatch '(?i)[\\/]\.cache[\\/]codex-runtimes[\\/].*[\\/]dependencies[\\/]native([\\/]|$)'
         }
 )
-
 try {
-    # Codex's bundled Poppler/libheif directories contain private ICU DLLs.
-    # Leaving them on PATH lets PyInstaller mistake those DLLs for Qt's
-    # Windows-system ICU dependency, producing a package that fails in QtGui.
+    # Exclude private runtime ICU libraries from PyInstaller's dependency scan.
     $env:Path = [string]::Join([IO.Path]::PathSeparator, $BuildSearchPathEntries)
-
     & $Python -c "import PySide6, PyInstaller, jsonschema, PIL, docx, pptx, pypdf; from PySide6 import QtPdf, QtPdfWidgets"
     if ($LASTEXITCODE -ne 0) {
         throw "桌面构建依赖不可用。请先在项目专用环境中安装 desktop_requirements.txt。"
     }
-
+    $StudioAssets = Join-Path $WorkspaceRoot "integrations\deeptutor_shchem_v1\desktop_workbench\studio_assets"
     $Arguments = @(
-        "-m", "PyInstaller",
-        "--windowed",
-        "--noupx",
-        "--name", "沪上化学智研台",
-        "--paths", $WorkspaceRoot,
-        "--distpath", $DistRoot,
-        "--workpath", $WorkRoot,
-        "--specpath", $SpecRoot,
+        "-m", "PyInstaller", "--windowed", "--noupx",
+        "--name", "沪上化学智研台", "--paths", $WorkspaceRoot,
+        "--distpath", $DistRoot, "--workpath", $WorkRoot, "--specpath", $SpecRoot,
+        "--add-data", ($StudioAssets + ":integrations/deeptutor_shchem_v1/desktop_workbench/studio_assets"),
         "--exclude-module", "integrations.deeptutor_shchem_v1.service",
         "--exclude-module", "integrations.deeptutor_shchem_v1.http_app",
         "--exclude-module", "integrations.deeptutor_shchem_v1.launcher",
         "--exclude-module", "PySide6.QtWebEngineCore",
         "--exclude-module", "PySide6.QtWebEngineWidgets"
     )
-    if ($OneFile) {
-        $Arguments += "--onefile"
-    }
+    if ($OneFile) { $Arguments += "--onefile" }
     $Arguments += $EntryPoint
-
     & $Python @Arguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "桌面应用构建失败。"
-    }
+    if ($LASTEXITCODE -ne 0) { throw "桌面应用构建失败。" }
 }
-finally {
-    $env:Path = $OriginalSearchPath
-}
-
+finally { $env:Path = $OriginalSearchPath }
 if (-not $OneFile) {
     $InternalRoot = Join-Path $DistRoot "沪上化学智研台\_internal"
     $UnexpectedIcu = @(
@@ -85,5 +66,4 @@ if (-not $OneFile) {
         throw "桌面包误收集了外部 ICU DLL，请检查构建进程 PATH。"
     }
 }
-
 Write-Host "构建完成：$DistRoot"
