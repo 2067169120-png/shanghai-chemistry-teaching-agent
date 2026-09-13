@@ -13,7 +13,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton, QSlider,
     QSpinBox, QTabWidget, QVBoxLayout, QWidget,
 )
-
 from ..desktop_studio import Countdown, NoRepeatPicker, equilibrium_step, make_groups, parse_roster
 from .components import page_scroll, section_title, set_status
 from .studio_templates import text_label
@@ -227,6 +226,8 @@ class EquilibriumCanvas(QWidget):
             painter.setFont(QFont("Microsoft YaHei UI", 11))
             painter.drawText(QRectF(x - 20, area.bottom() + 8, bar_width + 40, 32), Qt.AlignmentFlag.AlignCenter, f"{name}  {value:.1f}")
         chart = QRectF(width * .55, 60, max(20, width * .4 - 12), height - 112)
+        # Trace paths are lines, not closed areas. The bars above used a fill.
+        painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.setPen(QPen(QColor("#BECFC5"), 1))
         painter.drawLine(chart.bottomLeft(), chart.topLeft())
         painter.drawLine(chart.bottomLeft(), chart.bottomRight())
