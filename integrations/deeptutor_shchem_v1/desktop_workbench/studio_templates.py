@@ -121,6 +121,8 @@ class TemplatePage(QWidget):
 
     def rebuild(self, *_):
         for card in self.cards:
+            # Layout removal alone leaves the widget visible until deletion.
+            card.hide()
             self.grid.removeWidget(card)
             card.deleteLater()
         self.cards = []
