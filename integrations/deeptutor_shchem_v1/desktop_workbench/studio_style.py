@@ -1,4 +1,6 @@
 """Shared native design system: calm green, airy surfaces and clear hierarchy."""
+from .studio_control_style import control_style
+
 TOKENS = {
     "surface_app": "#F5F7F8", "surface_panel": "#FFFFFF", "surface_subtle": "#F0F4F2",
     "surface_rail": "#FAFCFB", "ink": "#233A32", "ink_muted": "#60746B",
@@ -79,4 +81,4 @@ QSlider::groove:horizontal {{ background: {t['line']}; height: 6px; border-radiu
 QSlider::handle:horizontal {{ background: {t['brand']}; width: 16px; margin: -5px 0; border-radius: 8px; }}
 '''
 
-WORKBENCH_STYLE = _build_style(TOKENS)
+WORKBENCH_STYLE = _build_style(TOKENS) + control_style()
