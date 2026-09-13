@@ -4,7 +4,7 @@ from __future__ import annotations
 from copy import deepcopy
 from PySide6.QtCore import Qt, QTimer, Signal, QSignalBlocker
 from PySide6.QtWidgets import (QBoxLayout, QComboBox, QFrame, QHBoxLayout, QLineEdit,
-    QPushButton, QScrollArea, QSplitter, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
+    QPushButton, QScrollArea, QSizePolicy, QSplitter, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
 
 from ..desktop_question_explorer import PERSONAL_LANES, core_results, entry_is_selected, personal_results
 from .components import CardFrame
@@ -85,8 +85,10 @@ class QuestionExplorerPage(QWidget):
         root.setContentsMargins(20, 18, 20, 12)
         root.setSpacing(12)
         heading = QHBoxLayout()
-        heading.addWidget(text_label("选题中心", "PageTitle"))
-        heading.addStretch(1)
+        self.page_heading = text_label("选题中心", "PageTitle")
+        self.page_heading.setWordWrap(False)
+        self.page_heading.setFixedHeight(40)
+        heading.addWidget(self.page_heading, 1)
         self.basket_button = QPushButton("选题篮  0")
         self.basket_button.setObjectName("ExplorerBasketButton")
         self.basket_button.clicked.connect(self.open_basket)
@@ -356,7 +358,6 @@ class QuestionExplorerPage(QWidget):
                 counts = {row["value"]: row.get("atomic_count") for row in (current or {}).get(group, {}).get("values", [])}
                 for row in spec["values"]:
                     count = counts.get(row["value"], 0) if current is not None else row.get("atomic_count")
-                    # Personal catalogs do not claim global facet statistics.
                     count = None if self.scope.currentData() in PERSONAL_LANES else count
                     label = row["label_zh"] + (f" ({count})" if count is not None else "")
                     child = QTreeWidgetItem(parent, [label])
@@ -397,7 +398,10 @@ class QuestionExplorerPage(QWidget):
         if self.curriculum:
             self._chip(getattr(self, "_curriculum_label", "已限定教材章节"), self.clear_curriculum)
         if not any(self.filters.values()) and not self.curriculum:
-            self.chips.addWidget(text_label("全部标签 · 请选择左侧条件", "MutedLabel"))
+            hint = text_label("全部标签 · 请选择左侧条件", "MutedLabel")
+            hint.setWordWrap(False)
+            hint.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
+            self.chips.addWidget(hint)
 
     def _chip(self, title, action):
         button = QPushButton(title + "  ×")
@@ -481,7 +485,7 @@ class QuestionExplorerPage(QWidget):
     def attach_reader(self, card, reader):
         self._reader = reader
         reader.setMinimumWidth(0)
-        reader.setFixedHeight(340)
+        reader.setFixedHeight(220 if isinstance(reader, PersonalQuestionReader) and not reader.images else 340)
         card.reader_layout.addWidget(reader)
         card.reader_host.show()
         card.excerpt.hide()

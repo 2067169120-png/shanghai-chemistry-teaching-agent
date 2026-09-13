@@ -85,3 +85,15 @@ def test_narrow_page_keeps_filters_accessible(window):
     win.resize(800,700);settle(app)
     assert p.filter_toggle.isVisible()
     p.filter_toggle.click();assert p.sidebar.isVisible()
+
+
+def test_short_questions_leave_room_for_following_results(window):
+    win, app = window
+    page = win.library_page
+    settle(app)
+    assert page.page_heading.text() == "选题中心"
+    assert page.page_heading.width() >= 120
+    assert page.page_heading.height() <= 44
+    assert page._reader.height() <= 240
+    assert page.cards[0].height() < 520
+    assert page.cards[1].geometry().top() < page.scroll.viewport().height()

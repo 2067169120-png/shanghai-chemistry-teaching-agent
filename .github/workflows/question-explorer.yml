@@ -22,27 +22,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Apply integrity-checked source transfer once
+      - name: Record tested source revision
         shell: python {0}
         run: |
-          import base64, hashlib, lzma, os, pathlib, subprocess
-          def git(*args, **kw):
-              return subprocess.run(['git', *args], check=True, **kw)
-          git('config', 'user.name', 'github-actions[bot]')
-          git('config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com')
-          parts = [pathlib.Path(f'.github/transfer/explorer.{i:02}.txt') for i in range(1,5)]
-          if parts[0].exists():
-              raw = lzma.decompress(base64.b64decode(''.join(p.read_text().strip() for p in parts), validate=True))
-              assert hashlib.sha256(raw).hexdigest() == '44fec57b28f07fad245b0d0a28fd1a22a2278896002290bbccc7f3e951689d35'
-              git('apply', '--check', '-', input=raw)
-              git('apply', '-', input=raw)
-              for p in parts: p.unlink()
-              git('add', '-A')
-              git('commit', '-m', 'feat(desktop): faceted question selection, durable basket and real Office pagination')
-              if os.environ['GITHUB_EVENT_NAME'] == 'push':
-                  git('push', 'origin', 'HEAD:feature/question-explorer-0.1.85')
-          sha = subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip()
-          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as env:
+          import os, subprocess
+          subprocess.run(['git','config','user.name','github-actions[bot]'],check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          sha = subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          with open(os.environ['GITHUB_ENV'],'a',encoding='utf-8') as env:
               env.write('SHCHEM_SOURCE_SHA=' + sha + '\n')
       - name: Install desktop and test dependencies
         run: python -m pip install -r requirements-dev.txt

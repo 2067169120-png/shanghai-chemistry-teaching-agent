@@ -10,7 +10,7 @@ from .components import page_scroll
 from .library_detail import ImageZoomDialog
 
 
-def text_label(text, name="StatusInfo"):
+def text_label(text, name="ExplorerBody"):
     widget = QLabel(str(text))
     widget.setTextFormat(Qt.TextFormat.PlainText)
     widget.setWordWrap(True)
@@ -100,6 +100,11 @@ class PersonalQuestionReader(QWidget):
         self.loaded_tabs.add(index)
         row = self.entry["payload"]
         body = QWidget()
+        body.setObjectName("ExplorerReadingSheet")
+        body.setStyleSheet(
+            "QWidget#ExplorerReadingSheet {background: white;}"
+            "QLabel#ExplorerBody {color: #243D34; font-size: 16px; background: white;}"
+        )
         layout = QVBoxLayout(body)
         layout.setContentsMargins(8, 12, 8, 16)
         layout.setSpacing(12)
