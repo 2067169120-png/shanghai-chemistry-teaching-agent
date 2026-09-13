@@ -5,3 +5,6 @@ Pillow>=10.4,<13
 python-docx>=1.1,<2
 python-pptx>=1.0,<2
 pypdf>=5,<7
+
+# Render actual PDF pages without a developer-specific Poppler runtime.
+pypdfium2>=4.30,<6

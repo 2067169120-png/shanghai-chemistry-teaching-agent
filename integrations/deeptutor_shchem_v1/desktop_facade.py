@@ -510,6 +510,8 @@ class ThemeCard:
     # Canonical inventory remains atomic_total; grouped direct/Wave aliases
     # may expose more independently answerable units in the native viewer.
     display_atomic_units: int = 0
+    preview_zh: str = ""
+    tags_zh: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -522,6 +524,8 @@ class ThemeSearchResult:
     has_more: bool
     pending_atomic_parts: int = 0
     pending_matched_atomic_parts: int = 0
+    next_cursor: str | None = None
+    facets: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -1339,6 +1343,8 @@ class DesktopWorkbenchFacade:
         section: str | None = None,
         mapping_status: str | None = None,
         curriculum: Mapping[str, str] | None = None,
+        filters: Mapping[str, list[str]] | None = None,
+        cursor: str | None = None,
     ) -> ThemeSearchResult:
         """Search complete theme cards, optionally by explicit textbook edges.
 
@@ -1388,6 +1394,8 @@ class DesktopWorkbenchFacade:
                     )
                 selector[key] = value.strip()
         if scope == PERSONAL_HANDOUT_SCOPE:
+            if filters or cursor:
+                raise DesktopFacadeError("personal_filter_route", "请在个人题库入口使用教学标签筛选。")
             if selector:
                 raise DesktopFacadeError(
                     "curriculum_not_supported_for_personal_scope",
@@ -1399,9 +1407,11 @@ class DesktopWorkbenchFacade:
         normalized_query = query.strip()
         payload: dict[str, Any] = {
             "scope": scope,
-            "filters": {},
+            "filters": dict(filters or {}),
             "limit": max(1, min(int(limit), 50)),
         }
+        if cursor is not None:
+            payload["cursor"] = cursor
         if normalized_query:
             payload["q"] = normalized_query
         if selector:
@@ -1467,6 +1477,12 @@ class DesktopWorkbenchFacade:
                         shared.get("context_summary_zh") or "共同材料摘要待整理"
                     ),
                     page_zh=self._page_label(item),
+                    preview_zh=str(shared.get("context_summary_zh") or ""),
+                    tags_zh=tuple(dict.fromkeys(
+                        label for atomic in item.get("atomic_chain", [])
+                        for label in atomic.get("classification_labels_zh", [])
+                        if isinstance(label, str)
+                    ))[:6],
                     source_identity_sha256=identity_digest,
                     data_snapshot_id=source_snapshots.get(scope)
                     or (
@@ -1487,6 +1503,8 @@ class DesktopWorkbenchFacade:
             matched_atomic_parts=_safe_int(counts.get("atomic_parts_matched")) or 0,
             cards=tuple(cards),
             has_more=page.get("has_more") is True,
+            next_cursor=page.get("next_cursor"),
+            facets=deepcopy(value.get("facets", {})),
             pending_atomic_parts=_safe_int(pending.get("atomic_parts_in_scope")) or 0,
             pending_matched_atomic_parts=_safe_int(pending.get("atomic_parts_matched"))
             or 0,
@@ -1884,6 +1902,12 @@ class DesktopWorkbenchFacade:
 
     def clear_basket(self) -> None:
         self._state.clear_basket()
+
+    def remove_basket_item(self, key: str) -> int:
+        return self._state.remove_basket_item(key)
+
+    def move_basket_item(self, key: str, delta: int) -> int:
+        return self._state.move_basket_item(key, delta)
 
     @staticmethod
     def _effective_profile_capabilities(value: Mapping[str, Any]) -> tuple[str, ...]:

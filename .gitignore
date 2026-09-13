@@ -154,3 +154,13 @@
 !/docs/screenshots/v0.1.84/commands.png
 !/docs/screenshots/v0.1.84/help.png
 !/docs/screenshots/v0.1.84/templates-compact.png
+
+# 0.1.85 selection UI and isolated test evidence
+!/README-0.1.84-archive.md
+!/docs/qa/0.1.85-selection.md
+!/docs/qa/0.1.85-selection.json
+!/docs/screenshots/v0.1.85/
+!/runtime/deeptutor_shchem/explorer_demo_data.py
+!/runtime/deeptutor_shchem/explorer_ci_smoke.py
+!/runtime/deeptutor_shchem/publish_explorer_screenshots.py
+!/.github/workflows/question-explorer.yml

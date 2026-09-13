@@ -314,8 +314,17 @@ def prepare_pages(docx_paths, output_root, *, toolchain=None, renderer=None, max
             from .paper_export_renderer import _render_with_canonical_docx_tool
             from .paper_export_workbench import _locate_toolchain
 
-            toolchain = (toolchain or _locate_toolchain()).validated()
-            renderer = _render_with_canonical_docx_tool
+            if toolchain is not None:
+                toolchain = toolchain.validated()
+                renderer = _render_with_canonical_docx_tool
+            else:
+                candidate = _locate_toolchain()
+                if candidate.render_docx_script.is_file() and candidate.pdftoppm_exe.is_file():
+                    toolchain = candidate.validated()
+                    renderer = _render_with_canonical_docx_tool
+                else:
+                    from .desktop_local_pagination import render_docx
+                    renderer = render_docx
         versions = {}
         for audience in _AUDIENCES:
             stage = "render_" + audience

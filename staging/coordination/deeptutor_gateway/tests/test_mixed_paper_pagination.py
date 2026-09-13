@@ -312,6 +312,9 @@ def test_default_renderer_reuses_existing_engine_and_validated_toolchain(inputs,
     base = SyntheticRenderer()
 
     class Toolchain:
+        render_docx_script = Path(__file__)
+        pdftoppm_exe = Path(__file__)
+
         def validated(self):
             return self
 
@@ -322,7 +325,7 @@ def test_default_renderer_reuses_existing_engine_and_validated_toolchain(inputs,
     assert len(base.calls) == 2 and all(call[2] is chain for call in base.calls)
 
 
-def test_missing_default_tools_report_chinese_failure_not_ready(inputs, tmp_path, monkeypatch):
+def test_missing_explicit_tools_report_chinese_failure_not_ready(inputs, tmp_path, monkeypatch):
     from integrations.deeptutor_shchem_v1 import paper_export_workbench
     from integrations.deeptutor_shchem_v1.paper_export_renderer import (
         PaperExportRendererError,
@@ -335,7 +338,7 @@ def test_missing_default_tools_report_chinese_failure_not_ready(inputs, tmp_path
     monkeypatch.setattr(paper_export_workbench, "_locate_toolchain", lambda: MissingTools())
     root = tmp_path / "frozen"
     with pytest.raises(pagination.MixedPaperPaginationError, match="缺少本地分页工具"):
-        pagination.prepare_pages(inputs, root)
+        pagination.prepare_pages(inputs, root, toolchain=MissingTools())
     assert diagnostic(root)["error_code"] == "renderer_tool_missing"
     assert not (root / pagination.MANIFEST_FILENAME).exists()
 
@@ -355,3 +358,28 @@ def test_corrupt_manifest_json_fails_closed_on_load(inputs, tmp_path):
     path.write_text('{"status":"failed","status":"rendered_pending_review"}', encoding="utf-8")
     with pytest.raises(pagination.MixedPaperPaginationError):
         pagination.load_prepared_pages(root, expected_manifest_sha256=manifest["manifest_sha256"])
+
+
+def test_missing_developer_runtime_uses_local_office_renderer(inputs, tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from integrations.deeptutor_shchem_v1 import desktop_local_pagination, paper_export_workbench
+    missing = tmp_path / 'not-installed'
+    monkeypatch.setattr(paper_export_workbench, '_locate_toolchain', lambda: SimpleNamespace(render_docx_script=missing, pdftoppm_exe=missing))
+    renderer = SyntheticRenderer()
+    monkeypatch.setattr(desktop_local_pagination, 'render_docx', renderer)
+    result = pagination.prepare_pages(inputs, tmp_path/'local-pages')
+    assert result['status'] == 'rendered_pending_review'
+    assert len(renderer.calls) == 2
+
+
+def test_missing_office_gives_actionable_failure_and_no_placeholder(inputs, tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from integrations.deeptutor_shchem_v1 import desktop_local_pagination, paper_export_workbench
+    missing = tmp_path/'missing'
+    monkeypatch.setattr(paper_export_workbench, '_locate_toolchain', lambda: SimpleNamespace(render_docx_script=missing,pdftoppm_exe=missing))
+    def unavailable(*args, **kwargs):
+        raise pagination.MixedPaperPaginationError('local_pagination_office_missing','请安装 Microsoft Word 或 LibreOffice。')
+    monkeypatch.setattr(desktop_local_pagination,'render_docx',unavailable)
+    with pytest.raises(pagination.MixedPaperPaginationError,match='LibreOffice'):
+        pagination.prepare_pages(inputs,tmp_path/'pages')
+    assert not (tmp_path/'pages'/'manifest.json').exists()
