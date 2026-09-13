@@ -1,0 +1,96 @@
+{
+  "schema_version": "shchem.mixed-desktop-batch-fixture.v2",
+  "synthetic_only": true,
+  "purpose": "binary-valid DOCX/PDF/PNG desktop routing and no-provider queue E2E",
+  "sources": [
+    {
+      "source_file_id": "MIX-Q-001",
+      "role": "question",
+      "order_index": 1,
+      "group_id": "mixed-paper-a",
+      "filename": "无角色提示的扫描页.png",
+      "mime_type": "image/png",
+      "content_base64": "iVBORw0KGgoAAAANSUhEUgAAADAAAABACAIAAADTQmMRAAAAf0lEQVR4nM3OQQEAIBCAMKSDEU1nSf9XQJZga59LicRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjL8D0wOxjgGl9NDteAAAAABJRU5ErkJggg==",
+      "source_sha256": "5b65ba2c96c3d17ff3c5b8e03943923c6005e736ffdb24d68bbdd53e381eaa6a",
+      "expected_import_state": "visual_only_required",
+      "rendered_pages": []
+    },
+    {
+      "source_file_id": "MIX-A-001",
+      "role": "answer",
+      "order_index": 1,
+      "group_id": "mixed-paper-a",
+      "filename": "独立参考页.pdf",
+      "mime_type": "application/pdf",
+      "content_base64": "JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAxMjAgMTYwXSAvUmVzb3VyY2VzIDw8ID4+IC9Db250ZW50cyA0IDAgUiA+PgplbmRvYmoKNCAwIG9iago8PCAvTGVuZ3RoIDM0ID4+CnN0cmVhbQowLjIgMC40IDAuOCByZyAxMCAxMCAxMDAgMTQwIHJlIGYKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2NCAwMDAwMCBuIAowMDAwMDAwMTIxIDAwMDAwIG4gCjAwMDAwMDAyMjUgMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSA1IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgozMDgKJSVFT0YK",
+      "source_sha256": "510b5a9e5ef7df57c62f862a7e2af55e5d486a8d257883093d3525f771003cff",
+      "expected_import_state": "visual_only_required",
+      "rendered_pages": [
+        {
+          "mime_type": "image/png",
+          "content_base64": "iVBORw0KGgoAAAANSUhEUgAAADAAAABACAIAAADTQmMRAAAAfUlEQVR4nM3OMQEAIAzAsFJfc4xIfgysUZBzZyiRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGImRGIlxO/B71tEBpnrMbtIAAAAASUVORK5CYII=",
+          "page_sha256": "86496526a8205f1218df41bc91200a3546903764cf4b465f40d5e609ff1f12f3",
+          "width": 48,
+          "height": 64,
+          "render_recipe_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+        }
+      ]
+    },
+    {
+      "source_file_id": "MIX-H-001",
+      "role": "handout",
+      "order_index": 1,
+      "group_id": "mixed-paper-a",
+      "filename": "纯文字讲义.docx",
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "content_base64": "UEsDBBQAAAAIAAAAIVx5bjPX6AAAAK0BAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbH1QyU7DMBD9FWuuKHHggBCK0wPLETiUDxjZk8SqN3nc0v49Tlt6QIXjzFv1+tXeO7GjzDYGBbdtB4KCjsaGScHn+rV5AMEFg0EXAyk4EMNq6NeHRCyqNrCCuZT0KCXrmTxyGxOFiowxeyz1zJNMqDc4kbzrunupYygUSlMWDxj6Zxpx64p42df3qUcmxyCeTsQlSwGm5KzGUnG5C+ZXSnNOaKvyyOHZJr6pBJBXExbk74Cz7r0Ok60h8YG5vKGvLPkVs5Em6q2vyvZ/mys94zhaTRf94pZy1MRcF/euvSAebfjpL49zD99QSwMEFAAAAAgAAAAhXJv9N+qtAAAAKQEAAAsAAABfcmVscy8ucmVsc43POw7CMAwG4KtE3mlaBoRQ0y4IqSsqB7ASN61oHkrCo7cnAwNFDIy2f3+W6/ZpZnanECdnBVRFCYysdGqyWsClP232wGJCq3B2lgQsFKFt6jPNmPJKHCcfWTZsFDCm5A+cRzmSwVg4TzZPBhcMplwGzT3KK2ri27Lc8fBpwNpknRIQOlUB6xdP/9huGCZJRydvhmz6ceIrkWUMmpKAhwuKq3e7yCzwpuarF5sXUEsDBBQAAAAIAAAAIVyKAm0O/AAAAIMBAAARAAAAd29yZC9kb2N1bWVudC54bWyN0LFOwzAQBuBXibxThw4IRUm6IGYGeABjX5pIsS+yDaEbYqFIDBVDkZh4ASjqUImKt4EYmHiFxqEVElOX/+Q769PZ8eBClsE5aFOgSshuLyQBKI6iUMOEnBwf7uyTwFimBCtRQUJGYMggjetIID+ToGzQAspEdUJya6uIUsNzkMz0sALVzjLUktn2qIe0Ri0qjRyMaX1Z0n4Y7lHJCkXWjNyGwSwrOBysF9ggNt8gbBtEaFb/X8K/6xTFyNfKh/Zh02YyduPJ53LmptfN0/3X8/zj9ebn7cG9zJrb6ffdo1su3GL+fnkVU3/fp+6yUwxwe6Rp1/jl6d//pStQSwMEFAAAAAgAAAAhXOn5wZN7AAAAmwAAABwAAAB3b3JkL19yZWxzL2RvY3VtZW50LnhtbC5yZWxzVcxBDgIhDIXhq5DuHdCFMQaYnQcweoBmpgKRKYQSo7eXpS5f/rzPzu8tqxc1SYUd7CcDingpa+Lg4H677E6gpCOvmAuTgw8JzN5eKWMfF4mpihoGi4PYez1rLUukDWUqlXiUR2kb9jFb0BWXJwbSB2OOuv0a4K3+Q/0XUEsBAhQAFAAAAAgAAAAhXHluM9foAAAArQEAABMAAAAAAAAAAAAAAIABAAAAAFtDb250ZW50X1R5cGVzXS54bWxQSwECFAAUAAAACAAAACFcm/036q0AAAApAQAACwAAAAAAAAAAAAAAgAEZAQAAX3JlbHMvLnJlbHNQSwECFAAUAAAACAAAACFcigJtDvwAAACDAQAAEQAAAAAAAAAAAAAAgAHvAQAAd29yZC9kb2N1bWVudC54bWxQSwECFAAUAAAACAAAACFc6fnBk3sAAACbAAAAHAAAAAAAAAAAAAAAgAEaAwAAd29yZC9fcmVscy9kb2N1bWVudC54bWwucmVsc1BLBQYAAAAABAAEAAMBAADPAwAAAAA=",
+      "source_sha256": "06d043ff870fb9b3f78ac57b724405a14fde62c367fc1d1b833e47b3893f80bd",
+      "expected_import_state": "native_text_complete",
+      "rendered_pages": [
+        {
+          "mime_type": "image/png",
+          "content_base64": "iVBORw0KGgoAAAANSUhEUgAAADAAAABACAIAAADTQmMRAAAAf0lEQVR4nM3OQQEAIBCAMCSUHexlcP9XQJZga99DicRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjL8D0wPhigGDp7RMTAAAAABJRU5ErkJggg==",
+          "page_sha256": "b4cb2bc1f46158b8c314f6ffaaa32fde4665d66953d06465c8dae05adb966416",
+          "width": 48,
+          "height": 64,
+          "render_recipe_sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+        }
+      ]
+    },
+    {
+      "source_file_id": "MIX-H-002",
+      "role": "handout",
+      "order_index": 2,
+      "group_id": "mixed-paper-a",
+      "filename": "含公式与图形讲义.docx",
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "content_base64": "UEsDBBQAAAAIAAAAIVx5bjPX6AAAAK0BAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbH1QyU7DMBD9FWuuKHHggBCK0wPLETiUDxjZk8SqN3nc0v49Tlt6QIXjzFv1+tXeO7GjzDYGBbdtB4KCjsaGScHn+rV5AMEFg0EXAyk4EMNq6NeHRCyqNrCCuZT0KCXrmTxyGxOFiowxeyz1zJNMqDc4kbzrunupYygUSlMWDxj6Zxpx64p42df3qUcmxyCeTsQlSwGm5KzGUnG5C+ZXSnNOaKvyyOHZJr6pBJBXExbk74Cz7r0Ok60h8YG5vKGvLPkVs5Em6q2vyvZ/mys94zhaTRf94pZy1MRcF/euvSAebfjpL49zD99QSwMEFAAAAAgAAAAhXJv9N+qtAAAAKQEAAAsAAABfcmVscy8ucmVsc43POw7CMAwG4KtE3mlaBoRQ0y4IqSsqB7ASN61oHkrCo7cnAwNFDIy2f3+W6/ZpZnanECdnBVRFCYysdGqyWsClP232wGJCq3B2lgQsFKFt6jPNmPJKHCcfWTZsFDCm5A+cRzmSwVg4TzZPBhcMplwGzT3KK2ri27Lc8fBpwNpknRIQOlUB6xdP/9huGCZJRydvhmz6ceIrkWUMmpKAhwuKq3e7yCzwpuarF5sXUEsDBBQAAAAIAAAAIVwbOjtVQQEAACsCAAARAAAAd29yZC9kb2N1bWVudC54bWyNkbFOwzAQhl/F8oqoSweEoiQdWqEuSAzwAMZxm0ixHdmG0A11gCIxVB2KxMQLQFGHSq14mkICTLwCdtpCQAxd/rvz3X2687n1cxaDMypVJLgHdypVCCgnIoh4x4PHR/vbexAojXmAY8GpB7tUwbrvpk4gyCmjXAMD4MpJPRhqnTgIKRJShlVFJJSbXFtIhrUJZQelQgaJFIQqZfgsRrVqdRcxHHG4wrBNMKLdjghtrgZYQ3S4huBNIIHE6d8h7F4nIuham1iRVrSfDfp5f/A2H+ejq+zh9v1x8jq7/ny+y5/G2c3oY3ifz6f5dPJy0XORrbcqC03KKOaIAzOmdYpI+61Frwe2QCO2dnE5BLVWI3YRKxhFFfpu+p9pDrFcxHex05E4CSNScptYY2S6SjlUavnNVJToQ4mKh+U3oJ87+19QSwMEFAAAAAgAAAAhXOn5wZN7AAAAmwAAABwAAAB3b3JkL19yZWxzL2RvY3VtZW50LnhtbC5yZWxzVcxBDgIhDIXhq5DuHdCFMQaYnQcweoBmpgKRKYQSo7eXpS5f/rzPzu8tqxc1SYUd7CcDingpa+Lg4H677E6gpCOvmAuTgw8JzN5eKWMfF4mpihoGi4PYez1rLUukDWUqlXiUR2kb9jFb0BWXJwbSB2OOuv0a4K3+Q/0XUEsBAhQAFAAAAAgAAAAhXHluM9foAAAArQEAABMAAAAAAAAAAAAAAIABAAAAAFtDb250ZW50X1R5cGVzXS54bWxQSwECFAAUAAAACAAAACFcm/036q0AAAApAQAACwAAAAAAAAAAAAAAgAEZAQAAX3JlbHMvLnJlbHNQSwECFAAUAAAACAAAACFcGzo7VUEBAAArAgAAEQAAAAAAAAAAAAAAgAHvAQAAd29yZC9kb2N1bWVudC54bWxQSwECFAAUAAAACAAAACFc6fnBk3sAAACbAAAAHAAAAAAAAAAAAAAAgAFfAwAAd29yZC9fcmVscy9kb2N1bWVudC54bWwucmVsc1BLBQYAAAAABAAEAAMBAAAUBAAAAAA=",
+      "source_sha256": "606e1774c428a16178fe79732ab6b75fb1a0434672dd061f77bf351ee524abd4",
+      "expected_import_state": "hybrid_visual_required",
+      "rendered_pages": [
+        {
+          "mime_type": "image/png",
+          "content_base64": "iVBORw0KGgoAAAANSUhEUgAAADAAAABACAIAAADTQmMRAAAAf0lEQVR4nM3OQQEAIBCAMCSfcQxlTP9XQJZg6+xLicRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjMRIjL8D0wMuwAHof/5NZAAAAABJRU5ErkJggg==",
+          "page_sha256": "76e415c801f2d612411320de066d203e05f2e591456a5b539bdb6e821459703c",
+          "width": 48,
+          "height": 64,
+          "render_recipe_sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "native_quick_count": 1,
+    "visual_queue_count": 3,
+    "visual_source_ids": ["MIX-Q-001", "MIX-A-001", "MIX-H-002"],
+    "visual_context_source_ids": [],
+    "no_provider_status": "awaiting_visual_provider",
+    "candidate_only": true,
+    "central_question_bank_write": false
+  },
+  "input_contract": {
+    "source_text_layer_supplied": false,
+    "fallback_allowed": false,
+    "ocr_allowed": false
+  }
+}

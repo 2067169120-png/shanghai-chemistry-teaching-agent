@@ -1,0 +1,39 @@
+{
+  "schema_version": "student_learning_local_runtime_lock_v1",
+  "platform": "win_amd64",
+  "python_abi": "cp312",
+  "artifacts": [
+    {
+      "name": "opencv-python-headless",
+      "version": "4.12.0.88",
+      "kind": "python_wheel",
+      "filename": "opencv_python_headless-4.12.0.88-cp37-abi3-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/f2/35/0858e9e71b36948eafbc5e835874b63e515179dc3b742cbe3d76bc683439/opencv_python_headless-4.12.0.88-cp37-abi3-win_amd64.whl",
+      "sha256": "86b413bdd6c6bf497832e346cd5371995de148e579b9774f8eba686dee3f5528",
+      "license": "Apache-2.0 for OpenCV; MIT for opencv-python packaging; bundled third-party notices apply",
+      "source": "https://pypi.org/project/opencv-python-headless/"
+    },
+    {
+      "name": "zxing-cpp",
+      "version": "3.1.1",
+      "kind": "python_wheel",
+      "filename": "zxing_cpp-3.1.1-cp312-abi3-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/7d/14/055c5a68a50bdde8378ced94e63f9ce340311e51c87b947f9b95fe69f51a/zxing_cpp-3.1.1-cp312-abi3-win_amd64.whl",
+      "sha256": "29f98a91148171460b47a942d137ecc90c4b8097636f23cca65263a56bb025d3",
+      "license": "Apache-2.0",
+      "source": "https://pypi.org/project/zxing-cpp/"
+    }
+  ],
+  "system_requirements": [
+    {
+      "name": "numpy",
+      "minimum_version": "1.26",
+      "installation_mutated_by_bootstrap": false
+    },
+    {
+      "name": "Pillow",
+      "minimum_version": "10",
+      "installation_mutated_by_bootstrap": false
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.sh-chem.invalid/generation_v2/r18_producer_receipt.schema.json",
+  "title": "Generation v2 R18 producer receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "version_id",
+    "paper_id",
+    "producer_fingerprint",
+    "regeneration_id",
+    "paper",
+    "task_card",
+    "controller_subject",
+    "deterministic_check",
+    "coverage_matrix",
+    "deterministic_atomic_scope",
+    "figure",
+    "authority_boundary",
+    "human_reviewed",
+    "self_hash"
+  ],
+  "properties": {
+    "schema_version": {"const": "3.0.0-r18"},
+    "record_type": {"const": "generation_v2_r18_producer_receipt"},
+    "version_id": {"const": "SHCHEM-GEN-V2-DEMO-20260813-R18"},
+    "paper_id": {"const": "PAPER-GEN-V2-20260813-018"},
+    "producer_fingerprint": {
+      "type": "object",
+      "required": ["producer_version_id", "algorithm", "source_file_count", "source_tree_sha256", "files"]
+    },
+    "regeneration_id": {"type": "string", "pattern": "^SHCHEM-GEN-V2-DEMO-20260813-R18-REGEN-[0-9a-f]{20}$"},
+    "paper": {"$ref": "#/$defs/file_ref"},
+    "task_card": {"$ref": "#/$defs/file_ref"},
+    "controller_subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["question", "answer", "subject_pair_sha256"],
+      "properties": {
+        "question": {"$ref": "#/$defs/file_ref"},
+        "answer": {"$ref": "#/$defs/file_ref"},
+        "subject_pair_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "deterministic_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request", "report"],
+      "properties": {
+        "request": {"$ref": "#/$defs/file_ref"},
+        "report": {"$ref": "#/$defs/file_ref"}
+      }
+    },
+    "coverage_matrix": {"$ref": "#/$defs/file_ref"},
+    "deterministic_atomic_scope": {"$ref": "#/$defs/file_ref"},
+    "figure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["figure_id", "svg", "png", "spec"],
+      "properties": {
+        "figure_id": {"const": "FIG-GEN-V2-EWASTE-ELECTROLYSIS-008"},
+        "svg": {"$ref": "#/$defs/file_ref"},
+        "png": {"$ref": "#/$defs/file_ref"},
+        "spec": {"$ref": "#/$defs/file_ref"}
+      }
+    },
+    "authority_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provenance_status",
+        "root_external_reconciliation_verified",
+        "review_dispatch_authorized",
+        "adversarial_dispatch_authorized",
+        "chain_creation_authorized",
+        "controller_registration_authorized",
+        "publication_authorized",
+        "delivery_authorized"
+      ],
+      "properties": {
+        "provenance_status": {"const": "self_reported"},
+        "root_external_reconciliation_verified": {"const": false},
+        "review_dispatch_authorized": {"const": false},
+        "adversarial_dispatch_authorized": {"const": false},
+        "chain_creation_authorized": {"const": false},
+        "controller_registration_authorized": {"const": false},
+        "publication_authorized": {"const": false},
+        "delivery_authorized": {"const": false}
+      }
+    },
+    "human_reviewed": {"const": false},
+    "self_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "file_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "bytes": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

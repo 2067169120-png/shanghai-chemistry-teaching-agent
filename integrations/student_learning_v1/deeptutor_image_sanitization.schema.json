@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.sh-chem-db/schema/deeptutor_image_sanitization_v1.json",
+  "title": "DeepTutor-callable local image sanitization receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "state", "egress_allowed", "allowed_consumers", "raw_local_save_allowed", "raw_model_access_allowed", "checks", "redaction_summary", "post_redaction_verification", "reasons", "processing_location", "machine_status", "human_reviewed", "media_id", "profile_id", "raw_sha256", "sanitized_sha256", "claim_scope"],
+  "properties": {
+    "contract_version": {"const": "deeptutor_image_sanitization_v1"},
+    "state": {"enum": ["ready_for_model_processing", "blocked_uncertain"]},
+    "egress_allowed": {"type": "boolean"},
+    "allowed_consumers": {"type": "array", "items": {"enum": ["DeepTutor", "Sol"]}, "uniqueItems": true},
+    "raw_local_save_allowed": {"const": true},
+    "raw_model_access_allowed": {"const": false},
+    "checks": {
+      "type": "object",
+      "required": ["sensitive_metadata", "identity_text", "qr_code", "barcode", "face"],
+      "properties": {
+        "sensitive_metadata": {"$ref": "#/$defs/check"},
+        "identity_text": {"$ref": "#/$defs/check"},
+        "qr_code": {"$ref": "#/$defs/check"},
+        "barcode": {"$ref": "#/$defs/check"},
+        "face": {"$ref": "#/$defs/check"}
+      }
+    },
+    "redaction_summary": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "post_redaction_verification": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {"enum": ["complete", "blocked_uncertain"]},
+        "remaining_detections": {
+          "type": "object",
+          "properties": {
+            "identity_text": {"type": "integer", "minimum": 0},
+            "qr_code": {"type": "integer", "minimum": 0},
+            "barcode": {"type": "integer", "minimum": 0},
+            "face": {"type": "integer", "minimum": 0}
+          }
+        },
+        "reason": {"type": "string"}
+      }
+    },
+    "reasons": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "processing_location": {"const": "local_only"},
+    "machine_status": {"const": "machine_only_not_human_reviewed"},
+    "human_reviewed": {"const": false},
+    "media_id": {"type": "string", "format": "uuid"},
+    "profile_id": {"type": "string", "format": "uuid"},
+    "raw_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "sanitized_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "input_deidentified_assertion": {"type": ["boolean", "null"]},
+    "input_contains_face_assertion": {"type": ["boolean", "null"]},
+    "claim_scope": {"type": "string"}
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {"enum": ["complete", "removed", "blocked_uncertain"]},
+        "backend": {"type": ["string", "null"]},
+        "detections": {"type": "integer", "minimum": 0},
+        "document_like": {"type": "boolean"},
+        "reason": {"type": "string"},
+        "original_metadata_keys": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"egress_allowed": {"const": false}}},
+      "then": {"properties": {"allowed_consumers": {"maxItems": 0}}}
+    },
+    {
+      "if": {"properties": {"egress_allowed": {"const": true}}},
+      "then": {"properties": {"state": {"const": "ready_for_model_processing"}, "sanitized_sha256": {"type": "string"}}}
+    }
+  ]
+}

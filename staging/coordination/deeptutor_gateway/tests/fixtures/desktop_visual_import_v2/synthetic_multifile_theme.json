@@ -1,0 +1,108 @@
+{
+  "schema_version": "shchem.synthetic-intake-batch-fixture.v2",
+  "synthetic_only": true,
+  "question_files": [
+    {
+      "source_file_id": "SRC-Q-A",
+      "filename": "synthetic-question-a.png",
+      "mime_type": "image/png",
+      "content_base64": "iVBORw0KGgoAAAANSUhEUgAAABgAAAAgCAIAAACHPC9vAAAANElEQVR4nGP88Os/AzUAE1VMYRg1iBgwGtiEwWgYEQajYUQYjIYRYTAaRoTBaBgRBoMvjAC29AMpz7+PEAAAAABJRU5ErkJggg==",
+      "page_sha256": "ed8ba5578b52946217c6a3c83af34fc97321411028d042f98399c4adf1b494d9"
+    },
+    {
+      "source_file_id": "SRC-Q-B",
+      "filename": "synthetic-question-b.png",
+      "mime_type": "image/png",
+      "content_base64": "iVBORw0KGgoAAAANSUhEUgAAABgAAAAgCAIAAACHPC9vAAAANElEQVR4nGP89fUhAzUAE1VMYRg1iBgwGtiEwWgYEQajYUQYjIYRYTAaRoTBaBgRBoMvjADTHwMQgNyMYQAAAABJRU5ErkJggg==",
+      "page_sha256": "671b1fd801e166739a987be5105151c6c55e6c1570b17a24430143f3f4a23fb1"
+    },
+    {
+      "source_file_id": "SRC-Q-C",
+      "filename": "synthetic-question-c.png",
+      "mime_type": "image/png",
+      "content_base64": "iVBORw0KGgoAAAANSUhEUgAAABgAAAAgCAIAAACHPC9vAAAANElEQVR4nGN8/f81AzUAE1VMYRg1iBgwGtiEwWgYEQajYUQYjIYRYTAaRoTBaBgRBoMvjAAAqwMVtPQnwwAAAABJRU5ErkJggg==",
+      "page_sha256": "f46e6ef8c96ded7e863c8d134ec1711bf8baea99c9548dd04747bc943e2f0dd3"
+    }
+  ],
+  "answer_files": [
+    {
+      "source_file_id": "SRC-A-A",
+      "filename": "synthetic-answer-a.png",
+      "mime_type": "image/png",
+      "content_base64": "iVBORw0KGgoAAAANSUhEUgAAABgAAAAgCAIAAACHPC9vAAAANElEQVR4nGP8//orAzUAE1VMYRg1iBgwGtiEwWgYEQajYUQYjIYRYTAaRoTBaBgRBoMvjABb4QMfRUBuCwAAAABJRU5ErkJggg==",
+      "page_sha256": "84e52cafd4d98d8805169f638891630a16566123b5966fe20b6ba3c682dac4ac"
+    }
+  ],
+  "paper_identity": {
+    "title": "合成多文件视觉导入测试卷",
+    "source_year": 2026,
+    "source_region_or_school": "上海·合成fixture",
+    "paper_type": "合成测试"
+  },
+  "theme": {
+    "theme_big_question_id": "THEME-SYN-1",
+    "theme_number": "一",
+    "title": "合成电化学主题",
+    "context": "仅用于软件测试的虚构装置与数据。",
+    "sequence_in_paper": 1,
+    "shared_material_id": "SHARED-SYN-1",
+    "shared_material_content": "合成装置中，铜电极与银离子溶液构成测试体系。",
+    "visual_object_id": "VISUAL-SYN-1"
+  },
+  "printed_questions": [
+    {
+      "printed_question_id": "PRINTED-SYN-1",
+      "question_number": "1",
+      "sequence_in_theme": 1,
+      "atomic_part_id": "ATOMIC-SYN-1",
+      "part_label": "（1）",
+      "stem": "写出铜电极的电极反应式。",
+      "response_requirements": "书写电极反应式并保留电荷。",
+      "item_type": "chemical_equation",
+      "primary_K": ["K-electrochemistry"],
+      "A": ["A-symbolic-reasoning"],
+      "C": ["C-synthetic-apparatus"],
+      "R": ["R-equation"],
+      "RP": ["RP-visual-to-symbol"]
+    },
+    {
+      "printed_question_id": "PRINTED-SYN-2",
+      "question_number": "2",
+      "sequence_in_theme": 2,
+      "atomic_part_id": "ATOMIC-SYN-2",
+      "part_label": "（1）",
+      "stem": "根据前一问判断电子转移方向。",
+      "response_requirements": "用文字说明电子由哪一电极流向哪一电极。",
+      "item_type": "reasoned_explanation",
+      "primary_K": ["K-electrochemistry"],
+      "A": ["A-evidence-reasoning"],
+      "C": ["C-synthetic-apparatus"],
+      "R": ["R-explanation"],
+      "RP": ["RP-symbol-to-text"]
+    }
+  ],
+  "answers": [
+    {
+      "answer_candidate_id": "ANSWER-SYN-1",
+      "question_number": "1",
+      "part_label": "（1）",
+      "atomic_part_id": "ATOMIC-SYN-1",
+      "answer_body": "Cu - 2e⁻ → Cu²⁺",
+      "analysis": "合成解析：铜发生氧化。",
+      "max_score": 2,
+      "scoring_point": "化学式、电荷与电子数完整",
+      "score": 2
+    },
+    {
+      "answer_candidate_id": "ANSWER-SYN-2",
+      "question_number": "2",
+      "part_label": "（1）",
+      "atomic_part_id": "ATOMIC-SYN-2",
+      "answer_body": "电子由铜电极流向银电极。",
+      "analysis": "合成解析：前问的氧化反应给出电子。",
+      "max_score": 2,
+      "scoring_point": "方向与电极名称均正确",
+      "score": 2
+    }
+  ]
+}
