@@ -4,7 +4,7 @@
   "python": "3.12.10",
   "qt": "6.11.2",
   "qt_platform": "offscreen",
-  "source_commit": "246d120c9c8c696d040c4afb116c8fec5d9510ee",
+  "source_commit": "f42eb0871cbb59451eab43c89bf346018defa750",
   "routes_opened": [
     "home",
     "library",
@@ -24,73 +24,73 @@
       "file": "home.png",
       "width": 1360,
       "height": 940,
-      "sha256": "04090174cb03229eb45fbe064eb81a44df9b61d9208eca1af92712acab784e8f"
+      "sha256": "99fc07f34c53e9406bbf8ab468f4de10074153b45d65237ed1801226dc8e0742"
     },
     {
       "file": "library.png",
       "width": 1360,
       "height": 940,
-      "sha256": "89b0c10e82e892ef15a2319feecabb3e26e3067b58d6b4d74eb9aec0db93e658"
+      "sha256": "8414737ba2dd97a3a7a87e411378dcf4793a048bc33b0f75e7a18151d6efd65a"
     },
     {
       "file": "paper.png",
       "width": 1360,
       "height": 940,
-      "sha256": "93f66c337b738021a1369ee443c6a602a13b20552b068ac7e7952a582b972359"
+      "sha256": "08757979932889aabc28d23877ae10bc55fdaec9e8a2937c57523ddc7a19285b"
     },
     {
       "file": "student.png",
       "width": 1360,
       "height": 940,
-      "sha256": "7f4acb8be937d4cc600bcfe70223d2501f4a7f5949721f19b4b2c9f129e6c03e"
+      "sha256": "93fa80af7c4c0920b03c00ea7edcf76e8175875de6448ea9a4ee19bb17ce2c47"
     },
     {
       "file": "preparation.png",
       "width": 1360,
       "height": 940,
-      "sha256": "6f72a9a60f26059cd1c20656b657861b725ec912e2076908c1b1966f4c6713cb"
+      "sha256": "d39295905c5e1fe9f90891868f0079bded35ff142da513819188453ebfe540c4"
     },
     {
       "file": "templates.png",
       "width": 1360,
       "height": 940,
-      "sha256": "f7eb0de38160a137f17095b082847953003961731cb8a5f754d427d4c5449da9"
+      "sha256": "546ea82d0dfb76e08649b32fde2fdccf3f3c89b08a3ff2b773d221f20e51721a"
     },
     {
       "file": "classroom.png",
       "width": 1360,
       "height": 940,
-      "sha256": "91e379313c387930b070d876d971bd5d7fa4a695f54eae62740aee7c5f34d813"
+      "sha256": "6166aafa3c15c8ad7d3c7f2f6a1c8c857a930c4e9bea7a8d97675c5df5d2e70c"
     },
     {
       "file": "mywork.png",
       "width": 1360,
       "height": 940,
-      "sha256": "bea091153d2c86c107d68ffda3f0e28ff3dc1802079ac5ce0c13ea4df9a9086b"
+      "sha256": "e48e4921f874be13187e607c16ca3d2487e0d8884f348557c5a634015314ce63"
     },
     {
       "file": "classroom-participation.png",
       "width": 1360,
       "height": 940,
-      "sha256": "390cb74c5cd1261ec3e4117f1cbb8f0461721019b40fa848af44f44bfbda7366"
+      "sha256": "9419380a36469130ea9b0963bfb825bd98ca09659620201cb372bc9346f34f45"
     },
     {
       "file": "classroom-equilibrium.png",
       "width": 1360,
       "height": 940,
-      "sha256": "c31282dc5d551975c1afce82bc8008cb79efafb09d810721fcd306aeac221aab"
+      "sha256": "b66a59137fc555f67b4e2001999671ed0543816ea1591e1fb7c4a12254b917e7"
     },
     {
       "file": "classroom-feedback.png",
       "width": 1360,
       "height": 940,
-      "sha256": "fb64f45c79602f30fe57a76d8060cf85636f9a588bc9057db3ee65fa702c8984"
+      "sha256": "e62faefead01622d3f1e882db6441094bc5ee75f70c1789c135fb2703edb07a3"
     },
     {
       "file": "import.png",
       "width": 720,
       "height": 680,
-      "sha256": "efb16ab2fadc3e18437fdb10bfd2eca5dddedb388333d353d79618d0881dd4ef"
+      "sha256": "0aed9e47296f6a7b9326c13e58ef3d6a30d43e8e2c07626726bcf4c12a920f9b"
     },
     {
       "file": "settings.png",
@@ -126,7 +126,7 @@
       "file": "templates-compact.png",
       "width": 800,
       "height": 700,
-      "sha256": "40490120f338da057a5084c826441d0767435cad0cb23f629401a8c7c82acb04"
+      "sha256": "133fdfac28f99c7ab28c7165d06fbab1c2e05c4641e1079e44bc63e143e7ef16"
     }
   ],
   "uncaught_errors": [],
@@ -137,5 +137,5 @@
     "errors": 0,
     "skipped": 0
   },
-  "workflow_run": "https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/actions/runs/34776036888"
+  "workflow_run": "https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/actions/runs/34776394170"
 }
