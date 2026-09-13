@@ -4,7 +4,7 @@
   "python": "3.12.10",
   "qt": "6.11.2",
   "qt_platform": "offscreen",
-  "source_commit": "f42eb0871cbb59451eab43c89bf346018defa750",
+  "source_commit": "a98260ec40f573c576f72d6f7c9dda1d0cc1bf95",
   "routes_opened": [
     "home",
     "library",
@@ -66,19 +66,19 @@
       "file": "mywork.png",
       "width": 1360,
       "height": 940,
-      "sha256": "e48e4921f874be13187e607c16ca3d2487e0d8884f348557c5a634015314ce63"
+      "sha256": "4e087eaf0eefad1cbb627ca9d32b8491dc520597a0cce0c04be18dab81eed6c6"
     },
     {
       "file": "classroom-participation.png",
       "width": 1360,
       "height": 940,
-      "sha256": "9419380a36469130ea9b0963bfb825bd98ca09659620201cb372bc9346f34f45"
+      "sha256": "1dc16b18f418ee8e835be342fb1f012a788148d8fb8df9694b1c3c01ac7d3e46"
     },
     {
       "file": "classroom-equilibrium.png",
       "width": 1360,
       "height": 940,
-      "sha256": "b66a59137fc555f67b4e2001999671ed0543816ea1591e1fb7c4a12254b917e7"
+      "sha256": "f0c9a5cdf1fc146ec116e5c4ad65f446a84d5bca8b06c4a4f0fa3827ec375a7c"
     },
     {
       "file": "classroom-feedback.png",
@@ -132,10 +132,10 @@
   "uncaught_errors": [],
   "scope": "Native Windows Qt source navigation and selected offline interactions. Empty original library; one saved synthetic draft and teacher-entered synthetic classroom data. No API call, knowledge distillation, private-material import, packaged EXE or classroom-effectiveness acceptance.",
   "tests": {
-    "tests": 113,
+    "tests": 115,
     "failures": 0,
     "errors": 0,
     "skipped": 0
   },
-  "workflow_run": "https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/actions/runs/34776394170"
+  "workflow_run": "https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/actions/runs/34777653369"
 }
