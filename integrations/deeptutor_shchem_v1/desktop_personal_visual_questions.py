@@ -18,6 +18,15 @@ from copy import deepcopy
 
 from PIL import Image
 
+from .desktop_personal_visual_attributes import (
+    EXAM_TYPE_LABELS,
+    GRADE_LABELS,
+    TEACHING_USE_LABELS,
+    PersonalVisualAttributeError,
+    PersonalVisualAttributeStore,
+    attribute_catalog,
+    initial_attributes,
+)
 from .desktop_preparation_images import (
     PreparationImageStore,
     image_info,
@@ -31,7 +40,7 @@ from .intake_batches_v2 import CandidateCAS, candidate_sha256, strict_json_loads
 
 SELECTION_DRAFT = "personal-visual-question-selection-v1"
 _BATCH = re.compile(r"DESKTOPBATCH-[a-f0-9]{32}\Z")
-_GROUPS = ("book", "chapter", "section", "knowledge", "grade", "exam", "source")
+_GROUPS = ("book", "chapter", "section", "knowledge", "grade", "exam", "source", "teaching_use")
 _UNKNOWN = "unknown"
 _CURRICULUM_GROUPS = ("book", "chapter", "section")
 
@@ -199,6 +208,7 @@ class PersonalVisualQuestionService:
         self.facade = facade
         self.root = facade.paths.state_root / "visual-import-v2"
         self.state = facade.state_store
+        self.attribute_store = PersonalVisualAttributeStore(facade.paths.state_root)
 
     def _file(self, relative, limit=32 * 1024 * 1024):
         path = self.root / relative
@@ -315,7 +325,7 @@ class PersonalVisualQuestionService:
                 knowledge = sorted({tag for row in atomics for name in ("primary_knowledge_K", "supporting_knowledge_K")
                                     for tag in row["classification"][name] if tag in known_knowledge})
                 source_names = list(dict.fromkeys(pages[(evidence[ref]["source_file_id"], evidence[ref]["page_number"], evidence[ref]["page_sha256"])]["source_name"] for ref in refs))
-                facets = {group: [] for group in _GROUPS}
+                facets = {group: [] for group in _GROUPS if group != "teaching_use"}
                 facets.update(knowledge=knowledge, source=[batch_id], exam=[_text(paper["paper_type"]) or _UNKNOWN], grade=[_UNKNOWN])
                 curriculum_paths = []
                 for atomic in atomics:
@@ -359,8 +369,45 @@ class PersonalVisualQuestionService:
                     "candidate_sha256": snapshot["candidate_sha256"],
                     "teacher_reviewed": False,
                 }
+                # Teaching labels are not recognition content. Seal the source
+                # projection before adding the independent local-label overlay.
                 item["revision"] = _digest(item)
+                item["facets"]["teaching_use"] = [_UNKNOWN]
+                item["attributes"] = initial_attributes(item, snapshot, pages, printed, taxonomy)
                 result.append(item)
+        saved = self.attribute_store.get_many(row["key"] for row in result)
+        for item in result:
+            attributes = item["attributes"]
+            stored = saved.get(item["key"])
+            item["stored_attribute_revision"] = stored["revision"] if stored else None
+            if stored and stored["source_sha256"] != attributes["source_sha256"]:
+                raise PersonalVisualQuestionError("图片题教学标签与原始图片来源不一致。")
+            bound = bool(stored and stored["question_revision"] == item["revision"]
+                         and stored["source_binding"] == attributes["source_binding"])
+            item["attribute_warning"] = (
+                "题面或识别范围已变化；旧教学标签仍保留在历史中，请对照当前原图重新核对。"
+                if stored and not bound else ""
+            )
+            if bound:
+                attributes = stored
+                item["attributes"] = attributes
+                origins = attributes["field_origins"]
+                if any(origins[field] != "source_observed" for field in ("primary_knowledge", "supporting_knowledge")):
+                    item["facets"]["knowledge"] = list(dict.fromkeys(
+                        entry["id"] for entry in [attributes["primary_knowledge"], *attributes["supporting_knowledge"]]
+                        if entry["id"] != _UNKNOWN)) or [_UNKNOWN]
+                if origins["applicable_grades"] != "source_observed":
+                    item["facets"]["grade"] = attributes["applicable_grades"]["values"] or [_UNKNOWN]
+                if origins["original_source.exam_type"] != "source_observed":
+                    item["facets"]["exam"] = [attributes["original_source"]["exam_type"]["value"]]
+                item["facets"]["teaching_use"] = attributes["teaching_use_tags"] or [_UNKNOWN]
+                if origins["curriculum_candidates"] != "source_observed":
+                    item["curriculum_paths"] = [{field: entry[field] for field in (
+                        "volume_id", "chapter_id", "section_key")} for entry in attributes["curriculum_candidates"]]
+                    for group in _CURRICULUM_GROUPS:
+                        item["facets"][group] = list(dict.fromkeys(
+                            _path_facets(path)[group] for path in item["curriculum_paths"])) or [_UNKNOWN]
+            item["attribute_revision"] = attributes["revision"]
         return result
 
     def catalog(self, batch_id=None):
@@ -379,6 +426,9 @@ class PersonalVisualQuestionService:
         options = {group: {} for group in _GROUPS}
         taxonomy = load_attribute_catalog(self.facade.paths.workspace_root)
         names = {row["id"]: row["name"] for row in taxonomy["knowledge_points"]}
+        names.update(GRADE_LABELS)
+        names.update(EXAM_TYPE_LABELS)
+        names.update(TEACHING_USE_LABELS)
         curriculum_options = {}
         for node in _curriculum_references(taxonomy["nodes"]).values():
             volume, chapter, section = node["volume_id"], node["chapter_id"], node["node_key"]
@@ -439,6 +489,38 @@ class PersonalVisualQuestionService:
 
     def detail(self, batch_id, key, revision):
         return self._matched_row(batch_id, key, revision)[0]
+
+    def attribute_options(self, batch_id, key, revision):
+        """Read labels bound to the verified current image content; no writes."""
+        try:
+            row = self._matched_row(batch_id, key, revision)[0]
+            return {
+                "attributes": deepcopy(row["attributes"]),
+                "catalog": attribute_catalog(load_attribute_catalog(self.facade.paths.workspace_root)),
+                "history": self.attribute_store.history(key),
+                "stored_revision": row["stored_attribute_revision"],
+                "warning": row["attribute_warning"],
+            }
+        except PersonalVisualAttributeError as exc:
+            raise PersonalVisualQuestionError(exc.message_zh) from exc
+
+    def save_attributes(self, batch_id, key, revision, updates, *,
+                        expected_attribute_revision, teacher_confirmed=False, edit_origin="teacher"):
+        """CAS local labels only; image/CAS/content revisions never change here."""
+        options = self.attribute_options(batch_id, key, revision)
+        attributes = options["attributes"]
+        if attributes["revision"] != expected_attribute_revision:
+            raise PersonalVisualQuestionError("图片题标签已有新版本，请刷新后修改。")
+        try:
+            saved = self.attribute_store.save_teacher_edit(
+                attributes, updates, expected_stored_revision=options["stored_revision"],
+                curriculum_entries=options["catalog"], teacher_confirmed=teacher_confirmed,
+                edit_origin=edit_origin,
+            )
+        except PersonalVisualAttributeError as exc:
+            raise PersonalVisualQuestionError(exc.message_zh) from exc
+        detail = self.detail(batch_id, key, revision)
+        return {"detail": detail, "attributes": saved, "attribute_revision": saved["revision"]}
 
     def image(self, batch_id, key, revision, image_id, original=False):
         row, snapshot, pages = self._matched_row(batch_id, key, revision)

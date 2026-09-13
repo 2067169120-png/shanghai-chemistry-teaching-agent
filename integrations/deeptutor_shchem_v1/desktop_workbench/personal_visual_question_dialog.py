@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from copy import deepcopy
-from typing import Any
+from typing import Any, ClassVar
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent
@@ -35,6 +35,10 @@ from ..desktop_personal_visual_questions import matches_personal_visual_filters
 from .components import page_scroll, section_title, set_status
 from .preparation_images_widget import _LocalImagePreview
 from .word_question_filter_panel import WordQuestionFilterPanel
+
+
+class _PersonalVisualFilterPanel(WordQuestionFilterPanel):
+    GROUPS: ClassVar = {**WordQuestionFilterPanel.GROUPS, "teaching_use": "教学用途"}
 
 
 def _text(value: object) -> str:
@@ -97,7 +101,7 @@ def _normalise_row(value: object, *, default_batch_id: str = "") -> dict[str, An
 def _normalise_filter_groups(value: object, rows: list[dict[str, Any]]) -> dict[str, list[dict[str, str]]]:
     groups: dict[str, list[dict[str, str]]] = {}
     source = value if isinstance(value, Mapping) else {}
-    for group in WordQuestionFilterPanel.GROUPS:
+    for group in _PersonalVisualFilterPanel.GROUPS:
         options: list[dict[str, str]] = []
         raw_options = source.get(group, ())
         if isinstance(raw_options, (list, tuple)):
@@ -165,9 +169,12 @@ class PersonalVisualQuestionDialog(QDialog):
         self._detail_generation = 0
         self._reference_generation = 0
         self._catalog_busy = False
+        self._catalog_loaded = False
         self._detail_busy = False
         self._save_busy = False
         self._reference_busy = False
+        self._attributes_busy = False
+        self._attributes_saving = False
         self._rendering_list = False
         self._rows: dict[tuple[str, str, str], dict[str, Any]] = {}
         self._visible_tokens: list[tuple[str, str, str]] = []
@@ -224,7 +231,7 @@ class PersonalVisualQuestionDialog(QDialog):
         top_row.addWidget(self.reload_button)
         root.addLayout(top_row)
 
-        self.filter_panel = WordQuestionFilterPanel()
+        self.filter_panel = _PersonalVisualFilterPanel()
         self.filter_panel.setAccessibleName("个人图文题标签叠加筛选")
         # Keep the descriptive alias used by the native Word browser.
         self.multi_filter_panel = self.filter_panel
@@ -259,6 +266,17 @@ class PersonalVisualQuestionDialog(QDialog):
         self.detail_note = _label("题目详情尚未读取。", muted=True)
         self.detail_note.setAccessibleName("当前个人图文题读取状态")
         right_layout.addWidget(self.detail_note)
+
+        self.attributes_button = QPushButton("编辑本题标签…")
+        self.attributes_button.setObjectName("QuietButton")
+        self.attributes_button.setAccessibleName("编辑当前图片题的个人教学标签")
+        self.attributes_button.setToolTip("修改主辅知识点、教材、年级与考试属性；先对照变更，再保存。不会修改原图或原档案。")
+        self.attributes_button.setVisible(
+            callable(getattr(facade, "personal_visual_question_attribute_options", None))
+            and callable(getattr(facade, "personal_visual_question_save_attributes", None))
+        )
+        self.attributes_button.clicked.connect(self._edit_attributes)
+        right_layout.addWidget(self.attributes_button, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.tabs = QTabWidget()
         self.tabs.setAccessibleName("个人图文题内容标签页")
@@ -391,17 +409,24 @@ class PersonalVisualQuestionDialog(QDialog):
         return task_id
 
     def _load_catalog(self) -> None:
-        if self._catalog_busy or self._closed:
+        if self._catalog_busy or self._attributes_busy or self._closed:
             return
         self._catalog_generation += 1
         generation = self._catalog_generation
+        selection_snapshot = deepcopy(self.selections) if self._catalog_loaded else None
         self._catalog_busy = True
         self._update_actions()
         set_status(self.status, "info", "正在本机读取个人图文题目录…")
+
+        def ready(value):
+            if selection_snapshot is not None and isinstance(value, Mapping):
+                value = {**value, "selection": selection_snapshot}
+            self._catalog_ready(generation, value)
+
         self._submit(
             "读取个人图文题目录",
             lambda: self.facade.personal_visual_questions(self.batch_id),
-            lambda value: self._catalog_ready(generation, value),
+            ready,
             lambda message: self._catalog_failed(generation, message),
         )
 
@@ -465,6 +490,7 @@ class PersonalVisualQuestionDialog(QDialog):
                 _normalise_filter_groups(value.get("filter_options"), list(rows.values()))
             )
             self._catalog_busy = False
+            self._catalog_loaded = True
             warnings = [
                 warning
                 for warning in value.get("warnings", ())
@@ -1056,7 +1082,7 @@ class PersonalVisualQuestionDialog(QDialog):
         self.reference_image_note.clear()
 
     def _update_actions(self) -> None:
-        busy = self._catalog_busy or self._detail_busy or self._save_busy or self._reference_busy
+        busy = self._catalog_busy or self._detail_busy or self._save_busy or self._reference_busy or self._attributes_busy
         has_selection = bool(self._selected)
         ref_ready = (
             self._reference_preview is not None
@@ -1067,10 +1093,127 @@ class PersonalVisualQuestionDialog(QDialog):
         self.save_button.setEnabled(not busy and not self._closed)
         self.preview_reference_button.setEnabled(has_selection and not busy)
         self.accept_preparation_button.setEnabled(ref_ready and not busy)
-        self.reload_button.setEnabled(not self._catalog_busy and not self._closed)
-        self.question_list.setEnabled(not self._catalog_busy and not self._closed)
+        self.reload_button.setEnabled(not self._catalog_busy and not self._attributes_busy and not self._closed)
+        self.question_list.setEnabled(not self._catalog_busy and not self._attributes_busy and not self._closed)
+        for control in (self.batch_combo, self.search, self.filter_panel):
+            control.setEnabled(not self._attributes_busy and not self._closed)
+        token = self._current_token
+        self.attributes_button.setEnabled(
+            not busy and not self._closed and self._current_detail is not None
+            and token is not None and token not in self._detail_failures
+            and self._required_images_ready(token)
+        )
+        self.cancel_button.setEnabled(not self._attributes_saving)
         self.selection_count.setText(
             f"已选 {len(self._selected)} 题；勾选不会自动保存，答案默认隐藏。"
+        )
+
+    def _edit_attributes(self) -> None:
+        token = self._current_token
+        if (token is None or not self._current_detail or not self.attributes_button.isEnabled()
+                or not callable(getattr(self.facade, "personal_visual_question_attribute_options", None))):
+            return
+        from .personal_visual_attributes_dialog import PersonalVisualAttributesDialog
+
+        question = deepcopy(self._current_detail)
+        question["title"] = question.get("title") or "当前图片题"
+        generation = self._catalog_generation
+        self._attributes_busy = True
+        self._update_actions()
+        set_status(self.status, "info", "正在本机读取本题标签与修订历史；原图和题篮保持不变…")
+
+        def failed(message):
+            self._attributes_busy = self._attributes_saving = False
+            set_status(self.status, "error", str(message) or "标签暂时无法保存，请重试。原图与选择未改变。")
+            self._update_actions()
+
+        def options_ready(options):
+            if token != self._current_token or generation != self._catalog_generation:
+                failed("当前题目已变化，请重新打开本题标签。尚未保存。")
+                return
+            try:
+                editor = PersonalVisualAttributesDialog(question, options, self)
+            except (KeyError, TypeError, ValueError):
+                failed("本题教学属性暂时无法读取，请刷新后重试。")
+                return
+            accepted = editor.exec() == QDialog.DialogCode.Accepted
+            updates = deepcopy(editor.updates)
+            expected = editor.expected_attribute_revision
+            confirmed = editor.teacher_confirmed
+            editor.deleteLater()
+            if not accepted or not updates:
+                self._attributes_busy = False
+                self._update_actions()
+                set_status(self.status, "info", "已取消标签修改；原图、标签及题篮均未改变。")
+                return
+            self._attributes_saving = True
+            self._update_actions()
+            set_status(self.status, "info", "正在保存本题个人教学标签…")
+            self._submit(
+                "保存图片题个人教学标签",
+                lambda: self.facade.personal_visual_question_save_attributes(
+                    *token, updates, expected_attribute_revision=expected,
+                    teacher_confirmed=confirmed,
+                ),
+                lambda result: self._attributes_saved(token, result),
+                failed,
+            )
+
+        self._submit(
+            "读取图片题教学标签",
+            lambda: self.facade.personal_visual_question_attribute_options(*token),
+            options_ready,
+            failed,
+        )
+
+    def _attributes_saved(self, token, result) -> None:
+        self._attributes_saving = False
+        try:
+            detail = _normalise_row(result["detail"], default_batch_id=token[0])
+            if detail is None or _row_token(detail) != token:
+                raise ValueError("Changed content revision")
+            if result["attribute_revision"] != result["attributes"]["revision"]:
+                raise ValueError("Changed attribute revision")
+        except (KeyError, TypeError, ValueError):
+            self._attributes_busy = False
+            set_status(self.status, "error", "标签保存结果暂时无法核对，请刷新目录确认。当前原图与题篮已保留。")
+            self._update_actions()
+            return
+        self._rows[token] = detail
+        self._detail_cache[token] = deepcopy(detail)
+        if token == self._current_token:
+            self._detail_ready(self._detail_generation, token, detail)
+        self._invalidate_reference()
+        # A label-only refresh must never restore an older persisted selection
+        # over the teacher's still-unsaved basket in this window.
+        selections = deepcopy(self.selections)
+        self._catalog_generation += 1
+        generation = self._catalog_generation
+        self._catalog_busy = True
+        self._update_actions()
+
+        def refreshed(value):
+            self._attributes_busy = False
+            if not isinstance(value, Mapping):
+                refresh_failed("标签已保存，但目录刷新未返回可读结果。")
+                return
+            local_view = dict(value)
+            local_view["selection"] = selections
+            self._catalog_ready(generation, local_view)
+            if self.status.objectName() != "StatusError":
+                set_status(self.status, "success", "本题个人标签已保存，筛选已刷新；原图、原档案与本窗口其他选题均未改动。")
+            self._update_actions()
+
+        def refresh_failed(_message):
+            self._attributes_busy = self._catalog_busy = False
+            set_status(self.status, "attention", "标签已保存，目录刷新暂时失败；当前题面与其他选题仍保留。可点击刷新重试。")
+            self._update_actions()
+
+        self._submit(
+            "刷新图片题教学标签筛选",
+            lambda: self.facade.personal_visual_questions(self.batch_id),
+            refreshed,
+            refresh_failed,
         )
 
     def _save_selection(self) -> None:
@@ -1192,6 +1335,9 @@ class PersonalVisualQuestionDialog(QDialog):
     def reject(self) -> None:
         if self._closed:
             return
+        if self._attributes_saving:
+            set_status(self.status, "attention", "正在保存本题标签，请稍候完成后再关闭。")
+            return
         self._closed = True
         self._catalog_generation += 1
         self._detail_generation += 1
@@ -1201,7 +1347,10 @@ class PersonalVisualQuestionDialog(QDialog):
 
     def closeEvent(self, event: QCloseEvent) -> None:
         self.reject()
-        event.accept()
+        if self._closed:
+            event.accept()
+        else:
+            event.ignore()
 
 
 __all__ = ["PersonalVisualQuestionDialog"]

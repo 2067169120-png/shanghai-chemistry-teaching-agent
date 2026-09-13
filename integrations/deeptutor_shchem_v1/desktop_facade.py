@@ -2852,6 +2852,20 @@ class DesktopWorkbenchFacade:
     def personal_visual_question_detail(self, batch_id, key, revision):
         return self._personal_visual_question_call("detail", batch_id, key, revision)
 
+    def personal_visual_question_attribute_options(self, batch_id, key, revision):
+        return self._personal_visual_question_call("attribute_options", batch_id, key, revision)
+
+    def personal_visual_question_save_attributes(
+        self, batch_id, key, revision, updates, *, expected_attribute_revision,
+        teacher_confirmed=False, edit_origin="teacher",
+    ):
+        return self._personal_visual_question_call(
+            "save_attributes", batch_id, key, revision, updates,
+            expected_attribute_revision=expected_attribute_revision,
+            teacher_confirmed=teacher_confirmed,
+            edit_origin=edit_origin,
+        )
+
     def personal_visual_question_image(self, batch_id, key, revision, image_id, original=False):
         return self._personal_visual_question_call(
             "image", batch_id, key, revision, image_id, original=original
