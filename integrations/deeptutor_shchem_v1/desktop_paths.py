@@ -43,16 +43,30 @@ def _candidate_roots(anchor: Path | None) -> list[Path]:
 
 
 def discover_workspace_root(anchor: str | Path | None = None) -> Path:
-    """Find the checkout containing both the evidence library and readers."""
+    """Prefer an existing library; allow a clean source checkout on first use.
 
+    An explicit workspace setting is never silently replaced by another
+    checkout. A source checkout does not ship the teacher's private library.
+    """
+    configured = os.environ.get("SHCHEM_WORKSPACE_ROOT")
+    if configured:
+        candidate = Path(configured).expanduser().resolve()
+        if not (candidate / "integrations" / "deeptutor_shchem_v1").is_dir():
+            raise DesktopPathError(
+                "SHCHEM_WORKSPACE_ROOT 未指向有效的工作台目录，请更正此设置。"
+            )
+        return candidate
     start = Path(anchor) if anchor is not None else Path(__file__)
-    for candidate in _candidate_roots(start):
-        if (
-            (candidate / "sh-chem-db").is_dir()
-            and (candidate / "integrations" / "deeptutor_shchem_v1").is_dir()
-        ):
+    checkouts = [
+        candidate for candidate in _candidate_roots(start)
+        if (candidate / "integrations" / "deeptutor_shchem_v1").is_dir()
+    ]
+    for candidate in checkouts:
+        if (candidate / "sh-chem-db").is_dir():
             return candidate
-    raise DesktopPathError("未找到上海高中化学资料工作区。")
+    if checkouts:
+        return checkouts[0]
+    raise DesktopPathError("未找到上海高中化学工作台源码或安装目录。")
 
 
 def default_state_root() -> Path:
@@ -83,7 +97,11 @@ class DesktopPaths:
         state = Path(state_root).resolve() if state_root else default_state_root().resolve()
         return cls(
             workspace_root=root,
-            shchem_root=root / "sh-chem-db",
+            shchem_root=(
+                root / "sh-chem-db"
+                if (root / "sh-chem-db").exists()
+                else state / "library" / "sh-chem-db"
+            ),
             runtime_root=root / "runtime" / "deeptutor_shchem",
             state_root=state,
             settings_root=state / "model-settings",
@@ -104,7 +122,15 @@ class DesktopPaths:
         ):
             path.mkdir(parents=True, exist_ok=True)
 
+    @property
+    def uses_personal_library(self) -> bool:
+        return self.shchem_root == self.state_root / "library" / "sh-chem-db"
+
     def validate_read_roots(self) -> None:
+        # Only the app-owned empty library may be created. Existing source
+        # libraries, including malformed paths, must not be replaced or edited.
+        if self.uses_personal_library:
+            self.shchem_root.mkdir(parents=True, exist_ok=True)
         if not self.shchem_root.is_dir():
             raise DesktopPathError("本地化学资料库不可用。")
 
