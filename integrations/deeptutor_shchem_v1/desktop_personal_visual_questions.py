@@ -38,6 +38,7 @@ from .desktop_personal_visual_crops import (
     source_binding,
     validate_bbox,
 )
+from .desktop_personal_visual_presentation import build_personal_visual_presentation
 from .desktop_preparation_images import (
     PreparationImageStore,
     image_info,
@@ -552,7 +553,17 @@ class PersonalVisualQuestionService:
         return matches[0], snapshot, pages
 
     def detail(self, batch_id, key, revision):
-        return self._matched_row(batch_id, key, revision)[0]
+        row, snapshot, _ = self._matched_row(batch_id, key, revision)
+        # Readability is a disposable view, never a new recognition revision.
+        # Preserve the catalog, label binding, selections and export evidence.
+        for theme in snapshot["candidate"]["paper"]["theme_big_questions"]:
+            if "visual-theme:" + _digest([batch_id, theme["theme_big_question_id"]]) != row["theme_key"]:
+                continue
+            for printed in theme["printed_questions"]:
+                if "visual-question:" + _digest([batch_id, printed["printed_question_id"]]) == key:
+                    row["presentation"] = build_personal_visual_presentation(theme, printed, row)
+                    return row
+        raise PersonalVisualQuestionError("图片题对应的原始结构已变化，请刷新后重新核对。")
 
     def attribute_options(self, batch_id, key, revision):
         """Read labels bound to the verified current image content; no writes."""

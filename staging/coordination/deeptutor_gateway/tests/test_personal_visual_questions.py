@@ -440,9 +440,12 @@ def test_catalog_and_detail_project_cas_hierarchy_with_role_separated_images(
     assert len(items[0]["images"]) == len({image["evidence_id"] for image in items[0]["images"]})
     assert all(item["candidate_sha256"] for item in items)
     assert all(item["candidate_revision"] for item in items)
-    assert imported_visual_batch["service"].detail(
+    detail = imported_visual_batch["service"].detail(
         BATCH_ID, items[0]["key"], items[0]["revision"]
-    ) == items[0]
+    )
+    presentation = detail.pop("presentation")
+    assert presentation["binding_revision"] == items[0]["revision"]
+    assert detail == items[0]
 
 
 def test_option_and_shared_visual_edges_keep_independent_evidence_and_chemistry(

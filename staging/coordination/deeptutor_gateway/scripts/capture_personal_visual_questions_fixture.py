@@ -212,12 +212,20 @@ class _SyntheticFacade:
         }
 
 
-def _capture(dialog, app, path: Path, width: int, height: int) -> None:
+def _capture(dialog, app, path: Path, width: int, height: int, *, readable_text=False) -> None:
     if path.exists():
         raise RuntimeError(f"Refusing to overwrite existing screenshot: {path}")
     dialog.resize(width, height)
     dialog.show()
     app.processEvents()
+    if readable_text:
+        from PySide6.QtWidgets import QPushButton
+
+        scroll = dialog.tabs.currentWidget()
+        toggle = next(button for button in scroll.findChildren(QPushButton)
+                      if button.accessibleName().startswith("展开完整识别文本："))
+        scroll.ensureWidgetVisible(toggle, 10, 30)
+        app.processEvents()
     pixmap = dialog.grab()
     if pixmap.isNull() or pixmap.width() < width or pixmap.height() < height:
         raise RuntimeError(f"Unexpected offscreen capture size: {pixmap.size()}")
@@ -231,7 +239,7 @@ def _capture(dialog, app, path: Path, width: int, height: int) -> None:
         raise RuntimeError(f"Could not save screenshot: {path}")
 
 
-def capture(output: Path, small_output: Path, *, curriculum_selected=False) -> None:
+def capture(output: Path, small_output: Path, *, curriculum_selected=False, readable_text=False) -> None:
     from PySide6.QtCore import QCoreApplication
     from PySide6.QtWidgets import QPlainTextEdit
 
@@ -248,6 +256,17 @@ def capture(output: Path, small_output: Path, *, curriculum_selected=False) -> N
     app = create_application([])
     font_family = install_font_fallbacks()
     facade = _SyntheticFacade()
+    if readable_text:
+        fields = ("question_text", "shared_text", "answer_text")
+        readable = {field: facade._row[field] for field in fields}
+        for field in fields:
+            facade._row[field] = readable[field] + "\n\n" + readable[field]
+        facade._row["presentation"] = {
+            "format_version": "personal-visual-presentation-v1",
+            "binding_revision": facade._row["revision"],
+            "full_text": {field: facade._row[field] for field in fields},
+            **readable,
+        }
     dialog = PersonalVisualQuestionDialog(facade, _ImmediateTasks(), batch_id="synthetic-batch")
     token = ("synthetic-batch", "synthetic-question", "synthetic-revision")
     question_preview = dialog._image_previews[(token, "synthetic-question-image", "question")]
@@ -270,7 +289,7 @@ def capture(output: Path, small_output: Path, *, curriculum_selected=False) -> N
         app.processEvents()
         assert len(dialog._visible_tokens) == 1
 
-    _capture(dialog, app, output, 1200, 850)
+    _capture(dialog, app, output, 1200, 850, readable_text=readable_text)
 
     dialog.tabs.setCurrentIndex(1)
     app.processEvents()
@@ -279,7 +298,7 @@ def capture(output: Path, small_output: Path, *, curriculum_selected=False) -> N
         for editor in dialog.findChildren(QPlainTextEdit)
     )
     assert not any(image_id.endswith("answer-image") for image_id, _original in facade.image_calls)
-    _capture(dialog, app, small_output, 900, 700)
+    _capture(dialog, app, small_output, 900, 700, readable_text=readable_text)
 
     dialog.reject()
     QCoreApplication.processEvents()
@@ -294,6 +313,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=default)
     parser.add_argument("--small-output", type=Path)
     parser.add_argument("--curriculum-selected", action="store_true")
+    parser.add_argument("--readable-text", action="store_true")
     args = parser.parse_args()
     output = args.output if args.output.is_absolute() else ROOT / args.output
     small_output = args.small_output
@@ -301,7 +321,7 @@ def main() -> None:
         small_output = output.with_name(output.stem + "-900x700" + output.suffix)
     elif not small_output.is_absolute():
         small_output = ROOT / small_output
-    capture(output, small_output, curriculum_selected=args.curriculum_selected)
+    capture(output, small_output, curriculum_selected=args.curriculum_selected, readable_text=args.readable_text)
 
 
 if __name__ == "__main__":

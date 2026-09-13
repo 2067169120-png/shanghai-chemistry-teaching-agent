@@ -74,6 +74,25 @@ def _row_token(row: Mapping[str, Any]) -> tuple[str, str, str]:
     )
 
 
+def _bound_presentation(row: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    """Reject a stale/incomplete readable view without hiding the source text."""
+    presentation = row.get("presentation")
+    if not isinstance(presentation, Mapping):
+        return None
+    if (presentation.get("format_version") != "personal-visual-presentation-v1"
+            or presentation.get("binding_revision") != row.get("revision")):
+        return None
+    full_text = presentation.get("full_text")
+    if not isinstance(full_text, Mapping):
+        return None
+    for field in ("question_text", "shared_text", "answer_text"):
+        if (full_text.get(field) != row.get(field, "")
+                or not isinstance(presentation.get(field), str)
+                or (full_text.get(field) and not presentation[field].strip())):
+            return None
+    return presentation
+
+
 def _normalise_row(value: object, *, default_batch_id: str = "") -> dict[str, Any] | None:
     if not isinstance(value, Mapping):
         return None
@@ -732,13 +751,10 @@ class PersonalVisualQuestionDialog(QDialog):
         layout = self._tab_layouts[index]
         _clear_layout(layout)
         detail = self._current_detail
-        text = (
-            detail.get("question_text", "")
-            if index == 0
-            else detail.get("shared_text", "")
-            if index == 1
-            else detail.get("answer_text", "")
-        )
+        field = ("question_text", "shared_text", "answer_text")[index]
+        full_text = detail.get(field, "")
+        presentation = _bound_presentation(detail)
+        text = presentation[field] if presentation is not None else full_text
         images = detail.get("images", ())
         role = "question" if index == 0 else "shared_material" if index == 1 else "answer"
         selected_images = [
@@ -758,8 +774,21 @@ class PersonalVisualQuestionDialog(QDialog):
                 editor.setMinimumHeight(130)
                 editor.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
                 layout.addWidget(editor)
+                if text != full_text:
+                    toggle = QPushButton("展开完整识别文本")
+                    toggle.setObjectName("QuietButton")
+                    toggle.setAccessibleName("展开完整识别文本：" + ("题面", "共同材料", "答案")[index])
+                    toggle.setCheckable(True)
+
+                    def show_full(checked: bool) -> None:
+                        editor.setPlainText(full_text if checked else text)
+                        toggle.setText("返回易读文本" if checked else "展开完整识别文本")
+
+                    toggle.toggled.connect(show_full)
+                    layout.addWidget(toggle, alignment=Qt.AlignmentFlag.AlignLeft)
+                    layout.addWidget(_label("仅折叠重复识别文字；原始图文、分值和来源记录保持不变。", muted=True))
             elif index == 1:
-                layout.addWidget(_label("本题没有单独的共同材料。", muted=True))
+                layout.addWidget(_label("本题未记录可显示的共同材料关联；请对照整页原图确认是否还需材料。", muted=True))
             else:
                 layout.addWidget(_label("本题暂无可显示的题面。", muted=True))
 

@@ -339,6 +339,81 @@ def test_detail_loads_real_question_and_shared_pixels_but_isolates_answer_images
     dialog.reject()
 
 
+def _add_presentation(row):
+    row["presentation"] = {
+        "format_version": "personal-visual-presentation-v1",
+        "binding_revision": row["revision"],
+        "full_text": {field: row[field] for field in ("question_text", "shared_text", "answer_text")},
+        "question_text": "易读题面",
+        "shared_text": row["shared_text"],
+        "answer_text": "易读来源答案",
+    }
+
+
+def test_readable_text_can_expand_exact_original_without_loading_answer(qt_app):
+    from PySide6.QtWidgets import QPlainTextEdit, QPushButton
+
+    from integrations.deeptutor_shchem_v1.desktop_workbench.personal_visual_question_dialog import (
+        PersonalVisualQuestionDialog,
+    )
+
+    facade = _Facade()
+    _add_presentation(facade.rows[0])
+    dialog = PersonalVisualQuestionDialog(facade, _ImmediateTasks())
+    editor = next(widget for widget in dialog.findChildren(QPlainTextEdit)
+                  if widget.accessibleName() == "完整题面")
+    toggle = next(widget for widget in dialog.findChildren(QPushButton)
+                  if widget.accessibleName() == "展开完整识别文本：题面")
+    assert editor.toPlainText() == "易读题面"
+    toggle.click()
+    assert editor.toPlainText() == facade.rows[0]["question_text"]
+    toggle.click()
+    assert editor.toPlainText() == "易读题面"
+    assert not any(call[3] == "q-a-answer" for call in facade.image_calls)
+    assert dialog._is_selectable(("batch-a", "q-a", "rev-a"))
+    dialog.tabs.setCurrentIndex(2)
+    answer = next(widget for widget in dialog.findChildren(QPlainTextEdit)
+                  if widget.accessibleName() == "来源答案文字")
+    assert answer.toPlainText() == "易读来源答案"
+    answer_toggle = next(widget for widget in dialog.findChildren(QPushButton)
+                         if widget.accessibleName() == "展开完整识别文本：答案")
+    answer_toggle.click()
+    assert answer.toPlainText() == facade.rows[0]["answer_text"]
+    assert editor.toPlainText() == "易读题面"
+    dialog.reject()
+
+
+@pytest.mark.parametrize("invalid", ["version", "revision", "source", "missing", "empty"])
+def test_stale_or_incomplete_readable_view_falls_back_to_full_text(qt_app, invalid):
+    from PySide6.QtWidgets import QPlainTextEdit, QPushButton
+
+    from integrations.deeptutor_shchem_v1.desktop_workbench.personal_visual_question_dialog import (
+        PersonalVisualQuestionDialog,
+    )
+
+    facade = _Facade()
+    row = facade.rows[0]
+    _add_presentation(row)
+    view = row["presentation"]
+    if invalid == "version":
+        view["format_version"] = "future"
+    elif invalid == "revision":
+        view["binding_revision"] = "old"
+    elif invalid == "source":
+        view["full_text"]["question_text"] = "different source"
+    elif invalid == "missing":
+        del view["answer_text"]
+    else:
+        view["question_text"] = ""
+    dialog = PersonalVisualQuestionDialog(facade, _ImmediateTasks())
+    editor = next(widget for widget in dialog.findChildren(QPlainTextEdit)
+                  if widget.accessibleName() == "完整题面")
+    assert editor.toPlainText() == row["question_text"]
+    assert not any(widget.accessibleName().startswith("展开完整识别文本")
+                   for widget in dialog.findChildren(QPushButton))
+    dialog.reject()
+
+
 def test_switching_questions_restores_cached_pixels_and_original_has_crop_return(qt_app):
     from integrations.deeptutor_shchem_v1.desktop_workbench.personal_visual_question_dialog import (
         PersonalVisualQuestionDialog,
