@@ -1,0 +1,29 @@
+name: Desktop integration
+
+on:
+  push:
+    branches: ["integration/desktop-closure-20260914"]
+  pull_request:
+    branches: ["feature/source-repairs-and-workbench", "main"]
+
+permissions:
+  contents: read
+
+jobs:
+  source-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Check Python syntax
+        run: python3 -m compileall -q integrations
+      - name: Archive tracked source for reproducible integration review
+        run: git archive --format=zip --output=desktop-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-source-${{ github.sha }}
+          path: desktop-source.zip
+          retention-days: 3
+          if-no-files-found: error
