@@ -69,9 +69,20 @@ class VisualImportEgressDialog(PreparationEgressDialog):
         )
         self.setObjectName("VisualImportEgressDialog")
         if self._valid_plan:
+            policy = self._plan.get("request_policy")
+            budget = ""
+            if isinstance(policy, dict) and all(
+                type(policy.get(key)) is int and policy[key] > 0
+                for key in ("max_output_tokens", "timeout_seconds")
+            ):
+                budget = (
+                    f"\n单次输出上限 {policy['max_output_tokens']} tokens（含推理）"
+                    f" · 最长等待 {policy['timeout_seconds']} 秒"
+                )
             self.summary.setText(
                 f"接收模型：{self._plan['model_label']}\n"
                 f"{len(assets)} 页整页图片 · 点击缩略图切换，放大检查内容与边界"
+                + budget
             )
         self.image_list.setAccessibleName("本次实际发送的题目、答案与讲义页面")
         self.confirm_button.setText("确认发送并识别")

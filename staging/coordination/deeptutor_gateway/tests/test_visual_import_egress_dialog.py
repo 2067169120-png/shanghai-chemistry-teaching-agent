@@ -176,6 +176,17 @@ def test_question_answer_and_handout_pages_are_distinct_and_zoomable(app):
     assert dialog.image_preview._zoom_dialog is None
 
 
+def test_request_budget_is_visible_alongside_image_not_only_in_fee_tab(app):
+    plan, contents = _plan_for([("合成图片", "question", (200, 20, 20), (48, 32))])
+    plan["request_policy"] = {"max_output_tokens": 32000, "timeout_seconds": 300,
+                              "schema_dialect": "inline-v1"}
+    dialog, _ = _dialog_for(plan, contents)
+    _flush(app, dialog)
+    assert "32000" in dialog.summary.text() and "300" in dialog.summary.text()
+    assert dialog.tabs.currentIndex() == 0 and dialog.image_preview.has_image
+    _close(dialog)
+
+
 def test_51_pages_are_all_kept_in_gallery_and_confirmation_rechecks_all(app):
     specs = [
         (

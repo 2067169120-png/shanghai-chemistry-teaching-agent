@@ -4,7 +4,7 @@ import hashlib
 import importlib.util
 import os
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -584,6 +584,38 @@ def test_resumable_batch_has_teacher_card_without_restoring_source_paths(
     assert not dialog.resume_card.isVisible()
     assert dialog.provider_card.isVisible()
     assert all(panel.paths() == [] for panel in dialog._role_panels())
+    dialog.close()
+
+
+@pytest.mark.parametrize("resumed", [False, True])
+def test_failed_visual_receipt_keeps_actionable_reason_without_resending(qt_app, resumed):
+    from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
+
+    message = (
+        "服务方拒绝了识别请求。请核对接口格式、模型名称和图像结构化输出支持。"
+        "原件仍保留；请修改配置后重新预览，不会自动重试。"
+    )
+    receipt = replace(_receipt(status="failed", visual_status="failed"), message_zh=message)
+    facade = _Facade(profiles=(_visual_profile(),), resumable=(receipt,) if resumed else ())
+    tasks = _manual_task_bridge()
+    dialog = ImportDialog(facade, tasks)
+    dialog.resize(420, 650)
+    dialog.show()
+    if resumed:
+        dialog.resume_button.click()
+    else:
+        dialog._visual_completed(receipt)
+    _settle(qt_app)
+    assert message in dialog.status.text()
+    assert "离线保存完成" not in dialog.status.text()
+    assert "视觉候选未生成" in dialog.progress.format()
+    assert not tasks.pending
+    assert not facade.run_calls
+    assert not facade.visual_preview_calls
+    if resumed:
+        viewport = dialog.scroll.viewport()
+        point = dialog.generate_button.mapTo(viewport, dialog.generate_button.rect().center())
+        assert viewport.rect().contains(point)
     dialog.close()
 
 

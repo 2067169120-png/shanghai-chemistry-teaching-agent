@@ -23,6 +23,12 @@ from .desktop_visual_import_v2 import (
     DesktopSourceFile,
     NativeDocxInspection,
 )
+from .desktop_visual_schema import (
+    VISUAL_OBSERVATION_PROMPT_VERSION,
+    DesktopVisualSchemaError,
+    desktop_visual_wire_schema,
+    visual_import_request_policy,
+)
 from .intake_batches_v2 import (
     DIRECT_PAGE_PIXEL_MODE,
     INTAKE_BATCH_VISUAL_FRAGMENT_V2_SCHEMA_VERSION,
@@ -204,7 +210,12 @@ class StructuredVisualShardProviderAdapter:
         should_cancel: Callable[[], bool] | None = None,
     ) -> None:
         self._context = context
-        self._transport = transport or PinnedVisualTransport()
+        self._policy = visual_import_request_policy(
+            context.base_url, context.model_id, context.api_style
+        )
+        self._transport = transport or PinnedVisualTransport(
+            total_timeout_seconds=self._policy["timeout_seconds"]
+        )
         self._should_cancel = should_cancel or (lambda: False)
 
     @staticmethod
@@ -233,7 +244,55 @@ class StructuredVisualShardProviderAdapter:
             "input_mode": DIRECT_PAGE_PIXEL_MODE,
             "source_text_layer_supplied": False,
             "fallback_allowed": False,
+            "observation_prompt_version": VISUAL_OBSERVATION_PROMPT_VERSION,
             "instructions": payload.get("instructions"),
+            "bbox_contract": {
+                "object_with_exact_keys": ["x", "y", "width", "height"],
+                "coordinate_space": "normalized_xywh",
+                "origin": "top_left",
+                "axes": "x 向右，y 向下；width 和 height 为框的宽度和高度。",
+                "normalization_extent": (
+                    "以对应 source_file_id/page_number 的整张发送页面为基准。"
+                    "page_manifests 的 width、height 是像素尺寸；"
+                    "输出 bbox 的四个值均为相对整页的比例。"
+                ),
+                "pixel_to_normalized": {
+                    "x": "left / page_width",
+                    "y": "top / page_height",
+                    "width": "(right - left) / page_width",
+                    "height": "(bottom - top) / page_height",
+                },
+                "bounds": [
+                    "0 <= x < 1",
+                    "0 <= y < 1",
+                    "0 < width <= 1",
+                    "0 < height <= 1",
+                    "x + width <= 1.000001",
+                    "y + height <= 1.000001",
+                ],
+                "edge_tolerance": (
+                    "真实框边界必须位于整页内，坐标和应不超过 1；"
+                    "额外 0.000001 仅为浮点舍入容差。"
+                ),
+                "synthetic_example": {
+                    "purpose": "纯合成换算示例，不是当前页面证据，禁止照抄示例框。",
+                    "page_pixels": {"width": 1000, "height": 2000},
+                    "box_pixels": {
+                        "left": 100,
+                        "top": 400,
+                        "right": 700,
+                        "bottom": 1000,
+                    },
+                    "bbox": {"x": 0.1, "y": 0.2, "width": 0.6, "height": 0.3},
+                },
+                "self_check": (
+                    "返回前逐个核对所有 evidence.bbox 的四个数值、坐标单位、"
+                    "实际页面位置及全部边界条件。发现不符时重新观察对应原页。"
+                    "不要返回像素坐标、百分数、xyxy 右下角坐标或四元素数组；"
+                    "不要用 clamp 裁边掩盖错误。无效返回会被拒绝，"
+                    "本地不会自动裁边、猜测坐标单位或转换不合规结果。"
+                ),
+            },
             "page_manifests": page_manifests,
         }
         return (
@@ -243,7 +302,9 @@ class StructuredVisualShardProviderAdapter:
             "前序依赖和答案候选。不得使用 OCR 文本或文档文本层；不得推断教材版本或"
             "章节、题型、K/A/C/R/RP 标签、认知或实测难度、官方性、独立核验、答案"
             '解析、分值或评分点。不确定的化学表达式使用 status="uncertain"；答案'
-            "对应关系不确定时将 atomic_part_id 设为 null，并在 warnings 中说明。\n"
+            "对应关系不确定时将 atomic_part_id 设为 null，并在 warnings 中说明。"
+            "每个 evidence.bbox 必须是归一化左上角 xywh 字典，严格遵守下方 "
+            "bbox_contract，并在返回前逐个核对。\n"
             + json.dumps(
                 prompt_payload,
                 ensure_ascii=False,
@@ -257,12 +318,21 @@ class StructuredVisualShardProviderAdapter:
         if self._should_cancel():
             raise DesktopVisualImportAdapterError("cancelled", "视觉导入已取消。", 409)
         cancel_event = threading.Event()
+        try:
+            wire_schema = desktop_visual_wire_schema(
+                self._context, intake_batch_visual_fragment_v2_schema()
+            )
+        except DesktopVisualSchemaError as exc:
+            raise DesktopVisualImportAdapterError(
+                "visual_schema_unsupported", "视觉导入约束无法完整转换为模型请求。", 409
+            ) from exc
         outbound = build_structured_visual_request(
             self._context,
             prompt=self._prompt(request),
-            schema=intake_batch_visual_fragment_v2_schema(),
+            schema=wire_schema,
             schema_name="shchem_visual_observation_fragment_v2",
             pages=tuple((page.mime_type, page.pixels) for page in request.pages),
+            max_output_tokens=self._policy["max_output_tokens"],
         )
         if self._should_cancel():
             cancel_event.set()
@@ -270,7 +340,7 @@ class StructuredVisualShardProviderAdapter:
         response = self._transport.send(
             outbound,
             cancel_event=cancel_event,
-            deadline_monotonic=time.monotonic() + 90.0,
+            deadline_monotonic=time.monotonic() + self._policy["timeout_seconds"],
         )
         if self._should_cancel():
             raise DesktopVisualImportAdapterError("cancelled", "视觉导入已取消。", 409)

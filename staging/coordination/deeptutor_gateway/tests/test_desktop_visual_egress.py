@@ -147,6 +147,39 @@ def test_preview_freezes_rendered_pages_and_reader_returns_exact_bytes():
     assert facade.provider_borrows == 0
 
 
+@pytest.mark.parametrize("changed_field,changed_value", [
+    ("max_output_tokens", 8000),
+    ("observation_prompt_version", "synthetic-changed-v2"),
+])
+def test_official_visual_budget_is_disclosed_and_frozen(monkeypatch, changed_field, changed_value):
+    import integrations.deeptutor_shchem_v1.desktop_visual_egress as module
+
+    facade = _PreviewFacade()
+    base_profile = facade._visual_import_profile("profile", "revision")
+    base_profile.update(base_url="https://api.deepseek.com", api_style="responses",
+                        model_id="deepseek-v4-flash-vision-exp")
+    monkeypatch.setattr(facade, "_visual_import_profile", lambda *_: dict(base_profile))
+    service = DesktopVisualEgressService(facade)
+    args = {"batch_id": facade.descriptor["batch_id"], "profile_id": "profile",
+            "expected_profile_revision": "revision"}
+    plan = service.preview(**args)
+    assert plan["request_policy"]["max_output_tokens"] == 32000
+    assert plan["request_policy"]["timeout_seconds"] == 300
+    assert "32000" in plan["confirmation_text"] and "300" in plan["confirmation_text"]
+    plan["request_policy"]["max_output_tokens"] = 1
+    service.frozen_renderer(**args, preview_id=plan["preview_id"], revision=plan["revision"],
+                            sources=(facade.source,))
+    changed_policy = module._request_policy(base_profile)
+    changed_policy[changed_field] = changed_value
+    monkeypatch.setattr(module, "_request_policy", lambda _: dict(changed_policy))
+    with pytest.raises(VisualEgressError, match="预算或处理规则已变化"):
+        service.frozen_renderer(**args, preview_id=plan["preview_id"], revision=plan["revision"],
+                                sources=(facade.source,))
+    changed_plan = service.preview(**args)
+    assert changed_plan["revision"] != plan["revision"]
+    assert facade.provider_borrows == 0
+
+
 def test_frozen_renderer_rejects_source_change_and_replays_same_page():
     facade = _PreviewFacade()
     service = DesktopVisualEgressService(facade)
@@ -365,7 +398,10 @@ def test_run_saved_visual_import_batch_injects_frozen_renderer_before_provider()
         def borrow_invocation_context(self, profile_id, *, expected_revision):
             assert profile_id == "profile"
             assert expected_revision == "profile-revision"
-            yield object()
+            yield SimpleNamespace(
+                base_url="https://example.test/v1", model_id="synthetic-vision",
+                api_style="responses",
+            )
 
     facade._saved_visual_import_batch = lambda _batch_id: descriptor
     facade._visual_import_profile = lambda _profile_id, _revision: {"profile_id": "profile"}
@@ -391,7 +427,13 @@ def test_run_saved_visual_import_batch_injects_frozen_renderer_before_provider()
     assert process_calls[0]["visual_confirmation"] is True
 
 
-def test_run_saved_visual_import_batch_requires_both_preview_tokens():
+@pytest.mark.parametrize("tokens", [
+    {}, {"egress_preview_id": "preview-only"},
+    {"egress_revision": "revision-only"},
+    {"egress_preview_id": "", "egress_revision": "revision"},
+    {"egress_preview_id": "preview", "egress_revision": "   "},
+])
+def test_run_saved_visual_import_batch_requires_both_preview_tokens(tokens):
     facade = DesktopWorkbenchFacade.__new__(DesktopWorkbenchFacade)
     with pytest.raises(DesktopFacadeError, match="预览不完整"):
         facade.run_saved_visual_import_batch(
@@ -399,5 +441,5 @@ def test_run_saved_visual_import_batch_requires_both_preview_tokens():
             profile_id="P",
             expected_profile_revision="R",
             teacher_confirmed=True,
-            egress_preview_id="preview-only",
+            **tokens,
         )

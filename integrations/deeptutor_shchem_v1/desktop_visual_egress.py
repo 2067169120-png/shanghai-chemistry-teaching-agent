@@ -94,6 +94,16 @@ def _model_label(profile: Mapping[str, Any]) -> str:
     return f"{provider} / {model}"
 
 
+def _request_policy(profile: Mapping[str, Any]) -> dict[str, Any]:
+    from .desktop_visual_schema import visual_import_request_policy
+
+    return visual_import_request_policy(
+        str(profile.get("base_url") or ""),
+        str(profile.get("model_id") or ""),
+        profile.get("api_style"),
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class _FrozenPage:
     manifest: dict[str, Any]
@@ -108,6 +118,7 @@ class _PreviewSnapshot:
     profile_id: str
     profile_revision: str
     model_label: str
+    request_policy: dict[str, Any]
     source_manifests: tuple[dict[str, Any], ...]
     pages: tuple[_FrozenPage, ...]
 
@@ -293,11 +304,13 @@ class DesktopVisualEgressService:
 
     @staticmethod
     def _confirmation_text(
-        model_label: str, pages: Sequence[Mapping[str, Any]]
+        model_label: str, pages: Sequence[Mapping[str, Any]], policy: Mapping[str, Any]
     ) -> str:
         lines = [
             f"接收模型：{model_label}。",
             f"发送内容：本批次已冻结的 {len(pages)} 张原始或本机渲染页面像素。",
+            f"每次请求输出上限 {policy['max_output_tokens']} tokens（包含模型推理）；最长等待 {policy['timeout_seconds']} 秒。",
+            "题目、答案、讲义分别分批请求；不会自动重试，失败时不采用残缺结果。",
             "请在图片预览中逐页检查题面、公共材料、答案页与化学图形；确认后只发送这些冻结像素。",
             "图内全部可见内容及文件元数据会离开本机；请先核对学校授权，并确认不含未经授权的个人信息。",
         ]
@@ -429,12 +442,14 @@ class DesktopVisualEgressService:
         source_manifests = tuple(_source_manifest(source) for source in sources)
         page_subject = [dict(page.manifest) for page in pages]
         model_label = _model_label(profile)
+        request_policy = _request_policy(profile)
         revision = "ve_rev_" + _digest(
             {
                 "batch_id": batch_id,
                 "profile_id": profile_id,
                 "profile_revision": expected_profile_revision,
                 "model_label": model_label,
+                "request_policy": request_policy,
                 "sources": list(source_manifests),
                 "pages": page_subject,
             }
@@ -462,6 +477,7 @@ class DesktopVisualEgressService:
                 profile_id=profile_id,
                 profile_revision=expected_profile_revision,
                 model_label=model_label,
+                request_policy=deepcopy(request_policy),
                 source_manifests=source_manifests,
                 pages=tuple(pages),
             )
@@ -482,8 +498,9 @@ class DesktopVisualEgressService:
             "profile_id": profile_id,
             "profile_revision": expected_profile_revision,
             "model_label": model_label,
+            "request_policy": deepcopy(request_policy),
             "pages": public_pages,
-            "confirmation_text": self._confirmation_text(model_label, public_pages),
+            "confirmation_text": self._confirmation_text(model_label, public_pages, request_policy),
         }
 
     def _snapshot(
@@ -547,6 +564,11 @@ class DesktopVisualEgressService:
             profile_id=profile_id,
             profile_revision=expected_profile_revision,
         )
+        profile = self.facade._visual_import_profile(profile_id, expected_profile_revision)
+        if _request_policy(profile) != snapshot.request_policy:
+            raise VisualEgressError(
+                "visual_egress_policy_changed", "识别预算或处理规则已变化，请重新预览并确认。"
+            )
         renderer = FrozenPageRenderer(snapshot)
         renderer.validate(sources)
         return renderer

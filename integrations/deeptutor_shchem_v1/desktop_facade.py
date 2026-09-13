@@ -102,6 +102,179 @@ _PAPER_PREVIEW_ACTIVE_DRAFT = "paper-preview-active"
 _PAPER_EXPORT_WAIT_SECONDS = 180.0
 _VISUAL_IMPORT_DRAFT_PREFIX = "visual-import-v2:"
 _VISUAL_IMPORT_DRAFT_SCHEMA = "shchem.desktop-visual-import-draft.v1"
+_VISUAL_FAILURE_UNKNOWN_CODE = "unknown"
+_VISUAL_FAILURE_MAX_CODES = 8
+_VISUAL_FAILURE_MANIFEST_MAX_BYTES = 8 * 1024 * 1024
+_VISUAL_BATCH_ID = re.compile(r"^DESKTOPBATCH-[0-9a-f]{32}$")
+_VISUAL_SOURCE_MANIFEST_FIELDS = (
+    "source_file_id",
+    "role",
+    "order_index",
+    "group_id",
+    "filename",
+    "mime_type",
+    "size_bytes",
+    "source_sha256",
+    "content_addressed",
+)
+_VISUAL_FAILURE_GUIDANCE = {
+    "provider_rejected": (
+        "服务端未接受本次视觉请求；当前信息不足以判断是密钥、模型能力还是权限原因。",
+        "核对服务商提供的接口地址、接口格式和模型名称，确认后再手动重试。",
+    ),
+    "visual_provider_failed": (
+        "视觉服务没有返回可用结果，本次未生成候选。",
+        "核对服务状态和请求配置后再手动重试。",
+    ),
+    "invalid_credentials": (
+        "服务端返回凭据未被接受（401）；这只说明本次请求未通过服务端校验。",
+        "核对设置中的已保存 Key 与账号授权，必要时重新保存后再手动重试。",
+    ),
+    "permission_denied": (
+        "服务端拒绝访问（403）；这只说明当前请求被服务端拒绝。",
+        "检查账号和模型访问权限；如仍被拒绝，请联系服务商确认授权。",
+    ),
+    "rate_limited": (
+        "服务端暂时限流（429），本次未生成候选。",
+        "等待一段时间并确认额度后再手动重试，不要连续点击重试。",
+    ),
+    "timeout": (
+        "请求超过等待时限，未得到可验证的完整结果；无法确认服务端是否已处理。",
+        "先检查网络和服务状态，稍后手动重试；重试可能再次计费。",
+    ),
+    "provider_unavailable": (
+        "服务端暂时不可用，本次未生成候选。",
+        "稍后手动重试，不要连续重复发送。",
+    ),
+    "visual_request_too_large": (
+        "本批图片请求超过本机或服务接口的大小上限。",
+        "减少单批页面数量或图片尺寸后再手动重试。",
+    ),
+    "image_size_invalid": (
+        "有页面图片未通过大小或格式校验，本次未生成候选。",
+        "检查原文件和本机渲染结果后，重新预览并手动重试。",
+    ),
+    "image_data_invalid": (
+        "页面图片数据未通过本机校验，本次未生成候选。",
+        "重新打开批次并核对页面；不要把这次结果当作候选。",
+    ),
+    "page_count_unsupported": (
+        "本次视觉请求的页面数量不在受支持范围内。",
+        "减少单批页面数量后重新预览并手动重试。",
+    ),
+    "provider_response_too_large": (
+        "服务端返回内容超过本机安全上限，本次未生成候选。",
+        "减少单批页面或确认服务端严格结构化输出后再手动重试。",
+    ),
+    "provider_response_invalid": (
+        "服务端响应格式无法核对，本次未生成候选。",
+        "核对接口格式和服务状态后再手动重试。",
+    ),
+    "provider_response_incomplete": (
+        "服务端没有返回完整的识别结果格式，本次未生成候选。",
+        "减少单批页面或确认模型的 JSON 输出设置后再手动重试。",
+    ),
+    "max_output_tokens": (
+        "模型输出达到上限，识别结果格式不完整，本次未生成候选。",
+        "减少单批页面或提高服务端允许的输出上限后再手动重试。",
+    ),
+    "provider_response_refused": (
+        "服务端拒绝返回可核对的识别结果，本次未生成候选。",
+        "核对模型和接口的结果格式设置后再手动重试。",
+    ),
+    "provider_response_empty": (
+        "服务端完成响应但没有可读取的识别结果，本次未生成候选。",
+        "核对模型是否返回 JSON 结果后再手动重试。",
+    ),
+    "provider_output_invalid": (
+        "服务端返回的识别结果无法解析，本次未生成候选。",
+        "确认模型服务支持约定的 JSON 结果格式后再手动重试。",
+    ),
+    "provider_output_schema_invalid": (
+        "服务端返回内容不符合视觉识别结果格式，本次未生成候选。",
+        "核对模型和接口是否支持约定的 JSON 结果格式后再手动重试。",
+    ),
+    "provider_output_contract_invalid": (
+        "服务端返回内容与页面观察要求不一致，本次未生成候选。",
+        "核对接口是否按页面可见内容返回结果后再手动重试。",
+    ),
+    "provider_output_evidence_invalid": (
+        "模型返回的页码或裁剪坐标与原图不一致，结果未通过校验，没有入库。",
+        "先核对原图与页面边界；需要修正识别定位后再处理，不要连续重试。",
+    ),
+    "visual_candidate_invalid": (
+        "视觉识别结果未通过本机格式校验，本次未生成候选。",
+        "保留原文件并核对模型返回格式后再手动重试。",
+    ),
+    "visual_candidate_schema_invalid": (
+        "视觉识别结果不符合本机格式要求，本次未生成候选。",
+        "核对模型返回的 JSON 结果格式后再手动重试。",
+    ),
+    "page_renderer_required": (
+        "文档页面没有可用的本机渲染器，本次未生成候选。",
+        "检查本机页面渲染组件后重新预览。",
+    ),
+    "page_render_failed": (
+        "本机未能把资料渲染为可核对页面，本次未生成候选。",
+        "检查原文件和本机渲染组件后重新预览。",
+    ),
+    "page_render_empty": (
+        "本机渲染没有产生可核对页面，本次未生成候选。",
+        "检查原文件内容后重新预览。",
+    ),
+    "batch_page_limit_exceeded": (
+        "本批渲染页面数量超过安全上限。",
+        "减少单批文件或页面数量后重新预览。",
+    ),
+    "provider_endpoint_invalid": (
+        "视觉服务接口地址或接口类型无法核对。",
+        "检查服务商给出的接口地址与接口类型后再手动重试。",
+    ),
+    "visual_provider_output_invalid": (
+        "服务端返回的识别结果格式无法核对，本次未生成候选。",
+        "核对模型是否返回约定的 JSON 结果后再手动重试。",
+    ),
+    "visual_schema_unsupported": (
+        "当前接口不能无损表达视觉识别所需的结果格式，本次未生成候选。",
+        "检查模型接口是否支持约定的 JSON 结果格式后再手动重试。",
+    ),
+    "visual_provider_invalid": (
+        "视觉服务配置没有提供可用的识别入口，本次未生成候选。",
+        "检查视觉模型配置后再手动重试。",
+    ),
+    "visual_request_invalid": (
+        "发送给视觉服务的页面请求格式无法核对，本次未生成候选。",
+        "重新预览页面并检查视觉模型配置后再手动重试。",
+    ),
+    "page_mime_invalid": (
+        "页面图片格式无法核对，本次未生成候选。",
+        "重新预览页面并检查图片格式后再手动重试。",
+    ),
+    "page_pixels_invalid": (
+        "页面图片无法读取，本次未生成候选。",
+        "检查原文件并重新预览页面后再手动重试。",
+    ),
+    "page_dimensions_invalid": (
+        "页面图片尺寸超出安全范围，本次未生成候选。",
+        "减少图片尺寸后重新预览并手动重试。",
+    ),
+    "rendered_page_invalid": (
+        "本机渲染页面无法核对，本次未生成候选。",
+        "检查本机渲染组件后重新预览。",
+    ),
+    "rendered_page_dimensions_mismatch": (
+        "本机渲染页面尺寸与图片内容不一致，本次未生成候选。",
+        "检查本机渲染组件后重新预览。",
+    ),
+    "pixel_archive_required": (
+        "视觉页面没有可用的本机归档，本次未生成候选。",
+        "检查本机个人归档设置后重新预览。",
+    ),
+    _VISUAL_FAILURE_UNKNOWN_CODE: (
+        "具体失败原因无法安全确认；未显示服务端返回正文。",
+        "保留原文件，检查模型设置和网络后再手动重试；不要连续重复发送。",
+    ),
+}
 _STUDENT_VISUAL_ROOT_NAME = "student-visual-v1"
 _STUDENT_SOURCE_MIME = {
     ".png": "image/png",
@@ -539,6 +712,7 @@ class DesktopVisualImportReceipt:
     message_zh: str
     candidate_only: bool = True
     central_question_bank_write: bool = False
+    failure_codes: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -553,6 +727,7 @@ class DesktopVisualImportReceipt:
             "message_zh": self.message_zh,
             "candidate_only": self.candidate_only,
             "central_question_bank_write": self.central_question_bank_write,
+            "failure_codes": list(self.failure_codes),
         }
 
 
@@ -576,6 +751,134 @@ def _canonical_digest(value: Any) -> str:
         allow_nan=False,
     ).encode("utf-8")
     return hashlib.sha256(raw).hexdigest()
+
+
+def _strict_json_loads(raw: bytes) -> Any:
+    """Decode a bounded local descriptor without accepting duplicate keys."""
+
+    def unique(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate key")
+            result[key] = value
+        return result
+
+    def reject_constant(_value: str) -> None:
+        raise ValueError("non-finite number")
+
+    return json.loads(
+        raw.decode("utf-8", errors="strict"),
+        object_pairs_hook=unique,
+        parse_constant=reject_constant,
+    )
+
+
+def _normalize_visual_failure_codes(
+    value: Any, *, failed: bool = False
+) -> tuple[str, ...] | None:
+    """Normalize persisted failure labels without accepting provider text."""
+
+    if value is None:
+        return None
+    if not isinstance(value, (list, tuple)):
+        return None
+    result: list[str] = []
+    for item in value[:_VISUAL_FAILURE_MAX_CODES]:
+        code = item if isinstance(item, str) else _VISUAL_FAILURE_UNKNOWN_CODE
+        if code not in _VISUAL_FAILURE_GUIDANCE:
+            code = _VISUAL_FAILURE_UNKNOWN_CODE
+        if code not in result:
+            result.append(code)
+    if failed and not result:
+        result.append(_VISUAL_FAILURE_UNKNOWN_CODE)
+    return tuple(result)
+
+
+def _visual_failure_codes_from_blockers(
+    blockers: Any, *, failed: bool
+) -> tuple[str, ...]:
+    """Project bounded blocker codes into a stable teacher-facing allowlist."""
+
+    if not failed:
+        return ()
+    result: list[str] = []
+    if isinstance(blockers, (list, tuple)):
+        for blocker in blockers[:64]:
+            candidates: list[Any] = []
+            if isinstance(blocker, Mapping):
+                candidates.extend((blocker.get("code"), blocker.get("cause_code")))
+            else:
+                candidates.append(None)
+            recognized = False
+            for candidate in candidates:
+                if not isinstance(candidate, str) or not candidate:
+                    continue
+                if candidate in _VISUAL_FAILURE_GUIDANCE:
+                    recognized = True
+                    if candidate not in result:
+                        result.append(candidate)
+            if not recognized and _VISUAL_FAILURE_UNKNOWN_CODE not in result:
+                result.append(_VISUAL_FAILURE_UNKNOWN_CODE)
+            if len(result) >= _VISUAL_FAILURE_MAX_CODES:
+                break
+    if not result:
+        result.append(_VISUAL_FAILURE_UNKNOWN_CODE)
+    return tuple(result[:_VISUAL_FAILURE_MAX_CODES])
+
+
+def _visual_source_projection(
+    value: Any,
+) -> tuple[dict[str, Any], ...] | None:
+    """Return only validated source fields used for manifest closure matching."""
+
+    if not isinstance(value, (list, tuple)) or not 1 <= len(value) <= 100:
+        return None
+    allowed_mimes = {
+        "image/png",
+        "image/jpeg",
+        "image/webp",
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    }
+    projected: list[dict[str, Any]] = []
+    for item in value:
+        if not isinstance(item, Mapping):
+            return None
+        if any(field_name not in item for field_name in _VISUAL_SOURCE_MANIFEST_FIELDS):
+            return None
+        source_file_id = item["source_file_id"]
+        role = item["role"]
+        group_id = item["group_id"]
+        filename = item["filename"]
+        mime_type = item["mime_type"]
+        order_index = item["order_index"]
+        size_bytes = item["size_bytes"]
+        source_sha256 = item["source_sha256"]
+        if any(
+            not isinstance(text, str) or not text.strip()
+            for text in (source_file_id, group_id, filename, mime_type)
+        ):
+            return None
+        if role not in {"question", "answer", "handout"}:
+            return None
+        if mime_type not in allowed_mimes:
+            return None
+        if type(order_index) is not int or order_index < 1:
+            return None
+        if type(size_bytes) is not int or not 1 <= size_bytes <= 256 * 1024 * 1024:
+            return None
+        if not isinstance(source_sha256, str) or _SHA256.fullmatch(source_sha256) is None:
+            return None
+        if item["content_addressed"] is not True:
+            return None
+        projected.append(
+            {
+                field_name: item[field_name]
+                for field_name in _VISUAL_SOURCE_MANIFEST_FIELDS
+            }
+        )
+    return tuple(projected)
 
 
 class DesktopWorkbenchFacade:
@@ -1754,7 +2057,11 @@ class DesktopWorkbenchFacade:
         return "pending"
 
     @staticmethod
-    def _visual_import_message(status: str, visual_status: str) -> str:
+    def _visual_import_message(
+        status: str,
+        visual_status: str,
+        failure_codes: Sequence[str] = (),
+    ) -> str:
         if status == "candidate_ready_for_review" and visual_status == "not_required":
             return (
                 "原生可编辑文字候选已保存到个人库存，等待教师复核；无需调用视觉模型。"
@@ -1762,7 +2069,18 @@ class DesktopWorkbenchFacade:
         if status == "candidate_ready_for_review":
             return "视觉候选已生成，仍需教师逐页复核后才能进入后续整理。"
         if status == "failed":
-            return "视觉候选生成未完成；原文件仍在个人归档中，可修正配置后重试。"
+            codes = _normalize_visual_failure_codes(failure_codes, failed=True)
+            safe_codes = codes or (_VISUAL_FAILURE_UNKNOWN_CODE,)
+            reasons = "；".join(
+                _VISUAL_FAILURE_GUIDANCE[code][0] for code in safe_codes
+            )
+            next_steps = "；".join(
+                _VISUAL_FAILURE_GUIDANCE[code][1] for code in safe_codes
+            )
+            return (
+                "视觉候选生成未完成；原文件仍在个人归档中，当前没有可见候选。\n"
+                f"原因：{reasons}\n下一步：{next_steps}"
+            )
         return "原文件与原生文字候选已保存；配置视觉模型并明确确认后可继续。"
 
     @staticmethod
@@ -1786,6 +2104,9 @@ class DesktopWorkbenchFacade:
             for source in result.plan.sources
         )
         status = DesktopWorkbenchFacade._visual_import_status(result.visual_status)
+        failure_codes = _visual_failure_codes_from_blockers(
+            result.blockers, failed=result.visual_status == "failed"
+        )
         return DesktopVisualImportReceipt(
             batch_id=result.batch_id,
             source_type=result.source_type,
@@ -1796,13 +2117,16 @@ class DesktopWorkbenchFacade:
             visual_queue_count=result.plan.visual_queue_count,
             sources=sources,
             message_zh=DesktopWorkbenchFacade._visual_import_message(
-                status, result.visual_status
+                status, result.visual_status, failure_codes
             ),
+            failure_codes=failure_codes,
         )
 
     @staticmethod
     def _visual_import_receipt_from_saved(
         value: Mapping[str, Any],
+        *,
+        fallback_failure_codes: Sequence[str] | None = None,
     ) -> DesktopVisualImportReceipt:
         receipt = value.get("receipt")
         if not isinstance(receipt, Mapping):
@@ -1815,6 +2139,26 @@ class DesktopWorkbenchFacade:
                 "visual_import_state_invalid", "已保存的视觉导入批次无法读取。"
             )
         try:
+            status = str(receipt["status"])
+            visual_status = str(receipt["visual_status"])
+            failed = status == "failed" or visual_status == "failed"
+            if failed:
+                failure_codes = _normalize_visual_failure_codes(
+                    receipt.get("failure_codes"), failed=True
+                )
+                if failure_codes is None or failure_codes == (_VISUAL_FAILURE_UNKNOWN_CODE,):
+                    failure_codes = _normalize_visual_failure_codes(
+                        fallback_failure_codes, failed=True
+                    )
+                if failure_codes is None:
+                    failure_codes = (_VISUAL_FAILURE_UNKNOWN_CODE,)
+            else:
+                failure_codes = ()
+            message_zh = str(receipt["message_zh"])
+            if status == "failed":
+                message_zh = DesktopWorkbenchFacade._visual_import_message(
+                    status, visual_status, failure_codes
+                )
             sources = tuple(
                 DesktopVisualImportSourceSummary(
                     role=str(item["role"]),
@@ -1828,17 +2172,18 @@ class DesktopWorkbenchFacade:
             result = DesktopVisualImportReceipt(
                 batch_id=str(receipt["batch_id"]),
                 source_type=str(receipt["source_type"]),
-                status=str(receipt["status"]),
-                visual_status=str(receipt["visual_status"]),
+                status=status,
+                visual_status=visual_status,
                 source_count=int(receipt["source_count"]),
                 native_quick_count=int(receipt["native_quick_count"]),
                 visual_queue_count=int(receipt["visual_queue_count"]),
                 sources=sources,
-                message_zh=str(receipt["message_zh"]),
+                message_zh=message_zh,
                 candidate_only=receipt.get("candidate_only") is True,
                 central_question_bank_write=(
                     receipt.get("central_question_bank_write") is True
                 ),
+                failure_codes=failure_codes,
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise DesktopFacadeError(
@@ -1889,6 +2234,66 @@ class DesktopWorkbenchFacade:
                 "visual_import_batch_missing", "未找到可继续的视觉导入批次。"
             )
         return dict(value)
+
+    def _visual_import_failure_codes_from_manifest(
+        self, value: Mapping[str, Any]
+    ) -> tuple[str, ...]:
+        """Read old failure codes only from an exact, bounded source manifest."""
+
+        if not isinstance(value, Mapping) or (
+            value.get("status") != "failed"
+            and value.get("visual_status") != "failed"
+        ):
+            return ()
+        batch_id = value.get("batch_id")
+        if not isinstance(batch_id, str) or _VISUAL_BATCH_ID.fullmatch(batch_id) is None:
+            return ()
+        raw_sources = value.get("sources")
+        descriptor_sources = _visual_source_projection(raw_sources)
+        if descriptor_sources is None:
+            return ()
+        try:
+            closure_digest = _canonical_digest(raw_sources)
+        except (TypeError, ValueError):
+            return ()
+        if value.get("source_closure_sha256") != closure_digest:
+            return ()
+        batches = self._visual_import_root / "batches"
+        path = batches / f"{batch_id}.json"
+        try:
+            if (
+                batches.is_symlink()
+                or not batches.is_dir()
+                or path.is_symlink()
+                or not path.is_file()
+            ):
+                return ()
+            with path.open("rb") as handle:
+                raw = handle.read(_VISUAL_FAILURE_MANIFEST_MAX_BYTES + 1)
+            if len(raw) > _VISUAL_FAILURE_MANIFEST_MAX_BYTES:
+                return ()
+            manifest = _strict_json_loads(raw)
+        except (OSError, UnicodeDecodeError, TypeError, ValueError, json.JSONDecodeError):
+            return ()
+        if not isinstance(manifest, Mapping):
+            return ()
+        if (
+            manifest.get("batch_id") != batch_id
+            or manifest.get("visual_status") != "failed"
+            or manifest.get("candidate_only") is not True
+            or manifest.get("central_question_bank_write") is not False
+            or manifest.get("visual_candidate") is not None
+            or manifest.get("visual_candidate_sha256") is not None
+        ):
+            return ()
+        plan = manifest.get("plan")
+        if not isinstance(plan, Mapping):
+            return ()
+        if _visual_source_projection(plan.get("sources")) != descriptor_sources:
+            return ()
+        return _visual_failure_codes_from_blockers(
+            manifest.get("blockers"), failed=True
+        )
 
     @staticmethod
     def _visual_import_private_sources(
@@ -2219,7 +2624,15 @@ class DesktopWorkbenchFacade:
             ):
                 values.append(value)
         values.sort(key=lambda value: str(value.get("created_at") or ""))
-        return tuple(self._visual_import_receipt_from_saved(value) for value in values)
+        return tuple(
+            self._visual_import_receipt_from_saved(
+                value,
+                fallback_failure_codes=self._visual_import_failure_codes_from_manifest(
+                    value
+                ),
+            )
+            for value in values
+        )
 
     def imported_word_preview(self, batch_id: str, source_id: str) -> dict[str, Any]:
         from .desktop_preparation_sources import PreparationSourcesService
@@ -2570,7 +2983,12 @@ class DesktopWorkbenchFacade:
             raise DesktopFacadeError(
                 "teacher_confirmation_required", "发送原始页面前需要教师明确确认。"
             )
-        if (egress_preview_id is None) != (egress_revision is None):
+        if not (
+            isinstance(egress_preview_id, str)
+            and egress_preview_id.strip()
+            and isinstance(egress_revision, str)
+            and egress_revision.strip()
+        ):
             raise DesktopFacadeError(
                 "visual_egress_preview_invalid",
                 "发送前图片预览不完整，请重新预览后确认。",
@@ -2583,17 +3001,15 @@ class DesktopWorkbenchFacade:
             )
         self._visual_import_profile(profile_id, expected_profile_revision)
         sources = self._restore_visual_import_sources(descriptor)
-        frozen_renderer = None
-        if egress_preview_id is not None and egress_revision is not None:
-            frozen_renderer = self._visual_egress_call(
-                "frozen_renderer",
-                batch_id=batch_id,
-                profile_id=profile_id,
-                expected_profile_revision=expected_profile_revision,
-                preview_id=egress_preview_id,
-                revision=egress_revision,
-                sources=sources,
-            )
+        frozen_renderer = self._visual_egress_call(
+            "frozen_renderer",
+            batch_id=batch_id,
+            profile_id=profile_id,
+            expected_profile_revision=expected_profile_revision,
+            preview_id=egress_preview_id,
+            revision=egress_revision,
+            sources=sources,
+        )
         source_type = str(descriptor.get("source_type") or "未分类资料")
         request = DesktopImportRequest(
             sources=sources,
@@ -2666,7 +3082,15 @@ class DesktopWorkbenchFacade:
             and value.get("status") in {"pending", "failed"}
         ]
         values.sort(key=lambda value: str(value.get("created_at") or ""))
-        return tuple(self._visual_import_receipt_from_saved(value) for value in values)
+        return tuple(
+            self._visual_import_receipt_from_saved(
+                value,
+                fallback_failure_codes=self._visual_import_failure_codes_from_manifest(
+                    value
+                ),
+            )
+            for value in values
+        )
 
     def run_word_handout_import_batch(
         self,

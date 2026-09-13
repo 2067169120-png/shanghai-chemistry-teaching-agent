@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 from contextlib import suppress
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QCloseEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -257,6 +257,9 @@ class ImportDialog(QDialog):
 
         self.scroll = page_scroll(content)
         self.scroll.setObjectName("ImportScroll")
+        self._provider_reveal_timer = QTimer(self)
+        self._provider_reveal_timer.setSingleShot(True)
+        self._provider_reveal_timer.timeout.connect(self._reveal_provider)
         root.addWidget(self.scroll, 1)
         self.progress = QProgressBar()
         self.progress.setVisible(False)
@@ -329,6 +332,11 @@ class ImportDialog(QDialog):
         self._saved_visual_receipt = self._resumable_receipts[-1]
         self.resume_card.setVisible(False)
         self._show_saved_receipt(self._saved_visual_receipt, resumed=True)
+        self._provider_reveal_timer.start(0)
+
+    def _reveal_provider(self) -> None:
+        if self.provider_card.isVisible():
+            self.scroll.ensureWidgetVisible(self.provider_card)
 
     def _save(self) -> None:
         if self._active_task_id:
@@ -534,6 +542,14 @@ class ImportDialog(QDialog):
             return
         self.provider_card.setVisible(True)
         self._refresh_visual_profiles()
+        if receipt.visual_status == "failed":
+            self.progress.setFormat("视觉候选未生成")
+            set_status(
+                self.status,
+                "error",
+                ("已恢复未完成批次。" if resumed else "") + receipt.message_zh,
+            )
+            return
         lead = "已恢复最近一批。" if resumed else "离线保存完成。"
         set_status(
             self.status,
@@ -905,7 +921,7 @@ class ImportDialog(QDialog):
         set_status(
             self.status,
             "error",
-            "视觉候选未生成；离线来源仍已保存，可稍后继续最近一批。",
+            receipt.message_zh,
         )
 
     def _import_failed(self, message: str) -> None:

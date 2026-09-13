@@ -384,12 +384,22 @@ def test_cross_restart_resume_requires_current_profile_and_explicit_confirmation
             expected_profile_revision="REV-1",
             teacher_confirmed=False,  # type: ignore[arg-type]
         )
+    preview = restarted.preview_saved_visual_import_batch(
+        batch_id=saved.batch_id,
+        profile_id="vision",
+        expected_profile_revision="REV-1",
+    )
+    preview_tokens = {
+        "egress_preview_id": preview["preview_id"],
+        "egress_revision": preview["revision"],
+    }
     with pytest.raises(DesktopFacadeError, match="配置已变化"):
         restarted.run_saved_visual_import_batch(
             batch_id=saved.batch_id,
             profile_id="vision",
             expected_profile_revision="REV-OLD",
             teacher_confirmed=True,
+            **preview_tokens,
         )
     assert transport.calls == 0
     assert provider.borrow_calls == 0
@@ -399,6 +409,7 @@ def test_cross_restart_resume_requires_current_profile_and_explicit_confirmation
         profile_id="vision",
         expected_profile_revision="REV-1",
         teacher_confirmed=True,
+        **preview_tokens,
     )
 
     assert isinstance(completed, DesktopVisualImportReceipt)
@@ -432,6 +443,7 @@ def test_cross_restart_resume_requires_current_profile_and_explicit_confirmation
             profile_id="vision",
             expected_profile_revision="REV-1",
             teacher_confirmed=True,
+            **preview_tokens,
         )
     assert transport.calls == 1
 
@@ -443,10 +455,16 @@ def test_missing_profile_and_cancel_are_chinese_and_do_not_call_transport(
     source.write_bytes(_png())
     empty = FakeProviderStore(configured=False)
     transport = FakeVisualTransport()
-    facade = _facade(desktop_paths, empty, transport=transport)
-    saved = facade.save_visual_import_batch(
+    configured = _facade(desktop_paths, FakeProviderStore(), transport=transport)
+    saved = configured.save_visual_import_batch(
         question_files=(source,), source_type="教师资料"
     )
+    preview = configured.preview_saved_visual_import_batch(
+        batch_id=saved.batch_id,
+        profile_id="vision",
+        expected_profile_revision="REV-1",
+    )
+    facade = _facade(desktop_paths, empty, transport=transport)
 
     with pytest.raises(DesktopFacadeError) as missing:
         facade.run_saved_visual_import_batch(
@@ -454,17 +472,20 @@ def test_missing_profile_and_cancel_are_chinese_and_do_not_call_transport(
             profile_id="vision",
             expected_profile_revision="REV-1",
             teacher_confirmed=True,
+            egress_preview_id=preview["preview_id"],
+            egress_revision=preview["revision"],
         )
     assert re.search(r"[\u4e00-\u9fff]", missing.value.message_zh)
     assert transport.calls == 0
 
-    configured = _facade(desktop_paths, FakeProviderStore(), transport=transport)
     with pytest.raises(DesktopFacadeError) as cancelled:
         configured.run_saved_visual_import_batch(
             batch_id=saved.batch_id,
             profile_id="vision",
             expected_profile_revision="REV-1",
             teacher_confirmed=True,
+            egress_preview_id=preview["preview_id"],
+            egress_revision=preview["revision"],
             should_cancel=lambda: True,
         )
     assert cancelled.value.code == "cancelled"
@@ -478,26 +499,27 @@ def test_saved_batch_rebuilds_only_from_archive_and_detects_changed_bytes(
     source = tmp_path / "question.png"
     raw = _png()
     source.write_bytes(raw)
-    facade = _facade(desktop_paths, FakeProviderStore(configured=False))
+    facade = _facade(desktop_paths, FakeProviderStore(), transport=FakeVisualTransport())
     saved = facade.save_visual_import_batch(
         question_files=(source,), source_type="教师资料"
+    )
+    preview = facade.preview_saved_visual_import_batch(
+        batch_id=saved.batch_id,
+        profile_id="vision",
+        expected_profile_revision="REV-1",
     )
     source.unlink()
     archive = desktop_paths.state_root / "visual-import-v2" / "sources"
     archived_source = next(archive.iterdir())
     archived_source.write_bytes(_png("black"))
-    restarted = _facade(
-        desktop_paths,
-        FakeProviderStore(),
-        transport=FakeVisualTransport(),
-    )
-
     with pytest.raises(DesktopFacadeError, match="归档不完整或已变化") as caught:
-        restarted.run_saved_visual_import_batch(
+        facade.run_saved_visual_import_batch(
             batch_id=saved.batch_id,
             profile_id="vision",
             expected_profile_revision="REV-1",
             teacher_confirmed=True,
+            egress_preview_id=preview["preview_id"],
+            egress_revision=preview["revision"],
         )
     assert caught.value.code == "visual_import_source_archive_invalid"
 
@@ -512,12 +534,19 @@ def test_failed_visual_run_remains_resumable(
     saved = facade.save_visual_import_batch(
         question_files=(source,), source_type="教师资料"
     )
+    preview = facade.preview_saved_visual_import_batch(
+        batch_id=saved.batch_id,
+        profile_id="vision",
+        expected_profile_revision="REV-1",
+    )
 
     failed = facade.run_saved_visual_import_batch(
         batch_id=saved.batch_id,
         profile_id="vision",
         expected_profile_revision="REV-1",
         teacher_confirmed=True,
+        egress_preview_id=preview["preview_id"],
+        egress_revision=preview["revision"],
     )
 
     assert failed.status == "failed"

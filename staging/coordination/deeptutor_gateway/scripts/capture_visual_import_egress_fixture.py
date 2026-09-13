@@ -77,6 +77,7 @@ def main():
         "preview_id": "synthetic-preview", "revision": "synthetic-revision",
         "batch_id": "synthetic-batch", "model_label": "示例视觉模型（没有调用）",
         "pages": pages,
+        "request_policy": {"max_output_tokens": 32000, "timeout_seconds": 300},
         "confirmation_text": "接收模型：示例视觉模型（合成演示，无网络调用）。\n"
         "发送本窗口预览的3页整页像素，包含题目、共同材料、参考答案与讲义。\n"
         "请确认来源授权及隐私；实际调用可能产生费用。返回不会发送。",
