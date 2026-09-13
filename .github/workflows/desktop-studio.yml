@@ -11,6 +11,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   windows-studio:
+    permissions:
+      contents: write
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -25,12 +27,27 @@ jobs:
       - name: Check source syntax
         run: python -m compileall -q integrations
       - name: Run native regression and studio tests
-        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_desktop_first_run.py staging/coordination/deeptutor_gateway/tests/test_desktop_library_progress.py staging/coordination/deeptutor_gateway/tests/test_desktop_teaching_design_contract.py staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py staging/coordination/deeptutor_gateway/tests/test_desktop_preparation_provider.py staging/coordination/deeptutor_gateway/tests/test_teacher_source_prompt_rules.py staging/coordination/deeptutor_gateway/tests/test_desktop_studio.py staging/coordination/deeptutor_gateway/tests/test_desktop_studio_ui.py --junitxml=studio-qa/pytest.xml
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_desktop_first_run.py staging/coordination/deeptutor_gateway/tests/test_desktop_library_progress.py staging/coordination/deeptutor_gateway/tests/test_desktop_teaching_design_contract.py staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py staging/coordination/deeptutor_gateway/tests/test_desktop_preparation_provider.py staging/coordination/deeptutor_gateway/tests/test_teacher_source_prompt_rules.py staging/coordination/deeptutor_gateway/tests/test_desktop_studio.py staging/coordination/deeptutor_gateway/tests/test_desktop_studio_ui.py staging/coordination/deeptutor_gateway/tests/test_desktop_studio_visual.py --junitxml=studio-qa/pytest.xml
       - name: Exercise all native pages and offline classroom workflows
         run: python runtime/deeptutor_shchem/studio_ci_smoke.py
+      - name: Publish verified synthetic screenshots
+        id: publish
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python runtime/deeptutor_shchem/publish_studio_screenshots.py
+      - name: Include published guide images in the source archive
+        if: success() && github.event_name == 'push'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.publish.outputs.sha }}
+          clean: false
+          persist-credentials: false
       - name: Archive tracked source
         if: always()
-        run: git archive --format=zip --output=studio-source.zip HEAD
+        run: |
+          git rev-parse HEAD > studio-qa/source-archive-commit.txt
+          git archive --format=zip --output=studio-source.zip HEAD
       - uses: actions/upload-artifact@v4
         if: always()
         with:
