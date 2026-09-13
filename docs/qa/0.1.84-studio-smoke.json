@@ -1,0 +1,141 @@
+{
+  "version": "0.1.84",
+  "platform": "Windows-2025Server-10.0.26100-SP0",
+  "python": "3.12.10",
+  "qt": "6.11.2",
+  "qt_platform": "offscreen",
+  "source_commit": "246d120c9c8c696d040c4afb116c8fec5d9510ee",
+  "routes_opened": [
+    "home",
+    "library",
+    "paper",
+    "student",
+    "preparation",
+    "templates",
+    "classroom",
+    "mywork"
+  ],
+  "actions": [
+    "Apply template to original preparation form and save one real local draft containing synthetic material",
+    "Teacher-entered synthetic feedback appended to original preparation materials without model invocation"
+  ],
+  "screenshots": [
+    {
+      "file": "home.png",
+      "width": 1360,
+      "height": 940,
+      "sha256": "04090174cb03229eb45fbe064eb81a44df9b61d9208eca1af92712acab784e8f"
+    },
+    {
+      "file": "library.png",
+      "width": 1360,
+      "height": 940,
+      "sha256": "89b0c10e82e892ef15a2319feecabb3e26e3067b58d6b4d74eb9aec0db93e658"
+    },
+    {
+      "file": "paper.png",
+      "width": 1360,
+      "height": 940,
+      "sha256": "93f66c337b738021a1369ee443c6a602a13b20552b068ac7e7952a582b972359"
+    },
+    {
+      "file": "student.png",
+      "width": 1360,
+      "height": 940,
+      "sha256": "7f4acb8be937d4cc600bcfe70223d2501f4a7f5949721f19b4b2c9f129e6c03e"
+    },
+    {
+      "file": "preparation.png",
+      "width": 1360,
+      "height": 940,
+      "sha256": "6f72a9a60f26059cd1c20656b657861b725ec912e2076908c1b1966f4c6713cb"
+    },
+    {
+      "file": "templates.png",
+      "width": 1360,
+      "height": 940,
+      "sha256": "f7eb0de38160a137f17095b082847953003961731cb8a5f754d427d4c5449da9"
+    },
+    {
+      "file": "classroom.png",
+      "width": 1360,
+      "height": 940,
+      "sha256": "91e379313c387930b070d876d971bd5d7fa4a695f54eae62740aee7c5f34d813"
+    },
+    {
+      "file": "mywork.png",
+      "width": 1360,
+      "height": 940,
+      "sha256": "bea091153d2c86c107d68ffda3f0e28ff3dc1802079ac5ce0c13ea4df9a9086b"
+    },
+    {
+      "file": "classroom-participation.png",
+      "width": 1360,
+      "height": 940,
+      "sha256": "390cb74c5cd1261ec3e4117f1cbb8f0461721019b40fa848af44f44bfbda7366"
+    },
+    {
+      "file": "classroom-equilibrium.png",
+      "width": 1360,
+      "height": 940,
+      "sha256": "c31282dc5d551975c1afce82bc8008cb79efafb09d810721fcd306aeac221aab"
+    },
+    {
+      "file": "classroom-feedback.png",
+      "width": 1360,
+      "height": 940,
+      "sha256": "fb64f45c79602f30fe57a76d8060cf85636f9a588bc9057db3ee65fa702c8984"
+    },
+    {
+      "file": "import.png",
+      "width": 720,
+      "height": 680,
+      "sha256": "efb16ab2fadc3e18437fdb10bfd2eca5dddedb388333d353d79618d0881dd4ef"
+    },
+    {
+      "file": "settings.png",
+      "width": 720,
+      "height": 650,
+      "sha256": "21e713db7b9c2ff9dac45795ef00fb436ec7895ea60a421852d663ac5fa68c28"
+    },
+    {
+      "file": "progress.png",
+      "width": 850,
+      "height": 620,
+      "sha256": "99ea647069e571db946a604f12b81aaf6e4f04ca947e9e4056cd1c1352ec3b3c"
+    },
+    {
+      "file": "template-preview.png",
+      "width": 720,
+      "height": 580,
+      "sha256": "23acf59c63b4f6ab8573f6e1c45cd4e5a7afd2382cd1a5664307b1676fc48108"
+    },
+    {
+      "file": "commands.png",
+      "width": 640,
+      "height": 500,
+      "sha256": "d2f6e60c288eb406b9d868c0352d1748dda54bca6c4a7cb47957f316d33ca34c"
+    },
+    {
+      "file": "help.png",
+      "width": 790,
+      "height": 650,
+      "sha256": "2086731123d4022081a6a599a58f8126bc7742584559802b202e98f69d21280e"
+    },
+    {
+      "file": "templates-compact.png",
+      "width": 800,
+      "height": 700,
+      "sha256": "40490120f338da057a5084c826441d0767435cad0cb23f629401a8c7c82acb04"
+    }
+  ],
+  "uncaught_errors": [],
+  "scope": "Native Windows Qt source navigation and selected offline interactions. Empty original library; one saved synthetic draft and teacher-entered synthetic classroom data. No API call, knowledge distillation, private-material import, packaged EXE or classroom-effectiveness acceptance.",
+  "tests": {
+    "tests": 113,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "workflow_run": "https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/actions/runs/34776036888"
+}
