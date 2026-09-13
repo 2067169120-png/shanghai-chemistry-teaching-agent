@@ -79,6 +79,18 @@ QLabel#TimerDisplay {{ font-size: 84px; font-weight: 600; color: {t['brand_dark'
 QLabel#DrawDisplay {{ font-size: 40px; font-weight: 700; color: {t['brand_dark']}; }}
 QSlider::groove:horizontal {{ background: {t['line']}; height: 6px; border-radius: 3px; }}
 QSlider::handle:horizontal {{ background: {t['brand']}; width: 16px; margin: -5px 0; border-radius: 8px; }}
+QFrame#ExplorerSidebar {{ background: white; border: 1px solid {t['line']}; border-radius: 10px; }}
+QFrame#ExplorerQuestionCard {{ background: white; border: 1px solid {t['line']}; border-radius: 9px; }}
+QFrame#ExplorerQuestionCard:hover {{ border-color: #9FC9AF; }}
+QFrame#ExplorerBasketFooter {{ background: {t['brand_soft']}; border: 1px solid #B8DCC7; border-radius: 10px; }}
+QLabel#ExplorerEyebrow {{ font-size: 12px; color: {t['brand']}; font-weight: 600; }}
+QLabel#ExplorerExcerpt {{ font-size: 15px; color: {t['ink']}; padding: 10px 0; }}
+QTreeWidget#ExplorerFacetTree {{ border: 0; padding: 0; border-radius: 0; }}
+QTreeWidget#ExplorerFacetTree::item {{ padding: 6px 2px; }}
+QTreeWidget#ExplorerFacetTree::item:hover {{ background: {t['surface_subtle']}; }}
+QTreeWidget#ExplorerFacetTree::item:selected {{ background: {t['brand_soft']}; color: {t['brand_dark']}; }}
+QPushButton#ExplorerFilterChip {{ background: {t['brand_soft']}; color: {t['brand_dark']}; border: 1px solid #BFDFCD; padding: 3px 8px; min-height: 18px; border-radius: 5px; }}
+QPushButton#ExplorerBasketButton {{ background: white; color: {t['brand_dark']}; border-color: #9FC9AF; font-weight: 600; }}
 '''
 
 WORKBENCH_STYLE = _build_style(TOKENS) + control_style()

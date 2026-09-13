@@ -152,6 +152,24 @@ class DesktopStateStore:
             value["basket"] = basket
         return len(self._update(operation)["basket"])
 
+    def remove_basket_item(self, key: str) -> int:
+        """Remove exactly one identity without replacing the rest of the state."""
+        if not isinstance(key, str) or not key:
+            raise DesktopStateError("题篮项目标识不正确。")
+        def operation(value):
+            value["basket"] = [row for row in value["basket"] if row.get("key") != key]
+        return len(self._update(operation)["basket"])
+
+    def move_basket_item(self, key: str, delta: int) -> int:
+        if not isinstance(key, str) or not key or type(delta) is not int or delta not in (-1, 1):
+            raise DesktopStateError("题篮排序参数不正确。")
+        def operation(value):
+            rows = value["basket"]
+            index = next((i for i, row in enumerate(rows) if row.get("key") == key), None)
+            if index is not None and 0 <= index + delta < len(rows):
+                rows[index], rows[index + delta] = rows[index + delta], rows[index]
+        return len(self._update(operation)["basket"])
+
     def save_studio_favorites(self, keys: list[str]) -> None:
         if not isinstance(keys, list) or any(not isinstance(key, str) or len(key) > 60 for key in keys):
             raise DesktopStateError("模板收藏标识不正确。")

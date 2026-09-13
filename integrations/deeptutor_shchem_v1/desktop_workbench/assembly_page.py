@@ -14,7 +14,7 @@ import hashlib
 from pathlib import Path
 from typing import Any, Mapping
 
-from PySide6.QtCore import QSize, Qt, QUrl, Signal
+from PySide6.QtCore import QTimer, QSize, Qt, QUrl, Signal
 from PySide6.QtGui import QAction, QDesktopServices, QKeyEvent, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -1988,6 +1988,8 @@ class MixedPaperPaginationDialog(QDialog):
 class MixedPaperPanel(QWidget):
     """Edit the ordered sections of the existing basket without flattening sources."""
 
+    load_finished = Signal(bool)
+
     def __init__(self, facade, tasks, legacy_model, parent=None):
         super().__init__(parent)
         self.facade, self.tasks = facade, tasks
@@ -2196,6 +2198,7 @@ class MixedPaperPanel(QWidget):
                         self._render()
                         self.status.setText("旧草稿无法恢复，原稿未覆盖；请重新打开后重试。")
                         self._update_actions()
+                        self.load_finished.emit(False)
                         return
                 self._loaded_once = True
                 self._render()
@@ -2203,7 +2206,11 @@ class MixedPaperPanel(QWidget):
                     self.status.setText("完整来源已读取；调整顺序后请查看两版图文预览。")
             except (TypeError, ValueError, KeyError):
                 self.status.setText("题篮投影不完整，未覆盖当前编排；请刷新后重试。")
+                self._update_actions()
+                self.load_finished.emit(False)
+                return
             self._update_actions()
+            self.load_finished.emit(True)
 
         def failed(message):
             if self._closed or epoch != self._load_epoch:
@@ -2211,6 +2218,7 @@ class MixedPaperPanel(QWidget):
             self._busy = False
             self.status.setText(str(message))
             self._update_actions()
+            self.load_finished.emit(False)
 
         try:
             self.tasks.submit(
@@ -2867,14 +2875,15 @@ class PaperPage(QWidget):
         self.setTabOrder(self.directory, self.continuous_preview)
         self.setTabOrder(self.continuous_preview, self.inspector)
 
-    def _activate_mixed(self, basket):
+    def _activate_mixed(self, basket, *, force=False):
         scopes = {row.get("scope", "master") for row in basket if row.get("item_kind") not in {"word_question", "personal_visual_theme"}}
         required = any(row.get("item_kind") in {"word_question", "personal_visual_theme"} for row in basket) or len(scopes) > 1
-        required = required or (self._mixed_panel is not None and bool(basket))
+        required = required or (self._mixed_panel is not None and bool(basket)) or (force and bool(basket))
         if not required or not callable(getattr(self.facade, "paper_basket_projection", None)):
             return False
         if self._mixed_panel is None:
             self._mixed_panel = MixedPaperPanel(self.facade, self.tasks, self.model, self)
+            self._mixed_panel.load_finished.connect(self._basket_preview_loaded)
             self.layout().addWidget(self._mixed_panel)
         self._legacy_body.hide()
         self._mixed_panel.show()
@@ -2882,6 +2891,39 @@ class PaperPage(QWidget):
             self._mixed_basket = deepcopy(basket)
             self._mixed_panel.load()
         return True
+
+    def request_layout_preview(self):
+        """Preview the current basket through the existing frozen DOCX/PDF pipeline."""
+        basket = self.facade.basket()
+        if not basket:
+            self.preview_state.setText("选题篮为空，请先选题。")
+            return
+        self._basket_preview_pending = True
+        if not self._activate_mixed(basket, force=True):
+            self._basket_preview_pending = False
+            self.preview_state.setText("当前资料服务不支持混合题篮分页，请重新打开工作台。")
+            return
+        if self._mixed_panel._loaded_once and not self._mixed_panel._busy:
+            QTimer.singleShot(0, lambda: self._basket_preview_loaded(True))
+
+    def _basket_preview_loaded(self, success):
+        if not getattr(self, "_basket_preview_pending", False):
+            return
+        self._basket_preview_pending = False
+        panel = self._mixed_panel
+        if not success or panel is None or panel._busy or panel._restore_failed:
+            return
+        # This explicit entry previews everything currently selected, in basket
+        # order; title/points remain editable in the same composer, not a copy.
+        order = [row["key"] for row in self.facade.basket() if row["key"] in panel.model.items]
+        if not order:
+            panel.status.setText("选题篮暂无可排版的完整题目，请核对来源。")
+            return
+        panel.model.order = order
+        panel.model.excluded = set()
+        panel._render()
+        panel._save()
+        panel._preview_request()
 
     def _load_catalog_if_available(self) -> None:
         loader = getattr(self.facade, "paper_theme_catalog", None)

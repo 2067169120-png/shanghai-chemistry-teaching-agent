@@ -263,6 +263,7 @@ class LibraryDetailDialog(QDialog):
         parent: QWidget | None = None,
         *,
         answer_image_loader: Callable[[LibraryImage], bytes] | None = None,
+        embedded: bool = False,
     ) -> None:
         super().__init__(parent)
         self.detail = detail
@@ -273,7 +274,9 @@ class LibraryDetailDialog(QDialog):
         self.setObjectName("LibraryDetailDialog")
         self.setWindowTitle(f"查看大题 · {detail.title_zh}")
         self.setModal(False)
-        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, not embedded)
+        if embedded:
+            self.setWindowFlags(Qt.WindowType.Widget)
         self.resize(940, 780)
         self.setMinimumSize(360, 460)
         root = QVBoxLayout(self)
@@ -304,6 +307,11 @@ class LibraryDetailDialog(QDialog):
         buttons.addStretch(1)
         buttons.addWidget(close_button)
         root.addLayout(buttons)
+        if embedded:
+            heading.hide()
+            close_button.hide()
+            self.setMinimumSize(0, 360)
+            root.setContentsMargins(0, 0, 0, 0)
         self._update_preview_readiness()
 
     def _update_preview_readiness(self) -> None:

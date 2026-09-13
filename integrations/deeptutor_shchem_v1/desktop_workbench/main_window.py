@@ -15,7 +15,7 @@ from ..desktop_state import DesktopStateError
 from ..desktop_version import DESKTOP_VERSION
 from .dialogs import ImportDialog, SettingsDialog
 from .home_page import HomePage
-from .library_page import LibraryPage
+from .question_explorer_page import QuestionExplorerPage as LibraryPage
 from .tasks import DesktopTaskBridge
 from .workflow_pages import PaperPage, StudentPage
 from .studio_preparation import StudioPreparationPage as PreparationPage
@@ -178,6 +178,8 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.my_work_page.open_requested.connect(self.open_work_record)
         self.classroom_page.reference_requested.connect(self.append_classroom_feedback)
         self.library_page.basket_changed.connect(self.paper_page.update_basket_count)
+        self.library_page.preview_requested.connect(self.preview_selected_paper)
+        self.library_page.assembly_requested.connect(lambda: self.navigate("paper"))
         self.preparation_page.basket_changed.connect(self.paper_page.update_basket_count)
         self.student_page.basket_changed.connect(self.paper_page.update_basket_count)
         self.library_page.preparation_image_requested.connect(self._library_image_to_preparation)
@@ -212,6 +214,10 @@ class TeacherWorkbenchWindow(QMainWindow):
     def primary_navigation_labels(self) -> tuple[str, ...]:
         return tuple(button.text() for button in self.nav_buttons)
 
+    def preview_selected_paper(self):
+        self.navigate("paper")
+        self.paper_page.request_layout_preview()
+
     def navigate(self, route: str) -> None:
         if route not in self.pages:
             return
@@ -225,7 +231,7 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.top_title.setText(PAGE_TITLES.get(route, "教师工作台"))
         if route == "paper":
             self.paper_page.update_basket_count()
-        if route == "library" and self.library_page.results.count() == 0:
+        if route == "library" and not self.library_page.cards and not self.library_page._loading:
             self.library_page.search()
 
     def open_template(self, key: str, topic: str = "") -> None:
