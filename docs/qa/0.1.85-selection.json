@@ -1,11 +1,11 @@
 {
   "version": "0.1.85",
-  "source_commit": "c2c55509c10fe04ccbe7f4301e84abf4e82e50bc",
+  "source_commit": "870f0f23bedfd2cd1a376171e344ed6ff95578c1",
   "platform": "Windows-2025Server-10.0.26100-SP0",
   "python": "3.12.10",
   "qt": "6.11.2",
   "tests": {
-    "tests": 240,
+    "tests": 241,
     "failures": 0,
     "errors": 0,
     "skipped": 0
@@ -15,13 +15,13 @@
       "file": "selection-all.png",
       "width": 1440,
       "height": 980,
-      "sha256": "6afc5a567e7bef008e8e373de48a90cac7c8590372700aea34f73c1e7c519e8e"
+      "sha256": "591eb9959e6a015dc8e7f9a9ac171ef6b2e9c3f2af8b9d69189ac71fe53a030f"
     },
     {
       "file": "selection-filtered.png",
       "width": 1440,
       "height": 980,
-      "sha256": "22c0b6161df7af59d59ec8510d4d682d44cdaa4fb8d1590210be31e3a9908ec4"
+      "sha256": "5632dee1ac96f54e97224c387d8ff5d6323d2b36ac26875a0a7ce006e6bfc145"
     },
     {
       "file": "selection-basket.png",
@@ -45,7 +45,7 @@
       "file": "selection-compact.png",
       "width": 800,
       "height": 700,
-      "sha256": "f28110b6b7cecc31655ebfb406983eb1def8b5de9e0d1c4c1001572fcbf4d725"
+      "sha256": "ac96c3c38cf02d4c7520026ff8304435a31ef0732b2db17c4d6a71118afe249f"
     }
   ],
   "uncaught_errors": [],
@@ -53,6 +53,6 @@
     "student": 1,
     "teacher": 1
   },
-  "workflow_run": "34781109760",
+  "workflow_run": "34781705927",
   "scope": "Actual isolated Word import, saved synthetic tags, native facet checkboxes, durable basket, real LibreOffice/Word DOCX-to-PDF pagination. No private materials, model calls or full chemical/production EXE acceptance."
 }
