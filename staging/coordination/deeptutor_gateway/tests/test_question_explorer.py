@@ -79,3 +79,27 @@ def test_facade_forwards_atomic_filters_and_cursor_without_flattening_theme():
     result=facade.search_themes(scope="master", filters={"K":["K09"],"year":["2025"]},cursor="opaque",limit=8)
     assert calls[0]["filters"] == {"K":["K09"],"year":["2025"]}
     assert calls[0]["cursor"] == "opaque" and result.facets["K"]["label_zh"] == "知识点"
+
+
+def test_authored_demo_range_omits_next_chapter_without_altering_source(tmp_path):
+    import sys
+    from pathlib import Path
+    from docx import Document
+    root = Path(__file__).resolve().parents[4]
+    sys.path.insert(0, str(root / "runtime/deeptutor_shchem"))
+    from explorer_demo_data import seed_demo
+    workspace = tmp_path / "workspace"
+    facade = seed_demo(workspace, tmp_path / "state")
+    try:
+        rows = facade.word_question_catalog()["items"]
+        assert len(rows) == 6
+        second_questions = [row for row in rows if row["title"].startswith("【例2】")]
+        assert len(second_questions) == 2
+        for row in second_questions:
+            assert "3.0" in str(row["answer_blocks"])
+            assert "电离与离子反应" not in str(row["answer_blocks"])
+            assert row["attributes"]["question_revision"] == row["revision"]
+        for path in workspace.glob("*.docx"):
+            assert "电离与离子反应" in [p.text for p in Document(path).paragraphs]
+    finally:
+        facade.shutdown()

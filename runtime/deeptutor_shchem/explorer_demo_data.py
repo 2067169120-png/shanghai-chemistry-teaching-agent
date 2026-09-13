@@ -46,6 +46,21 @@ def seed_demo(workspace: Path, state: Path):
         doc.save(path)
         facade.save_visual_import_batch(handout_files=(path,), source_type="教师讲义")
         sources.append((path.name, exam))
+    # The generic importer can include a following prose heading in an answer.
+    # Model the teacher's explicit range correction for this authored fixture;
+    # do not change the general parser or claim every imported boundary is exact.
+    for row in facade.word_question_catalog()["items"]:
+        answers = row.get("answer_blocks", [])
+        if len(answers) >= 2 and answers[-1].get("text", "").strip() == "电离与离子反应":
+            context = row.get("context_blocks", [])
+            facade.word_question_update_range(
+                row["key"], row["revision"],
+                block_start=row["question_blocks"][0]["index"],
+                question_end=row["question_blocks"][-1]["index"],
+                answer_start=answers[0]["index"], block_end=answers[-2]["index"],
+                context_start=context[0]["index"] if context else None,
+                context_end=context[-1]["index"] if context else None,
+            )
     exams = dict(sources)
     for row in facade.word_question_catalog()["items"]:
         options = facade.word_question_attribute_options(row["key"], row["revision"])
