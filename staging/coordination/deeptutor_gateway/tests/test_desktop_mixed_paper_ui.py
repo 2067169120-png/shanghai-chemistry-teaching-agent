@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+from dataclasses import replace
 import hashlib
 import json
 import os
-from copy import deepcopy
 
 import pytest
 
@@ -157,7 +158,7 @@ class Facade:
             "sections": sections,
             **{key: payload[key] for key in ("title", "show_question_scores")},
         }
-        return PaperPreview(
+        self.created_preview = PaperPreview(
             "synthetic-preview",
             payload["title"],
             "练习",
@@ -168,6 +169,23 @@ class Facade:
             model,
             "f" * 64,
         )
+        return self.created_preview
+
+    def prepare_mixed_paper_pagination(self, preview_id, preview_hash):
+        self.calls.append(("paginate", preview_id, preview_hash))
+        data = deepcopy(self.created_preview.preview_model)
+        raw = png_bytes()
+        data["pagination"] = {
+            "status": "rendered_pending_review", "manifest_sha256": "e" * 64,
+            "documents": {
+                audience: {"page_count": 1, "pages": [{
+                    "page_number": 1, "image_id": audience + "-page-1",
+                    "sha256": hashlib.sha256(raw).hexdigest(), "width": 240, "height": 100,
+                }]}
+                for audience in ("student", "teacher")
+            },
+        }
+        return replace(self.created_preview, preview_model=data, preview_hash="a" * 64)
 
     def paper_preview_image(self, preview_id, image_id):
         self.calls.append(("image", preview_id, image_id))
@@ -191,11 +209,13 @@ class Facade:
             raise RuntimeError("synthetic export error")
         self.calls.append(("export", preview_id, preview_hash, deepcopy(draft)))
         return {
-            "message_zh": "已生成两版 DOCX",
-            "pdf_status": "not_generated",
+            "message_zh": "已生成两版 DOCX 和 PDF",
+            "pdf_status": "generated",
             "artifacts": [
                 {"artifact_id": "student_docx", "path": "synthetic-student.docx"},
                 {"artifact_id": "teacher_docx", "path": "synthetic-teacher.docx"},
+                {"artifact_id": "student_pdf", "path": "synthetic-student.pdf"},
+                {"artifact_id": "teacher_pdf", "path": "synthetic-teacher.pdf"},
             ],
         }
 
@@ -227,7 +247,11 @@ def confirm_preview(widget, tasks):
     dialog = widget._preview_dialog
     assert dialog is not None
     assert not dialog.confirm_button.isEnabled()
+    dialog.review_page_button.click()
     dialog.tabs.setCurrentIndex(1)
+    tasks.flush()
+    assert not dialog.confirm_button.isEnabled()
+    dialog.review_page_button.click()
     assert dialog.confirm_button.isEnabled()
     dialog.confirm_button.click()
     tasks.flush()
@@ -255,7 +279,9 @@ def test_ui_complete_preview_then_approval_then_docx(panel):
     assert not widget.export_button.isEnabled()
     dialog = confirm_preview(widget, tasks)
     labels = "\n".join(label.text() for label in dialog.findChildren(QLabel))
-    assert "合成共同材料" in labels and "参考答案：" in labels
+    assert "真实页图" in labels
+    assert "合成共同材料" not in labels  # Content blocks cannot stand in for rendered pages.
+    assert dialog.review.reviewed == {("student", 1), ("teacher", 1)}
     assert dialog._pixmaps and all(
         not picture.isNull() for picture in dialog._pixmaps.values()
     )
@@ -263,8 +289,9 @@ def test_ui_complete_preview_then_approval_then_docx(panel):
     widget.export_button.click()
     tasks.flush()
     assert any(call[0] == "export" for call in facade.calls)
-    assert "PDF 尚未生成" in widget.status.text()
-    assert "四文件" not in widget.status.text()
+    assert "PDF 尚未生成" not in widget.status.text()
+    assert "四个文件" in widget.status.text()
+    assert set(widget._artifact_paths) == {"student_docx", "teacher_docx", "student_pdf", "teacher_pdf"}
 
 
 def test_changed_word_points_match_frozen_preview_and_teacher_answer(panel):
@@ -281,9 +308,7 @@ def test_changed_word_points_match_frozen_preview_and_teacher_answer(panel):
     assert "本次练习评分：4 分" in "\n".join(
         block.get("text", "") for block in section["teacher_blocks"]
     )
-    assert any(
-        "本次练习分值：4" in label.text() for label in dialog.findChildren(QLabel)
-    )
+    assert dialog.review.can_confirm
 
 
 def test_edit_invalidates_preview_closes_dialog_and_keeps_default_extra_lines_zero(
@@ -307,7 +332,10 @@ def test_failed_content_or_approval_never_unlocks_export(panel, failure):
     widget.preview_button.click()
     tasks.flush()
     if widget._preview_dialog is not None:
+        widget._preview_dialog.review_page_button.click()
         widget._preview_dialog.tabs.setCurrentIndex(1)
+        tasks.flush()
+        widget._preview_dialog.review_page_button.click()
         widget._preview_dialog.confirm_button.click()
         tasks.flush()
     assert not widget.export_button.isEnabled()

@@ -76,6 +76,13 @@ def build_mixed_paper_docx(
             if root is not None and not isinstance(root, Path):
                 raise WordQuestionExportError("冻结题图目录格式不正确。")
             prepared.append(("core_plan", bundle, root))
+        elif section.get("kind") == "personal_visual_theme":
+            from .desktop_personal_visual_theme_writer import build_theme_blocks
+
+            visual_item, assets = section.get("item"), section.get("assets")
+            for audience in ("student", "teacher"):
+                build_theme_blocks(visual_item, assets, audience, show_scores=show_student_scores)
+            prepared.append(("personal_visual_theme", visual_item, assets))
         else:
             raise WordQuestionExportError("题篮条目类型不支持，请重新选择。")
 
@@ -89,8 +96,17 @@ def build_mixed_paper_docx(
     total = sum(
         item.points
         if kind == "word_question"
+        else sum(row["max_score"] or 0 for row in item["content"]["source_scores"])
+        if kind == "personal_visual_theme"
         else item["student_plan"]["visible"]["theme_sections"][0]["theme_score"]
         for kind, item, _root in prepared
+    )
+    has_visual = any(kind == "personal_visual_theme" for kind, _item, _root in prepared)
+    scores_complete = all(
+        row["max_score"] is not None
+        for kind, item, _root in prepared
+        if kind == "personal_visual_theme"
+        for row in item["content"]["source_scores"]
     )
     # Use the application's established A4 exercise layout consistently across
     # sources; source formatting is namespaced by the native Word writer.
@@ -103,13 +119,21 @@ def build_mixed_paper_docx(
         teacher = audience == "teacher"
         scores = teacher or show_student_scores
         document = _new_document(title.strip(), teacher)
+        if teacher and has_visual:
+            document.paragraphs[2].text = (
+                "图片主题保留来源参考分值；Word及其他题组按本次设置。"
+                "答案供备课和讲评使用，未核定分值明确标为待核对。"
+            )
         _style_document(document, preset)
         _configure_section(document, preset, {"header": {"text_zh": title.strip()}})
         if subtitle.strip():
             document.add_paragraph(subtitle.strip())
         meta = f"{duration_minutes} 分钟 · {len(prepared)} 个题组"
         if scores:
-            meta += f" · 本次分值 {total:g} 分"
+            label = "合计已知分值" if has_visual else "本次分值"
+            meta += f" · {label} {total:g} 分"
+            if not scores_complete:
+                meta += "（部分分值待核对，非总分）"
         document.add_paragraph(meta, "ShChemPaperMeta")
         if not teacher:
             document.add_paragraph(
@@ -117,6 +141,14 @@ def build_mixed_paper_docx(
             )
         writer = _Writer(document)
         for ordinal, (kind, item, asset_root) in enumerate(prepared, 1):
+            if kind == "personal_visual_theme":
+                from .desktop_personal_visual_theme_writer import (
+                    append_personal_visual_theme,
+                )
+
+                append_personal_visual_theme(document, item, asset_root, audience,
+                                             ordinal=ordinal, show_scores=show_student_scores)
+                continue
             if kind == "word_question":
                 score = f"（{item.points:g} 分）" if scores else ""
                 document.add_paragraph(f"题组 {ordinal}{score}", "ShChemThemeHeading")
@@ -165,7 +197,8 @@ def build_mixed_paper_docx(
             "本地混合选编练习；题目来源见教师版；不可发布"
         )
         document.core_properties.comments = (
-            "保留来源题面；本次练习分值不是原卷分值。未进行 PDF 转换或分页视觉验收。"
+            "保留来源题面；图片主题采用来源参考分值，其他题组采用本次设置。"
+            "须在软件中核对实际分页；排版确认不等于化学或教学审核。"
         )
         stream = BytesIO()
         document.save(stream)

@@ -344,6 +344,11 @@ class PersonalVisualQuestionDialog(QDialog):
         self.save_button = QPushButton("保存选择")
         self.save_button.setObjectName("PrimaryAction")
         self.save_button.setAccessibleName("明确保存个人图文题选择")
+        self.add_basket_button = QPushButton("整主题加入题篮")
+        self.add_basket_button.setObjectName("PrimaryAction")
+        self.add_basket_button.setAccessibleName("将所选图片题及完整主题加入统一题篮")
+        self.add_basket_button.setToolTip("带入该题所属完整主题、全部小问和公共材料；答案仅用于教师版。")
+        self.add_basket_button.setVisible(callable(getattr(self.facade, "add_personal_visual_questions_to_basket", None)))
         self.preview_reference_button = QPushButton("预览备课选材")
         self.preview_reference_button.setObjectName("QuietButton")
         self.preview_reference_button.setAccessibleName("预览选中个人图文题备课材料")
@@ -354,6 +359,7 @@ class PersonalVisualQuestionDialog(QDialog):
         self.cancel_button.setObjectName("QuietButton")
         self.cancel_button.setAccessibleName("取消个人图文题选择")
         action_row.addWidget(self.save_button)
+        action_row.addWidget(self.add_basket_button)
         action_row.addWidget(self.preview_reference_button)
         action_row.addWidget(self.accept_preparation_button)
         action_row.addStretch(1)
@@ -372,6 +378,7 @@ class PersonalVisualQuestionDialog(QDialog):
         self.question_list.currentItemChanged.connect(self._current_changed)
         self.tabs.currentChanged.connect(self._tab_changed)
         self.save_button.clicked.connect(self._save_selection)
+        self.add_basket_button.clicked.connect(self._add_to_basket)
         self.preview_reference_button.clicked.connect(self._preview_reference)
         self.accept_preparation_button.clicked.connect(self._accept_preparation)
         self.cancel_button.clicked.connect(self.reject)
@@ -1135,6 +1142,7 @@ class PersonalVisualQuestionDialog(QDialog):
         # An empty explicit save is meaningful: it clears an older persisted
         # selection.  Never make that mutation implicit on cancel or refresh.
         self.save_button.setEnabled(not busy and not self._closed)
+        self.add_basket_button.setEnabled(has_selection and not busy and not self._closed)
         self.preview_reference_button.setEnabled(has_selection and not busy)
         self.accept_preparation_button.setEnabled(ref_ready and not busy)
         self.reload_button.setEnabled(not self._catalog_busy and not self._attributes_busy and not self._crop_busy and not self._closed)
@@ -1378,6 +1386,22 @@ class PersonalVisualQuestionDialog(QDialog):
             refreshed,
             refresh_failed,
         )
+
+    def _add_to_basket(self) -> None:
+        if self._save_busy or self._closed or not self._selected:
+            return
+        payload = deepcopy(self.selections)
+        self._save_busy = True
+        self._update_actions()
+
+        def added(count):
+            self._save_busy = False
+            set_status(self.status, "success", f"所选题目已按完整主题加入；题篮现有 {count} 项。到组卷页可调整顺序并预览实际分页，已有主题不会重复加入。")
+            self._update_actions()
+
+        self._submit("图片题整主题加入统一题篮",
+                     lambda: self.facade.add_personal_visual_questions_to_basket(payload),
+                     added, self._selection_save_failed)
 
     def _save_selection(self) -> None:
         if self._save_busy or self._closed:

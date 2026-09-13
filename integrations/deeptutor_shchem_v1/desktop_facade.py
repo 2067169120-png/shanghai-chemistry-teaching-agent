@@ -6,18 +6,18 @@ read-only chemistry readers and personal-state managers directly.
 
 from __future__ import annotations
 
-import hashlib
-import json
-import re
-import threading
-import time
-import uuid
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import AbstractContextManager
 from copy import deepcopy
 from dataclasses import asdict, dataclass, field
+import hashlib
+import json
 from pathlib import Path
+import re
+import threading
+import time
 from typing import Any, Literal, Protocol
+import uuid
 
 from .archived_wechat_crop_revision import presentation_fingerprint
 from .candidate_review import Wave1CandidateReviewReader
@@ -1630,7 +1630,9 @@ class DesktopWorkbenchFacade:
         return tuple(self._state.basket())
 
     def _mixed_paper_call(self, method: str, *args: Any) -> Any:
+        from .desktop_mixed_paper_pagination import MixedPaperPaginationError
         from .desktop_mixed_paper_service import MixedPaperError, MixedPaperService
+        from .desktop_personal_visual_questions import PersonalVisualQuestionError
         from .desktop_state import DesktopStateError
 
         try:
@@ -1638,7 +1640,7 @@ class DesktopWorkbenchFacade:
                 return getattr(MixedPaperService(self), method)(*args)
         except (DesktopFacadeError, ReadCancelled):
             raise
-        except (MixedPaperError, DesktopStateError) as exc:
+        except (MixedPaperError, DesktopStateError, MixedPaperPaginationError, PersonalVisualQuestionError) as exc:
             raise DesktopFacadeError(
                 getattr(exc, "code", "mixed_paper_invalid"),
                 getattr(exc, "message_zh", str(exc)),
@@ -1651,6 +1653,13 @@ class DesktopWorkbenchFacade:
     def add_word_questions_to_basket(self, selections: list[dict[str, Any]]) -> int:
         """Atomically add source-bound native Word selections to the main basket."""
         return self._mixed_paper_call("add_word_questions", selections)
+
+    def add_personal_visual_questions_to_basket(self, selections: list[dict[str, Any]]) -> int:
+        """Keep every selected visual question inside its complete source theme."""
+        return self._mixed_paper_call("add_visual_questions", selections)
+
+    def prepare_mixed_paper_pagination(self, preview_id: str, preview_hash: str) -> PaperPreview:
+        return self._mixed_paper_call("prepare_pagination", preview_id, preview_hash)
 
     def paper_basket_projection(self) -> dict[str, Any]:
         return self._mixed_paper_call("projection")

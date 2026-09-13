@@ -31,6 +31,10 @@
 !/docs/screenshots/word-range-review.png
 !/docs/screenshots/mixed-basket.png
 !/docs/screenshots/mixed-paper-preview.png
+!/docs/screenshots/visual-mixed-pagination.png
+!/docs/qa/
+/docs/qa/*
+!/docs/qa/0.1.82-visual-pagination.md
 !/docs/screenshots/word-curriculum-filters.png
 !/docs/screenshots/lecture-study-reference.png
 !/docs/screenshots/word-multirange-selection.png

@@ -7,13 +7,13 @@ live in a private, immutable preview directory, never in the master question ban
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from copy import deepcopy
 import hashlib
 import json
 import math
-import re
-from collections.abc import Mapping
-from copy import deepcopy
 from pathlib import Path
+import re
 from typing import Any
 from uuid import uuid4
 
@@ -29,7 +29,7 @@ _PREFIX = "mixed-preview-"
 _SCOPES = {"master", "wave1", "supplemental"}
 _SHA = re.compile(r"[0-9a-f]{64}")
 _NOTICE = (
-    "本次统一导出学生版和教师版 DOCX；PDF 未生成，尚未进行成品分页与版面目视验收。"
+    "当前是图文内容核对；生成实际分页后，才能确认并导出学生和教师 DOCX/PDF。"
 )
 
 
@@ -60,9 +60,9 @@ def _sha(data: bytes) -> str:
 
 def _kind(item: Mapping[str, Any]) -> str:
     kind = item.get("item_kind", "core_theme")
-    if kind not in {"core_theme", "word_question"}:
+    if kind not in {"core_theme", "word_question", "personal_visual_theme"}:
         raise MixedPaperError("题篮包含不支持的来源类型，请重新选择。")
-    if kind == "core_theme" and str(item.get("key", "")).startswith("word:"):
+    if kind == "core_theme" and str(item.get("key", "")).startswith(("word:", "personal-visual-theme:")):
         raise MixedPaperError("Word 题篮来源类型缺失，未按原卷题猜测。")
     return kind
 
@@ -130,6 +130,7 @@ class MixedPaperService:
         core_bundle_builder=None,
         docx_builder=None,
         word_validator=None,
+        pagination_builder=None,
     ):
         self.facade = facade
         self.state = facade.state_store
@@ -137,6 +138,40 @@ class MixedPaperService:
         self._core_bundle_builder = core_bundle_builder
         self._docx_builder = docx_builder
         self._word_validator = word_validator
+        self._pagination_builder = pagination_builder
+
+    def _visual_themes(self):
+        from .desktop_personal_visual_questions import PersonalVisualQuestionService
+        from .desktop_personal_visual_theme_export import (
+            PersonalVisualThemeExportService,
+        )
+
+        return PersonalVisualThemeExportService(PersonalVisualQuestionService(self.facade))
+
+    def add_visual_questions(self, selections):
+        themes, _ = self._visual_themes().compile(selections)
+        items = [{"item_kind": "personal_visual_theme", "key": item["key"],
+                  "title_zh": item["title_zh"], "source_zh": item["source_zh"],
+                  "source_ref": item["source_ref"],
+                  "visual_selections": item["source_ref"]["selections"], "added_at": utc_now()}
+                 for item in themes]
+        return self.state.add_many_to_basket(items)
+
+    def _resolve_visuals(self, basket):
+        items, assets = {}, {}
+        for raw in basket:
+            if _kind(raw) != "personal_visual_theme":
+                continue
+            choices = raw.get("visual_selections")
+            compiled, blobs = self._visual_themes().compile(choices)
+            if len(compiled) != 1 or compiled[0]["key"] != raw["key"] or compiled[0]["source_ref"] != raw.get("source_ref"):
+                raise MixedPaperError("图片主题来源、裁片或小问已变化，请重新加入题篮。", "paper_preview_stale")
+            items[raw["key"]] = compiled[0]
+            for asset_id, data in blobs.items():
+                if asset_id in assets and assets[asset_id] != data:
+                    raise MixedPaperError("图片资源标识冲突。")
+                assets[asset_id] = data
+        return items, assets
 
     def add_word_questions(self, selections) -> int:
         rows, _ = self.facade._word_questions()._resolve(selections)
@@ -215,9 +250,13 @@ class MixedPaperService:
             else ({}, {})
         )
         catalogs, result, seen = {}, [], set()
+        visuals, _ = self._resolve_visuals(basket)
         for item in basket:
             check_read_cancelled()
             key = item["key"]
+            if _kind(item) == "personal_visual_theme":
+                result.append(visuals[key])
+                continue
             if _kind(item) == "word_question":
                 row = words[key]
                 result.append(
@@ -375,6 +414,10 @@ class MixedPaperService:
     def _settings(item, raw):
         if not isinstance(raw, dict):
             raise MixedPaperError("本次练习分值设置格式不正确。")
+        if item["kind"] == "personal_visual_theme":
+            if set(raw) - {"use_source_scores"} or raw.get("use_source_scores", True) is not True:
+                raise MixedPaperError("图片主题保留来源分值和原答题区，不额外添加答题线。")
+            return {"use_source_scores": True}
         if item["kind"] == "word_question":
             if set(raw) - {"points"}:
                 raise MixedPaperError(
@@ -486,6 +529,7 @@ class MixedPaperService:
         folder = self.root / token
         folder.mkdir(parents=True, exist_ok=False)
         manifest, sections, images, blockers = [], [], {}, []
+        visual_items, visual_assets = self._resolve_visuals(basket)
         for index, key in enumerate(order):
             check_read_cancelled()
             item = by_key[key]
@@ -538,6 +582,32 @@ class MixedPaperService:
                         "content_sha256": _digest(_word_content(row)),
                     }
                 )
+            elif item["kind"] == "personal_visual_theme":
+                from .desktop_personal_visual_theme_writer import build_theme_blocks
+
+                if item != visual_items[key]:
+                    raise MixedPaperError("图片主题在准备期间已变化，请重新预览。", "paper_preview_stale")
+                audience_blocks = {}
+                descriptor_by_id = {image["asset_id"]: image for image in item["content"]["images"]}
+                for audience in ("student", "teacher"):
+                    blocks = build_theme_blocks(item, visual_assets, audience, show_scores=show)
+                    converted = []
+                    for block in blocks:
+                        if block["kind"] == "image":
+                            descriptor = descriptor_by_id[block["asset_id"]]
+                            converted.append(self._save_image(folder, images, visual_assets[block["asset_id"]],
+                                                             descriptor["content_type"], block.get("caption_zh")))
+                        else:
+                            converted.append(block)
+                    audience_blocks[audience] = converted
+                score_rows = item["content"]["source_scores"]
+                points = sum(row["max_score"] or 0 for row in score_rows)
+                sections.append({**base, "student_blocks": audience_blocks["student"],
+                                 "teacher_blocks": audience_blocks["teacher"], "points": points,
+                                 "scores_complete": all(row["max_score"] is not None for row in score_rows)})
+                manifest.append({"kind": "personal_visual_theme", "key": key,
+                                 "source_ref": base["source_ref"], "content_sha256": _digest(item["content"]),
+                                 "settings": normalized[key]})
             else:
                 from .paper_export_workbench import build_core_export_bundle
 
@@ -612,7 +682,9 @@ class MixedPaperService:
             "sections": sections,
             "stats": {
                 "section_count": len(sections),
-                "total_score": sum(section["points"] for section in sections),
+                "total_score": (sum(section["points"] for section in sections)
+                                if all(section.get("scores_complete", True) for section in sections) else None),
+                "known_score": sum(section["points"] for section in sections),
             },
             "notices": [_NOTICE],
             "blockers": blockers,
@@ -874,9 +946,10 @@ class MixedPaperService:
         if not isinstance(record, dict) or record.get("preview_id") != preview_id:
             raise MixedPaperError("统一预览已缺失，请重新生成。")
         folder = self.root / preview_id.removeprefix(_PREFIX)
-        snapshot = json.loads(
-            _read_verified(folder / "snapshot.json", record.get("snapshot_sha256"))
-        )
+        snapshot_name = record.get("snapshot_file", "snapshot.json")
+        if not isinstance(snapshot_name, str) or not re.fullmatch(r"(?:snapshot|paginated-[0-9a-f]{32})\.json", snapshot_name):
+            raise MixedPaperError("统一预览快照文件标识无效。")
+        snapshot = json.loads(_read_verified(folder / snapshot_name, record.get("snapshot_sha256")))
         if snapshot.get("preview_id") != preview_id or snapshot.get(
             "preview_hash"
         ) != record.get("preview_hash"):
@@ -901,46 +974,58 @@ class MixedPaperService:
     def image(self, preview_id, image_id):
         folder, _, snapshot = self._load(preview_id)
         image = snapshot["images"].get(image_id) if isinstance(image_id, str) else None
-        if not isinstance(image, dict) or image_id != "image-" + image.get(
-            "sha256", ""
-        ):
+        if not isinstance(image, dict) or (image_id != "image-" + image.get("sha256", "")
+                and image_id not in self._page_ids(snapshot)):
             raise MixedPaperError("图片不属于这个统一预览。")
         path = (folder / image["path"]).resolve()
         if not path.is_relative_to(folder.resolve()):
             raise MixedPaperError("图片路径不属于这个统一预览。")
+        data = _read_verified(path, image["sha256"])
+        if image_id in self._page_ids(snapshot):
+            self._pagination(folder, snapshot)
+            with self.state._lock:
+                _, record, current = self._load(preview_id, require_current=True)
+                if current["preview_hash"] != snapshot["preview_hash"]:
+                    raise MixedPaperError("分页已变化，请重新预览。", "paper_preview_stale")
+                record["pages_read"] = sorted(set(record.get("pages_read", [])) | {image_id})
+                self.state.save_draft(preview_id, record)
         return {
-            "data": _read_verified(path, image["sha256"]),
+            "data": data,
             "content_type": image["content_type"],
             "sha256": image["sha256"],
         }
 
     def approve(self, preview_id, preview_hash):
-        _, record, snapshot = self._load(preview_id, require_current=True)
+        folder, record, snapshot = self._load(preview_id, require_current=True)
         if preview_hash != snapshot["preview_hash"]:
             raise MixedPaperError("确认的预览版本不一致。", "paper_preview_stale")
         if snapshot["preview_model"]["blockers"]:
             raise MixedPaperError(
                 "所选题目仍有未解决的题答范围或图文预览缺口，不能确认导出。"
             )
-        record["approval"] = {
-            "status": "approved",
-            "preview_hash": preview_hash,
-            "approved_at": utc_now(),
-        }
-        self.state.save_draft(preview_id, record)
+        self._pagination(folder, snapshot)
+        page_ids = self._page_ids(snapshot)
+        if not page_ids or set(record.get("pages_read", [])) != page_ids:
+            raise MixedPaperError("请逐页查看学生版和教师版的实际分页后再确认。")
+        self._build_sections(preview_id, snapshot, folder, check_images=False)
+        check_read_cancelled()
+        with self.state._lock:
+            _, record, current = self._load(preview_id, require_current=True)
+            if current["preview_hash"] != preview_hash:
+                raise MixedPaperError("确认期间预览已变化，请重新预览。", "paper_preview_stale")
+            check_read_cancelled()
+            record["approval"] = {
+                "status": "approved",
+                "preview_hash": preview_hash,
+                "approved_at": utc_now(),
+            }
+            self.state.save_draft(preview_id, record)
         return {
             "status": "approved",
-            "message_zh": "本次统一图文预览已确认，可以导出学生和教师 DOCX。",
+            "message_zh": "本次实际分页已确认，可以导出同一份学生和教师 DOCX/PDF。",
         }
 
-    def export(self, preview_id, preview_hash):
-        folder, record, snapshot = self._load(preview_id, require_current=True)
-        if (
-            preview_hash != snapshot["preview_hash"]
-            or (record.get("approval") or {}).get("preview_hash") != preview_hash
-            or (record.get("approval") or {}).get("status") != "approved"
-        ):
-            raise MixedPaperError("请先确认本次统一图文预览。")
+    def _build_sections(self, preview_id, snapshot, folder, *, check_images=True):
         items, words, inventory, _ = self._resolve(self.state.basket())
         current = {item["key"]: item for item in items}
         sections = []
@@ -963,6 +1048,12 @@ class MixedPaperService:
                 if _sha(row["source_bytes"]) != row["source_sha256"]:
                     raise MixedPaperError("Word 原件已变化，未导出。")
                 sections.append({"kind": "word_question", "question": row})
+            elif frozen["kind"] == "personal_visual_theme":
+                item = current[key]
+                if _digest(item["content"]) != frozen["content_sha256"]:
+                    raise MixedPaperError("图片主题内容已变化，请重新预览。", "paper_preview_stale")
+                _, assets = self._resolve_visuals([raw for raw in self.state.basket() if raw["key"] == key])
+                sections.append({"kind": "personal_visual_theme", "item": item, "assets": assets})
             else:
                 bundle_path = (folder / frozen["bundle_path"]).resolve()
                 asset_root = (folder / frozen["asset_root"]).resolve()
@@ -982,10 +1073,16 @@ class MixedPaperService:
                 sections.append(
                     {"kind": "core_plan", "bundle": bundle, "asset_root": asset_root}
                 )
-        for image_id in snapshot["images"]:
-            self.image(preview_id, image_id)
+        if check_images:
+            for image_id in snapshot["images"]:
+                if image_id not in self._page_ids(snapshot):
+                    self.image(preview_id, image_id)
+        return sections
+
+    def _build_docx(self, preview_id, snapshot, folder):
         from .desktop_mixed_paper_export import build_mixed_paper_docx
 
+        sections = self._build_sections(preview_id, snapshot, folder)
         model = snapshot["preview_model"]
         payload = (self._docx_builder or build_mixed_paper_docx)(
             model["title"],
@@ -999,34 +1096,128 @@ class MixedPaperService:
             for key in ("student_bytes", "teacher_bytes")
         ):
             raise MixedPaperError("统一导出未生成完整的学生与教师 DOCX。")
-        # Check again before registering output: edits during construction must
-        # not silently turn an old approval into an export of a different basket.
-        self._load(preview_id, require_current=True)
+        return payload
+
+    @staticmethod
+    def _page_ids(snapshot):
+        pagination = snapshot.get("preview_model", {}).get("pagination", {})
+        return {page["image_id"] for document in pagination.get("documents", {}).values()
+                for page in document.get("pages", [])}
+
+    def _pagination(self, folder, snapshot):
+        from .desktop_mixed_paper_pagination import load_prepared_pages
+
+        binding = snapshot.get("pagination_binding")
+        if not isinstance(binding, dict):
+            raise MixedPaperError("尚未生成实际分页，请先生成学生版和教师版分页。")
+        root = (folder / binding["path"]).resolve()
+        if not root.is_relative_to(folder.resolve()):
+            raise MixedPaperError("分页目录不属于本次预览。")
+        manifest = load_prepared_pages(root, expected_manifest_sha256=binding["manifest_sha256"])
+        return root, manifest
+
+    def prepare_pagination(self, preview_id, preview_hash):
+        from .desktop_mixed_paper_pagination import prepare_pages
+
+        folder, record, snapshot = self._load(preview_id, require_current=True)
+        if snapshot["preview_hash"] != preview_hash:
+            raise MixedPaperError("内容预览版本已变化，请重新生成。", "paper_preview_stale")
+        if snapshot["preview_model"]["blockers"]:
+            raise MixedPaperError("图文仍有缺口，请先修订所选题目。")
+        if snapshot.get("pagination_binding"):
+            raise MixedPaperError("本次分页已生成；需要重新排版时，请新建预览。")
+        payload = self._build_docx(preview_id, snapshot, folder)
+        token = uuid4().hex
+        inputs = folder / ("page-inputs-" + token)
+        inputs.mkdir(exist_ok=False)
+        paths = {}
+        for audience in ("student", "teacher"):
+            paths[audience] = inputs / (audience + ".docx")
+            paths[audience].write_bytes(payload[audience + "_bytes"])
+        output = folder / ("pagination-" + token)
+        manifest = (self._pagination_builder or prepare_pages)(paths, output)
+        documents = {}
+        for audience in ("student", "teacher"):
+            version = manifest["versions"][audience]
+            pages = []
+            for page in version["pages"]:
+                image_id = f"page-{audience}-{page['page_number']}-{page['sha256']}"
+                snapshot["images"][image_id] = {
+                    "path": (output.relative_to(folder) / page["path"]).as_posix(),
+                    "sha256": page["sha256"], "content_type": "image/png",
+                }
+                pages.append({"page_number": page["page_number"], "image_id": image_id,
+                              "sha256": page["sha256"], "width": page["width_px"], "height": page["height_px"]})
+            documents[audience] = {"page_count": version["page_count"], "pages": pages}
+        snapshot["pagination_binding"] = {"path": output.relative_to(folder).as_posix(),
+                                           "manifest_sha256": manifest["manifest_sha256"]}
+        model = snapshot["preview_model"]
+        model.pop("preview_snapshot_sha256")
+        model["pagination"] = {"status": "rendered_pending_review", "documents": documents,
+                               "manifest_sha256": manifest["manifest_sha256"]}
+        model["notices"] = ["以下为已生成DOCX的真实PDF分页；逐页核对后，导出保持相同文件。"]
+        model["preview_snapshot_sha256"] = _digest(model)
+        snapshot["preview_hash"] = model["preview_snapshot_sha256"]
+        self._pagination(folder, snapshot)
+        self._build_sections(preview_id, snapshot, folder, check_images=False)
+        check_read_cancelled()
+        filename = f"paginated-{token}.json"
+        data = _json_bytes(snapshot)
+        (folder / filename).write_bytes(data)
+        with self.state._lock:
+            _, current, _ = self._load(preview_id, require_current=True)
+            if current["preview_hash"] != preview_hash:
+                raise MixedPaperError("分页生成期间预览已变化，请重试。", "paper_preview_stale")
+            check_read_cancelled()
+            record.update(preview_hash=snapshot["preview_hash"], snapshot_file=filename,
+                          snapshot_sha256=_sha(data), approval=None, pages_read=[])
+            self.state.save_draft(preview_id, record)
+            self.state.save_draft(_ACTIVE, {"preview_id": preview_id, "preview_hash": snapshot["preview_hash"]})
+        from .desktop_facade import PaperPreview
+
+        return PaperPreview(preview_id=preview_id, title_zh=model["title"],
+                            mode_zh="模拟考试" if model["mode"] == "mock_exam" else "平时练习",
+                            theme_count=len(model["sections"]),
+                            theme_titles=tuple(row["title_zh"] for row in model["sections"]),
+                            export_ready=False, blockers=(), preview_model=model,
+                            preview_hash=snapshot["preview_hash"], approved=False)
+
+    def export(self, preview_id, preview_hash):
+        from .desktop_mixed_paper_pagination import read_frozen_artifact
+
+        folder, record, snapshot = self._load(preview_id, require_current=True)
+        if (preview_hash != snapshot["preview_hash"]
+                or (record.get("approval") or {}).get("preview_hash") != preview_hash
+                or (record.get("approval") or {}).get("status") != "approved"):
+            raise MixedPaperError("请先确认本次实际分页。")
+        self._build_sections(preview_id, snapshot, folder)
+        root, manifest = self._pagination(folder, snapshot)
         output = folder / ("export-" + uuid4().hex)
         output.mkdir(exist_ok=False)
         artifacts = []
-        for audience, filename in (
-            ("student", "学生练习.docx"),
-            ("teacher", "教师答案.docx"),
-        ):
-            data = payload[f"{audience}_bytes"]
-            path = output / filename
-            path.write_bytes(data)
-            artifacts.append(
-                {
-                    "artifact_id": f"{audience}_docx",
-                    "path": str(path.resolve()),
-                    "filename": filename,
-                    "sha256": _sha(data),
-                }
-            )
+        for audience, name in (("student", "学生练习"), ("teacher", "教师答案")):
+            for extension in ("docx", "pdf"):
+                data = read_frozen_artifact(root, manifest, audience, extension,
+                                           expected_manifest_sha256=manifest["manifest_sha256"])
+                path = output / (name + "." + extension)
+                path.write_bytes(data)
+                artifacts.append({"artifact_id": f"{audience}_{extension}", "path": str(path.resolve()),
+                                  "filename": path.name, "sha256": _sha(data)})
+        self._build_sections(preview_id, snapshot, folder, check_images=False)
+        with self.state._lock:
+            _, current, current_snapshot = self._load(preview_id, require_current=True)
+            if (current_snapshot["preview_hash"] != preview_hash
+                    or (current.get("approval") or {}).get("preview_hash") != preview_hash
+                    or (current.get("approval") or {}).get("status") != "approved"):
+                raise MixedPaperError("导出期间预览或确认已变化，请重新预览。", "paper_preview_stale")
+            check_read_cancelled()
         return {
             "status": "completed",
             "preview_id": preview_id,
             "artifacts": artifacts,
-            "pdf_status": "not_generated",
-            "warnings": list(payload.get("warnings", [])) + [_NOTICE],
-            "message_zh": "统一学生版与教师版 DOCX 已生成；PDF 未生成，成品分页尚待目视检查。",
+            "pdf_status": "generated",
+            "warnings": ["个人选编材料；教师确认排版不等于来源答案的官方或化学审核。"],
+            "message_zh": "学生版与教师版 DOCX/PDF 已导出，与已确认分页使用同一文件。",
         }
 
 

@@ -9,10 +9,10 @@ projection free of Qt makes numbering, preview invalidation and narrow-window
 tests deterministic and reusable by other desktop surfaces.
 """
 
-import hashlib
-import json
 from copy import deepcopy
 from dataclasses import asdict, dataclass, field
+import hashlib
+import json
 from typing import Any, Iterable, Mapping, Sequence
 
 from ..datong_answer_bindings import EXISTING_ANSWER_AREA_NODE_IDS
@@ -46,7 +46,7 @@ class MixedPaperComposerModel:
                 or not isinstance(row.get("key"), str)
                 or not row["key"]
                 or row["key"] in incoming
-                or row.get("kind") not in {"core_theme", "word_question"}
+                or row.get("kind") not in {"core_theme", "word_question", "personal_visual_theme"}
                 or not isinstance(row.get("content"), dict)
             ):
                 raise ValueError("题篮条目无法对应完整来源，请刷新。")
@@ -61,6 +61,9 @@ class MixedPaperComposerModel:
             key: value for key, value in self.settings.items() if key in incoming
         }
         for key, row in incoming.items():
+            if row["kind"] == "personal_visual_theme":
+                self.settings[key] = {"use_source_scores": True}
+                continue
             if key not in self.settings:
                 self.settings[key] = deepcopy(
                     row.get("settings")
@@ -127,6 +130,13 @@ class MixedPaperComposerModel:
             return False
         if any(not isinstance(value, dict) for value in settings.values()):
             return False
+        if any(
+            self.items[key]["kind"] == "personal_visual_theme"
+            and value != {"use_source_scores": True}
+            for key, value in settings.items()
+            if key in self.items
+        ):
+            return False
         self.excluded = set(excluded) & self.items.keys()
         self.order = [
             key for key in order if key in self.items and key not in self.excluded
@@ -140,6 +150,76 @@ class MixedPaperComposerModel:
             if isinstance(settings.get(key), dict):
                 self.settings[key] = deepcopy(settings[key])
         return True
+
+
+class MixedPaperPageReviewModel:
+    """Track explicit per-page review of one immutable pagination manifest."""
+
+    def __init__(self, pagination: Mapping[str, Any]):
+        def valid_hash(value):
+            return isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
+
+        if not isinstance(pagination, Mapping) or pagination.get("status") != "rendered_pending_review" or not valid_hash(pagination.get("manifest_sha256")):
+            raise ValueError("本次真实分页尚未完成，不能确认。")
+        documents = pagination.get("documents")
+        if not isinstance(documents, Mapping) or set(documents) != {"student", "teacher"}:
+            raise ValueError("学生版或教师版分页缺失，不能确认。")
+        self.manifest_sha256 = pagination["manifest_sha256"]
+        self.pages = {}
+        self.loaded: set[tuple[str, int]] = set()
+        self.reviewed: set[tuple[str, int]] = set()
+        self.failed = False
+        ids = set()
+        for audience in ("student", "teacher"):
+            document = documents[audience]
+            if not isinstance(document, Mapping):
+                raise ValueError("分页目录无法读取，不能确认。")
+            count, pages = document.get("page_count"), document.get("pages")
+            if type(count) is not int or count < 1 or not isinstance(pages, list) or len(pages) != count:
+                raise ValueError("分页数量与目录不一致，不能确认。")
+            for number, page in enumerate(pages, 1):
+                if (
+                    not isinstance(page, Mapping)
+                    or type(page.get("page_number")) is not int
+                    or page["page_number"] != number
+                    or not isinstance(page.get("image_id"), str)
+                    or not page["image_id"].strip()
+                    or page["image_id"] in ids
+                    or not valid_hash(page.get("sha256"))
+                    or any(type(page.get(key)) is not int or page[key] < 1 for key in ("width", "height"))
+                    or page["width"] * page["height"] > 40_000_000
+                ):
+                    raise ValueError("分页目录有缺页、重复页或无效图片标识，不能确认。")
+                ids.add(page["image_id"])
+            self.pages[audience] = tuple(deepcopy(dict(page)) for page in pages)
+
+    def page(self, audience: str, number: int) -> dict:
+        if audience not in self.pages or type(number) is not int or not 1 <= number <= len(self.pages[audience]):
+            raise ValueError("所选分页不在本次预览中。")
+        return deepcopy(self.pages[audience][number - 1])
+
+    def mark_loaded(self, audience: str, number: int, sha256: str, width: int, height: int) -> bool:
+        page = self.page(audience, number)
+        if type(width) is not int or type(height) is not int or (sha256, width, height) != (page["sha256"], page["width"], page["height"]):
+            self.failed = True
+            return False
+        self.loaded.add((audience, number))
+        return True
+
+    def mark_reviewed(self, audience: str, number: int) -> bool:
+        self.page(audience, number)
+        if self.failed or (audience, number) not in self.loaded:
+            return False
+        self.reviewed.add((audience, number))
+        return True
+
+    @property
+    def total_pages(self) -> int:
+        return sum(len(pages) for pages in self.pages.values())
+
+    @property
+    def can_confirm(self) -> bool:
+        return not self.failed and len(self.reviewed) == self.total_pages
 
 
 ANSWER_STATUS_LABELS: dict[str, tuple[str, str]] = {

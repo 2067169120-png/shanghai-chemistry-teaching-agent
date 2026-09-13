@@ -8,9 +8,9 @@ current-item inspector are independent, keyboard-focusable widgets that share
 the pure :class:`PaperComposerModel` projection.
 """
 
-import hashlib
 from copy import deepcopy
 from dataclasses import replace
+import hashlib
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -57,6 +57,7 @@ from .paper_composer import (
     ComposerQuestion,
     ComposerTheme,
     MixedPaperComposerModel,
+    MixedPaperPageReviewModel,
     PaperComposerModel,
     answer_status,
     difficulty_label,
@@ -1759,6 +1760,231 @@ class MixedPaperPreviewDialog(QDialog):
         super().reject()
 
 
+class MixedPaperPaginationDialog(QDialog):
+    """Actual document pages, loaded on selection and explicitly reviewed one by one."""
+
+    preview_confirmed = Signal()
+
+    def __init__(self, data, tasks, image_loader, parent=None):
+        super().__init__(parent)
+        self._closed = False
+        self._tasks, self._image_loader = tasks, image_loader
+        self._jobs, self._pending, self._pixmaps = [], set(), {}
+        self._pages = {"student": 1, "teacher": 1}
+        self._labels, self._scrolls = {}, {}
+        self.confirmed = False
+        self.review = None
+        self.resize(900, 850)
+        self.setMinimumSize(360, 520)
+        self.setWindowTitle("真实分页预览 · 逐页核对")
+        root = QVBoxLayout(self)
+        root.addWidget(_label(str(data.get("title") or "本次试卷"), "CardTitle"))
+        root.addWidget(_label("这里显示本次学生、教师文档的真实页图。每页显示后请明确核对；切换标签或自动读图不等于已核对。确认不提升来源或化学审核状态。", "MutedLabel"))
+        try:
+            self.review = MixedPaperPageReviewModel(data.get("pagination"))
+            if data.get("blockers"):
+                self.review.failed = True
+        except (ValueError, TypeError, KeyError) as exc:
+            root.addWidget(_label(str(exc), "StatusAttention"))
+        if data.get("blockers"):
+            root.addWidget(_label("待处理：\n" + "\n".join(str(x) for x in data["blockers"]), "StatusAttention"))
+        self.tabs = QTabWidget()
+        self.tabs.setMinimumWidth(0)
+        for audience, title in (("student", "学生版 · 题面与共同材料"), ("teacher", "教师版 · 答案与逐题分值")):
+            body = QWidget()
+            layout = QVBoxLayout(body)
+            label = _label("请选择本版页面。", "MutedLabel")
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(label, 0, Qt.AlignmentFlag.AlignHCenter)
+            layout.addStretch(1)
+            scroll = page_scroll(body)
+            self.tabs.addTab(scroll, title)
+            self._labels[audience], self._scrolls[audience] = label, scroll
+        root.addWidget(self.tabs, 1)
+        controls = QHBoxLayout()
+        self.previous_button, self.next_button = _quiet_button("上一页"), _quiet_button("下一页")
+        self.page_selector = QSpinBox()
+        self.page_selector.setAccessibleName("当前版本页码")
+        self.page_selector.setMinimumWidth(0)
+        self.zoom = QComboBox()
+        self.zoom.setAccessibleName("页图缩放")
+        self.zoom.addItem("适合宽度", 0)
+        for value in (25, 50, 75, 100, 150):
+            self.zoom.addItem(f"{value}%", value)
+        for widget in (self.previous_button, self.page_selector, self.next_button, self.zoom):
+            controls.addWidget(widget)
+        root.addLayout(controls)
+        self.review_page_button = QPushButton("已核对当前页")
+        self.review_page_button.setAccessibleName("明确标记当前页已核对")
+        root.addWidget(self.review_page_button)
+        self.status = _label("正在准备分页…", "MutedLabel")
+        root.addWidget(self.status)
+        buttons = QHBoxLayout()
+        self.back_button = _quiet_button("返回")
+        self.confirm_button = QPushButton("确认两版全部页面已核对")
+        buttons.addWidget(self.back_button)
+        buttons.addWidget(self.confirm_button)
+        root.addLayout(buttons)
+        self.tabs.currentChanged.connect(self._edition_changed)
+        self.page_selector.valueChanged.connect(self._page_changed)
+        self.previous_button.clicked.connect(lambda: self.page_selector.setValue(self.page_selector.value() - 1))
+        self.next_button.clicked.connect(lambda: self.page_selector.setValue(self.page_selector.value() + 1))
+        self.zoom.currentIndexChanged.connect(self._fit_page)
+        self.review_page_button.clicked.connect(self._review_current)
+        self.back_button.clicked.connect(self.reject)
+        self.confirm_button.clicked.connect(self._confirm)
+        self._edition_changed()
+
+    def _current(self):
+        audience = "teacher" if self.tabs.currentIndex() == 1 else "student"
+        return audience, self._pages[audience]
+
+    def _edition_changed(self, *_args):
+        audience, number = self._current()
+        count = len(self.review.pages[audience]) if self.review else 1
+        self.page_selector.blockSignals(True)
+        self.page_selector.setRange(1, count)
+        self.page_selector.setSuffix(f" / {count} 页")
+        self.page_selector.setValue(number)
+        self.page_selector.blockSignals(False)
+        self._show_current()
+
+    def _page_changed(self, number):
+        audience, _ = self._current()
+        self._pages[audience] = number
+        self._show_current()
+
+    def _show_current(self):
+        if self._closed:
+            return
+        current = self._current()
+        if not self.review:
+            self._update_confirmation()
+            return
+        audience, number = current
+        label = self._labels[audience]
+        label.clear()
+        label.setMinimumSize(0, 0)
+        label.setMaximumSize(16777215, 16777215)
+        self._scrolls[audience].verticalScrollBar().setValue(0)
+        if current in self._pixmaps:
+            self._fit_page()
+        else:
+            label.setText("正在读取本页实际图像…")
+            if current not in self._pending and not self.review.failed:
+                page = self.review.page(*current)
+                self._pending.add(current)
+                try:
+                    task_id = self._tasks.submit(
+                        "读取实际分页图",
+                        lambda key=page["image_id"]: self._image_loader(key),
+                        on_success=lambda value, key=current: self._page_ready(key, value),
+                        on_failure=lambda _message, key=current: self._page_failed(key),
+                    )
+                    if task_id:
+                        self._jobs.append(task_id)
+                except Exception:
+                    self._page_failed(current)
+        self._update_confirmation()
+
+    def _page_ready(self, key, value):
+        if self._closed or not self.review:
+            return
+        raw = value.get("data", value.get("bytes")) if isinstance(value, Mapping) else None
+        mime = value.get("content_type", value.get("mime_type")) if isinstance(value, Mapping) else None
+        page = self.review.page(*key)
+        bitmap = QPixmap()
+        if (
+            not isinstance(raw, bytes) or not raw or len(raw) > 32 * 1024 * 1024
+            or mime != "image/png"
+            or hashlib.sha256(raw).hexdigest() != page["sha256"]
+            or value.get("sha256") != page["sha256"]
+            or not bitmap.loadFromData(raw) or bitmap.isNull()
+            or not self.review.mark_loaded(*key, page["sha256"], bitmap.width(), bitmap.height())
+        ):
+            self._page_failed(key)
+            return
+        self._pending.discard(key)
+        self._pixmaps[key] = bitmap
+        if key == self._current():
+            self._fit_page()
+        self._update_confirmation()
+
+    def _page_failed(self, key):
+        if self._closed or not self.review:
+            return
+        self._pending.discard(key)
+        self.review.failed = True
+        if key == self._current():
+            self._labels[key[0]].setText("本页缺失、无法读取或与冻结版本不一致；不能确认，请返回重新生成预览。")
+        self._update_confirmation()
+
+    def _fit_page(self, *_args):
+        key = self._current()
+        pixmap = self._pixmaps.get(key)
+        if pixmap is None:
+            return
+        scroll, label = self._scrolls[key[0]], self._labels[key[0]]
+        zoom = self.zoom.currentData()
+        width = max(40, scroll.viewport().width() - 28) if not zoom else max(1, round(pixmap.width() * zoom / 100))
+        image = pixmap.scaledToWidth(width, Qt.TransformationMode.SmoothTransformation)
+        label.setPixmap(image)
+        label.setFixedSize(image.size())
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded if zoom else Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+    def _review_current(self):
+        if self.review and self.isVisible() and self.review.mark_reviewed(*self._current()):
+            self._update_confirmation()
+
+    def _update_confirmation(self):
+        current = self._current()
+        review = self.review
+        enabled = review is not None and not review.failed and not self._closed
+        self.page_selector.setEnabled(enabled)
+        self.zoom.setEnabled(enabled)
+        self.previous_button.setEnabled(enabled and current[1] > 1)
+        self.next_button.setEnabled(enabled and current[1] < len(review.pages[current[0]]))
+        self.review_page_button.setEnabled(enabled and current in review.loaded and current not in review.reviewed)
+        self.confirm_button.setEnabled(enabled and review.can_confirm and not self._pending and not self.confirmed)
+        self.review_page_button.setText("本页已核对" if review and current in review.reviewed else "已核对当前页")
+        self.status.setText(
+            "分页或图片不完整，本次不能确认。" if not enabled
+            else f"已明确核对 {len(review.reviewed)} / {review.total_pages} 页。"
+            + ("两版全部页面已核对，可确认本次预览。" if review.can_confirm else "请逐页查看后点击“已核对当前页”。")
+        )
+
+    def _confirm(self):
+        if self.confirm_button.isEnabled() and self.review and self.review.can_confirm:
+            self.confirm_button.setEnabled(False)
+            self.preview_confirmed.emit()
+
+    def mark_confirmed(self):
+        self.confirmed = True
+        self.confirm_button.setEnabled(False)
+        self.status.setText("已确认本次两版全部分页；返回后可导出。")
+
+    def mark_confirmation_failed(self, message):
+        self._update_confirmation()
+        self.status.setText(str(message))
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, "zoom"):
+            self._fit_page()
+
+    def reject(self):
+        self._closed = True
+        cancel = getattr(self._tasks, "cancel", None)
+        if callable(cancel):
+            for task_id in self._jobs:
+                cancel(task_id)
+        super().reject()
+
+    def closeEvent(self, event):
+        self.reject()
+        event.accept()
+
+
 class MixedPaperPanel(QWidget):
     """Edit the ordered sections of the existing basket without flattening sources."""
 
@@ -1786,7 +2012,7 @@ class MixedPaperPanel(QWidget):
         root.addWidget(
             section_title(
                 "组卷工作台",
-                "同一个题篮：完整原卷主题与 Word 原生题按这里的顺序编排，共同材料不拆散。",
+                "同一个题篮：图片整主题、原卷主题与 Word 原生题按这里的顺序编排，共同材料不拆散。",
             )
         )
         self.title = QLineEdit(legacy_model.title or "化学巩固练习")
@@ -1853,10 +2079,12 @@ class MixedPaperPanel(QWidget):
         settings_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
         settings_form.addRow("本题分值／主题内每个作答单元分值", self.points)
         settings_form.addRow("原卷题额外答题行数（默认 0）", self.space)
+        self._points_label = settings_form.labelForField(self.points)
+        self._space_label = settings_form.labelForField(self.space)
         root.addLayout(settings_form)
         self.preview_button = QPushButton("查看完整学生版与教师版")
         self.preview_button.setObjectName("PrimaryAction")
-        self.export_button = QPushButton("导出两版 DOCX")
+        self.export_button = QPushButton("导出学生与教师版 DOCX、PDF")
         root.addWidget(self.preview_button)
         root.addWidget(self.export_button)
         self.status = _label(
@@ -1867,6 +2095,8 @@ class MixedPaperPanel(QWidget):
         for key, title in (
             ("student_docx", "打开学生版 DOCX"),
             ("teacher_docx", "打开教师版 DOCX"),
+            ("student_pdf", "打开学生版 PDF"),
+            ("teacher_pdf", "打开教师版 PDF"),
         ):
             button = _quiet_button(title)
             button.clicked.connect(
@@ -1877,7 +2107,7 @@ class MixedPaperPanel(QWidget):
             self.artifact_buttons[key] = button
         root.addWidget(
             _label(
-                "混合组卷本阶段生成学生、教师两版 DOCX；PDF 尚未生成。预览不代表已完成人工化学审核。",
+                "导出学生、教师两版 DOCX 和 PDF，共四个文件，复用本次已核对的冻结文档。分页确认不代表已完成人工化学审核。",
                 "MutedLabel",
             )
         )
@@ -2079,7 +2309,7 @@ class MixedPaperPanel(QWidget):
         self.sections.clear()
         for number, key in enumerate(self.model.order, 1):
             value = self.model.items[key]
-            kind = "Word 完整题" if value["kind"] == "word_question" else "原卷完整主题"
+            kind = {"word_question": "Word 完整题", "personal_visual_theme": "来源图片整主题 · 原分值", "core_theme": "原卷完整主题"}[value["kind"]]
             item = QListWidgetItem(
                 f"{number}　{value.get('title_zh', '完整题目')}\n{kind} · {value.get('source_zh', '来源待核对')}"
             )
@@ -2101,16 +2331,20 @@ class MixedPaperPanel(QWidget):
             value = self.model.items.get(key, {})
             settings = self.model.settings.get(key, {})
             word = value.get("kind") == "word_question"
+            visual = value.get("kind") == "personal_visual_theme"
+            for field in (self.points, self.space, self._points_label, self._space_label):
+                field.setVisible(not visual)
             self.points.setRange(0.1 if word else 1, 100 if word else 30)
             self.points.setDecimals(1 if word else 0)
             self.points.setValue(
                 float(settings.get("points" if word else "score_per_atomic", 2))
             )
             self.space.setValue(int(settings.get("answer_space_lines", 0)))
-            self.space.setEnabled(bool(key) and not word and not self._busy)
-            self.points.setEnabled(bool(key) and not self._busy)
+            self.space.setEnabled(bool(key) and not word and not visual and not self._busy)
+            self.points.setEnabled(bool(key) and not visual and not self._busy)
             self.settings_note.setText(
-                "Word 原题文字、图表和已有答题区域整体保留，不额外补线。"
+                "图片题按完整主题保留来源题面、共用材料和参考答案；使用来源分值，不追加答题线。分值缺失时明确标记，不能当作零分或补造分数。"
+                if visual else "Word 原题文字、图表和已有答题区域整体保留，不额外补线。"
                 if word
                 else "原卷主题保持完整；修改这里的分值会统一应用于主题内各作答单元。已有逐题设置在未修改时保留。"
             )
@@ -2121,6 +2355,8 @@ class MixedPaperPanel(QWidget):
     def _settings_changed(self, *_args):
         key = self._current_key()
         if self._rendering or not key:
+            return
+        if self.model.items[key]["kind"] == "personal_visual_theme":
             return
         self.model.settings[key] = (
             {"points": self.points.value()}
@@ -2186,6 +2422,10 @@ class MixedPaperPanel(QWidget):
         self.down_button.setEnabled(enabled and 0 <= row < len(self.model.order) - 1)
         self.remove_button.setEnabled(enabled and row >= 0)
         self.restore_button.setEnabled(enabled and bool(self.model.excluded))
+        key = self._current_key()
+        kind = self.model.items.get(key, {}).get("kind")
+        self.points.setEnabled(enabled and bool(key) and kind != "personal_visual_theme")
+        self.space.setEnabled(enabled and bool(key) and kind == "core_theme")
 
     def _preview_request(self):
         if self._busy or self._restore_failed or not self.model.order:
@@ -2215,7 +2455,7 @@ class MixedPaperPanel(QWidget):
                 failed("预览题目顺序与当前选择不一致，请重新预览。")
                 return
             self._preview = value
-            dialog = MixedPaperPreviewDialog(
+            dialog = MixedPaperPaginationDialog(
                 data,
                 self.tasks,
                 lambda key: self.facade.paper_preview_image(value.preview_id, key),
@@ -2236,9 +2476,23 @@ class MixedPaperPanel(QWidget):
             self._update_actions()
 
         try:
+            def prepare():
+                if self._closed or generation != self._generation:
+                    raise RuntimeError("编排已改变，本次分页任务已取消。")
+                content = self.facade.create_paper_preview(request)
+                if self._closed or generation != self._generation:
+                    raise RuntimeError("编排已改变，本次分页任务已取消。")
+                paginate = getattr(self.facade, "prepare_mixed_paper_pagination", None)
+                if not callable(paginate):
+                    raise RuntimeError("真实分页服务尚未接入，不能用内容块代替分页确认。")
+                result = paginate(content.preview_id, content.preview_hash)
+                if result.preview_id != content.preview_id or result.preview_hash == content.preview_hash:
+                    raise RuntimeError("真实分页未绑定本次新版本，不能确认。")
+                return result
+
             self.tasks.submit(
-                "生成混合整卷预览",
-                lambda: self.facade.create_paper_preview(request),
+                "生成学生与教师版真实分页",
+                prepare,
                 on_success=ready,
                 on_failure=failed,
             )
@@ -2246,6 +2500,12 @@ class MixedPaperPanel(QWidget):
             failed("预览任务未启动，请重试。")
 
     def _approve(self, dialog, generation, preview):
+        if (
+            self._closed or dialog._closed or generation != self._generation
+            or self._preview_dialog is not dialog or not dialog.review
+            or not dialog.review.can_confirm
+        ):
+            return
         def ready(result):
             if (
                 self._closed
@@ -2259,7 +2519,7 @@ class MixedPaperPanel(QWidget):
                 return
             self._approved = True
             dialog.mark_confirmed()
-            self.status.setText("已确认本次图文预览，可导出两版 DOCX；PDF 尚未生成。")
+            self.status.setText("已确认本次两版全部分页，可导出学生与教师版 DOCX、PDF。")
             self._update_actions()
 
         def failed(message):
@@ -2288,7 +2548,7 @@ class MixedPaperPanel(QWidget):
         )
         self._busy = True
         self._update_actions()
-        self.status.setText("正在本机生成学生、教师两版 DOCX…")
+        self.status.setText("正在保存已核对的学生、教师版 DOCX 和 PDF…")
 
         def ready(result):
             if self._closed or generation != self._generation:
@@ -2304,17 +2564,17 @@ class MixedPaperPanel(QWidget):
             }
             if not all(
                 isinstance(paths.get(key), str)
-                and Path(paths[key]).suffix.lower() == ".docx"
+                and Path(paths[key]).suffix.lower() == (".pdf" if key.endswith("_pdf") else ".docx")
                 for key in self.artifact_buttons
-            ):
-                failed("两版 DOCX 的导出结果不完整，请重试；未提供打开按钮。")
+            ) or result.get("pdf_status") != "generated":
+                failed("学生、教师 DOCX/PDF 四个文件的导出结果不完整，请重试；未提供打开按钮。")
                 return
             self._artifact_paths = paths
             for button in self.artifact_buttons.values():
                 button.show()
             self.status.setText(
-                str(result.get("message_zh") or "已生成学生、教师两版 DOCX。")
-                + "\nPDF 尚未生成，请检查两版 Word 的图文与答案。"
+                str(result.get("message_zh") or "已保存学生、教师版 DOCX 和 PDF。")
+                + "\n四个文件来自本次已核对的冻结文档；编辑 DOCX 后应重新检查分页。"
             )
             self._update_actions()
 
@@ -2326,7 +2586,7 @@ class MixedPaperPanel(QWidget):
 
         try:
             self.tasks.submit(
-                "导出混合组卷 DOCX",
+                "导出混合组卷 DOCX 和 PDF",
                 lambda: self.facade.export_paper_preview(
                     value.preview_id, value.preview_hash, draft
                 ),
@@ -2339,7 +2599,7 @@ class MixedPaperPanel(QWidget):
     def _open_artifact(self, key):
         path = self._artifact_paths.get(key)
         if not path or not Path(path).is_file():
-            self.status.setText("该版 Word 暂时不可用，请重新导出。")
+            self.status.setText("该文档暂时不可用，请重新导出。")
             return
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(Path(path).resolve())))
 
@@ -2369,7 +2629,7 @@ class PaperPage(QWidget):
         basket = facade.basket()
         self._mixed_panel = None
         self._mixed_basket = None
-        legacy_basket = tuple(row for row in basket if row.get("item_kind") != "word_question")
+        legacy_basket = tuple(row for row in basket if row.get("item_kind") not in {"word_question", "personal_visual_theme"})
         self._basket_signature = PaperComposerModel.basket_signature(basket)
         self.model = PaperComposerModel.from_basket(legacy_basket, mode="mock_exam")
         self._restored_draft = False
@@ -2608,8 +2868,8 @@ class PaperPage(QWidget):
         self.setTabOrder(self.continuous_preview, self.inspector)
 
     def _activate_mixed(self, basket):
-        scopes = {row.get("scope", "master") for row in basket if row.get("item_kind") != "word_question"}
-        required = any(row.get("item_kind") == "word_question" for row in basket) or len(scopes) > 1
+        scopes = {row.get("scope", "master") for row in basket if row.get("item_kind") not in {"word_question", "personal_visual_theme"}}
+        required = any(row.get("item_kind") in {"word_question", "personal_visual_theme"} for row in basket) or len(scopes) > 1
         required = required or (self._mixed_panel is not None and bool(basket))
         if not required or not callable(getattr(self.facade, "paper_basket_projection", None)):
             return False

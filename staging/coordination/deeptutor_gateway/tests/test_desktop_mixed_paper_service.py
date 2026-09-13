@@ -7,8 +7,13 @@ from threading import Event, RLock
 from types import SimpleNamespace
 from zipfile import ZipFile
 
-import pytest
 from lxml import etree
+from mixed_pagination_test_support import (
+    paginate_and_read,
+    synthetic_docx,
+    synthetic_pagination,
+)
+import pytest
 from test_desktop_visual_import_facade import (
     desktop_paths as desktop_paths,  # noqa: PLC0414
 )
@@ -194,8 +199,8 @@ def setup(tmp_path):
     def builder(title, sections, **kwargs):
         builder_calls.append((title, sections, kwargs))
         return {
-            "student_bytes": b"PK synthetic student docx",
-            "teacher_bytes": b"PK synthetic teacher docx",
+            "student_bytes": synthetic_docx("Synthetic student"),
+            "teacher_bytes": synthetic_docx("Synthetic teacher"),
             "warnings": [],
         }
 
@@ -388,12 +393,15 @@ def test_real_preview_order_images_score_and_docx_handoff(setup):
     assert service.image(preview.preview_id, image["image_id"])["data"] == words.image
     with pytest.raises(MixedPaperError, match="先确认"):
         service.export(preview.preview_id, preview.preview_hash)
+    preview = paginate_and_read(service, preview)
     service.approve(preview.preview_id, preview.preview_hash)
     exported = service.export(preview.preview_id, preview.preview_hash)
-    assert exported["pdf_status"] == "not_generated"
+    assert exported["pdf_status"] == "generated"
     assert {item["artifact_id"] for item in exported["artifacts"]} == {
         "student_docx",
         "teacher_docx",
+        "student_pdf",
+        "teacher_pdf",
     }
     assert [item["kind"] for item in calls[0][1]] == ["word_question", "core_plan"]
     assert calls[0][1][0]["question"]["source_bytes"] == words.data
@@ -445,8 +453,9 @@ def test_approved_snapshot_cannot_export_changed_sources(setup, mutation):
     service, state, words, calls, _ = setup
     _add_word(service, words)
     preview = service.create_preview(_request(service))
+    preview = paginate_and_read(service, preview)
     service.approve(preview.preview_id, preview.preview_hash)
-    folder, _, snapshot = service._load(preview.preview_id)
+    folder, record, snapshot = service._load(preview.preview_id)
     if mutation == "basket":
         state.add_many_to_basket([_core_item("master")])
     elif mutation == "word_revision":
@@ -458,10 +467,10 @@ def test_approved_snapshot_cannot_export_changed_sources(setup, mutation):
             b"changed"
         )
     else:
-        (folder / "snapshot.json").write_bytes(b"{}")
+        (folder / record["snapshot_file"]).write_bytes(b"{}")
     with pytest.raises(MixedPaperError):
         service.export(preview.preview_id, preview.preview_hash)
-    assert calls == []
+    assert len(calls) == 1  # Built once before pagination, never rebuilt at export.
 
 
 def test_unreadable_original_picture_is_explicit_and_blocks_confirmation(setup):
@@ -526,11 +535,12 @@ def test_new_preview_invalidates_older_approval(setup):
     service, _, words, calls, _ = setup
     _add_word(service, words)
     first = service.create_preview(_request(service))
+    first = paginate_and_read(service, first)
     service.approve(first.preview_id, first.preview_hash)
     service.create_preview(_request(service))
     with pytest.raises(MixedPaperError):
         service.export(first.preview_id, first.preview_hash)
-    assert calls == []
+    assert len(calls) == 1
 
 
 def test_facade_new_methods_delegate_without_constructing_provider(setup, monkeypatch):
@@ -556,6 +566,11 @@ def test_facade_new_methods_delegate_without_constructing_provider(setup, monkey
         if block["kind"] == "image"
     )
     facade.paper_preview_image(preview.preview_id, image["image_id"])
+    service._pagination_builder = synthetic_pagination
+    preview = facade.prepare_mixed_paper_pagination(preview.preview_id, preview.preview_hash)
+    for document in preview.preview_model["pagination"]["documents"].values():
+        for page in document["pages"]:
+            facade.paper_preview_image(preview.preview_id, page["image_id"])
     facade.approve_paper_preview(preview.preview_id, preview.preview_hash)
     facade.export_paper_preview(
         preview.preview_id, preview.preview_hash, {"ignored": "untrusted"}
@@ -564,6 +579,9 @@ def test_facade_new_methods_delegate_without_constructing_provider(setup, monkey
         "add_word_questions",
         "projection",
         "create_preview",
+        "image",
+        "prepare_pagination",
+        "image",
         "image",
         "approve",
         "export",
@@ -643,17 +661,25 @@ def test_full_native_word_core_bundle_preview_image_approve_and_docx_export(
         if block["kind"] == "image":
             image = facade.paper_preview_image(preview.preview_id, block["image_id"])
             assert _sha(image["data"]) == image["sha256"]
+    preview = paginate_and_read(service, preview)
     facade.approve_paper_preview(preview.preview_id, preview.preview_hash)
     exported = facade.export_paper_preview(preview.preview_id, preview.preview_hash)
-    assert exported["pdf_status"] == "not_generated"
+    assert exported["pdf_status"] == "generated"
     assert {row["artifact_id"] for row in exported["artifacts"]} == {
         "student_docx",
         "teacher_docx",
+        "student_pdf",
+        "teacher_pdf",
     }
     for artifact in exported["artifacts"]:
         path = Path(artifact["path"])
         data = path.read_bytes()
         assert _sha(data) == artifact["sha256"]
+        if artifact["artifact_id"].endswith("_pdf"):
+            from pypdf import PdfReader
+
+            assert len(PdfReader(BytesIO(data)).pages) == 1
+            continue
         with ZipFile(BytesIO(data)) as package:
             document = etree.fromstring(package.read("word/document.xml"))
             text = "".join(document.xpath("//*[local-name()='t']/text()"))
