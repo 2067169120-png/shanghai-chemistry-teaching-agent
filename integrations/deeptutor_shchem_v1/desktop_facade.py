@@ -2407,6 +2407,42 @@ class DesktopWorkbenchFacade:
     def word_question_export(self, title, selections, *, show_student_scores=False):
         return self._word_questions().export(title, selections, show_student_scores=show_student_scores)
 
+    def _personal_visual_question_call(self, method, *args, **kwargs):
+        from .desktop_personal_visual_questions import (
+            PersonalVisualQuestionError,
+            PersonalVisualQuestionService,
+        )
+
+        try:
+            return getattr(PersonalVisualQuestionService(self), method)(*args, **kwargs)
+        except PersonalVisualQuestionError as exc:
+            raise DesktopFacadeError(exc.code, exc.message_zh) from exc
+        except (OSError, ValueError, TypeError, KeyError, RuntimeError) as exc:
+            raise DesktopFacadeError(
+                "personal_visual_questions_unavailable",
+                "图片题暂时无法读取，请重新打开原页核对；没有调用模型。",
+            ) from exc
+
+    def personal_visual_questions(self, batch_id=None):
+        return self._personal_visual_question_call("catalog", batch_id)
+
+    def personal_visual_question_detail(self, batch_id, key, revision):
+        return self._personal_visual_question_call("detail", batch_id, key, revision)
+
+    def personal_visual_question_image(self, batch_id, key, revision, image_id, original=False):
+        return self._personal_visual_question_call(
+            "image", batch_id, key, revision, image_id, original=original
+        )
+
+    def save_personal_visual_selection(self, selections):
+        return self._personal_visual_question_call("save_selection", selections)
+
+    def personal_visual_question_reference(self, selections):
+        return self._personal_visual_question_call("reference", selections)
+
+    def import_personal_visual_question_reference(self, reference, existing_assets):
+        return self._personal_visual_question_call("import_reference", reference, existing_assets)
+
     def _visual_import_profile(
         self, profile_id: str, expected_revision: str
     ) -> Mapping[str, Any]:

@@ -588,10 +588,11 @@ class PreparationPage(QWidget):
         )
 
     def import_word_reference(self, reference: dict) -> bool:
-        """Append the confirmed offline Word selection to the current materials."""
+        """Append confirmed Word or personal-image references to the materials."""
         from ..desktop_blueprint_drafts import BlueprintDraftError
         from ..desktop_blueprint_preparation import append_reference
 
+        source_label = "图片题" if isinstance(reference, dict) and reference.get("source_kind") == "personal_visual" else "Word"
         if (
             self._save_task_id
             or self._library_image_task_id
@@ -600,8 +601,8 @@ class PreparationPage(QWidget):
         ):
             QMessageBox.information(
                 self,
-                "暂不能追加 Word 资料",
-                "请先等待当前备课保存、生成或图片导入结束，再重新选择 Word 内容。",
+                f"暂不能追加 {source_label} 资料",
+                f"请先等待当前备课保存、生成或图片导入结束，再重新选择 {source_label} 内容。",
             )
             return False
         if not isinstance(reference, dict):
@@ -614,7 +615,7 @@ class PreparationPage(QWidget):
             or not isinstance(warnings, (list, tuple))
             or any(not isinstance(warning, str) for warning in warnings)
         ):
-            set_status(self.status, "error", "Word 参考内容不完整，请重新预览后导入。")
+            set_status(self.status, "error", f"{source_label} 参考内容不完整，请重新预览后导入。")
             return False
         missing_warnings = [
             warning for warning in warnings if warning and warning not in materials
@@ -624,9 +625,9 @@ class PreparationPage(QWidget):
         try:
             combined = append_reference(self.materials.toPlainText(), materials)
         except BlueprintDraftError as exc:
-            QMessageBox.information(self, "未追加 Word 资料", exc.message_zh)
+            QMessageBox.information(self, f"未追加 {source_label} 资料", exc.message_zh)
             return False
-        if any(
+        if reference.get("source_kind") == "personal_visual" or any(
             key in reference
             for key in ("selections", "source_selection", "include_images", "image_assets", "image_issues")
         ):
@@ -640,7 +641,7 @@ class PreparationPage(QWidget):
         set_status(
             self.status,
             "success",
-            "所选 Word 内容已追加到备课资料。请核对课题、对象和目标后保存或生成；尚未调用模型。"
+            f"所选 {source_label} 内容已追加到备课资料。请核对课题、对象和目标后保存或生成；尚未调用模型。"
             + warning_note,
         )
         self.materials.setFocus()
@@ -655,8 +656,15 @@ class PreparationPage(QWidget):
             normalize_image_assets,
         )
 
+        personal_visual = reference.get("source_kind") == "personal_visual"
+        source_label = "图片题" if personal_visual else "Word"
+        image_label = "图片" if personal_visual else "原图"
         try:
             source_selection = reference.get("source_selection")
+            if personal_visual and (
+                "source_selection" in reference or reference.get("include_images") is not True
+            ):
+                raise PreparationImageError("图片题须携带对应题面图片，不能当作 Word 原文区块导入。")
             if "source_selection" in reference:
                 if reference.get("reference_issues"):
                     raise PreparationImageError("原教案有待处理事项，请返回原文预览核对。")
@@ -683,8 +691,17 @@ class PreparationPage(QWidget):
                         for item in reference["selections"]
                     )
                 ):
-                    raise PreparationImageError("Word 选题定位不完整，请重新预览。")
-                import_method = getattr(self.facade, "import_word_question_reference", None)
+                    raise PreparationImageError(f"{source_label} 选题定位不完整，请重新预览。")
+                if personal_visual and any(
+                    not isinstance(item.get("batch_id"), str) or not item["batch_id"]
+                    for item in reference["selections"]
+                ):
+                    raise PreparationImageError("图片题导入批次不完整，请重新预览。")
+                import_method = getattr(
+                    self.facade,
+                    "import_personal_visual_question_reference" if personal_visual else "import_word_question_reference",
+                    None,
+                )
             if (
                 type(reference.get("include_images")) is not bool
                 or "warnings" not in reference
@@ -692,10 +709,12 @@ class PreparationPage(QWidget):
                 or any(not isinstance(item, str) for item in reference["image_issues"])
                 or "image_assets" not in reference
             ):
-                raise PreparationImageError("Word 图文参考不完整，请重新预览。")
+                raise PreparationImageError(f"{source_label} 图文参考不完整，请重新预览。")
             incoming = normalize_image_assets(reference["image_assets"])
             if incoming != reference["image_assets"]:
-                raise PreparationImageError("Word 图片说明已变化，请重新预览。")
+                raise PreparationImageError(f"{source_label} 图片说明已变化，请重新预览。")
+            if personal_visual and not incoming:
+                raise PreparationImageError("图片题缺少可核对的题面图片，请重新预览。")
             if not reference["include_images"] and incoming:
                 raise PreparationImageError("仅文字参考不应携带图片，请重新预览。")
             if reference["include_images"] and reference["image_issues"]:
@@ -738,7 +757,7 @@ class PreparationPage(QWidget):
         set_status(
             self.status,
             "info",
-            "正在核对所选 Word 内容并保存原图；全部成功后一起追加，不调用模型…",
+            f"正在核对所选 {source_label} 内容并保存{image_label}；全部成功后一起追加，不调用模型…",
         )
 
         def active():
@@ -753,7 +772,7 @@ class PreparationPage(QWidget):
             set_status(
                 self.status,
                 "error",
-                "Word 图文未能完整导入，原有备课内容与图片保留。来源可能已变化或图片读取失败，请重新预览后重试。",
+                f"{source_label} 图文未能完整导入，原有备课内容与图片保留。来源可能已变化或图片读取失败，请重新预览后重试。",
             )
 
         def ready(value):
@@ -786,8 +805,8 @@ class PreparationPage(QWidget):
             set_status(
                 self.status,
                 "success",
-                f"Word 文字与 {len(merged) - len(existing)} 张新增原图已一起追加；原有表单和图片保留。"
-                "原图已保存到本机；是否交给 AI 读图以“图片用法”为准，生成前会确认发送清单。尚未调用模型。"
+                f"{source_label} 文字与 {len(merged) - len(existing)} 张新增{image_label}已一起追加；原有表单和图片保留。"
+                f"{image_label}已保存到本机；是否交给 AI 读图以“图片用法”为准，生成前会确认发送清单。尚未调用模型。"
                 + (
                     f" 包含 {len(expected['warnings'])} 条待核对提醒。"
                     if expected["warnings"]
@@ -798,7 +817,7 @@ class PreparationPage(QWidget):
 
         try:
             self._library_image_task_id = self.tasks.submit(
-                "导入 Word 选题图文",
+                f"导入 {source_label} 选题图文",
                 lambda: import_method(
                     frozen_reference, existing
                 ),

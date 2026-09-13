@@ -178,6 +178,13 @@ class LibraryPage(QWidget):
         self.word_questions_button.setObjectName("PrimaryButton")
         self.word_questions_button.clicked.connect(self._open_word_questions)
         root.addWidget(self.word_questions_button)
+        self.personal_visual_questions_button = QPushButton("已识别图片题 · 逐题预览与挑选")
+        self.personal_visual_questions_button.setObjectName("QuietButton")
+        self.personal_visual_questions_button.setVisible(
+            callable(getattr(self.facade, "personal_visual_questions", None))
+        )
+        self.personal_visual_questions_button.clicked.connect(self._open_personal_visual_questions)
+        root.addWidget(self.personal_visual_questions_button)
         self.handout_candidates_button = QPushButton("已整理讲义 · 查看题面与配对答案")
         self.handout_candidates_button.setObjectName("QuietButton")
         self.handout_candidates_button.clicked.connect(self._open_handout_candidates)
@@ -783,6 +790,14 @@ class LibraryPage(QWidget):
     def _word_basket_changed(self, count: int) -> None:
         self._refresh_basket_label()
         self.basket_changed.emit(count)
+
+    def _open_personal_visual_questions(self) -> None:
+        from .personal_visual_question_dialog import PersonalVisualQuestionDialog
+
+        dialog = PersonalVisualQuestionDialog(self.facade, self.tasks, self.window())
+        if dialog.exec() == dialog.DialogCode.Accepted and dialog.preparation_reference is not None:
+            self.word_reference_requested.emit(dialog.preparation_reference)
+        dialog.deleteLater()
 
     def _open_handout_candidates(self) -> None:
         from .handout_candidate_dialog import HandoutCandidateDialog

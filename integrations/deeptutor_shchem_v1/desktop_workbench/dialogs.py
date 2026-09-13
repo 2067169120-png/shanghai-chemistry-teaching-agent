@@ -242,6 +242,13 @@ class ImportDialog(QDialog):
         word_history_layout.addWidget(self.word_reference_button)
         self.word_history_card.setVisible(False)
         content_layout.addWidget(self.word_history_card)
+        self.personal_visual_questions_button = QPushButton("已识别图片题 · 逐题预览与挑选…")
+        self.personal_visual_questions_button.setObjectName("QuietButton")
+        self.personal_visual_questions_button.setVisible(
+            callable(getattr(self.facade, "personal_visual_questions", None))
+        )
+        self.personal_visual_questions_button.clicked.connect(self._open_personal_visual_questions)
+        content_layout.addWidget(self.personal_visual_questions_button)
         content_layout.addStretch(1)
 
         self.scroll = page_scroll(content)
@@ -446,6 +453,7 @@ class ImportDialog(QDialog):
             not busy and self.word_batch_combo.count() > 0
         )
         self.word_questions_button.setEnabled(not busy)
+        self.personal_visual_questions_button.setEnabled(not busy)
         self.word_annotation_button.setEnabled(not busy and self.word_batch_combo.count() > 0)
         if busy:
             self.generate_button.setEnabled(False)
@@ -574,6 +582,17 @@ class ImportDialog(QDialog):
             return
         dialog = WordQuestionDialog(self.facade, self.tasks, self, batch_id=self.word_batch_combo.currentData())
         dialog.basket_changed.connect(self.basket_changed)
+        if dialog.exec() == dialog.DialogCode.Accepted and dialog.preparation_reference is not None:
+            self.preparation_reference = dialog.preparation_reference
+            self.accept()
+        dialog.deleteLater()
+
+    def _open_personal_visual_questions(self) -> None:
+        from .personal_visual_question_dialog import PersonalVisualQuestionDialog
+
+        if self._active_task_id:
+            return
+        dialog = PersonalVisualQuestionDialog(self.facade, self.tasks, self)
         if dialog.exec() == dialog.DialogCode.Accepted and dialog.preparation_reference is not None:
             self.preparation_reference = dialog.preparation_reference
             self.accept()
@@ -786,7 +805,8 @@ class ImportDialog(QDialog):
             set_status(
                 self.status,
                 "success",
-                "候选已生成，待教师逐页复核；本次结果没有写入正式题库。",
+                "候选已生成，待教师逐页复核；可从“已识别图片题”逐题查看、筛选并带入备课。"
+                "请对照原页核对内容；这些个人题目没有写入正式题库。",
             )
             return
         self.progress.setFormat("视觉候选未生成")
