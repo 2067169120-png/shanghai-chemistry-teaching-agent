@@ -11,6 +11,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   windows-check:
+    permissions:
+      contents: write
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -28,6 +30,11 @@ jobs:
         run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_desktop_first_run.py staging/coordination/deeptutor_gateway/tests/test_desktop_library_progress.py staging/coordination/deeptutor_gateway/tests/test_desktop_teaching_design_contract.py staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py staging/coordination/deeptutor_gateway/tests/test_desktop_preparation_provider.py staging/coordination/deeptutor_gateway/tests/test_teacher_source_prompt_rules.py --junitxml=desktop-qa/pytest.xml
       - name: Exercise native Windows Qt routes and capture real screenshots
         run: python runtime/deeptutor_shchem/desktop_ci_smoke.py
+      - name: Publish verified empty-library screenshots
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python runtime/deeptutor_shchem/publish_desktop_screenshots.py
       - name: Archive exact tracked source
         if: always()
         run: git archive --format=zip --output=desktop-source.zip HEAD
