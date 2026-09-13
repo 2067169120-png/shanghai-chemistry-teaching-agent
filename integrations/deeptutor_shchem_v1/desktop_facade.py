@@ -678,6 +678,8 @@ class DesktopWorkbenchFacade:
                 temporary_parent=paths.state_root / "visual-import-v2" / "temporary",
             )
         )
+        self._visual_egress_service = None
+        self._visual_egress_lock = threading.RLock()
         self._import_preview_lock = threading.RLock()
         self._preparation_manager = preparation_manager
         self._preparation_renderer = preparation_renderer
@@ -1965,11 +1967,14 @@ class DesktopWorkbenchFacade:
         return tuple(sources)
 
     def _visual_import_coordinator(
-        self, *, visual_provider: Any | None = None
+        self,
+        *,
+        visual_provider: Any | None = None,
+        renderer: Any | None = None,
     ) -> DesktopImportCoordinatorV2:
         return DesktopImportCoordinatorV2(
             visual_provider=visual_provider,
-            renderer=self._visual_import_renderer,
+            renderer=self._visual_import_renderer if renderer is None else renderer,
             native_importer=self._visual_import_native_importer,
             archive_root=self._visual_import_root,
         )
@@ -2488,6 +2493,65 @@ class DesktopWorkbenchFacade:
             )
         return profile
 
+    def _visual_egress_service_instance(self):
+        from .desktop_visual_egress import DesktopVisualEgressService
+
+        with self._visual_egress_lock:
+            service = self._visual_egress_service
+            if service is None:
+                service = DesktopVisualEgressService(self)
+                self._visual_egress_service = service
+            return service
+
+    def _visual_egress_call(self, method: str, *args, **kwargs):
+        from .desktop_visual_egress import VisualEgressError
+
+        try:
+            return getattr(self._visual_egress_service_instance(), method)(
+                *args, **kwargs
+            )
+        except VisualEgressError as exc:
+            raise DesktopFacadeError(exc.code, exc.message_zh) from exc
+        except DesktopFacadeError:
+            raise
+        except (OSError, RuntimeError, TypeError, ValueError, KeyError) as exc:
+            raise DesktopFacadeError(
+                "visual_egress_unavailable",
+                "发送前图片预览暂时无法读取，请重新打开批次后重试。",
+            ) from exc
+
+    def preview_saved_visual_import_batch(
+        self,
+        *,
+        batch_id: str,
+        profile_id: str,
+        expected_profile_revision: str,
+        progress_callback: Callable[[Mapping[str, Any]], None] | None = None,
+        should_cancel: Callable[[], bool] | None = None,
+    ) -> dict[str, Any]:
+        """Render and freeze saved visual pages before any provider borrow."""
+
+        return self._visual_egress_call(
+            "preview",
+            batch_id=batch_id,
+            profile_id=profile_id,
+            expected_profile_revision=expected_profile_revision,
+            progress_callback=progress_callback,
+            should_cancel=should_cancel,
+        )
+
+    def visual_import_egress_image(
+        self, preview_id: str, revision: str, page_id: str
+    ) -> bytes:
+        """Read one page from the exact in-memory egress snapshot."""
+
+        return self._visual_egress_call("image", preview_id, revision, page_id)
+
+    def discard_visual_import_egress(self, preview_id: str) -> bool:
+        """Release a page-preview snapshot without deleting source archives."""
+
+        return self._visual_egress_call("discard", preview_id)
+
     def run_saved_visual_import_batch(
         self,
         *,
@@ -2495,6 +2559,8 @@ class DesktopWorkbenchFacade:
         profile_id: str,
         expected_profile_revision: str,
         teacher_confirmed: Literal[True],
+        egress_preview_id: str | None = None,
+        egress_revision: str | None = None,
         progress_callback: Callable[[Mapping[str, Any]], None] | None = None,
         should_cancel: Callable[[], bool] | None = None,
     ) -> DesktopVisualImportReceipt:
@@ -2504,6 +2570,11 @@ class DesktopWorkbenchFacade:
             raise DesktopFacadeError(
                 "teacher_confirmation_required", "发送原始页面前需要教师明确确认。"
             )
+        if (egress_preview_id is None) != (egress_revision is None):
+            raise DesktopFacadeError(
+                "visual_egress_preview_invalid",
+                "发送前图片预览不完整，请重新预览后确认。",
+            )
         descriptor = self._saved_visual_import_batch(batch_id)
         if descriptor.get("status") == "candidate_ready_for_review":
             raise DesktopFacadeError(
@@ -2512,6 +2583,17 @@ class DesktopWorkbenchFacade:
             )
         self._visual_import_profile(profile_id, expected_profile_revision)
         sources = self._restore_visual_import_sources(descriptor)
+        frozen_renderer = None
+        if egress_preview_id is not None and egress_revision is not None:
+            frozen_renderer = self._visual_egress_call(
+                "frozen_renderer",
+                batch_id=batch_id,
+                profile_id=profile_id,
+                expected_profile_revision=expected_profile_revision,
+                preview_id=egress_preview_id,
+                revision=egress_revision,
+                sources=sources,
+            )
         source_type = str(descriptor.get("source_type") or "未分类资料")
         request = DesktopImportRequest(
             sources=sources,
@@ -2532,7 +2614,9 @@ class DesktopWorkbenchFacade:
                     transport=self._visual_import_transport,
                     should_cancel=should_cancel,
                 )
-                coordinator = self._visual_import_coordinator(visual_provider=provider)
+                coordinator = self._visual_import_coordinator(
+                    visual_provider=provider, renderer=frozen_renderer
+                )
                 if coordinator.plan(request).batch_id != batch_id:
                     raise DesktopImportBridgeError(
                         "visual_import_source_closure_changed",

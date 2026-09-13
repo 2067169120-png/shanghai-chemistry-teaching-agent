@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import os
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import pytest
 
@@ -15,6 +17,19 @@ from integrations.deeptutor_shchem_v1.desktop_facade import (
     DesktopVisualImportSourceSummary,
     ProviderProfileSummary,
 )
+
+
+def _png_bytes(color: str = "#d9eef0", *, width: int = 24, height: int = 16) -> bytes:
+    from PySide6.QtCore import QBuffer, QByteArray, QIODevice
+    from PySide6.QtGui import QColor, QImage
+
+    image = QImage(width, height, QImage.Format.Format_RGB32)
+    image.fill(QColor(color))
+    data = QByteArray()
+    buffer = QBuffer(data)
+    assert buffer.open(QIODevice.OpenModeFlag.WriteOnly)
+    assert image.save(buffer, "PNG")
+    return bytes(data)
 
 
 def _qt_available() -> bool:
@@ -93,14 +108,40 @@ class _Facade:
         *,
         profiles: tuple[ProviderProfileSummary, ...] = (),
         resumable: tuple[DesktopVisualImportReceipt, ...] = (),
+        visual_preview_error: bool = False,
     ) -> None:
         self.profiles = profiles
         self.resumable = resumable
+        self.visual_preview_error = visual_preview_error
         self.save_calls: list[dict[str, Any]] = []
         self.run_calls: list[dict[str, Any]] = []
         self.preview_calls = []
+        self.visual_preview_calls: list[dict[str, Any]] = []
+        self.egress_image_calls: list[tuple[str, str, str]] = []
+        self.discard_visual_egress_calls: list[str] = []
         self.commit_calls = []
         self.discard_calls = []
+        self.egress_image = _png_bytes()
+        image_sha256 = hashlib.sha256(self.egress_image).hexdigest()
+        self.visual_plan = {
+            "preview_id": "EGRESS-PREVIEW-INTERNAL",
+            "revision": "EGRESS-REVISION-INTERNAL",
+            "batch_id": "BATCH-INTERNAL-DO-NOT-SHOW",
+            "model_label": "教师视觉服务 / chem-vision",
+            "confirmation_text": "合成发送页预览；未发送模型请求。",
+            "pages": [
+                {
+                    "page_id": "page-internal-1",
+                    "source_name": "合成页面.png",
+                    "source_role": "question",
+                    "page_number": 1,
+                    "width": 24,
+                    "height": 16,
+                    "sha256": image_sha256,
+                    "mime_type": "image/png",
+                }
+            ],
+        }
 
     def preview_import_files(self, **kwargs):
         self.preview_calls.append(kwargs)
@@ -167,6 +208,29 @@ class _Facade:
             status="candidate_ready_for_review",
             visual_status="completed",
         )
+
+    def preview_saved_visual_import_batch(self, **kwargs: Any) -> dict[str, Any]:
+        self.visual_preview_calls.append(dict(kwargs))
+        if self.visual_preview_error:
+            raise OSError("private preview failure")
+        plan = deepcopy(self.visual_plan)
+        plan["batch_id"] = str(kwargs["batch_id"])
+        return plan
+
+    def visual_import_egress_image(
+        self, preview_id: str, revision: str, page_id: str
+    ) -> bytes:
+        self.egress_image_calls.append((preview_id, revision, page_id))
+        if (
+            preview_id != self.visual_plan["preview_id"]
+            or revision != self.visual_plan["revision"]
+            or page_id != self.visual_plan["pages"][0]["page_id"]
+        ):
+            raise KeyError(page_id)
+        return self.egress_image
+
+    def discard_visual_import_egress(self, preview_id: str) -> None:
+        self.discard_visual_egress_calls.append(preview_id)
 
     def run_one_round_review_corpus_import(self, **_kwargs: Any) -> dict[str, int]:
         return {
@@ -436,50 +500,39 @@ def test_input_change_invalidates_preimport_confirmation(qt_app, tmp_path, monke
     dialog.close()
 
 
-def test_visual_confirmation_no_does_not_call_model_and_yes_binds_batch_revision_once(
+def test_visual_preview_precedes_model_run_and_egress_snapshot_is_explicit(
     qt_app: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from PySide6.QtWidgets import QMessageBox
+    from PySide6.QtWidgets import QDialog
 
-    from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
-
-    receipt = _receipt()
-    profile = _visual_profile()
-    facade = _Facade(profiles=(profile,))
+    facade = _Facade(profiles=(_visual_profile(),))
     tasks = _manual_task_bridge()
-    dialog = ImportDialog(facade, tasks)  # type: ignore[arg-type]
-    dialog._saved_visual_receipt = receipt
-    dialog._show_saved_receipt(receipt)
-
-    monkeypatch.setattr(
-        QMessageBox,
-        "question",
-        lambda *_args, **_kwargs: QMessageBox.StandardButton.No,
+    _patch_visual_egress(
+        monkeypatch, result=QDialog.DialogCode.Accepted, load_pixels=True
     )
-    dialog._run_visual()
-    assert facade.run_calls == []
-    assert tasks.pending == []
-    assert "已取消发送" in dialog.status.text()
+    dialog = _visual_dialog(facade, tasks)
 
-    monkeypatch.setattr(
-        QMessageBox,
-        "question",
-        lambda *_args, **_kwargs: QMessageBox.StandardButton.Yes,
-    )
     dialog._run_visual()
     assert len(tasks.pending) == 1
+    assert facade.visual_preview_calls == []
+    assert facade.run_calls == []
     tasks.finish_next()
-    _settle(qt_app)
 
+    assert len(facade.visual_preview_calls) == 1
+    assert len(tasks.pending) == 1
+    assert facade.run_calls == []
+    tasks.finish_next()
     assert len(facade.run_calls) == 1
     call = facade.run_calls[0]
-    assert call["batch_id"] == receipt.batch_id
-    assert call["profile_id"] == profile.profile_id
-    assert call["expected_profile_revision"] == profile.revision
-    assert call["teacher_confirmed"] is True
+    assert call["batch_id"] == facade.visual_plan["batch_id"]
+    assert call["profile_id"] == "PROFILE-INTERNAL-DO-NOT-SHOW"
+    assert call["expected_profile_revision"] == "REVISION-INTERNAL-DO-NOT-SHOW"
+    assert call["egress_preview_id"] == facade.visual_plan["preview_id"]
+    assert call["egress_revision"] == facade.visual_plan["revision"]
     assert "候选已生成，待教师逐页复核" in dialog.status.text()
     assert "导入完成" not in dialog.status.text()
     assert "正式入库" not in dialog.status.text()
+    dialog.close()
 
 
 def test_model_filter_empty_hint_and_internal_values_never_rendered(
@@ -535,10 +588,9 @@ def test_resumable_batch_has_teacher_card_without_restoring_source_paths(
 
 
 def test_active_visual_cancel_wording_close_guard_and_narrow_scroll(
-    qt_app: Any, monkeypatch: pytest.MonkeyPatch
+    qt_app: Any,
 ) -> None:
     from PySide6.QtCore import Qt
-    from PySide6.QtWidgets import QMessageBox
 
     from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
 
@@ -548,11 +600,6 @@ def test_active_visual_cancel_wording_close_guard_and_narrow_scroll(
     receipt = _receipt()
     dialog._saved_visual_receipt = receipt
     dialog._show_saved_receipt(receipt)
-    monkeypatch.setattr(
-        QMessageBox,
-        "question",
-        lambda *_args, **_kwargs: QMessageBox.StandardButton.Yes,
-    )
     dialog.show()
     dialog.resize(420, 680)
     _settle(qt_app)
@@ -570,11 +617,195 @@ def test_active_visual_cancel_wording_close_guard_and_narrow_scroll(
     assert dialog._active_task_id is not None
     dialog.reject()
     assert dialog.isVisible()
-    assert "等待当前页处理结束" in dialog.status.text()
+    assert "未调用模型" in dialog.status.text()
+    assert "当前文件处理结束" in dialog.status.text()
     dialog.cancel_button.click()
-    assert "将在当前页处理结束后停止" in dialog.status.text()
+    assert "正在停止本地页面准备" in dialog.status.text()
+    assert "未调用模型" in dialog.status.text()
     tasks.finish_next()
     _settle(qt_app)
     assert facade.run_calls == []
     assert dialog._active_task_id is None
     dialog.close()
+
+
+def _visual_dialog(facade: Any, tasks: Any) -> Any:
+    from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
+
+    dialog = ImportDialog(facade, tasks)  # type: ignore[arg-type]
+    receipt = _receipt()
+    dialog._saved_visual_receipt = receipt
+    dialog._show_saved_receipt(receipt)
+    return dialog
+
+
+class _FakeVisualImportEgressDialog:
+    result = None
+    instances: ClassVar[list[Any]] = []
+    load_pixels = False
+
+    def __init__(self, plan, image_loader, parent):
+        self.plan = deepcopy(plan)
+        self.image_loader = image_loader
+        self.parent = parent
+        self.loaded_pixels: bytes | None = None
+        type(self).instances.append(self)
+
+    def exec(self):
+        if self.load_pixels:
+            page_id = self.plan["pages"][0]["page_id"]
+            self.loaded_pixels = self.image_loader(page_id)
+        return self.result
+
+    def deleteLater(self):
+        return None
+
+
+def _patch_visual_egress(monkeypatch: pytest.MonkeyPatch, *, result, load_pixels=False):
+    import integrations.deeptutor_shchem_v1.desktop_workbench.visual_import_egress_dialog as module
+
+    _FakeVisualImportEgressDialog.result = result
+    _FakeVisualImportEgressDialog.load_pixels = load_pixels
+    _FakeVisualImportEgressDialog.instances = []
+    monkeypatch.setattr(module, "VisualImportEgressDialog", _FakeVisualImportEgressDialog)
+
+
+def test_visual_egress_cancel_discards_snapshot_without_model_run(
+    qt_app: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from PySide6.QtWidgets import QDialog
+
+    facade = _Facade(profiles=(_visual_profile(),))
+    tasks = _manual_task_bridge()
+    _patch_visual_egress(monkeypatch, result=QDialog.DialogCode.Rejected)
+    dialog = _visual_dialog(facade, tasks)
+
+    dialog._run_visual()
+    assert len(tasks.pending) == 1
+    assert facade.visual_preview_calls == []
+    tasks.finish_next()
+
+    assert len(facade.visual_preview_calls) == 1
+    assert len(_FakeVisualImportEgressDialog.instances) == 1
+    assert facade.discard_visual_egress_calls == [facade.visual_plan["preview_id"]]
+    assert facade.run_calls == []
+    assert "未发送图片" in dialog.status.text()
+    dialog.close()
+
+
+def test_visual_preview_failure_stops_before_egress_and_model_run(qt_app: Any):
+    facade = _Facade(profiles=(_visual_profile(),), visual_preview_error=True)
+    tasks = _manual_task_bridge()
+    dialog = _visual_dialog(facade, tasks)
+
+    dialog._run_visual()
+    tasks.finish_next()
+
+    assert len(facade.visual_preview_calls) == 1
+    assert facade.run_calls == []
+    assert facade.discard_visual_egress_calls == []
+    assert dialog._active_task_id is None
+    assert "未调用模型" in dialog.status.text()
+    assert "预览未完成" in dialog.status.text()
+    dialog.close()
+
+
+def test_visual_preview_window_failure_discards_without_model_run(qt_app: Any, monkeypatch):
+    import integrations.deeptutor_shchem_v1.desktop_workbench.visual_import_egress_dialog as module
+
+    def broken_window(*_args, **_kwargs):
+        raise RuntimeError("synthetic widget failure")
+
+    monkeypatch.setattr(module, "VisualImportEgressDialog", broken_window)
+    facade = _Facade(profiles=(_visual_profile(),))
+    tasks = _manual_task_bridge()
+    dialog = _visual_dialog(facade, tasks)
+    dialog._run_visual()
+    tasks.finish_next()
+    assert not facade.run_calls
+    assert facade.discard_visual_egress_calls == [facade.visual_plan["preview_id"]]
+    assert "未调用模型" in dialog.status.text()
+    dialog.close()
+
+
+def test_visual_egress_confirmation_passes_preview_snapshot_ids_to_run(
+    qt_app: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from PySide6.QtWidgets import QDialog
+
+    facade = _Facade(profiles=(_visual_profile(),))
+    tasks = _manual_task_bridge()
+    _patch_visual_egress(
+        monkeypatch, result=QDialog.DialogCode.Accepted, load_pixels=True
+    )
+    dialog = _visual_dialog(facade, tasks)
+
+    dialog._run_visual()
+    tasks.finish_next()
+    assert len(tasks.pending) == 1
+    assert facade.run_calls == []
+    assert _FakeVisualImportEgressDialog.instances[0].loaded_pixels == facade.egress_image
+
+    tasks.finish_next()
+    assert len(facade.run_calls) == 1
+    call = facade.run_calls[0]
+    assert call["batch_id"] == facade.visual_plan["batch_id"]
+    assert call["profile_id"] == "PROFILE-INTERNAL-DO-NOT-SHOW"
+    assert call["expected_profile_revision"] == "REVISION-INTERNAL-DO-NOT-SHOW"
+    assert call["egress_preview_id"] == facade.visual_plan["preview_id"]
+    assert call["egress_revision"] == facade.visual_plan["revision"]
+    assert facade.egress_image_calls == [
+        (
+            facade.visual_plan["preview_id"],
+            facade.visual_plan["revision"],
+            facade.visual_plan["pages"][0]["page_id"],
+        )
+    ]
+    assert facade.discard_visual_egress_calls == [facade.visual_plan["preview_id"]]
+    dialog.close()
+
+
+def test_cancel_during_local_visual_preview_never_runs_model_or_egress(
+    qt_app: Any,
+) -> None:
+    facade = _Facade(profiles=(_visual_profile(),))
+    tasks = _manual_task_bridge()
+    dialog = _visual_dialog(facade, tasks)
+
+    dialog._run_visual()
+    assert dialog._active_task_kind == "visual_preview"
+    dialog.cancel_button.click()
+    assert tasks.cancelled == {dialog._active_task_id}
+    tasks.finish_next()
+
+    assert facade.visual_preview_calls == []
+    assert facade.run_calls == []
+    assert facade.discard_visual_egress_calls == []
+    assert dialog._active_task_id is None
+    dialog.close()
+
+
+def test_real_visual_egress_dialog_timer_loads_synthetic_png(qt_app: Any) -> None:
+    from integrations.deeptutor_shchem_v1.desktop_workbench.visual_import_egress_dialog import (
+        VisualImportEgressDialog,
+    )
+
+    facade = _Facade()
+    plan = deepcopy(facade.visual_plan)
+    dialog = VisualImportEgressDialog(
+        plan,
+        lambda page_id: facade.visual_import_egress_image(
+            plan["preview_id"], plan["revision"], page_id
+        ),
+    )
+    dialog.show()
+    for _ in range(100):
+        qt_app.processEvents()
+        if dialog._ready:
+            break
+
+    assert dialog._ready
+    assert dialog.image_preview.has_image
+    assert facade.egress_image_calls
+    assert dialog.image_list.item(0).icon().isNull() is False
+    dialog.reject()

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+from contextlib import suppress
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QCloseEvent, QResizeEvent
@@ -66,6 +67,9 @@ class ImportDialog(QDialog):
         self._word_annotation_messages: dict[str, str] = {}
         self._import_preview_session: dict | None = None
         self._import_preview_epoch = 0
+        self._pending_visual_egress: tuple | None = None
+        self._visual_egress_id: str | None = None
+        self._visual_preview_cancel_requested = False
         self._resumable_receipts: tuple[DesktopVisualImportReceipt, ...] = ()
         self.setWindowTitle("导入资料")
         self.resize(720, 680)
@@ -197,8 +201,8 @@ class ImportDialog(QDialog):
         self.provider_note.setObjectName("MutedLabel")
         self.provider_note.setWordWrap(True)
         provider_layout.addWidget(self.provider_note)
-        self.generate_button = QPushButton("生成视觉候选")
-        self.generate_button.setAccessibleName("确认后生成视觉候选")
+        self.generate_button = QPushButton("预览发送页面，再识别")
+        self.generate_button.setAccessibleName("先查看实际发送页面，确认后生成视觉候选")
         self.generate_button.clicked.connect(self._run_visual)
         provider_layout.addWidget(
             self.generate_button, alignment=Qt.AlignmentFlag.AlignLeft
@@ -466,6 +470,19 @@ class ImportDialog(QDialog):
             return
         stage = payload.get("stage")
         kind = self._active_task_kind
+        if kind == "visual_preview":
+            if stage == "completed":
+                self.progress.setValue(3)
+                text = "本地页面已准备好，等待看图核对；尚未调用模型。"
+            elif stage == "planned":
+                self.progress.setValue(1)
+                text = "正在本机准备发送页面；尚未调用模型。"
+            else:
+                self.progress.setValue(2)
+                text = "正在本机逐份整理发送页面；尚未调用模型。"
+            self.progress.setFormat(text)
+            set_status(self.status, "info", text)
+            return
         if stage == "planned":
             self.progress.setValue(1)
             if kind == "visual":
@@ -669,41 +686,114 @@ class ImportDialog(QDialog):
                 "尚无可用视觉模型；请先到“设置”完成模型与 Key 配置。离线候选已保存。",
             )
             return
-        answer = QMessageBox.question(
-            self,
-            "确认发送已保存页面",
-            "将把本批待视觉资料渲染后的已确认页面发送给所选视觉模型，以生成结构化候选。"
-            "这可能产生模型费用，页面内容也会离开本机。请先确认学校授权、费用与隐私要求。\n\n"
-            "是否继续？",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
+        profile_id, revision = selected
+        self._pending_visual_egress = None
+        self._visual_preview_cancel_requested = False
+        self._begin_task(
+            "visual_preview",
+            "正在本机准备实际发送页面，完成后逐页核对；尚未调用模型。",
         )
-        if answer != QMessageBox.StandardButton.Yes:
-            set_status(
-                self.status,
-                "attention",
-                "已取消发送；离线候选仍已保存，可稍后再生成视觉候选。",
+        def prepared(plan):
+            # Open only after the preparation worker's finished signal, so its
+            # cleanup cannot clear a subsequently started provider task.
+            self._pending_visual_egress = (receipt, selected, plan)
+        def prepare_pages(report, cancelled):
+            plan = self.facade.preview_saved_visual_import_batch(
+                batch_id=receipt.batch_id, profile_id=profile_id,
+                expected_profile_revision=revision,
+                progress_callback=report, should_cancel=cancelled,
             )
+            if cancelled() and isinstance(plan, dict):
+                self._discard_visual_egress(plan.get("preview_id"))
+            return plan
+        try:
+            self._active_task_id = self.tasks.submit_progress(
+                "准备发送页面预览（本地）",
+                prepare_pages,
+                on_progress=self._import_progress, on_success=prepared,
+                on_failure=self._import_failed,
+            )
+        except (AttributeError, RuntimeError, TypeError):
+            self._active_task_id = self._active_task_kind = None
+            self.cancel_button.hide()
+            self._set_busy(False)
+            set_status(self.status, "error", "发送页面预览未能启动，未调用模型；请更新软件后重试。")
+
+    def _discard_visual_egress(self, preview_id) -> None:
+        if not isinstance(preview_id, str) or not preview_id:
+            return
+        discard = getattr(self.facade, "discard_visual_import_egress", None)
+        if callable(discard):
+            discard(preview_id)
+
+    def _open_visual_egress(self, receipt, selected, plan) -> None:
+        from .visual_import_egress_dialog import VisualImportEgressDialog
+
+        preview_id = plan.get("preview_id") if isinstance(plan, dict) else None
+        if self._visual_preview_cancel_requested:
+            self._discard_visual_egress(preview_id)
+            set_status(self.status, "info", "已取消页面准备，未调用模型；已保存来源保留。")
+            return
+        if (
+            not isinstance(plan, dict) or plan.get("batch_id") != receipt.batch_id
+            or not isinstance(preview_id, str) or not preview_id
+            or not isinstance(plan.get("revision"), str) or not plan["revision"]
+        ):
+            self._discard_visual_egress(preview_id)
+            set_status(self.status, "error", "发送页面清单不完整，未调用模型；请重新预览。")
+            return
+        dialog = None
+        try:
+            dialog = VisualImportEgressDialog(
+                plan,
+                lambda page_id: self.facade.visual_import_egress_image(
+                    preview_id, plan["revision"], page_id,
+                ),
+                self,
+            )
+            result = dialog.exec()
+        except (OSError, RuntimeError, TypeError, ValueError, KeyError):
+            self._discard_visual_egress(preview_id)
+            set_status(self.status, "error", "图片核对窗口未能打开，未调用模型；请重新预览。")
+            return
+        finally:
+            if dialog is not None:
+                with suppress(RuntimeError):
+                    dialog.deleteLater()
+        if result != QDialog.DialogCode.Accepted:
+            self._discard_visual_egress(preview_id)
+            set_status(self.status, "info", "已返回，未发送图片、未调用模型；已保存来源保留。")
             return
         profile_id, revision = selected
+        self._visual_egress_id = preview_id
         self._begin_task(
             "visual",
             "正在生成视觉候选；如停止，将在当前页处理结束后停止。",
         )
-        self._active_task_id = self.tasks.submit_progress(
-            "生成视觉候选",
-            lambda report, cancelled: self.facade.run_saved_visual_import_batch(
-                batch_id=receipt.batch_id,
-                profile_id=profile_id,
-                expected_profile_revision=revision,
-                teacher_confirmed=True,
-                progress_callback=report,
-                should_cancel=cancelled,
-            ),
-            on_progress=self._import_progress,
-            on_success=self._visual_completed,
-            on_failure=self._import_failed,
-        )
+        try:
+            self._active_task_id = self.tasks.submit_progress(
+                "生成视觉候选",
+                lambda report, cancelled: self.facade.run_saved_visual_import_batch(
+                    batch_id=receipt.batch_id,
+                    profile_id=profile_id,
+                    expected_profile_revision=revision,
+                    teacher_confirmed=True,
+                    egress_preview_id=preview_id,
+                    egress_revision=plan["revision"],
+                    progress_callback=report,
+                    should_cancel=cancelled,
+                ),
+                on_progress=self._import_progress,
+                on_success=self._visual_completed,
+                on_failure=self._import_failed,
+            )
+        except (RuntimeError, TypeError):
+            self._discard_visual_egress(preview_id)
+            self._visual_egress_id = None
+            self._active_task_id = self._active_task_kind = None
+            self.cancel_button.hide()
+            self._set_busy(False)
+            set_status(self.status, "error", "识别任务未能启动，未调用模型；请重新预览后重试。")
 
     def _visual_batch_saved(self, receipt: DesktopVisualImportReceipt) -> None:
         self._saved_visual_receipt = receipt
@@ -822,6 +912,8 @@ class ImportDialog(QDialog):
         self.progress.setFormat("任务未完成")
         if self._active_task_kind == "visual":
             text = f"视觉候选未生成；离线来源仍已保存，可重试。{message}"
+        elif self._active_task_kind == "visual_preview":
+            text = f"发送页面预览未完成，未调用模型；已保存来源保留。{message}"
         elif self._active_task_kind == "preview":
             text = f"导入预览未完成，尚未保存。{message}"
         else:
@@ -883,11 +975,15 @@ class ImportDialog(QDialog):
             set_status(self.status, "info", "正在完整保存所选文件，请稍候；本阶段不能撤销。")
             return
         if self._active_task_id:
+            if self._active_task_kind == "visual_preview":
+                self._visual_preview_cancel_requested = True
             self.tasks.cancel(self._active_task_id)
             self.cancel_button.setEnabled(False)
             set_status(self.status, "attention")
             if self._active_task_kind == "visual":
                 self.status.setText("已请求停止，将在当前页处理结束后停止。")
+            elif self._active_task_kind == "visual_preview":
+                self.status.setText("正在停止本地页面准备，当前文件处理结束后停止；未调用模型。")
             elif self._active_task_kind == "corpus":
                 self.status.setText("已请求停止批量读取；正在完成当前文件。")
             else:
@@ -912,12 +1008,21 @@ class ImportDialog(QDialog):
             return
         if self._active_task_kind == "commit":
             self._discard_import_preview()
+        kind = self._active_task_kind
         self._active_task_id = None
         if task_id == self._corpus_task_id:
             self._corpus_task_id = None
         self._active_task_kind = None
         self.cancel_button.setVisible(False)
         self._set_busy(False)
+        if kind == "visual":
+            preview_id, self._visual_egress_id = self._visual_egress_id, None
+            self._discard_visual_egress(preview_id)
+        if kind == "visual_preview":
+            pending, self._pending_visual_egress = self._pending_visual_egress, None
+            if pending:
+                self._open_visual_egress(*pending)
+            return
         batch_id, self._pending_word_annotation = self._pending_word_annotation, None
         if batch_id:
             self._start_word_annotation(batch_id)
@@ -929,6 +1034,8 @@ class ImportDialog(QDialog):
                 self.status.setText(
                     "视觉候选仍在生成；可请求停止，但需等待当前页处理结束后再关闭。"
                 )
+            elif self._active_task_kind == "visual_preview":
+                self.status.setText("正在本机准备发送页面，未调用模型；可停止，等待当前文件处理结束后关闭。")
             elif self._corpus_task_id:
                 self.status.setText("批量读取仍在进行；请先停止并等待任务结束。")
             else:
@@ -945,6 +1052,8 @@ class ImportDialog(QDialog):
                 self.status.setText(
                     "视觉候选仍在生成；请先请求停止并等待当前页处理结束。"
                 )
+            elif self._active_task_kind == "visual_preview":
+                self.status.setText("正在本机准备发送页面，未调用模型；请先停止并等待当前文件处理结束。")
             elif self._corpus_task_id:
                 self.status.setText("批量读取仍在进行；请先停止并等待任务结束。")
             else:

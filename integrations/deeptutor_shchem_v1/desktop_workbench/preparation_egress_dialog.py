@@ -73,15 +73,16 @@ class PreparationEgressDialog(QDialog):
         heading.setTextFormat(Qt.TextFormat.PlainText)
         heading.setWordWrap(True)
         layout.addWidget(heading)
-        summary = QLabel(
+        self.summary = QLabel(
             f"{image_count} 张图片 · 点击缩略图查看，放大检查公式与裁剪边界"
             if image_count else "完整发送范围与费用说明"
             if not local_only
             else "不调用模型 · 不发送文字或图片"
         )
-        summary.setObjectName("MutedLabel")
-        summary.setWordWrap(True)
-        layout.addWidget(summary)
+        self.summary.setObjectName("MutedLabel")
+        self.summary.setTextFormat(Qt.TextFormat.PlainText)
+        self.summary.setWordWrap(True)
+        layout.addWidget(self.summary)
 
         self.disclosure = QPlainTextEdit()
         self.disclosure.setAccessibleName("完整发送范围、模型和费用说明")
@@ -116,7 +117,8 @@ class PreparationEgressDialog(QDialog):
         details_layout.setContentsMargins(8, 0, 0, 0)
         details_layout.addWidget(self.image_preview, 1)
         details_layout.addWidget(self.image_details)
-        gallery = QSplitter(Qt.Orientation.Horizontal)
+        gallery = QSplitter(Qt.Orientation.Horizontal, self)
+        self.gallery = gallery
         gallery.setChildrenCollapsible(False)
         gallery.addWidget(self.image_list)
         gallery.addWidget(detail_panel)
@@ -125,6 +127,8 @@ class PreparationEgressDialog(QDialog):
         gallery.setSizes([240, 580])
         if image_count:
             self.tabs.addTab(gallery, f"图片预览（{image_count}）")
+        else:
+            gallery.hide()
         self.tabs.addTab(self.disclosure, "发送范围与费用")
         layout.addWidget(self.tabs, 1)
         self.validation_status = QLabel()
@@ -161,7 +165,7 @@ class PreparationEgressDialog(QDialog):
         try:
             if type(image_count) is not int or image_count < 0:
                 raise ValueError("Invalid image count")
-            self._assets = normalize_image_assets([] if image_assets is None else image_assets)
+            self._assets = self._normalize_assets([] if image_assets is None else image_assets)
             if len(self._assets) != image_count or (local_only and image_count):
                 raise ValueError("Incomplete sending snapshot")
             if self._assets and not callable(image_loader):
@@ -183,6 +187,9 @@ class PreparationEgressDialog(QDialog):
             self.image_list.addItem(item)
         self.validation_status.setText(f"正在读取本次发送的图片：0 / {image_count}；尚未发送。")
         self._timer.start(0)
+
+    def _normalize_assets(self, assets: object) -> list[dict]:
+        return normalize_image_assets(assets)
 
     def _read_image(self, index: int) -> bytes:
         asset = self._assets[index]
