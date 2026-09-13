@@ -70,7 +70,7 @@ class HomePage(QWidget):
         heading.addWidget(
             section_title(
                 "首页",
-                "一张安静的教研工作台：先选下一步，再回到最近的大题和草稿。",
+                "把资料变成一节好课：选题、组卷、备课与学情回看。",
             ),
             1,
         )
@@ -82,13 +82,16 @@ class HomePage(QWidget):
         root.addLayout(heading)
 
         actions = CardFrame()
+        actions.setStyleSheet(
+            "QFrame#Card {background: #EAF5F4; border: 1px solid #BCDCD8; border-radius: 16px;}"
+        )
         actions_layout = QVBoxLayout(actions)
         actions_layout.setContentsMargins(20, 16, 20, 16)
         actions_layout.setSpacing(10)
-        action_title = QLabel("今天从这里开始")
+        action_title = QLabel("今天，要完成哪项教学任务？")
         action_title.setObjectName("CardTitle")
         actions_layout.addWidget(action_title)
-        action_hint = QLabel("常用路径控制在五步内；每个入口都保留下一步说明。")
+        action_hint = QLabel("先选教学目标，再带入完整原题；让教案、课件和课后练习使用同一套材料。")
         action_hint.setObjectName("MutedLabel")
         action_hint.setWordWrap(True)
         action_hint.setMinimumWidth(0)
@@ -116,10 +119,23 @@ class HomePage(QWidget):
         status_title = QLabel("资料状态")
         status_title.setObjectName("CardTitle")
         status_layout.addWidget(status_title)
-        status_hint = QLabel("“小问”指大题中可以单独作答的一部分。")
+        status_hint = QLabel("小问不一定能独立作答；选用时须保留公共材料、题图和必要的前序条件。")
         status_hint.setObjectName("MutedLabel")
         status_hint.setWordWrap(True)
         status_layout.addWidget(status_hint)
+        self.progress_button = QPushButton("检查本地题库进度")
+        self.progress_button.setObjectName("QuietButton")
+        self.progress_button.clicked.connect(self.open_library_progress)
+        status_layout.addWidget(self.progress_button)
+        paths = getattr(self.facade, "paths", None)
+        if paths is not None and getattr(paths, "uses_personal_library", False):
+            first_run = QLabel(
+                "当前未连接旧版原题库。已有个人Word/图片导入仍保留；新资料从右上角“导入资料”加入。"
+                "缺少原题库不影响打开工作台、设置模型和备课。"
+            )
+            first_run.setObjectName("StatusInfo")
+            first_run.setWordWrap(True)
+            status_layout.addWidget(first_run)
         grid = QGridLayout()
         grid.setHorizontalSpacing(4)
         grid.setVerticalSpacing(4)
@@ -158,6 +174,13 @@ class HomePage(QWidget):
         outer.addWidget(page_scroll(content))
         self._refresh_recent()
         QTimer.singleShot(80, self.refresh)
+
+    def open_library_progress(self) -> None:
+        from .library_progress_dialog import LibraryProgressDialog
+
+        dialog = LibraryProgressDialog(self.facade, self.tasks, self)
+        dialog.exec()
+        dialog.deleteLater()
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         compact = event.size().width() < 600

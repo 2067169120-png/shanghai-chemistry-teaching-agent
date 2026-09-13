@@ -108,3 +108,19 @@
 **/private_student_domain/
 **/*secret*
 **/*credential*
+
+# Desktop integration source, public research notes and isolated CI evidence.
+!/.github/
+!/.github/workflows/
+!/.github/workflows/desktop-integration.yml
+!/启动源码桌面版.cmd
+!/README-0.1.82-archive.md
+!/CHANGELOG-through-0.1.82.md
+!/docs/research/
+!/docs/research/2026-09-14-teaching-design.md
+!/docs/desktop-integration-20260914.md
+!/docs/screenshots/desktop-home.png
+!/docs/screenshots/library-progress.png
+!/docs/qa/0.1.83-windows-smoke.json
+!/runtime/deeptutor_shchem/desktop_ci_smoke.py
+!/runtime/deeptutor_shchem/publish_desktop_screenshots.py

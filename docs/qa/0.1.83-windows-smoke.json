@@ -1,0 +1,16 @@
+{
+  "version": "0.1.83",
+  "platform": "Windows-2025Server-10.0.26100-SP0",
+  "python": "3.12.10",
+  "qt_platform": "offscreen",
+  "source_commit": "47c6655065c113612c86c9d7ee7fe60058cf19ac",
+  "routes_opened": [
+    "home",
+    "library",
+    "paper",
+    "student",
+    "preparation"
+  ],
+  "uncaught_errors": [],
+  "scope": "Native Qt source startup/navigation, empty personal library; not real-material acceptance or packaged EXE."
+}

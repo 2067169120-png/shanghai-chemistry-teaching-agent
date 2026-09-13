@@ -1,5 +1,7 @@
 """Shared content-design rules, not a chemical correctness validator."""
 
+from .desktop_teaching_design_contract import CLASSROOM_DESIGN_CONTRACT
+
 CHEMISTRY_RULES_VERSION = "sample-and-evidence-v1"
 
 TEACHING_SOURCE_RULES_VERSION = "teacher-source-closure-v2"
@@ -28,3 +30,7 @@ CHEMISTRY_CONSISTENCY_RULES = """化学材料一致性规则（sample-and-eviden
 6. 来源迁移：E编号只支持其实际内容。讲义答案中的物种、条件或实验结论与新情境不一致时，不照搬；明确保留的考查关系与改写的条件。不相关材料可以不用，不能为保留引用而引入无来源的新物种。指出来源或模型原稿问题时须定位原句，区分已明确条件与真正缺失条件。
 7. 修订闭合：逐项将已确认的问题落实到共同材料、对应任务和答案；对证据不足的问题明确保留不确定性。原稿已明确“另取未经处理的原样”时不要再误报为沿用处理后滤液；分取新样是否足够仍须按样品组成和干扰条件单独判断。若诊断误报，应在unknowns说明撤回哪项、原文已有何条件，不将模型诊断当作新事实。
 """
+
+# Keep source-integrity rules reusable and the classroom extension independently
+# versioned. The composed string enters the existing real generation requests.
+TEACHING_SOURCE_RULES += "\n" + CLASSROOM_DESIGN_CONTRACT
