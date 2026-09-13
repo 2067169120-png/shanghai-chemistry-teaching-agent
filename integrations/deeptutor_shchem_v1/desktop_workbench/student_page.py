@@ -39,6 +39,7 @@ from .components import (
     section_title,
     set_status,
 )
+from .student_egress_dialog import AnalysisConfirmationDialog
 from .student_practice_panel import StudentPracticeDetailDialog, StudentPracticePanel
 from .tasks import DesktopTaskBridge
 
@@ -213,97 +214,6 @@ class NewStudentDialog(QDialog):
         root.addWidget(buttons)
 
 
-class AnalysisConfirmationDialog(QDialog):
-    """Exact-page/provider confirmation; both statements are opt-in."""
-
-    def __init__(self, confirmation: object, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.setWindowTitle("确认发送学生页面")
-        self.setModal(True)
-        self.setMinimumWidth(340)
-        root = QVBoxLayout(self)
-        root.setContentsMargins(20, 18, 20, 18)
-        root.setSpacing(12)
-
-        title = QLabel("确认发送学生页面")
-        title.setObjectName("DialogTitle")
-        root.addWidget(title)
-
-        counts = _field(confirmation, "page_counts_by_role", {})
-        if not isinstance(counts, Mapping):
-            counts = {}
-        count_text = "；".join(
-            (
-                f"题目 {int(counts.get('question_pages', 0))} 页",
-                f"参考答案 {int(counts.get('reference_answer_pages', 0))} 页",
-                f"学生作答 {int(counts.get('student_work_pages', 0))} 页",
-            )
-        )
-        details = QLabel(
-            "\n".join(
-                (
-                    f"匿名学生：{_field(confirmation, 'student_label_zh', '匿名学生')}",
-                    f"模型：{_field(confirmation, 'provider_label_zh', '所选视觉模型')}",
-                    f"发送范围：{count_text}",
-                    (
-                        "保留期限记录："
-                        f"{int(_field(confirmation, 'retention_days', 0))} 天"
-                        "（本版本不会到期自动删除文件）"
-                    ),
-                    "这些页面将离开本机并发送给所选模型，可能产生模型服务费用。",
-                )
-            )
-        )
-        details.setWordWrap(True)
-        details.setAccessibleName("学生页面发送范围与费用说明")
-        root.addWidget(details)
-        message = str(_field(confirmation, "message_zh", "")).strip()
-        if message:
-            message_label = QLabel(message)
-            message_label.setWordWrap(True)
-            message_label.setObjectName("MutedLabel")
-            root.addWidget(message_label)
-
-        self.identifiers_clear = QCheckBox(
-            "这些页面不含姓名、学号等直接身份标识，\n或已经完成脱敏。"
-        )
-        self.identifiers_clear.setSizePolicy(
-            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred
-        )
-        self.identifiers_clear.setAccessibleName("确认学生页面不含直接身份标识")
-        root.addWidget(self.identifiers_clear)
-        self.egress_confirmed = QCheckBox(
-            "我确认把上述页面发送给所选模型，\n并知晓可能产生费用。"
-        )
-        self.egress_confirmed.setSizePolicy(
-            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred
-        )
-        self.egress_confirmed.setAccessibleName("确认学生页面模型外传与可能费用")
-        root.addWidget(self.egress_confirmed)
-
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
-        self.start_button = buttons.button(QDialogButtonBox.StandardButton.Ok)
-        self.start_button.setText("确认并开始分析")
-        self.start_button.setAccessibleName("确认隐私与费用后开始学生分析")
-        self.start_button.setEnabled(False)
-        cancel = buttons.button(QDialogButtonBox.StandardButton.Cancel)
-        cancel.setText("暂不发送")
-        cancel.setAccessibleName("取消发送学生页面")
-        cancel.setDefault(True)
-        cancel.setAutoDefault(True)
-        self.start_button.setDefault(False)
-        self.identifiers_clear.toggled.connect(self._update_start_enabled)
-        self.egress_confirmed.toggled.connect(self._update_start_enabled)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        root.addWidget(buttons)
-
-    def _update_start_enabled(self) -> None:
-        self.start_button.setEnabled(
-            self.identifiers_clear.isChecked() and self.egress_confirmed.isChecked()
-        )
 
 
 class PagePreviewDialog(QDialog):
@@ -1850,15 +1760,27 @@ class StudentPage(QWidget):
 
     def _confirmation_prepared(self, confirmation: object) -> None:
         self._confirmation_task_id = None
-        dialog = AnalysisConfirmationDialog(confirmation, self)
+        pages = tuple(_field(confirmation, "pages", ()))
+        page_map = {_field(page, "sha256"): page for page in pages}
+
+        def load_page(page_sha256):
+            page = page_map[page_sha256]
+            return self.facade.student_submission_page(
+                student_id=str(_field(confirmation, "student_id")),
+                submission_id=str(_field(confirmation, "submission_id")),
+                file_id=str(_field(page, "file_id")),
+                page_sha256=page_sha256,
+            )
+
+        dialog = AnalysisConfirmationDialog(confirmation, self, image_loader=load_page)
         accepted = dialog.exec() == QDialog.DialogCode.Accepted
         identifiers_clear = dialog.identifiers_clear.isChecked()
         egress_confirmed = dialog.egress_confirmed.isChecked()
-        if not accepted or not (identifiers_clear and egress_confirmed):
+        if not accepted or not dialog._ready or not (identifiers_clear and egress_confirmed):
             set_status(
                 self.model_status,
                 "attention",
-                "未发送任何页面。只有两项确认都勾选后才会调用模型。",
+                "未发送任何页面。图片须完整显示，并勾选两项确认后才会调用模型。",
             )
             self._update_analysis_button()
             return

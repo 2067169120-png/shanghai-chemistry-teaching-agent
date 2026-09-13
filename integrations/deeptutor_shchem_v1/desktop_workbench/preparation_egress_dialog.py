@@ -7,10 +7,12 @@ from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
+    QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
     QPlainTextEdit,
+    QPushButton,
     QSizePolicy,
     QSplitter,
     QTabWidget,
@@ -100,6 +102,7 @@ class PreparationEgressDialog(QDialog):
         self.image_list.setWordWrap(True)
         self.image_list.setMinimumWidth(150)
         self.image_list.currentRowChanged.connect(self._select_image)
+        self.image_list.itemDoubleClicked.connect(self._zoom_thumbnail)
         self.image_preview = _LocalImagePreview()
         self.image_preview.image.setMinimumHeight(120)
         self.image_preview.image.setMaximumHeight(16777215)
@@ -125,10 +128,44 @@ class PreparationEgressDialog(QDialog):
         gallery.setStretchFactor(0, 0)
         gallery.setStretchFactor(1, 1)
         gallery.setSizes([240, 580])
+        self.image_navigation = QWidget()
+        navigation_layout = QHBoxLayout(self.image_navigation)
+        navigation_layout.setContentsMargins(0, 0, 0, 0)
+        navigation_layout.setSpacing(8)
+        self.previous_image_button = QPushButton("上一张")
+        self.next_image_button = QPushButton("下一张")
+        for button in (self.previous_image_button, self.next_image_button):
+            button.setObjectName("QuietButton")
+            button.setAutoDefault(False)
+            button.setEnabled(False)
+        self.previous_image_button.setAccessibleName("查看上一张待发送图片")
+        self.next_image_button.setAccessibleName("查看下一张待发送图片")
+        self.previous_image_button.clicked.connect(lambda: self._navigate_image(-1))
+        self.next_image_button.clicked.connect(lambda: self._navigate_image(1))
+        self.image_position = QLabel("第 0 / 0 张")
+        self.image_position.setTextFormat(Qt.TextFormat.PlainText)
+        self.image_position.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.image_position.setAccessibleName("当前图片序号与总数")
+        navigation_layout.addWidget(self.previous_image_button)
+        navigation_layout.addWidget(self.image_position)
+        navigation_layout.addWidget(self.next_image_button)
+        navigation_layout.addStretch(1)
+        # Reuse the existing zoom row across the gallery's full width, leaving
+        # the main raster and bottom consent actions their original space.
+        self.image_preview.layout().removeWidget(self.image_preview.zoom_button)
+        self.image_preview.zoom_button.setAutoDefault(False)
+        navigation_layout.addWidget(self.image_preview.zoom_button)
+        self.image_navigation.hide()
+        gallery_panel = QWidget(self)
+        gallery_layout = QVBoxLayout(gallery_panel)
+        gallery_layout.setContentsMargins(0, 0, 0, 0)
+        gallery_layout.setSpacing(4)
+        gallery_layout.addWidget(gallery, 1)
+        gallery_layout.addWidget(self.image_navigation)
         if image_count:
-            self.tabs.addTab(gallery, f"图片预览（{image_count}）")
+            self.tabs.addTab(gallery_panel, f"图片预览（{image_count}）")
         else:
-            gallery.hide()
+            gallery_panel.hide()
         self.tabs.addTab(self.disclosure, "发送范围与费用")
         layout.addWidget(self.tabs, 1)
         self.validation_status = QLabel()
@@ -185,6 +222,7 @@ class PreparationEgressDialog(QDialog):
             item.setToolTip(asset["caption"])
             item.setSizeHint(QSize(200, 96))
             self.image_list.addItem(item)
+        self._update_image_navigation(self.image_list.currentRow())
         self.validation_status.setText(f"正在读取本次发送的图片：0 / {image_count}；尚未发送。")
         self._timer.start(0)
 
@@ -255,6 +293,7 @@ class PreparationEgressDialog(QDialog):
         self._timer.start(0)
 
     def _select_image(self, index: int) -> None:
+        self._update_image_navigation(index)
         if not 0 <= index < len(self._assets) or self._closed:
             return
         asset = self._assets[index]
@@ -268,6 +307,29 @@ class PreparationEgressDialog(QDialog):
         except Exception:  # noqa: BLE001 - never substitute a stale/blank preview
             self.image_preview.clear("本次图片无法读取或已经变化，请取消后重新选择。")
             self._fail_image(index)
+
+    def _update_image_navigation(self, index: int) -> None:
+        count = len(self._assets)
+        selected = 0 <= index < count
+        self.image_navigation.setVisible(bool(count))
+        self.image_position.setText(f"第 {index + 1 if selected else 0} / {count} 张")
+        self.previous_image_button.setEnabled(selected and index > 0 and not self._closed)
+        self.next_image_button.setEnabled(selected and index < count - 1 and not self._closed)
+
+    def _navigate_image(self, offset: int) -> None:
+        if self._closed:
+            return
+        index = self.image_list.currentRow() + offset
+        if 0 <= index < len(self._assets):
+            self.image_list.setCurrentRow(index)
+
+    def _zoom_thumbnail(self, item: QListWidgetItem) -> None:
+        if self._closed:
+            return
+        index = self.image_list.row(item)
+        if 0 <= index < len(self._assets):
+            self.image_list.setCurrentRow(index)
+            self.image_preview.zoom_button.click()
 
     def accept(self) -> None:
         if self._manifest_error or not self._ready or self._closed:

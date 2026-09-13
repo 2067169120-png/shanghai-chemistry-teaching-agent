@@ -920,6 +920,7 @@ def test_confirmation_binds_all_pages_and_start_records_privacy_before_analysis(
     assert confirmation.provider_profile_id == PROFILE_ID
     assert confirmation.provider_revision == PROFILE_REVISION
     assert confirmation.page_sha256 == tuple(page.sha256 for page in confirmed.pages)
+    assert confirmation.pages == confirmed.pages
     assert confirmation.total_page_count == 4
     assert confirmation.page_counts_by_role == confirmed.page_counts_by_role
     assert confirmation.student_label_zh == profile.label_zh

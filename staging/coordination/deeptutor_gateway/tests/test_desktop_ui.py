@@ -1475,17 +1475,34 @@ class _StudentFacade(_Facade):
         return self.current
 
     def student_submission_page(self, **_kwargs: object) -> tuple[bytes, str]:
+        if hasattr(self, "_egress_pixels"):
+            return self._egress_pixels[_kwargs["page_sha256"]], "image/png"
         return (b"not-a-real-image", "image/png")
 
     def prepare_student_analysis_confirmation(self, **kwargs: object) -> object:
+        import hashlib
+        import io
+
+        from PIL import Image
+
         self.confirmation_calls.append(dict(kwargs))
+        pages = []
+        self._egress_pixels = {}
+        for number, original in enumerate(self._pages):
+            stream = io.BytesIO()
+            Image.new("RGB", (80, 100), (40 + number * 30, 80, 190)).save(stream, format="PNG")
+            raw = stream.getvalue()
+            sha = hashlib.sha256(raw).hexdigest()
+            self._egress_pixels[sha] = raw
+            pages.append(SimpleNamespace(**{**vars(original), "sha256": sha, "width": 80, "height": 100}))
         return SimpleNamespace(
             student_id=self.student.student_id,
             submission_id="submission-internal-secret",
             expected_revision="revision-internal-secret-confirmation",
             provider_profile_id=self.profile.profile_id,
             provider_revision=self.profile.revision,
-            page_sha256=("a" * 64, "c" * 64),
+            page_sha256=tuple(page.sha256 for page in pages),
+            pages=tuple(pages),
             provider_label_zh="示例视觉服务 · teacher-vision-model",
             total_page_count=2,
             page_counts_by_role={
@@ -1879,6 +1896,7 @@ def test_student_analysis_requires_both_explicit_confirmations(
     assert page.analyze_button.isEnabled()
 
     def fake_exec(dialog: AnalysisConfirmationDialog):
+        dialog.reject()
         if dialog_result == "decline":
             return QDialog.DialogCode.Rejected
         return QDialog.DialogCode.Accepted
@@ -1886,6 +1904,7 @@ def test_student_analysis_requires_both_explicit_confirmations(
     monkeypatch.setattr(AnalysisConfirmationDialog, "exec", fake_exec)
     page.analyze_button.click()
     assert _wait_until(qt_app, lambda: len(facade.confirmation_calls) == 1)
+    assert _wait_until(qt_app, lambda: "未发送任何页面" in page.model_status.text())
     _settle(qt_app)
     assert facade.start_calls == []
     assert "未发送任何页面" in page.model_status.text()
@@ -2052,9 +2071,13 @@ def test_student_polling_stops_on_failure_without_automatic_retry(
     page._render_submission(ready)
 
     def accept_with_both(dialog: AnalysisConfirmationDialog):
+        assert _wait_until(qt_app, lambda: dialog._ready)
+        assert dialog.image_preview.has_image
         dialog.identifiers_clear.setChecked(True)
         dialog.egress_confirmed.setChecked(True)
-        return QDialog.DialogCode.Accepted
+        dialog.accept()
+        assert _wait_until(qt_app, lambda: dialog.result() == QDialog.DialogCode.Accepted)
+        return dialog.result()
 
     monkeypatch.setattr(AnalysisConfirmationDialog, "exec", accept_with_both)
     page.analyze_button.click()

@@ -202,6 +202,10 @@ _VISUAL_FAILURE_GUIDANCE = {
         "模型返回的页码或裁剪坐标与原图不一致，结果未通过校验，没有入库。",
         "先核对原图与页面边界；需要修正识别定位后再处理，不要连续重试。",
     ),
+    "provider_output_role_invalid": (
+        "模型把题目、答案或讲义的内容角色混在了一起，本次没有入库。",
+        "核对文件分类并修正识别规则后重新预览；不会把答案内容当成题目。",
+    ),
     "visual_candidate_invalid": (
         "视觉识别结果未通过本机格式校验，本次未生成候选。",
         "保留原文件并核对模型返回格式后再手动重试。",
@@ -642,6 +646,7 @@ class StudentAnalysisConfirmation:
     student_label_zh: str
     retention_days: int
     message_zh: str
+    pages: tuple[StudentPageSummary, ...] = field(default=(), repr=False)
 
 
 @dataclass(frozen=True)
@@ -3784,6 +3789,15 @@ class DesktopWorkbenchFacade:
                     "student_not_found", _STUDENT_ERROR_MESSAGES["student_not_found"]
                 )
             provider_label = f"{profile.provider_name} / {profile.model_id}"
+            # Build the pixel gallery from this exact revision, not a UI's
+            # earlier summary. Non-stored files are not part of this egress.
+            frozen_pages = self._student_submission_summary({
+                **submission,
+                "files": [record for record in submission.get("files", [])
+                          if isinstance(record, Mapping) and record.get("state") == "stored"],
+            }).pages
+            if tuple(page.sha256 for page in frozen_pages) != tuple(page_hashes):
+                raise DesktopFacadeError("submission_pages_incomplete", "发送页面清单不完整，请重新预览。")
             return StudentAnalysisConfirmation(
                 student_id=student_id,
                 submission_id=submission_id,
@@ -3796,6 +3810,7 @@ class DesktopWorkbenchFacade:
                 page_counts_by_role=dict(page_counts),
                 student_label_zh=profile_summary.label_zh,
                 retention_days=profile_summary.retention_days,
+                pages=frozen_pages,
                 message_zh=(
                     f"将 {len(page_hashes)} 页已确认图片发送给 {provider_label}；"
                     "可能产生模型费用，返回结果仅作为教师复核候选。"

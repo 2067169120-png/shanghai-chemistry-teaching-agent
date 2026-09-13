@@ -71,6 +71,7 @@ def _failed_result(code: str) -> SimpleNamespace:
         "provider_response_too_large",
         "provider_output_invalid",
         "provider_output_evidence_invalid",
+        "provider_output_role_invalid",
         "visual_provider_output_invalid",
         "visual_candidate_schema_invalid",
     ),

@@ -131,6 +131,112 @@ def test_selected_images_are_actual_distinct_pixels_and_zoomable(app):
     assert dialog.image_preview._zoom_dialog is None
 
 
+def test_image_navigation_switches_actual_pixels_and_stays_in_sync_with_list(app):
+    dialog, _, _ = _dialog(3)
+    dialog.show()
+    _flush(app, dialog)
+    assert dialog.image_position.text() == "第 1 / 3 张"
+    assert not dialog.previous_image_button.isEnabled()
+    assert dialog.next_image_button.isEnabled()
+    assert not dialog.next_image_button.autoDefault()
+    dialog.next_image_button.click()
+    assert dialog.image_list.currentRow() == 1
+    assert dialog.image_position.text() == "第 2 / 3 张"
+    assert dialog.image_preview._source.toImage().pixelColor(0, 0).getRgb()[:3] == (24, 50, 197)
+    assert dialog.previous_image_button.isEnabled() and dialog.next_image_button.isEnabled()
+    dialog.next_image_button.click()
+    assert dialog.image_list.currentRow() == 2
+    assert dialog.image_position.text() == "第 3 / 3 张"
+    assert dialog.image_preview._source.toImage().pixelColor(0, 0).getRgb()[:3] == (28, 50, 194)
+    assert dialog.previous_image_button.isEnabled()
+    assert not dialog.next_image_button.isEnabled()
+    dialog.next_image_button.click()
+    assert dialog.image_list.currentRow() == 2
+    dialog.previous_image_button.click()
+    assert dialog.image_list.currentRow() == 1
+    dialog.image_list.setCurrentRow(0)
+    assert dialog.image_position.text() == "第 1 / 3 张"
+    assert not dialog.previous_image_button.isEnabled()
+    assert dialog.image_preview._source.toImage().pixelColor(0, 0).getRgb()[:3] == (20, 50, 200)
+    assert dialog.result() == QDialog.DialogCode.Rejected
+    dialog.reject()
+
+
+def test_double_click_thumbnail_opens_existing_zoom_without_accepting(app):
+    dialog, _, _ = _dialog()
+    dialog.show()
+    _flush(app, dialog)
+    item = dialog.image_list.item(1)
+    position = dialog.image_list.visualItemRect(item).center()
+    QTest.mouseClick(dialog.image_list.viewport(), Qt.MouseButton.LeftButton, pos=position)
+    QTest.mouseDClick(dialog.image_list.viewport(), Qt.MouseButton.LeftButton, pos=position)
+    app.processEvents()
+    assert dialog.image_list.currentRow() == 1
+    assert dialog.image_position.text() == "第 2 / 2 张"
+    assert dialog.image_preview._source.toImage().pixelColor(0, 0).getRgb()[:3] == (24, 50, 197)
+    assert dialog.image_preview._zoom_dialog is not None
+    assert dialog.image_preview._zoom_dialog.isVisible()
+    assert dialog.result() == QDialog.DialogCode.Rejected
+    assert dialog._rechecking is False
+    dialog.reject()
+    assert dialog.image_preview._zoom_dialog is None
+
+
+def test_navigation_keeps_failed_images_blocking_confirmation(app):
+    dialog, assets, contents = _dialog()
+    contents.pop(assets[1]["asset_id"])
+    dialog.show()
+    _flush(app, dialog)
+    assert not dialog.confirm_button.isEnabled()
+    dialog.next_image_button.click()
+    assert dialog.image_position.text() == "第 2 / 2 张"
+    assert not dialog.image_preview.has_image
+    assert not dialog.image_preview.zoom_button.isEnabled()
+    dialog.image_list.itemDoubleClicked.emit(dialog.image_list.item(1))
+    assert dialog.image_preview._zoom_dialog is None
+    dialog.previous_image_button.click()
+    assert dialog.image_preview.has_image
+    assert not dialog.confirm_button.isEnabled()
+    dialog.accept()
+    assert dialog.result() == QDialog.DialogCode.Rejected
+    dialog.reject()
+
+
+def test_navigation_is_hidden_without_images_and_disabled_for_one_image(app):
+    empty = PreparationEgressDialog("发送前核对", "仅文字")
+    empty.show()
+    app.processEvents()
+    assert not empty.image_navigation.isVisible()
+    assert not empty.image_preview.zoom_button.isVisible()
+    empty.reject()
+    single, _, _ = _dialog(1)
+    single.show()
+    _flush(app, single)
+    assert single.image_navigation.isVisible()
+    assert single.image_position.text() == "第 1 / 1 张"
+    assert not single.previous_image_button.isEnabled()
+    assert not single.next_image_button.isEnabled()
+    assert single.confirm_button.isEnabled()
+    single.reject()
+
+
+def test_small_gallery_keeps_navigation_raster_and_consent_actions_visible(app):
+    dialog, _, _ = _dialog()
+    dialog.resize(640, 480)
+    dialog.show()
+    _flush(app, dialog)
+    assert dialog.width() <= 640 and dialog.height() <= 480
+    assert dialog.image_preview.image.height() >= 120
+    for widget in (
+        dialog.previous_image_button, dialog.image_position, dialog.next_image_button,
+        dialog.image_preview.zoom_button, dialog.cancel_button, dialog.confirm_button,
+    ):
+        assert widget.isVisible()
+        assert dialog.rect().contains(widget.mapTo(dialog, widget.rect().topLeft()))
+        assert dialog.rect().contains(widget.mapTo(dialog, widget.rect().bottomRight()))
+    dialog.reject()
+
+
 def test_confirm_revalidates_all_snapshot_bytes_then_accepts(app):
     dialog, assets, contents = _dialog()
     original = copy.deepcopy(assets)
