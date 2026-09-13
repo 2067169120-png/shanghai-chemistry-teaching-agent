@@ -18,6 +18,15 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT))
 
+from integrations.deeptutor_shchem_v1.desktop_word_question_filters import (
+    chapter_filter_id,
+    section_filter_id,
+)
+
+_BOOK = "synthetic-book"
+_CHAPTER = "synthetic-chapter"
+_SECTION = "synthetic-section"
+
 
 def _png_bytes(title: str, subtitle: str, background: str) -> bytes:
     from PySide6.QtCore import QBuffer, QIODevice, QRectF, Qt
@@ -125,8 +134,12 @@ class _SyntheticFacade:
             "facets": {
                 "source": ["synthetic-source"],
                 "book": ["synthetic-book"],
+                "chapter": [chapter_filter_id(_BOOK, _CHAPTER)],
+                "section": [section_filter_id(_BOOK, _CHAPTER, _SECTION)],
                 "knowledge": ["synthetic-knowledge"],
             },
+            "curriculum_paths": [{"volume_id": _BOOK, "chapter_id": _CHAPTER,
+                                  "section_key": _SECTION}],
             "selection_ready": True,
         }
         self._question_png = _png_bytes(
@@ -154,7 +167,13 @@ class _SyntheticFacade:
             "items": rows,
             "warnings": [],
             "filter_options": {
-                "book": [{"value": "synthetic-book", "label": "合成教材册"}],
+                "book": [{"value": _BOOK, "label": "合成教材册", "volume_id": _BOOK}],
+                "chapter": [{"value": chapter_filter_id(_BOOK, _CHAPTER),
+                             "label": "合成教材册 / 第一章", "volume_id": _BOOK,
+                             "chapter_id": _CHAPTER}],
+                "section": [{"value": section_filter_id(_BOOK, _CHAPTER, _SECTION),
+                             "label": "合成教材册 / 第一章 / 第一节", "volume_id": _BOOK,
+                             "chapter_id": _CHAPTER, "section_key": _SECTION}],
                 "knowledge": [{"value": "synthetic-knowledge", "label": "合成知识标签"}],
                 "source": [{"value": "synthetic-source", "label": "合成测试来源"}],
             },
@@ -212,7 +231,7 @@ def _capture(dialog, app, path: Path, width: int, height: int) -> None:
         raise RuntimeError(f"Could not save screenshot: {path}")
 
 
-def capture(output: Path, small_output: Path) -> None:
+def capture(output: Path, small_output: Path, *, curriculum_selected=False) -> None:
     from PySide6.QtCore import QCoreApplication
     from PySide6.QtWidgets import QPlainTextEdit
 
@@ -243,6 +262,14 @@ def capture(output: Path, small_output: Path) -> None:
     assert "合成测试题干" in question_text and "(1)" in question_text and "(2)" in question_text
     assert dialog.tabs.currentIndex() == 0
 
+    if curriculum_selected:
+        dialog.filter_panel.set_selection({
+            "book": [_BOOK], "chapter": [chapter_filter_id(_BOOK, _CHAPTER)],
+            "section": [section_filter_id(_BOOK, _CHAPTER, _SECTION)],
+        })
+        app.processEvents()
+        assert len(dialog._visible_tokens) == 1
+
     _capture(dialog, app, output, 1200, 850)
 
     dialog.tabs.setCurrentIndex(1)
@@ -266,6 +293,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=default)
     parser.add_argument("--small-output", type=Path)
+    parser.add_argument("--curriculum-selected", action="store_true")
     args = parser.parse_args()
     output = args.output if args.output.is_absolute() else ROOT / args.output
     small_output = args.small_output
@@ -273,7 +301,7 @@ def main() -> None:
         small_output = output.with_name(output.stem + "-900x700" + output.suffix)
     elif not small_output.is_absolute():
         small_output = ROOT / small_output
-    capture(output, small_output)
+    capture(output, small_output, curriculum_selected=args.curriculum_selected)
 
 
 if __name__ == "__main__":

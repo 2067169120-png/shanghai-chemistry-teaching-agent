@@ -111,6 +111,7 @@ def _row(
             "book": [book],
             "knowledge": list(knowledge),
         },
+        "curriculum_paths": [{"volume_id": book, "chapter_id": "合成章", "section_key": "unknown"}],
         "selection_ready": True,
         "_image_failure": image_failure,
         "_color": color,
@@ -245,6 +246,72 @@ def test_batch_and_cross_group_and_filtering_keep_selection_scope(qt_app):
     assert dialog.question_list.count() == 1
     assert dialog.question_list.item(0).data(256)[1] == "q-a"
     dialog.filter_panel.set_selection({"source": {"来源甲"}, "book": {"必修二"}})
+    assert dialog.question_list.count() == 0
+    dialog.reject()
+
+
+def test_curriculum_options_keep_parents_and_dialog_rejects_cross_path(qt_app):
+    from integrations.deeptutor_shchem_v1.desktop_word_question_filters import (
+        chapter_filter_id,
+        section_filter_id,
+    )
+    from integrations.deeptutor_shchem_v1.desktop_workbench.personal_visual_question_dialog import (
+        PersonalVisualQuestionDialog,
+    )
+
+    class CurriculumFacade(_Facade):
+        def personal_visual_questions(self, batch_id=None):
+            result = super().personal_visual_questions(batch_id)
+            result["filter_options"]["chapter"] = [
+                {"value": chapter_filter_id(book, "合成章"), "label": book + " / 合成章",
+                 "volume_id": book, "chapter_id": "合成章"}
+                for book in ("必修一", "必修二")
+            ]
+            result["filter_options"]["section"] = [
+                {"value": section_filter_id(book, "合成章", book + "-节"), "label": book + " / 合成节",
+                 "volume_id": book, "chapter_id": "合成章", "section_key": book + "-节"}
+                for book in ("必修一", "必修二")
+            ]
+            return result
+
+    facade = CurriculumFacade()
+    for row in facade.rows:
+        path = row["curriculum_paths"][0]
+        path["section_key"] = path["volume_id"] + "-节"
+    facade.rows[0]["curriculum_paths"].append(deepcopy(facade.rows[1]["curriculum_paths"][0]))
+    dialog = PersonalVisualQuestionDialog(facade, _ImmediateTasks())
+    dialog.filter_panel.set_selection({"book": {"必修一"}})
+    assert [row["id"] for row in dialog.filter_panel._available("chapter")] == [
+        chapter_filter_id("必修一", "合成章")
+    ]
+    assert [row["id"] for row in dialog.filter_panel._available("section")] == [
+        section_filter_id("必修一", "合成章", "必修一-节")
+    ]
+    dialog.filter_panel.set_selection({
+        "book": {"必修一", "必修二"},
+        "chapter": {chapter_filter_id("必修二", "合成章")},
+        "section": {section_filter_id("必修二", "合成章", "必修二-节")},
+    })
+    assert dialog.question_list.count() == 2
+    assert not dialog._matches_filters(facade.rows[0], {
+        "book": {"必修一"}, "chapter": {chapter_filter_id("必修二", "合成章")}
+    })
+    dialog.reject()
+
+
+def test_legacy_facet_only_ui_still_browses_and_filters_non_curriculum(qt_app):
+    from integrations.deeptutor_shchem_v1.desktop_workbench.personal_visual_question_dialog import (
+        PersonalVisualQuestionDialog,
+    )
+
+    facade = _Facade()
+    for row in facade.rows:
+        row.pop("curriculum_paths")
+    dialog = PersonalVisualQuestionDialog(facade, _ImmediateTasks())
+    assert dialog.question_list.count() == 3
+    dialog.filter_panel.set_selection({"source": {"来源甲"}, "knowledge": {"k-redox"}})
+    assert dialog.question_list.count() == 1
+    dialog.filter_panel.set_selection({"book": {"必修一"}})
     assert dialog.question_list.count() == 0
     dialog.reject()
 

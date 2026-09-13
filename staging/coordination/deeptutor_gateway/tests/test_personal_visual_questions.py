@@ -12,12 +12,20 @@ from typing import Any
 import pytest
 from PIL import Image
 
+from integrations.deeptutor_shchem_v1 import (
+    desktop_personal_visual_questions as personal_visual,
+)
 from integrations.deeptutor_shchem_v1 import desktop_visual_import_v2 as bridge
 from integrations.deeptutor_shchem_v1.desktop_paths import DesktopPaths
 from integrations.deeptutor_shchem_v1.desktop_personal_visual_questions import (
     SELECTION_DRAFT,
     PersonalVisualQuestionError,
     PersonalVisualQuestionService,
+    matches_personal_visual_filters,
+)
+from integrations.deeptutor_shchem_v1.desktop_word_question_filters import (
+    chapter_filter_id,
+    section_filter_id,
 )
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[4]
@@ -279,6 +287,136 @@ def _items(context: dict[str, Any]) -> list[dict[str, Any]]:
     result = context["service"].catalog(BATCH_ID)
     assert result["warnings"] == []
     return result["items"]
+
+
+def _curriculum_projection(context, monkeypatch, refs, *, nodes=None):
+    nodes = nodes if nodes is not None else [
+        {"node_key": "SEC-A", "volume_id": "BOOK-A", "chapter_id": "CH-A",
+         "volume_title": "合成甲册", "chapter_title": "甲章", "section_title": "甲节"},
+        {"node_key": "SEC-B", "volume_id": "BOOK-B", "chapter_id": "CH-B",
+         "volume_title": "合成乙册", "chapter_title": "乙章", "section_title": "乙节"},
+    ]
+    service = context["service"]
+    snapshot, pages = service._batch(BATCH_ID)
+    snapshot = deepcopy(snapshot)
+    printed = snapshot["candidate"]["paper"]["theme_big_questions"][0]["printed_questions"]
+    for question in printed:
+        for atomic in question["atomic_parts"]:
+            atomic["curriculum"].update(primary_chapter="unknown", secondary_chapters=[])
+    printed[0]["atomic_parts"][0]["curriculum"].update(
+        primary_chapter=refs[0] if refs else "unknown", secondary_chapters=refs[1:]
+    )
+    monkeypatch.setattr(personal_visual, "load_attribute_catalog", lambda _root: {
+        "nodes": nodes, "knowledge_points": []
+    })
+    monkeypatch.setattr(service, "_batch", lambda _batch: (snapshot, pages))
+    return service.catalog(BATCH_ID)
+
+
+def test_curriculum_projection_preserves_paths_and_parent_qualified_options(
+    imported_visual_batch, monkeypatch,
+):
+    context = imported_visual_batch
+    before = deepcopy(context["facade"].state_store.snapshot())
+    result = _curriculum_projection(context, monkeypatch, ["SEC-A", "SEC-B", "SEC-A"])
+    row = result["items"][0]
+    assert row["curriculum_paths"] == [
+        {"volume_id": "BOOK-A", "chapter_id": "CH-A", "section_key": "SEC-A"},
+        {"volume_id": "BOOK-B", "chapter_id": "CH-B", "section_key": "SEC-B"},
+    ]
+    assert row["facets"]["chapter"] == [
+        chapter_filter_id("BOOK-A", "CH-A"), chapter_filter_id("BOOK-B", "CH-B")
+    ]
+    option = next(option for option in result["filter_options"]["section"]
+                  if option["value"] == section_filter_id("BOOK-B", "CH-B", "SEC-B"))
+    assert option == {
+        "value": section_filter_id("BOOK-B", "CH-B", "SEC-B"),
+        "label": "合成乙册 / 乙章 / 乙节", "volume_id": "BOOK-B",
+        "chapter_id": "CH-B", "section_key": "SEC-B",
+    }
+    assert context["facade"].state_store.snapshot() == before
+
+
+@pytest.mark.parametrize("selection, expected", [
+    ({"book": {"BOOK-A", "BOOK-B"}, "chapter": {chapter_filter_id("BOOK-B", "CH-B")},
+      "section": {section_filter_id("BOOK-B", "CH-B", "SEC-B")}}, True),
+    ({"book": {"BOOK-A"}, "chapter": {chapter_filter_id("BOOK-B", "CH-B")}}, False),
+    ({"chapter": {chapter_filter_id("BOOK-A", "CH-A")},
+      "section": {section_filter_id("BOOK-B", "CH-B", "SEC-B")}}, False),
+    ({"book": {"BOOK-A"}, "chapter": {"CH-A"}}, False),
+    ({"book": {"BOOK-A"}, "grade": {"grade_12"}}, False),
+    ({"book": {"BOOK-A"}, "grade": {"unknown"}, "source": {BATCH_ID}}, True),
+    ({"book": {"nonexistent"}}, False),
+])
+def test_curriculum_multiselect_matches_one_path(
+    imported_visual_batch, monkeypatch, selection, expected,
+):
+    row = _curriculum_projection(imported_visual_batch, monkeypatch, ["SEC-A", "SEC-B"])["items"][0]
+    original = deepcopy(row)
+    assert matches_personal_visual_filters(row, selection) is expected
+    assert row == original
+
+
+def test_bare_chapter_does_not_guess_book_or_section(imported_visual_batch, monkeypatch):
+    nodes = [
+        {"node_key": "SEC-A", "volume_id": "BOOK-A", "chapter_id": "CH-DUP"},
+        {"node_key": "SEC-B", "volume_id": "BOOK-B", "chapter_id": "CH-DUP"},
+        {"node_key": "SEC-C1", "volume_id": "BOOK-C", "chapter_id": "CH-C"},
+        {"node_key": "SEC-C2", "volume_id": "BOOK-C", "chapter_id": "CH-C"},
+    ]
+    row = _curriculum_projection(imported_visual_batch, monkeypatch, ["CH-DUP", "CH-C"], nodes=nodes)["items"][0]
+    assert row["curriculum_paths"] == [
+        {"volume_id": "BOOK-C", "chapter_id": "CH-C", "section_key": "unknown"}
+    ]
+    assert row["facets"]["section"] == ["unknown"]
+    assert matches_personal_visual_filters(row, {"book": {"BOOK-C"}, "section": {"unknown"}})
+    assert not matches_personal_visual_filters(row, {"book": {"BOOK-A"}})
+
+
+def test_explicit_section_keeps_duplicate_chapter_ids_in_their_own_books(imported_visual_batch, monkeypatch):
+    nodes = [
+        {"node_key": "SEC-A", "volume_id": "BOOK-A", "chapter_id": "CH-DUP"},
+        {"node_key": "SEC-B", "volume_id": "BOOK-B", "chapter_id": "CH-DUP"},
+    ]
+    result = _curriculum_projection(imported_visual_batch, monkeypatch, ["SEC-A", "SEC-B"], nodes=nodes)
+    row = result["items"][0]
+    assert row["facets"]["chapter"] == [
+        chapter_filter_id("BOOK-A", "CH-DUP"), chapter_filter_id("BOOK-B", "CH-DUP")
+    ]
+    assert not matches_personal_visual_filters(row, {
+        "book": {"BOOK-A"}, "chapter": {chapter_filter_id("BOOK-B", "CH-DUP")}
+    })
+    assert matches_personal_visual_filters(row, {
+        "book": {"BOOK-A"}, "chapter": {chapter_filter_id("BOOK-A", "CH-DUP")}
+    })
+
+
+def test_unknown_and_ambiguous_section_ids_remain_unmapped(imported_visual_batch, monkeypatch):
+    nodes = [
+        {"node_key": "SEC-CONFLICT", "volume_id": "BOOK-A", "chapter_id": "CH-A"},
+        {"node_key": "SEC-CONFLICT", "volume_id": "BOOK-B", "chapter_id": "CH-B"},
+        {"node_key": "SEC-BAD", "volume_id": "unknown", "chapter_id": "CH-BAD"},
+    ]
+    row = _curriculum_projection(imported_visual_batch, monkeypatch,
+                                ["SEC-CONFLICT", "SEC-BAD", "missing"], nodes=nodes)["items"][0]
+    assert row["curriculum_paths"] == []
+    assert matches_personal_visual_filters(row, {"book": {"unknown"}, "chapter": {"unknown"}})
+    assert not matches_personal_visual_filters(row, {"book": {"BOOK-A"}})
+
+
+def test_legacy_facet_only_supports_non_curriculum_filters_without_inventing_paths():
+    row = {"facets": {"book": ["BOOK-A"], "chapter": ["CH-A"],
+                      "knowledge": ["K01", "K02"], "exam": ["second_mock"]}}
+    assert matches_personal_visual_filters(row, {})
+    assert matches_personal_visual_filters(row, {"knowledge": {"K02", "K03"}})
+    assert matches_personal_visual_filters(row, {"knowledge": {"K01", "K02"}, "knowledge_mode": "all"})
+    assert not matches_personal_visual_filters(row, {"knowledge": {"K01", "K03"}, "knowledge_mode": "all"})
+    assert matches_personal_visual_filters(row, {"exam": {"second_mock"}, "knowledge": {"K01"}})
+    assert not matches_personal_visual_filters(row, {"book": {"BOOK-A"}})
+    assert not matches_personal_visual_filters(row, {"book": {"unknown"}})
+    assert not matches_personal_visual_filters(row, {"book": "BOOK-A"})
+    assert not matches_personal_visual_filters(row, {"knowledge_mode": "invalid"})
+    assert not matches_personal_visual_filters({**row, "curriculum_paths": [{}]}, {"book": {"unknown"}})
 
 
 def test_catalog_and_detail_project_cas_hierarchy_with_role_separated_images(

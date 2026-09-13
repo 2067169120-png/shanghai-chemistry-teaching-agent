@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..desktop_personal_visual_questions import matches_personal_visual_filters
 from .components import page_scroll, section_title, set_status
 from .preparation_images_widget import _LocalImagePreview
 from .word_question_filter_panel import WordQuestionFilterPanel
@@ -541,21 +542,7 @@ class PersonalVisualQuestionDialog(QDialog):
 
     @staticmethod
     def _matches_filters(row: Mapping[str, Any], selection: Mapping[str, Any]) -> bool:
-        facets = row.get("facets", {})
-        if not isinstance(facets, Mapping):
-            facets = {}
-        knowledge_mode = selection.get("knowledge_mode", "any")
-        for group in WordQuestionFilterPanel.GROUPS:
-            selected = selection.get(group, set())
-            if not selected:
-                continue
-            values = {str(item) for item in facets.get(group, ())}
-            if group == "knowledge" and knowledge_mode == "all":
-                if not set(selected).issubset(values):
-                    return False
-            elif not values.intersection({str(item) for item in selected}):
-                return False
-        return True
+        return matches_personal_visual_filters(row, selection)
 
     def _render_list(self) -> None:
         current = self._current_token if self._current_token in self._visible_tokens else None

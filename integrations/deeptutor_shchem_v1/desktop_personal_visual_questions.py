@@ -13,6 +13,7 @@ import io
 import json
 import math
 import re
+from collections.abc import Mapping
 from copy import deepcopy
 
 from PIL import Image
@@ -25,12 +26,14 @@ from .desktop_preparation_images import (
 )
 from .desktop_preparation_limits import MAX_MATERIALS
 from .desktop_word_question_attributes import load_attribute_catalog
+from .desktop_word_question_filters import chapter_filter_id, section_filter_id
 from .intake_batches_v2 import CandidateCAS, candidate_sha256, strict_json_loads
 
 SELECTION_DRAFT = "personal-visual-question-selection-v1"
 _BATCH = re.compile(r"DESKTOPBATCH-[a-f0-9]{32}\Z")
 _GROUPS = ("book", "chapter", "section", "knowledge", "grade", "exam", "source")
 _UNKNOWN = "unknown"
+_CURRICULUM_GROUPS = ("book", "chapter", "section")
 
 
 class PersonalVisualQuestionError(ValueError):
@@ -49,6 +52,93 @@ def _digest(value):
 
 def _text(value):
     return value.strip() if isinstance(value, str) and value.strip() != _UNKNOWN else ""
+
+
+def _curriculum_references(nodes):
+    """Resolve explicit IDs only; a bare chapter ID cannot choose between books."""
+    sections, chapters = {}, {}
+    for node in nodes:
+        if not isinstance(node, Mapping):
+            continue
+        key, volume, chapter = (
+            _text(node.get(field)) for field in ("node_key", "volume_id", "chapter_id")
+        )
+        if not all((key, volume, chapter)):
+            continue
+        node = {**node, "node_key": key, "volume_id": volume, "chapter_id": chapter}
+        sections.setdefault(key, {})[(volume, chapter)] = node
+        chapters.setdefault(chapter, {})[volume] = node
+    resolved = {}
+    for key, candidates in chapters.items():
+        if len(candidates) == 1 and key not in sections:
+            node = next(iter(candidates.values()))
+            resolved[key] = {**node, "node_key": _UNKNOWN}
+    for key, candidates in sections.items():
+        if len(candidates) == 1:
+            resolved[key] = next(iter(candidates.values()))
+    return resolved
+
+
+def _path_facets(path):
+    volume, chapter, section = (
+        path[field] for field in ("volume_id", "chapter_id", "section_key")
+    )
+    return {
+        "book": volume,
+        "chapter": chapter_filter_id(volume, chapter),
+        "section": section_filter_id(volume, chapter, section)
+        if section != _UNKNOWN else _UNKNOWN,
+    }
+
+
+def matches_personal_visual_filters(row, selection):
+    """Same-group OR, cross-group AND, with one explicit curriculum path.
+
+    Older facet-only rows remain browsable and support non-curriculum filters;
+    their flattened labels cannot establish a book/chapter/section relationship.
+    """
+    if not isinstance(row, Mapping) or not isinstance(selection, Mapping):
+        return False
+    chosen = {}
+    for group in _GROUPS:
+        values = selection.get(group, ())
+        if not isinstance(values, (list, tuple, set, frozenset)) or any(
+            not isinstance(value, str) or not value for value in values
+        ):
+            return False
+        chosen[group] = set(values)
+    if selection.get("knowledge_mode", "any") not in {"any", "all"}:
+        return False
+    facets = row.get("facets")
+    facets = facets if isinstance(facets, Mapping) else {}
+    for group in _GROUPS:
+        if group in _CURRICULUM_GROUPS or not chosen[group]:
+            continue
+        raw = facets.get(group, ())
+        values = {value for value in raw if isinstance(value, str)} if isinstance(
+            raw, (list, tuple, set, frozenset)
+        ) else set()
+        if group == "knowledge" and selection.get("knowledge_mode", "any") == "all":
+            if not chosen[group].issubset(values):
+                return False
+        elif not chosen[group].intersection(values):
+            return False
+    if not any(chosen[group] for group in _CURRICULUM_GROUPS):
+        return True
+    paths = row.get("curriculum_paths")
+    if not isinstance(paths, list):
+        return False
+    candidates = []
+    for path in paths:
+        if not isinstance(path, Mapping) or not all(
+            _text(path.get(field)) for field in ("volume_id", "chapter_id")
+        ) or not isinstance(path.get("section_key"), str) or not path["section_key"]:
+            continue
+        candidates.append(_path_facets(path))
+    if not paths:
+        candidates = [{group: _UNKNOWN for group in _CURRICULUM_GROUPS}]
+    return any(all(not chosen[group] or path[group] in chosen[group]
+                   for group in _CURRICULUM_GROUPS) for path in candidates)
 
 
 def _question_text(node):
@@ -199,8 +289,7 @@ class PersonalVisualQuestionService:
         paper = candidate["paper"]
         taxonomy = load_attribute_catalog(self.facade.paths.workspace_root)
         known_knowledge = {row["id"] for row in taxonomy["knowledge_points"]}
-        curriculum_nodes = {row["node_key"]: row for row in taxonomy["nodes"]}
-        curriculum_chapters = {row["chapter_id"]: row for row in taxonomy["nodes"]}
+        curriculum_references = _curriculum_references(taxonomy["nodes"])
         result = []
         for theme in paper["theme_big_questions"]:
             theme_key = "visual-theme:" + _digest([batch_id, theme["theme_big_question_id"]])
@@ -228,15 +317,18 @@ class PersonalVisualQuestionService:
                 source_names = list(dict.fromkeys(pages[(evidence[ref]["source_file_id"], evidence[ref]["page_number"], evidence[ref]["page_sha256"])]["source_name"] for ref in refs))
                 facets = {group: [] for group in _GROUPS}
                 facets.update(knowledge=knowledge, source=[batch_id], exam=[_text(paper["paper_type"]) or _UNKNOWN], grade=[_UNKNOWN])
+                curriculum_paths = []
                 for atomic in atomics:
                     curriculum = atomic["curriculum"]
                     for key in [curriculum["primary_chapter"], *curriculum["secondary_chapters"]]:
-                        node = curriculum_nodes.get(key) or curriculum_chapters.get(key)
+                        node = curriculum_references.get(key)
                         if node:
-                            facets["book"].append(node["volume_id"])
-                            facets["chapter"].append(node["chapter_id"])
-                            if key in curriculum_nodes:
-                                facets["section"].append(node["node_key"])
+                            path = {"volume_id": node["volume_id"], "chapter_id": node["chapter_id"],
+                                    "section_key": node["node_key"]}
+                            if path not in curriculum_paths:
+                                curriculum_paths.append(path)
+                                for group, value in _path_facets(path).items():
+                                    facets[group].append(value)
                 facets = {group: list(dict.fromkeys(values)) or [_UNKNOWN] for group, values in facets.items()}
                 warnings = ["文字与裁剪范围为AI识别候选，请对照原页检查；未作教师化学审核。"]
                 if theme["merge_status"] != "complete":
@@ -261,6 +353,7 @@ class PersonalVisualQuestionService:
                     "answer_text": answer_text, "warnings": warnings,
                     "images": shared_images + question_images + answer_images,
                     "facets": facets,
+                    "curriculum_paths": curriculum_paths,
                     "selection_ready": theme["merge_status"] == "complete" and bool(question_images),
                     "candidate_revision": snapshot["revision_token"],
                     "candidate_sha256": snapshot["candidate_sha256"],
@@ -286,15 +379,32 @@ class PersonalVisualQuestionService:
         options = {group: {} for group in _GROUPS}
         taxonomy = load_attribute_catalog(self.facade.paths.workspace_root)
         names = {row["id"]: row["name"] for row in taxonomy["knowledge_points"]}
-        for node in taxonomy["nodes"]:
-            names.update({node["volume_id"]: node["volume_title"],
-                          node["chapter_id"]: node["chapter_title"],
-                          node["node_key"]: node["section_title"]})
+        curriculum_options = {}
+        for node in _curriculum_references(taxonomy["nodes"]).values():
+            volume, chapter, section = node["volume_id"], node["chapter_id"], node["node_key"]
+            book_label = _text(node.get("volume_title")) or volume
+            chapter_label = book_label + " / " + (_text(node.get("chapter_title")) or chapter)
+            curriculum_options[volume] = {"value": volume, "label": book_label, "volume_id": volume}
+            chapter_value = chapter_filter_id(volume, chapter)
+            curriculum_options[chapter_value] = {"value": chapter_value, "label": chapter_label,
+                                                "volume_id": volume, "chapter_id": chapter}
+            if section != _UNKNOWN:
+                section_value = section_filter_id(volume, chapter, section)
+                curriculum_options[section_value] = {
+                    "value": section_value,
+                    "label": chapter_label + " / " + (_text(node.get("section_title")) or section),
+                    "volume_id": volume, "chapter_id": chapter, "section_key": section,
+                }
         for row in items:
             for group, values in row["facets"].items():
                 for value in values or [_UNKNOWN]:
-                    options[group][value] = ("待标注" if value == _UNKNOWN else
-                                            row["source_name"] if group == "source" else names.get(value, value))
+                    if group in _CURRICULUM_GROUPS and value != _UNKNOWN:
+                        if value in curriculum_options:
+                            options[group][value] = curriculum_options[value]
+                        continue
+                    options[group][value] = {"value": value, "label": (
+                        "待标注" if value == _UNKNOWN else row["source_name"]
+                        if group == "source" else names.get(value, value))}
         draft = self.state.snapshot().get("drafts", {}).get(SELECTION_DRAFT, {})
         saved = draft.get("selections", []) if isinstance(draft, dict) else None
         if not isinstance(saved, list):
@@ -317,7 +427,7 @@ class PersonalVisualQuestionService:
             warnings.append("部分旧选题的来源已变化或暂不可读，请重新打开后勾选。")
         return {"items": items, "warnings": list(dict.fromkeys(warnings)),
                 "selection": deepcopy(valid),
-                "filter_options": {group: [{"value": key, "label": label} for key, label in pairs.items()]
+                "filter_options": {group: list(pairs.values())
                                    for group, pairs in options.items()}}
 
     def _matched_row(self, batch_id, key, revision):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import io
 import json
 from collections.abc import Mapping
 from copy import deepcopy
@@ -9,6 +10,7 @@ from typing import Any
 
 import pytest
 from jsonschema import Draft202012Validator
+from PIL import Image
 
 from integrations.deeptutor_shchem_v1 import desktop_visual_import_adapters as adapters
 from integrations.deeptutor_shchem_v1 import desktop_visual_schema as wire
@@ -104,7 +106,7 @@ def test_other_routes_preserve_exact_original_schema(changes: dict[str, Any]) ->
         "max_output_tokens": 8000,
         "timeout_seconds": 90,
         "schema_dialect": "canonical-v2",
-        "observation_prompt_version": "normalized-xywh-v1",
+        "observation_prompt_version": "normalized-xywh-roles-pages-v4",
     }
 
 
@@ -122,7 +124,7 @@ def test_official_endpoint_url_variants_are_supported(base_url: str) -> None:
         "max_output_tokens": 32000,
         "timeout_seconds": 300,
         "schema_dialect": "inline-v1",
-        "observation_prompt_version": "normalized-xywh-v1",
+        "observation_prompt_version": "normalized-xywh-roles-pages-v4",
     }
 
 
@@ -173,6 +175,23 @@ def test_schema_expansion_has_depth_and_output_growth_bounds() -> None:
         wire.desktop_visual_wire_schema(
             _context(), {"$defs": definitions, "$ref": f"#/$defs/{previous}"}
         )
+
+
+@pytest.mark.parametrize("invalid", [True, False, -1, 0.0, 1.5, "0", None, []])
+def test_wire_schema_rejects_invalid_max_items(invalid: Any) -> None:
+    schema = {"type": "array", "items": {"type": "string"}, "maxItems": invalid}
+    with pytest.raises(wire.DesktopVisualSchemaError, match="maxItems"):
+        wire.desktop_visual_wire_schema(_context(), schema)
+
+
+@pytest.mark.parametrize("maximum", [0, 1, 3])
+def test_wire_schema_preserves_nonnegative_integer_max_items(maximum: int) -> None:
+    schema = {"type": "array", "items": {"type": "string"}, "maxItems": maximum}
+    adapted = wire.desktop_visual_wire_schema(_context(), schema)
+    assert adapted == schema
+    validator = Draft202012Validator(adapted)
+    assert validator.is_valid(["synthetic"] * maximum)
+    assert not validator.is_valid(["synthetic"] * (maximum + 1))
 
 
 def _fragments() -> list[dict[str, Any]]:
@@ -322,13 +341,301 @@ class _CaptureTransport:
         )
 
 
+def _role_fragment(request: core.VisualShardRequest) -> dict[str, Any]:
+    if request.source_role == "answer":
+        return _lean_answer_fragment(request)
+    fragment = _lean_question_fragment(request)
+    fragment["source_role"] = request.source_role
+    return fragment
+
+
+def _wrong_role_fragment(request: core.VisualShardRequest) -> dict[str, Any]:
+    fragment = _role_fragment(request)
+    refs = [fragment["evidence"][0]["evidence_id"]]
+    if request.source_role == "answer":
+        # A schema-valid answer-page heading still must not create a theme,
+        # even if it contains no printed questions at all.
+        fragment["theme_fragments"] = [
+            {
+                "theme_big_question_id": "SYNTHETIC-ANSWER-HEADING",
+                "theme_number": "一",
+                "title": "合成答案页标题",
+                "context": "合成答案分组",
+                "sequence_in_paper": 1,
+                "fragment_position": "complete",
+                "shared_materials": [],
+                "visual_objects": [],
+                "dependency_edges": [],
+                "printed_questions": [],
+                "evidence_refs": refs,
+            }
+        ]
+    else:
+        fragment["answer_candidates"] = [
+            {
+                "answer_candidate_id": "SYNTHETIC-WRONG-ROLE-ANSWER",
+                "question_number": "1",
+                "part_label": None,
+                "atomic_part_id": None,
+                "answer_body": "纯合成答案",
+                "chemical_expressions": [],
+                "evidence_refs": refs,
+            }
+        ]
+    return fragment
+
+
 @pytest.mark.parametrize("official", [True, False])
+@pytest.mark.parametrize("role", ["question", "answer", "handout"])
+def test_role_schema_adds_only_the_existing_empty_array_gate(
+    official: bool,
+    role: str,
+) -> None:
+    context = _context() if official else _context(base_url="https://api.openai.com/v1")
+    canonical = core.intake_batch_visual_fragment_v2_schema()
+    before = deepcopy(canonical)
+    forbidden = "theme_fragments" if role == "answer" else "answer_candidates"
+    role_schema = wire.desktop_visual_role_schema(canonical, role)
+    expected_role_schema = deepcopy(canonical)
+    expected_role_schema["properties"][forbidden]["maxItems"] = 0
+    assert role_schema == expected_role_schema
+    assert (
+        role_schema["properties"][forbidden]["items"]
+        == canonical["properties"][forbidden]["items"]
+    )
+    assert canonical == before
+    adapted = wire.desktop_visual_wire_schema(context, role_schema)
+    expected_wire = deepcopy(wire.desktop_visual_wire_schema(context, canonical))
+    expected_wire["properties"][forbidden]["maxItems"] = 0
+    assert adapted == expected_wire
+    assert all(node.get("items") is not False for node in _walk(adapted))
+    Draft202012Validator.check_schema(adapted)
+    validator = Draft202012Validator(adapted)
+    request = _lean_shard(role)
+    valid = _role_fragment(request)
+    validator.validate(valid)
+    invalid = _wrong_role_fragment(request)
+    # This used to pass the outbound schema and fail only after model return.
+    Draft202012Validator(canonical).validate(invalid)
+    assert not validator.is_valid(invalid)
+    for nonempty in ([None], [{}], [False]):
+        invalid = deepcopy(valid)
+        invalid[forbidden] = nonempty
+        assert not validator.is_valid(invalid)
+    missing = deepcopy(valid)
+    del missing[forbidden]
+    assert not validator.is_valid(missing)
+
+
+@pytest.mark.parametrize("role", ["question", "answer", "handout"])
+def test_wrong_role_response_is_rejected_locally_without_discarding_records(
+    role: str,
+) -> None:
+    request = _lean_shard(role)
+    invalid = _wrong_role_fragment(request)
+    before = deepcopy(invalid)
+    adapter = adapters.StructuredVisualShardProviderAdapter(
+        _context(), transport=_CaptureTransport(invalid)
+    )
+    decoded = adapter.analyze_shard(request)
+    assert decoded == before
+    with pytest.raises(core.IntakeBatchV2Error) as raised:
+        core._validate_fragment(decoded, request=request)
+    assert raised.value.code == "provider_output_role_invalid"
+    assert decoded == before
+
+
+def test_role_schema_rejects_unknown_role_or_missing_required_array() -> None:
+    with pytest.raises(wire.DesktopVisualSchemaError, match="source role"):
+        wire.desktop_visual_role_schema(
+            core.intake_batch_visual_fragment_v2_schema(), "unknown"
+        )
+    with pytest.raises(wire.DesktopVisualSchemaError, match="array is missing"):
+        wire.desktop_visual_role_schema({"type": "object", "properties": {}}, "answer")
+
+
+def _two_page_request(layout: str) -> core.VisualShardRequest:
+    request = _lean_shard("question")
+    pages = []
+    for index, color in enumerate(((210, 40, 40), (40, 40, 210)), 1):
+        output = io.BytesIO()
+        standalone = layout == "independent_jpeg"
+        Image.new("RGB", (24, 32), color).save(
+            output, format="JPEG" if standalone else "PNG"
+        )
+        raw = output.getvalue()
+        pages.append(
+            replace(
+                request.pages[0],
+                source_file_id=f"SYNTHETIC-JPG-{index}"
+                if standalone
+                else "SYNTHETIC-PDF",
+                source_order=index if standalone else 1,
+                page_number=1 if standalone else index,
+                mime_type="image/jpeg" if standalone else "image/png",
+                pixels=raw,
+                page_sha256=core.sha256_bytes(raw),
+            )
+        )
+    return replace(request, pages=tuple(pages))
+
+
+def _two_page_fragment(request: core.VisualShardRequest) -> dict[str, Any]:
+    fragment = _lean_question_fragment(request)
+    second = deepcopy(fragment["evidence"][0])
+    second["evidence_id"] = "EV-SYNTHETIC-SECOND"
+    for field in ("source_file_id", "source_role", "page_number", "page_sha256"):
+        second[field] = request.pages[1].public_manifest()[field]
+    fragment["evidence"].append(second)
+    return fragment
+
+
+@pytest.mark.parametrize("official", [True, False])
+@pytest.mark.parametrize("layout", ["independent_jpeg", "single_pdf"])
+def test_page_schema_preserves_exact_manifest_tuples_and_other_constraints(
+    official: bool,
+    layout: str,
+) -> None:
+    request = _two_page_request(layout)
+    manifests = tuple(page.public_manifest() for page in request.pages)
+    if layout == "independent_jpeg":
+        assert [page["page_number"] for page in manifests] == [1, 1]
+    else:
+        assert [page["page_number"] for page in manifests] == [1, 2]
+        assert manifests[0]["source_file_id"] == manifests[1]["source_file_id"]
+    canonical = core.intake_batch_visual_fragment_v2_schema()
+    schema = wire.desktop_visual_role_schema(canonical, "question")
+    before = deepcopy(schema)
+    restricted = wire.desktop_visual_page_schema(schema, manifests)
+    assert schema == before
+    branches = restricted["properties"]["evidence"]["items"]["anyOf"]
+    assert len(branches) == 2
+    fields = ("source_file_id", "source_role", "page_number", "page_sha256")
+    for branch, manifest in zip(branches, manifests, strict=True):
+        expected = deepcopy(schema["$defs"]["evidence"])
+        for field in fields:
+            expected["properties"][field] = {
+                **expected["properties"][field],
+                "type": "integer" if field == "page_number" else "string",
+                "enum": [manifest[field]],
+            }
+        assert branch == expected
+        assert (
+            branch["properties"]["evidence_id"]
+            == schema["$defs"]["evidence"]["properties"]["evidence_id"]
+        )
+    original_items = before["properties"]["evidence"]["items"]
+    restored = deepcopy(restricted)
+    restored["properties"]["evidence"]["items"] = original_items
+    assert restored == before
+    context = _context() if official else _context(base_url="https://api.openai.com/v1")
+    adapted = wire.desktop_visual_wire_schema(context, restricted)
+    unbound_wire = wire.desktop_visual_wire_schema(context, schema)
+    restored_wire = deepcopy(adapted)
+    restored_wire["properties"]["evidence"]["items"] = unbound_wire["properties"][
+        "evidence"
+    ]["items"]
+    assert restored_wire == unbound_wire
+    Draft202012Validator.check_schema(adapted)
+    validator = Draft202012Validator(adapted)
+    valid = _two_page_fragment(request)
+    validator.validate(valid)
+    core._validate_fragment(valid, request=request)
+    for field in fields:
+        if manifests[0][field] == manifests[1][field]:
+            continue
+        mixed = deepcopy(valid)
+        mixed["evidence"][0][field] = manifests[1][field]
+        assert not validator.is_valid(mixed), field
+    for field, value in (
+        ("source_role", "answer"),
+        ("source_file_id", "UNKNOWN"),
+        ("page_sha256", "0" * 64),
+    ):
+        invalid = deepcopy(valid)
+        invalid["evidence"][0][field] = value
+        assert not validator.is_valid(invalid), field
+    invalid = deepcopy(valid)
+    invalid["evidence"][1]["page_number"] = 2 if layout == "independent_jpeg" else 3
+    Draft202012Validator(canonical).validate(invalid)
+    assert not validator.is_valid(invalid)
+    for mutate in ("extra_property", "missing_bbox"):
+        invalid = deepcopy(valid)
+        if mutate == "extra_property":
+            invalid["evidence"][0]["unexpected"] = True
+        else:
+            del invalid["evidence"][0]["bbox"]
+        assert not validator.is_valid(invalid)
+    assert core.intake_batch_visual_fragment_v2_schema() == canonical
+
+
+@pytest.mark.parametrize("official", [True, False])
+def test_adapter_binds_independent_jpeg_page_one_and_never_rewrites_returned_identity(
+    official: bool,
+) -> None:
+    request = _two_page_request("independent_jpeg")
+    fragment = _two_page_fragment(request)
+    fragment["evidence"][1]["page_number"] = 2
+    before = deepcopy(fragment)
+    transport = _CaptureTransport(fragment)
+    context = _context() if official else _context(base_url="https://api.openai.com/v1")
+    adapter = adapters.StructuredVisualShardProviderAdapter(
+        context, transport=transport
+    )
+    decoded = adapter.analyze_shard(request)
+    assert decoded == before
+    with pytest.raises(core.IntakeBatchV2Error, match="not bound to pixels"):
+        core._validate_fragment(decoded, request=request)
+    assert decoded == before
+    body = json.loads(transport.requests[0].body)
+    content = body["input"][0]["content"]
+    assert [
+        base64.b64decode(row["image_url"].split(",", 1)[1]) for row in content[1:]
+    ] == [page.pixels for page in request.pages]
+    payload = json.loads(content[0]["text"].split("\n", 1)[1])
+    contract = payload["page_identity_contract"]
+    expected = [
+        {
+            field: getattr(page, field)
+            for field in ("source_file_id", "source_role", "page_number", "page_sha256")
+        }
+        for page in request.pages
+    ]
+    assert contract["allowed_combinations"] == expected
+    assert "该来源文件内部的页号，不是卷面印刷页码" in contract["instructions"]
+    assert "本地不会改写、猜测或替换页号与哈希" in contract["instructions"]
+
+
+@pytest.mark.parametrize(
+    "mutate", ["empty", "missing_id", "boolean_page", "bad_hash", "ref_sibling"]
+)
+def test_page_schema_rejects_invalid_manifest_or_unexpected_item_contract(
+    mutate: str,
+) -> None:
+    schema = core.intake_batch_visual_fragment_v2_schema()
+    pages = [_lean_shard("question").pages[0].public_manifest()]
+    if mutate == "empty":
+        pages = []
+    elif mutate == "missing_id":
+        del pages[0]["source_file_id"]
+    elif mutate == "boolean_page":
+        pages[0]["page_number"] = True
+    elif mutate == "bad_hash":
+        pages[0]["page_sha256"] = "not-a-digest"
+    else:
+        schema["properties"]["evidence"]["items"]["maxProperties"] = 6
+    with pytest.raises(wire.DesktopVisualSchemaError):
+        wire.desktop_visual_page_schema(schema, pages)
+
+
+@pytest.mark.parametrize("official", [True, False])
+@pytest.mark.parametrize("role", ["question", "answer", "handout"])
 def test_adapter_sends_strict_schema_and_pixel_only_prompt(
-    official: bool, monkeypatch: pytest.MonkeyPatch
+    official: bool, role: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(adapters.time, "monotonic", lambda: 1000.0)
-    request = _lean_shard("question")
-    fragment = _lean_question_fragment(request)
+    request = _lean_shard(role)
+    fragment = _role_fragment(request)
     transport = _CaptureTransport(fragment)
     context = _context() if official else _context(base_url="https://api.openai.com/v1")
     adapter = adapters.StructuredVisualShardProviderAdapter(
@@ -342,7 +649,13 @@ def test_adapter_sends_strict_schema_and_pixel_only_prompt(
     output = body["text"]["format"]
     assert output["strict"] is True
     assert output["schema"] == wire.desktop_visual_wire_schema(
-        context, core.intake_batch_visual_fragment_v2_schema()
+        context,
+        wire.desktop_visual_page_schema(
+            wire.desktop_visual_role_schema(
+                core.intake_batch_visual_fragment_v2_schema(), request.source_role
+            ),
+            tuple(page.public_manifest() for page in request.pages),
+        ),
     )
     prompt = body["input"][0]["content"][0]["text"]
     assert '"fallback_allowed":false' in prompt
@@ -354,15 +667,32 @@ def test_adapter_sends_strict_schema_and_pixel_only_prompt(
             context.base_url, context.model_id, context.api_style
         )["observation_prompt_version"]
     )
+    role_contract = prompt_payload["role_contract"]
+    forbidden = "theme_fragments" if role == "answer" else "answer_candidates"
+    assert role_contract["source_role"] == role
+    assert role_contract["required_empty_arrays"] == {forbidden: []}
+    assert f"{forbidden} 必须为 []" in role_contract["instructions"]
+    if role == "answer":
+        assert (
+            "答案页标题、章节标题、分组名和题号不得创建主题大题"
+            in role_contract["instructions"]
+        )
+        assert "空题目主题也不允许" in role_contract["instructions"]
     image = body["input"][0]["content"][1]
     assert image["type"] == "input_image"
     assert (
         base64.b64decode(image["image_url"].split(",", 1)[1]) == request.pages[0].pixels
     )
     validated = core._validate_fragment(fragment, request=request)
-    atomic = validated["theme_fragments"][0]["printed_questions"][0]["atomic_parts"][0]
-    assert atomic["cognitive_difficulty"]["human_verified"] is False
-    assert atomic["classification"]["item_type"] == "unknown"
+    if role == "answer":
+        assert validated["theme_fragments"] == []
+        assert validated["answer_candidates"][0]["independently_verified"] is False
+    else:
+        atomic = validated["theme_fragments"][0]["printed_questions"][0][
+            "atomic_parts"
+        ][0]
+        assert atomic["cognitive_difficulty"]["human_verified"] is False
+        assert atomic["classification"]["item_type"] == "unknown"
 
 
 def test_prompt_defines_normalized_xywh_and_correct_synthetic_example() -> None:
@@ -373,7 +703,7 @@ def test_prompt_defines_normalized_xywh_and_correct_synthetic_example() -> None:
     prompt = adapters.StructuredVisualShardProviderAdapter._prompt(request)
     payload = json.loads(prompt.split("\n", 1)[1])
     contract = payload["bbox_contract"]
-    assert payload["observation_prompt_version"] == "normalized-xywh-v1"
+    assert payload["observation_prompt_version"] == "normalized-xywh-roles-pages-v4"
     assert "归一化左上角 xywh 字典" in prompt
     assert contract["object_with_exact_keys"] == ["x", "y", "width", "height"]
     assert contract["coordinate_space"] == "normalized_xywh"

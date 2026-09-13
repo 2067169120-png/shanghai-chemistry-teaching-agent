@@ -26,6 +26,8 @@ from .desktop_visual_import_v2 import (
 from .desktop_visual_schema import (
     VISUAL_OBSERVATION_PROMPT_VERSION,
     DesktopVisualSchemaError,
+    desktop_visual_page_schema,
+    desktop_visual_role_schema,
     desktop_visual_wire_schema,
     visual_import_request_policy,
 )
@@ -235,6 +237,34 @@ class StructuredVisualShardProviderAdapter:
             page_manifests.append(
                 {key: value for key, value in page.items() if key != "image_data_url"}
             )
+        if request.source_role == "answer":
+            role_contract = {
+                "source_role": "answer",
+                "required_empty_arrays": {"theme_fragments": []},
+                "instructions": (
+                    "本分片为参考答案页；theme_fragments 必须为 []。"
+                    "只在 answer_candidates 中记录页面直接可见的答案候选。"
+                    "答案页标题、章节标题、分组名和题号不得创建主题大题、"
+                    "printed_questions 或 atomic_parts，空题目主题也不允许。"
+                    "题号记入 answer_candidates.question_number，小问标签记入 part_label；"
+                    "无法唯一确定 atomic_part_id 时填 null 并写明 warning。"
+                ),
+            }
+        elif request.source_role in {"question", "handout"}:
+            role_contract = {
+                "source_role": request.source_role,
+                "required_empty_arrays": {"answer_candidates": []},
+                "instructions": (
+                    "本分片为题目或教师讲义页；answer_candidates 必须为 []。"
+                    "在 theme_fragments 中记录直接可见的题面、共同材料、"
+                    "主题大题、印刷小题及最小作答单元。"
+                    "不得在本角色中创建独立答案候选，也不得推导答案。"
+                ),
+            }
+        else:
+            raise DesktopVisualImportAdapterError(
+                "visual_request_invalid", "视觉分片的来源角色不正确。"
+            )
         prompt_payload = {
             "schema_version": INTAKE_BATCH_VISUAL_FRAGMENT_V2_SCHEMA_VERSION,
             "batch_id": request.batch_id,
@@ -246,6 +276,31 @@ class StructuredVisualShardProviderAdapter:
             "fallback_allowed": False,
             "observation_prompt_version": VISUAL_OBSERVATION_PROMPT_VERSION,
             "instructions": payload.get("instructions"),
+            "role_contract": role_contract,
+            "page_identity_contract": {
+                "allowed_combinations": [
+                    {
+                        key: page[key]
+                        for key in (
+                            "source_file_id",
+                            "source_role",
+                            "page_number",
+                            "page_sha256",
+                        )
+                    }
+                    for page in page_manifests
+                ],
+                "instructions": (
+                    "每个 evidence 必须从 allowed_combinations 选择一条完整组合，"
+                    "原样填写 source_file_id、source_role、page_number 和 page_sha256。"
+                    "page_number 是该来源文件内部的页号，不是卷面印刷页码，"
+                    "也不是本次附件的排列序号。多个独立 JPG/PNG 文件通常各自都是第 1 页；"
+                    "一个 PDF 的不同页面则使用该 PDF 在 manifest 中列出的文件内页号。"
+                    "不要把不同页面的来源标识、角色、页号或哈希混配，"
+                    "不要从图片上的印刷页码推断或替换 page_number。"
+                    "返回前逐条核对完整组合；本地不会改写、猜测或替换页号与哈希。"
+                ),
+            },
             "bbox_contract": {
                 "object_with_exact_keys": ["x", "y", "width", "height"],
                 "coordinate_space": "normalized_xywh",
@@ -297,14 +352,16 @@ class StructuredVisualShardProviderAdapter:
         }
         return (
             "请直接观察随请求附带的原始或本机渲染页面像素，并严格返回给定 JSON "
-            "Schema 的一个对象。只提取页面上直接可见的证据、试卷身份、主题大题、"
+            "Schema 的一个对象。按当前 source_role 和下方 role_contract，"
+            "仅提取该角色允许且页面上直接可见的证据、试卷身份、主题大题、"
             "印刷小题、最小作答单元、原文、选项、作答要求、化学表达式、视觉对象、"
             "前序依赖和答案候选。不得使用 OCR 文本或文档文本层；不得推断教材版本或"
             "章节、题型、K/A/C/R/RP 标签、认知或实测难度、官方性、独立核验、答案"
             '解析、分值或评分点。不确定的化学表达式使用 status="uncertain"；答案'
             "对应关系不确定时将 atomic_part_id 设为 null，并在 warnings 中说明。"
             "每个 evidence.bbox 必须是归一化左上角 xywh 字典，严格遵守下方 "
-            "bbox_contract，并在返回前逐个核对。\n"
+            "bbox_contract。每条证据的页面标识必须使用 page_identity_contract 中的"
+            "完整组合，并在返回前逐个核对。\n"
             + json.dumps(
                 prompt_payload,
                 ensure_ascii=False,
@@ -320,7 +377,13 @@ class StructuredVisualShardProviderAdapter:
         cancel_event = threading.Event()
         try:
             wire_schema = desktop_visual_wire_schema(
-                self._context, intake_batch_visual_fragment_v2_schema()
+                self._context,
+                desktop_visual_page_schema(
+                    desktop_visual_role_schema(
+                        intake_batch_visual_fragment_v2_schema(), request.source_role
+                    ),
+                    tuple(page.public_manifest() for page in request.pages),
+                ),
             )
         except DesktopVisualSchemaError as exc:
             raise DesktopVisualImportAdapterError(
