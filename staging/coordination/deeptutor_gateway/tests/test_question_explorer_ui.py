@@ -97,3 +97,65 @@ def test_short_questions_leave_room_for_following_results(window):
     assert page._reader.height() <= 240
     assert page.cards[0].height() < 520
     assert page.cards[1].geometry().top() < page.scroll.viewport().height()
+
+
+def test_collapsed_facet_is_not_reopened_by_search(window):
+    win, app = window
+    page = win.library_page
+    knowledge = next(page.tree.topLevelItem(i) for i in range(page.tree.topLevelItemCount())
+                     if page.tree.topLevelItem(i).text(0) == "知识点")
+    knowledge.setExpanded(False)
+    page.search()
+    settle(app, lambda: not page._loading and bool(page.cards) and page.cards[0].ready)
+    knowledge = next(page.tree.topLevelItem(i) for i in range(page.tree.topLevelItemCount())
+                     if page.tree.topLevelItem(i).text(0) == "知识点")
+    assert not knowledge.isExpanded()
+
+
+def test_curriculum_path_stays_open_when_facets_refresh(window):
+    from PySide6.QtCore import QSignalBlocker
+    win, _ = window
+    page = win.library_page
+    # Exercise menu rebuilding only; no synthetic catalogue is passed off as
+    # an installed or official textbook, and no core search is invoked here.
+    with QSignalBlocker(page.scope):
+        page.scope.setCurrentIndex(page.scope.findData("master"))
+    page._curriculum_catalog = {"volumes": [{"volume_id": "demo-volume", "volume_title": "合成教材册",
+        "chapters": [{"chapter_id": "demo-chapter", "chapter_title": "合成章",
+            "sections": [{"section_key": "demo-section", "section_title": "合成节"}]}]}]}
+    page._render_tree()
+    volume = page.tree.topLevelItem(0).child(0)
+    chapter = volume.child(0)
+    volume.setExpanded(True)
+    chapter.setExpanded(True)
+    page._render_tree()
+    volume = page.tree.topLevelItem(0).child(0)
+    assert volume.isExpanded() and volume.child(0).isExpanded()
+    # A deliberately closed subtree must also remain closed.
+    volume.child(0).setExpanded(False)
+    page._render_tree()
+    assert not page.tree.topLevelItem(0).child(0).child(0).isExpanded()
+
+
+def test_real_page_changes_keep_selected_questions_and_status(window, monkeypatch):
+    win, app = window
+    page = win.library_page
+    monkeypatch.setattr(page, "PAGE_SIZE", 2)
+    page.search()
+    settle(app, lambda: not page._loading and len(page.cards) == 2 and page.cards[0].ready)
+    first_key = page.cards[0].entry["key"]
+    page.cards[0].add.click()
+    settle(app, lambda: len(win.facade.basket()) == 1)
+    assert page.cards[0].add.text() == "已在题篮"
+    page.next.click()
+    settle(app, lambda: not page._loading and page._page == 1 and page.cards[0].ready)
+    assert page.cards[0].entry["key"] != first_key
+    page.cards[0].add.click()
+    settle(app, lambda: len(win.facade.basket()) == 2)
+    page.previous.click()
+    settle(app, lambda: not page._loading and page._page == 0 and page.cards[0].ready)
+    assert page.cards[0].entry["key"] == first_key
+    assert page.cards[0].add.text() == "已在题篮" and not page.cards[0].add.isEnabled()
+    page.cards[0].add.click()
+    settle(app)
+    assert len(win.facade.basket()) == 2

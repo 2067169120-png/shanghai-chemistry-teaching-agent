@@ -1,7 +1,6 @@
 """Native faceted question search: left taxonomy, right cards and a persistent cart."""
 from __future__ import annotations
 
-from copy import deepcopy
 from PySide6.QtCore import Qt, QTimer, Signal, QSignalBlocker
 from PySide6.QtWidgets import (QBoxLayout, QComboBox, QFrame, QHBoxLayout, QLineEdit,
     QPushButton, QScrollArea, QSizePolicy, QSplitter, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
@@ -328,8 +327,23 @@ class QuestionExplorerPage(QWidget):
                 item.widget().deleteLater()
 
     def _render_tree(self, current=None):
-        expanded = {self.tree.topLevelItem(i).text(0) for i in range(self.tree.topLevelItemCount())
-                    if self.tree.topLevelItem(i).isExpanded()}
+        # Rebuilding result counts must not close the teacher's chapter path or
+        # reopen a deliberately collapsed group. Branch labels are stable; leaf
+        # count labels are not used as keys. Scope changes start a fresh menu.
+        def branches(parent, path=()):
+            for index in range(parent.childCount()):
+                item = parent.child(index)
+                item_path = (*path, item.text(0))
+                if item.childCount():
+                    yield item_path, item
+                    yield from branches(item, item_path)
+
+        lane = self.scope.currentData()
+        same_lane = lane == getattr(self, "_tree_lane", None)
+        branch_state = {path: item.isExpanded() for path, item in
+                        branches(self.tree.invisibleRootItem())} if same_lane else {}
+        scroll_position = self.tree.verticalScrollBar().value() if same_lane else 0
+        expanded = {path[0] for path, opened in branch_state.items() if len(path) == 1 and opened}
         with QSignalBlocker(self.tree):
             self.tree.clear()
             if self.scope.currentData() in {"master", "supplemental"}:
@@ -365,6 +379,12 @@ class QuestionExplorerPage(QWidget):
                     child.setData(0, Qt.ItemDataRole.UserRole, (group, row["value"]))
                     child.setFlags(child.flags() | Qt.ItemFlag.ItemIsUserCheckable)
                     child.setCheckState(0, Qt.CheckState.Checked if row["value"] in self.filters.get(group, set()) else Qt.CheckState.Unchecked)
+            for path, item in branches(self.tree.invisibleRootItem()):
+                if path in branch_state:
+                    item.setExpanded(branch_state[path])
+            self.tree.doItemsLayout()
+            self.tree.verticalScrollBar().setValue(scroll_position)
+        self._tree_lane = lane
         self.filter_hint.setText("同类多选为或，不同类为且。" + ("括号为当前匹配小问数。" if self.scope.currentData() not in PERSONAL_LANES else "使用已保存的来源标签。"))
 
     def facet_changed(self, item, _column):
@@ -540,7 +560,7 @@ class QuestionExplorerPage(QWidget):
         self.preview_button.setEnabled(bool(count))
         for card in self.cards:
             selected = entry_is_selected(card.entry, basket)
-            card.add.setText("✓ 已在题篮" if selected else "＋ 加入选题篮")
+            card.add.setText("已在题篮" if selected else "＋ 加入选题篮")
             card.add.setEnabled(card.ready and not selected and card.entry["key"] not in self._adding)
 
     def open_basket(self):
