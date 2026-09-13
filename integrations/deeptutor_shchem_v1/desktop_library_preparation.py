@@ -103,7 +103,7 @@ def library_preparation_reference(
     if len(text) > MAX_MATERIALS:
         raise BlueprintDraftError(
             "library_reference_too_large",
-            "所选题库参考超过20000字，未截断。请减少作答单元或取消答案后再导入。",
+            f"所选题库参考超过{MAX_MATERIALS}字，未截断。请减少作答单元或取消答案后再导入。",
         )
     return {
         "materials": text,

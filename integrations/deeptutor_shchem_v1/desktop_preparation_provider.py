@@ -21,6 +21,7 @@ from .desktop_preparation import preparation_candidate_schema
 from .desktop_preparation_image_input import (
     PreparationImageInputError,
     image_input_mode,
+    validate_preparation_image_dimensions,
 )
 from .desktop_preparation_images import (
     PreparationImageError,
@@ -42,7 +43,7 @@ from .visual_provider_runtime import (
 # staging/coordination/deeptutor_gateway/teacher_preparation_research_20260909/README.md.
 # This is a design revision, not a claim of award-winning or reviewed output.
 PREPARATION_PROMPT_REVISION = "20260913-lecture-practice-notes-v26"
-PREPARATION_REQUEST_POLICY_REVISION = "20260909-deepseek-v4-output-budget-v12"
+PREPARATION_REQUEST_POLICY_REVISION = "20260913-complete-lesson-image-budget-v13"
 
 # Distilled from the inspected v15 live lesson, not additional source facts.
 # Keep this short check after the complete teacher brief so long source excerpts
@@ -515,6 +516,11 @@ class StructuredPreparationProvider:
             message_zh="正在整理教师备课要求…",
         )
         try:
+            if image_input_mode(payload) == "vision":
+                validate_preparation_image_dimensions(
+                    {"base_url": self._context.base_url, "model_id": self._context.model_id},
+                    normalize_image_assets(payload.get("image_assets", [])),
+                )
             pages = _provider_image_pages(payload, image_data)
             request_arguments = {
                 "prompt": _prompt(payload),

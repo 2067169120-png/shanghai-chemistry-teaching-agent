@@ -17,11 +17,11 @@ from docx import Document
 from docx.oxml.ns import qn
 from docx.text.paragraph import Paragraph
 
+from .desktop_preparation_limits import MAX_MATERIALS
 from .word_handout_import import _validate_container
 from .word_native_text import NATIVE_WORD_TEXT_REVISION, WordNativeTextReader
 
 CONCEPTS = "sh-chem-db/kb/textbook_knowledge_map_v1_2026-08-28/concepts.jsonl"
-MAX_MATERIALS = 20_000
 MAX_TEXTBOOK_PREVIEW_BYTES = 256 * 1024 * 1024
 
 
@@ -675,7 +675,7 @@ class PreparationSourcesService:
         text = "\n".join(lines)
         if len(text) > MAX_MATERIALS:
             raise PreparationSourceError(
-                "参考超过20000字，未截断；请缩小Word区块范围或减少知识点。"
+                f"参考超过{MAX_MATERIALS}字，未截断；请缩小Word区块范围或减少知识点。"
             )
         _reject_sensitive(text)
         return {"materials": text, "warnings": warnings}

@@ -147,7 +147,7 @@ def test_inspector_rejects_old_six_image_capacity():
                 return super().extract(name)
             path = ROOT / (name.replace(".", "/") + ".py")
             source = path.read_text("utf-8").replace(
-                "MAX_IMAGES = 12", "MAX_IMAGES = 6"
+                "MAX_IMAGES = 48", "MAX_IMAGES = 6"
             )
             return compile(source, str(path), "exec")
 

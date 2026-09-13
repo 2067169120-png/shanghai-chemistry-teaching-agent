@@ -90,6 +90,7 @@ def frozen_image_namespaces(pyz):
         "pathlib",
         "uuid",
         "PIL",
+        "urllib.parse",
     }
 
     def pure_import(name, globals=None, locals=None, fromlist=(), level=0):
@@ -596,8 +597,9 @@ def verify_frozen_image_limit(pyz) -> bool:
         pyz.extract("integrations.deeptutor_shchem_v1.desktop_preparation_images"),
         namespace,
     )
-    if namespace["MAX_IMAGES"] != 12:
-        raise RuntimeError("Frozen image capacity is not 12")
+    if namespace["MAX_IMAGES"] != 48:
+        raise RuntimeError("Frozen image capacity is not 48")
+    limit = namespace["MAX_IMAGES"]
     assets = [
         {
             "asset_id": "IMG-" + f"{n:064x}",
@@ -609,9 +611,9 @@ def verify_frozen_image_limit(pyz) -> bool:
             "height": 90,
             "content_type": "image/png",
         }
-        for n in range(13)
+        for n in range(limit + 1)
     ]
-    if namespace["normalize_image_assets"](assets[:12]) != assets[:12]:
+    if namespace["normalize_image_assets"](assets[:limit]) != assets[:limit]:
         raise RuntimeError("Frozen image metadata was changed")
     try:
         namespace["normalize_image_assets"](assets)
@@ -975,7 +977,7 @@ def main() -> int:
         "desktop_version": [args.version],
         "desktop_preparation_provider": [
             PROMPT_REVISION,
-            "20260909-deepseek-v4-output-budget-v12",
+            "20260913-complete-lesson-image-budget-v13",
             "provider_response_empty",
         ],
         "desktop_preparation_sources": [

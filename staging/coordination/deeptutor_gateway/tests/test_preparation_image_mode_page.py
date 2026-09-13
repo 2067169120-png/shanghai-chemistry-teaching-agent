@@ -4,7 +4,7 @@ import os
 from copy import deepcopy
 
 import pytest
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 from test_desktop_ui import _fill_preparation_page, _PreparationFacade
 from test_preparation_draft_ui import _chooser
 
@@ -16,10 +16,34 @@ from integrations.deeptutor_shchem_v1.desktop_workbench.workflow_pages import (
 
 
 def _preview(*, mode="vision", local=False):
+    sending = mode == "vision" and not local
+    image_assets = [
+        {
+            "asset_id": "IMG-" + "a" * 64,
+            "sha256": "a" * 64,
+            "caption": "预检图片一",
+            "source": "合成测试来源一",
+            "purpose": "核对第一张发送图片",
+            "width": 1600,
+            "height": 900,
+            "content_type": "image/png",
+        },
+        {
+            "asset_id": "IMG-" + "b" * 64,
+            "sha256": "b" * 64,
+            "caption": "预检图片二",
+            "source": "合成测试来源二",
+            "purpose": "核对第二张发送图片",
+            "width": 1200,
+            "height": 800,
+            "content_type": "image/png",
+        },
+    ]
     return {
         "image_input_mode": mode,
-        "image_count": 2 if mode == "vision" and not local else 0,
+        "image_count": 2 if sending else 0,
         "images": [],
+        "image_assets": image_assets if sending else [],
         "model_label": "已绑定模型 / frozen-vision-model",
         "confirmation_text": (
             "将使用冻结候选本地重新导出；不调用模型，不发送文字或图片。"
@@ -52,6 +76,54 @@ class _EgressFacade(_PreparationFacade):
             raise self.preview_error
         return deepcopy(self.task_preview)
 
+    def preparation_image_bytes(self, asset):
+        return b"synthetic-image-bytes-" + asset["asset_id"].encode()
+
+
+@pytest.fixture
+def fake_egress_dialog(monkeypatch):
+    import integrations.deeptutor_shchem_v1.desktop_workbench.workflow_pages as module
+
+    captures = []
+    decision = {
+        "result": QDialog.DialogCode.Accepted,
+        "on_open": None,
+    }
+
+    class FakePreparationEgressDialog:
+        DialogCode = QDialog.DialogCode
+
+        def __init__(
+            self,
+            title,
+            text,
+            *,
+            image_count,
+            image_assets,
+            image_loader,
+            local_only,
+            parent=None,
+        ):
+            captures.append(
+                {
+                    "title": title,
+                    "text": text,
+                    "image_count": image_count,
+                    "image_assets": deepcopy(image_assets),
+                    "image_loader": image_loader,
+                    "local_only": local_only,
+                    "parent": parent,
+                }
+            )
+            if decision["on_open"] is not None:
+                decision["on_open"]()
+
+        def exec(self):
+            return decision["result"]
+
+    monkeypatch.setattr(module, "PreparationEgressDialog", FakePreparationEgressDialog)
+    return captures, decision
+
 
 @pytest.fixture
 def page_bundle(tmp_path):
@@ -65,6 +137,7 @@ def page_bundle(tmp_path):
         (facade.preparation_availability(), facade.preparation_profiles(), ())
     )
     _fill_preparation_page(page)
+    page.image_assets_widget.set_assets(facade.new_preview["image_assets"])
     yield page, facade, app
     page.close()
     bridge.shutdown(1000)
@@ -109,37 +182,44 @@ def test_draft_restores_mode_without_retaining_previous_selection(
 
 
 def test_new_generation_preflights_before_confirm_and_uses_preview_text(
-    page_bundle, monkeypatch
+    page_bundle, monkeypatch, fake_egress_dialog
 ):
     page, facade, _ = page_bundle
     page.image_assets_widget.set_image_input_mode("vision")
     started = []
-    prompts = []
     monkeypatch.setattr(page, "_start_generation_task", started.append)
 
-    def confirm(*args):
+    captures, decision = fake_egress_dialog
+
+    def opened():
         assert len(facade.new_previews) == 1
         assert not facade.prepare_calls
-        prompts.append(args[2])
         # The submitted snapshot cannot drift with the live form during consent.
         page.image_assets_widget.set_image_input_mode("local_only")
-        return QMessageBox.StandardButton.Yes
 
-    monkeypatch.setattr(QMessageBox, "question", confirm)
+    decision["on_open"] = opened
     page._generate()
-    assert prompts == [facade.new_preview["confirmation_text"] + "\n\n是否继续？"]
+    assert len(captures) == 1
+    capture = captures[0]
+    assert capture["title"] == "确认调用模型"
+    assert capture["text"] == facade.new_preview["confirmation_text"]
+    assert capture["image_count"] == 2
+    assert capture["image_assets"] == facade.new_preview["image_assets"]
+    assert capture["local_only"] is False and capture["parent"] is page
+    assert capture["image_loader"].__self__ is facade
+    assert capture["image_loader"].__name__ == "preparation_image_bytes"
     assert facade.prepare_calls[0] == facade.new_previews[0]
     assert facade.prepare_calls[0][0]["image_input_mode"] == "vision"
     assert started == [facade.prepared]
 
 
-def test_cancel_after_preflight_does_not_prepare(page_bundle, monkeypatch):
+def test_cancel_after_preflight_does_not_prepare(page_bundle, fake_egress_dialog):
     page, facade, _ = page_bundle
-    monkeypatch.setattr(
-        QMessageBox, "question", lambda *_: QMessageBox.StandardButton.No
-    )
+    captures, decision = fake_egress_dialog
+    decision["result"] = QDialog.DialogCode.Rejected
     page._generate()
     assert len(facade.new_previews) == 1
+    assert len(captures) == 1 and captures[0]["image_count"] == 2
     assert not facade.prepare_calls and not facade.generate_calls
 
 
@@ -185,7 +265,7 @@ def test_malformed_preview_cannot_be_silently_confirmed(
 @pytest.mark.parametrize("retry", [False, True])
 @pytest.mark.parametrize("local", [False, True])
 def test_history_uses_frozen_preview_not_current_form_or_profile(
-    page_bundle, monkeypatch, retry, local
+    page_bundle, monkeypatch, fake_egress_dialog, retry, local
 ):
     page, facade, _ = page_bundle
     summary = facade.cancelled if retry else facade.prepared
@@ -214,14 +294,25 @@ def test_history_uses_frozen_preview_not_current_form_or_profile(
         prompts.append((args[1], args[2]))
         return QMessageBox.StandardButton.Yes
 
-    monkeypatch.setattr(QMessageBox, "question", confirm)
+    captures, decision = fake_egress_dialog
+    if local:
+        monkeypatch.setattr(QMessageBox, "question", confirm)
+    else:
+        decision["result"] = QDialog.DialogCode.Accepted
     page._activate_current_task()
     assert not facade.new_previews and not facade.prepare_calls
-    assert prompts[0][1] == facade.task_preview["confirmation_text"] + "\n\n是否继续？"
-    assert "LIVE-FORM-MODE" not in prompts[0][1]
-    assert prompts[0][0] == (
-        "确认本地重新导出" if local else "确认重试备课候选" if retry else "确认继续生成"
-    )
+    title = "确认本地重新导出" if local else "确认重试备课候选" if retry else "确认继续生成"
+    if local:
+        assert prompts[0][1] == facade.task_preview["confirmation_text"] + "\n\n是否继续？"
+        assert "LIVE-FORM-MODE" not in prompts[0][1]
+        assert prompts[0][0] == title
+    else:
+        assert len(captures) == 1
+        assert captures[0]["title"] == title
+        assert captures[0]["text"] == facade.task_preview["confirmation_text"]
+        assert captures[0]["image_count"] == 2
+        assert captures[0]["image_assets"] == facade.task_preview["image_assets"]
+        assert captures[0]["local_only"] is False
     assert facade.retry_calls == ([summary.task_id] if retry else [])
     assert started == [facade.prepared]
     assert started[0].task_id == summary.task_id

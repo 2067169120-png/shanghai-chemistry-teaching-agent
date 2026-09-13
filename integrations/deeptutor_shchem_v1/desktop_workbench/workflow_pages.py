@@ -8,6 +8,7 @@ from PySide6.QtGui import QDesktopServices, QResizeEvent
 from PySide6.QtWidgets import (
     QBoxLayout,
     QComboBox,
+    QDialog,
     QLabel,
     QLineEdit,
     QMessageBox,
@@ -36,6 +37,10 @@ from .components import (
     set_status,
 )
 from .preparation_design_widget import PreparationDesignEditor
+from .preparation_egress_dialog import (
+    PreparationEgressDialog,
+    needs_scrollable_confirmation,
+)
 from .preparation_images_widget import PreparationImagesWidget
 from .student_page import StudentPage
 from .tasks import DesktopTaskBridge
@@ -1143,14 +1148,7 @@ class PreparationPage(QWidget):
         except (AttributeError, OSError, RuntimeError, TypeError, ValueError):
             set_status(self.status, "error", "备课发送预检未能完成；尚未准备任务或调用模型，请检查输入与设置后重试。")
             return
-        answer = QMessageBox.question(
-            self,
-            "确认调用模型",
-            confirmation_text + "\n\n是否继续？",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
-        if answer != QMessageBox.StandardButton.Yes:
+        if not self._confirm_egress("确认调用模型", confirmation_text, preview):
             set_status(self.status, "info", "已取消生成；没有调用模型。")
             return
         try:
@@ -1177,6 +1175,27 @@ class PreparationPage(QWidget):
         if not isinstance(text, str) or not text.strip():
             raise ValueError("发送预检缺少确认说明。")
         return text
+
+    def _confirm_egress(self, title: str, text: str, preview: dict) -> bool:
+        count = preview.get("image_count", 0)
+        if needs_scrollable_confirmation(text, count):
+            dialog = PreparationEgressDialog(
+                title,
+                text,
+                image_count=count if type(count) is int and count >= 0 else 0,
+                image_assets=preview.get("image_assets", []),
+                image_loader=getattr(self.facade, "preparation_image_bytes", None),
+                local_only=preview.get("local_only_operation") is True,
+                parent=self,
+            )
+            return dialog.exec() == QDialog.DialogCode.Accepted
+        return QMessageBox.question(
+            self,
+            title,
+            text + "\n\n是否继续？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        ) == QMessageBox.StandardButton.Yes
 
     def _continue_confirmed_preparation(self, summary: object) -> None:
         """Continue a prepared identity without asking for the same consent twice."""
@@ -1332,14 +1351,7 @@ class PreparationPage(QWidget):
                 )
         else:
             title = "确认继续生成"
-        answer = QMessageBox.question(
-            self,
-            title,
-            message + "\n\n是否继续？",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
-        if answer != QMessageBox.StandardButton.Yes:
+        if not self._confirm_egress(title, message, preview):
             set_status(self.status, "info", "已取消；没有继续生成备课候选。")
             return
         try:

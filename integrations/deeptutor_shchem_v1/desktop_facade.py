@@ -5642,6 +5642,7 @@ class DesktopWorkbenchFacade:
         from .desktop_preparation_image_input import (
             image_input_mode,
             require_preparation_vision_policy,
+            validate_preparation_image_dimensions,
         )
 
         if image_input_mode(payload) != "vision" or not payload.get("image_assets"):
@@ -5653,6 +5654,7 @@ class DesktopWorkbenchFacade:
             )
         policy = policy_reader(profile_id, expected_revision=revision)
         require_preparation_vision_policy(policy)
+        validate_preparation_image_dimensions(policy, payload["image_assets"])
 
     @staticmethod
     def _preparation_egress_disclosure(
@@ -5688,6 +5690,9 @@ class DesktopWorkbenchFacade:
             "image_input_mode": mode,
             "image_count": len(images),
             "images": images,
+            # A metadata-only snapshot for the consent gallery. Its loader checks
+            # these hashes against the same local bytes the request will use.
+            "image_assets": [dict(asset) for asset in assets] if sending else [],
             "model_label": model_label,
             "confirmation_text": text,
             "local_only_operation": local_only_operation,
@@ -5704,6 +5709,28 @@ class DesktopWorkbenchFacade:
                 )
             return self._preparation_manager
 
+    def _preparation_preflight_image_bytes(self, payload: Mapping[str, Any]) -> None:
+        from .desktop_preparation_image_input import image_input_mode
+        from .visual_provider_runtime import (
+            VisualProviderRuntimeError,
+            inline_image_payload_size,
+        )
+
+        try:
+            sizes = []
+            for asset in payload.get("image_assets", []):
+                data = self._preparation_preflight_manager().image_store.load(asset)
+                if image_input_mode(payload) == "vision":
+                    sizes.append(len(data))
+                    inline_image_payload_size(sizes)
+        except VisualProviderRuntimeError as exc:
+            if exc.code == "visual_request_too_large":
+                raise DesktopFacadeError(
+                    exc.code,
+                    "所选图片编码后已超过48MiB请求上限；本次未创建任务或发送，请调整图片后重新预览。",
+                ) from exc
+            raise self._as_preparation_error(exc, "无法核对图片发送大小。") from exc
+
     def preparation_egress_preview(
         self, payload: Mapping[str, Any], profile_id: str, expected_profile_revision: str
     ) -> dict[str, Any]:
@@ -5714,8 +5741,7 @@ class DesktopWorkbenchFacade:
             normalized = normalize_preparation_payload(payload)
             profile = self._preparation_profile(profile_id, expected_profile_revision)
             self._preparation_image_policy(normalized, profile_id, expected_profile_revision)
-            for asset in normalized.get("image_assets", []):
-                self._preparation_preflight_manager().image_store.load(asset)
+            self._preparation_preflight_image_bytes(normalized)
             return self._preparation_egress_disclosure(
                 normalized, f"{profile.provider_name} / {profile.model_id}（{profile.base_url}）"
             )
@@ -5733,6 +5759,7 @@ class DesktopWorkbenchFacade:
             if not local:
                 profile = self._preparation_profile(snapshot["profile_id"], snapshot["profile_revision"])
                 self._preparation_image_policy(snapshot, profile.profile_id, profile.revision)
+                self._preparation_preflight_image_bytes(snapshot)
                 label = f"{profile.provider_name} / {profile.model_id}（{profile.base_url}）"
             return {
                 **self._preparation_egress_disclosure(snapshot, label, local_only_operation=local),

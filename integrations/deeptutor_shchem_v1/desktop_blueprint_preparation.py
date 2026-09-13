@@ -6,9 +6,8 @@ import json
 
 from .desktop_blueprint_drafts import BlueprintDraftError, BlueprintDraftService
 from .desktop_blueprint_generation import format_blueprint
+from .desktop_preparation_limits import MAX_MATERIALS
 from .desktop_state import DesktopStateStore
-
-MAX_MATERIALS = 20_000
 
 
 class BlueprintPreparationService:
@@ -102,7 +101,7 @@ class BlueprintPreparationService:
         if len(text) > MAX_MATERIALS:
             raise BlueprintDraftError(
                 "blueprint_preparation_too_large",
-                "这份蓝图和资料依据超过备课资料的20000字上限，未截断或导入。请先另存精简蓝图；若资料依据本身过长，请用较少参考资料重新编译蓝图。",
+                f"这份蓝图和资料依据超过备课资料的{MAX_MATERIALS}字上限，未截断或导入。请先另存精简蓝图；若资料依据本身过长，请用较少参考资料重新编译蓝图。",
             )
         return {
             "materials": text,
@@ -121,6 +120,6 @@ def append_reference(existing: str, reference: str) -> str:
     if len(combined) > MAX_MATERIALS:
         raise BlueprintDraftError(
             "blueprint_preparation_too_large",
-            "合并后超过备课资料的20000字上限，原填写内容未变。请先精简资料再导入。",
+            f"合并后超过备课资料的{MAX_MATERIALS}字上限，原填写内容未变。请先精简资料再导入。",
         )
     return combined

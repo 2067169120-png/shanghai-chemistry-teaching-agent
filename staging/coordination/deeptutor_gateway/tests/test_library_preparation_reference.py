@@ -15,6 +15,7 @@ from integrations.deeptutor_shchem_v1.desktop_library import (
 from integrations.deeptutor_shchem_v1.desktop_library_preparation import (
     library_preparation_reference,
 )
+from integrations.deeptutor_shchem_v1.desktop_preparation_limits import MAX_MATERIALS
 
 
 def _image(node_id: str, *, role: str = "question") -> LibraryImage:
@@ -174,7 +175,7 @@ def test_over_limit_reference_fails_without_truncating_materials():
             _part(
                 "A1",
                 "原卷第 7 题 · 作答单元 1",
-                "超长摘要-" + "知识点" * 7000,
+                "超长摘要-" + "知识点" * MAX_MATERIALS,
                 "独立作答",
             ),
         )

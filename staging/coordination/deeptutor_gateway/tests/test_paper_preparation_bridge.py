@@ -14,6 +14,7 @@ from integrations.deeptutor_shchem_v1.desktop_paper_preparation import (
 from integrations.deeptutor_shchem_v1.desktop_preparation import (
     normalize_preparation_payload,
 )
+from integrations.deeptutor_shchem_v1.desktop_preparation_limits import MAX_MATERIALS
 from integrations.deeptutor_shchem_v1.desktop_preparation_provider import _prompt
 from integrations.deeptutor_shchem_v1.desktop_workbench.main_window import (
     TeacherWorkbenchWindow,
@@ -108,8 +109,8 @@ def test_invalid_selection_is_not_silently_imported(indices):
 
 def test_oversize_fails_without_truncating():
     value = snapshot()
-    value["themes"][0]["shared_text"] = "正文" * 11000
-    with pytest.raises(BlueprintDraftError, match="20000"):
+    value["themes"][0]["shared_text"] = "正文" * (MAX_MATERIALS // 2 + 1)
+    with pytest.raises(BlueprintDraftError, match=str(MAX_MATERIALS)):
         paper_preparation_reference(value, [0])
 
 

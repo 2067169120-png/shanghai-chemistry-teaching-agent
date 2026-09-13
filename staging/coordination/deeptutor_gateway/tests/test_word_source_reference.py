@@ -17,6 +17,7 @@ from integrations.deeptutor_shchem_v1.desktop_preparation_images import (
     MAX_IMAGES,
     PreparationImageStore,
 )
+from integrations.deeptutor_shchem_v1.desktop_preparation_limits import MAX_MATERIALS
 from integrations.deeptutor_shchem_v1.desktop_preparation_sources import (
     PreparationSourceError,
     PreparationSourcesService,
@@ -51,7 +52,8 @@ def _import(
         p = doc.add_paragraph("未支持对象：")
         p.add_run()._r.append(OxmlElement("w:object"))
     if long:
-        doc.add_paragraph("原教案必要条件" * 4000)
+        unit = "原教案必要条件"
+        doc.add_paragraph(unit * (MAX_MATERIALS // len(unit) + 1))
     doc.add_paragraph("原教案的最后一段不应丢失。")
     path = tmp_path / "已完成教案.docx"
     doc.save(path)

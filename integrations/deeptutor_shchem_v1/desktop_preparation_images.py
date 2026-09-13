@@ -14,7 +14,9 @@ from collections.abc import Mapping
 from pathlib import Path
 from uuid import uuid4
 
-MAX_IMAGES = 12
+# Whole two-period lessons include source diagrams, examples and textbook pages.
+# Transport byte and provider-specific dimension limits remain independent.
+MAX_IMAGES = 48
 MAX_IMAGE_BYTES = 10 * 1024 * 1024
 MAX_IMAGE_PIXELS = 24_000_000
 _ID = re.compile(r"IMG-[0-9a-f]{64}\Z")

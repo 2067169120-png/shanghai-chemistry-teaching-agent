@@ -34,9 +34,14 @@ def asset(number):
     }
 
 
-def reference(*images, include_images=True, issues=()):
+def reference(
+    *images,
+    include_images=True,
+    issues=(),
+    materials="所选完整 Word 题面与答案",
+):
     return {
-        "materials": "所选完整 Word 题面与答案",
+        "materials": materials,
         "warnings": ["教师核对题目边界"],
         "selections": [{"key": "q1", "revision": "r1", "points": 2}],
         "include_images": include_images,
@@ -137,21 +142,26 @@ def test_failed_batch_keeps_all_original_fields_and_images(qt_app, fault):
 
 
 def test_capacity_rejected_before_background_reads_without_partial_text(qt_app):
-    page, facade, tasks = page_for([asset(n) for n in range(11)])
+    from integrations.deeptutor_shchem_v1.desktop_preparation_images import MAX_IMAGES
+
+    page, facade, tasks = page_for([asset(n) for n in range(MAX_IMAGES - 1)])
     before = deepcopy(page._payload())
-    assert not page.import_word_reference(reference(asset(20), asset(21)))
+    assert not page.import_word_reference(reference(asset(100), asset(101)))
     assert page._payload() == before and not tasks.pending and not facade.calls
-    assert "已有 11 张" in page.status.text()
+    assert f"已有 {MAX_IMAGES - 1} 张" in page.status.text()
     page.close()
 
 
 def test_duplicate_sha_keeps_existing_metadata_and_uses_no_extra_slot(qt_app):
-    existing = [asset(n) for n in range(11)]
+    from integrations.deeptutor_shchem_v1.desktop_preparation_images import MAX_IMAGES
+
+    existing = [asset(n) for n in range(MAX_IMAGES - 1)]
     page, _, tasks = page_for(existing)
     repeated = {**asset(1), "caption": "同图另一道题"}
-    assert page.import_word_reference(reference(repeated, asset(12)))
+    new_asset = asset(MAX_IMAGES + 1)
+    assert page.import_word_reference(reference(repeated, new_asset))
     tasks.finish("导入 Word 选题图文")
-    assert page.image_assets_widget.assets() == existing + [asset(12)]
+    assert page.image_assets_widget.assets() == existing + [new_asset]
     page.close()
 
 
@@ -234,11 +244,37 @@ def test_external_form_change_before_reply_is_not_overwritten(qt_app):
 
 
 def test_material_limit_rejects_before_reading_any_image(qt_app):
+    from integrations.deeptutor_shchem_v1.desktop_preparation_limits import (
+        MAX_MATERIALS,
+    )
+
     page, _, tasks = page_for()
-    page.materials.setPlainText("原" * 20000)
+    page._availability_timer.stop()
+    page.materials.setPlainText("原" * MAX_MATERIALS)
     before = deepcopy(page._payload())
     assert not page.import_word_reference(reference(asset(1)))
     assert page._payload() == before and not tasks.pending
+    page.close()
+
+
+def test_complete_23000_char_word_reference_is_not_blocked_by_old_limit(qt_app):
+    materials = "【完整Word参考】"
+    unit = "知识点、例题、答案与解析。"
+    materials = (materials + unit * 23000)[:23000]
+    assert len(materials) == 23000
+
+    page, facade, tasks = page_for()
+    selected = reference(asset(1), materials=materials)
+    before = deepcopy(page._payload())
+    assert page.import_word_reference(selected)
+    assert page._payload() == before
+    tasks.finish("导入 Word 选题图文")
+
+    after = page._payload()
+    assert materials in after["materials"]
+    assert len(after["materials"]) > 20_000
+    assert page.image_assets_widget.assets() == [asset(1)]
+    assert facade.calls[0][0]["materials"] == materials
     page.close()
 
 

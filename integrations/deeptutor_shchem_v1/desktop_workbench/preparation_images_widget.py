@@ -504,8 +504,10 @@ class PreparationImagesWidget(QWidget):
                 continue
             seen.add(asset["asset_id"])
             cleaned.append(asset)
-            if len(cleaned) >= self.MAX_ASSETS:
-                break
+            if len(cleaned) > self.MAX_ASSETS:
+                raise ValueError(
+                    f"图片超过{self.MAX_ASSETS}张，未截断列表，也未覆盖当前图片。"
+                )
         self._assets = cleaned
         self._render_assets()
         self.assets_changed.emit(self.assets())

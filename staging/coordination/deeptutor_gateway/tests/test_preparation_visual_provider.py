@@ -12,7 +12,10 @@ from PIL import Image
 
 from integrations.deeptutor_shchem_v1 import desktop_preparation_provider as module
 from integrations.deeptutor_shchem_v1 import visual_provider_runtime
-from integrations.deeptutor_shchem_v1.desktop_preparation_images import image_info
+from integrations.deeptutor_shchem_v1.desktop_preparation_images import (
+    MAX_IMAGES,
+    image_info,
+)
 from integrations.deeptutor_shchem_v1.model_provider_probe import ProbeTransportResponse
 from integrations.deeptutor_shchem_v1.model_provider_settings import (
     ModelProviderProbeContext,
@@ -49,8 +52,9 @@ def _asset(index, fmt="PNG"):
     }, data
 
 
-def _selection():
-    pairs = [_asset(1), _asset(2, "JPEG"), _asset(3, "WEBP")]
+def _selection(count=3):
+    formats = ("PNG", "JPEG", "WEBP")
+    pairs = [_asset(index, formats[(index - 1) % len(formats)]) for index in range(1, count + 1)]
     payload = {
         "topic": "有机结构",
         "lesson_route": "讲练课",
@@ -158,6 +162,25 @@ def test_visual_request_preserves_exact_selected_pixels_and_order(style, entrypo
         assert body["response_format"]["json_schema"]["strict"] is True
     assert payload == frozen_payload
     assert image_data == frozen_data
+
+
+@pytest.mark.parametrize("style", ["responses", "chat_completions"])
+def test_visual_request_accepts_twelve_images_without_dropping_pixels(style):
+    payload, image_data = _selection(12)
+    transport = _Transport()
+    provider = module.StructuredPreparationProvider(
+        _context(style), transport=transport
+    )
+    provider.generate(payload, image_data=image_data)
+    body, prompt, urls = _content(transport.requests[0])
+    assert len(urls) == 12
+    for number, (asset, url) in enumerate(
+        zip(payload["image_assets"], urls, strict=True), start=1
+    ):
+        _header, encoded = url.split(",", 1)
+        assert base64.b64decode(encoded, validate=True) == image_data[asset["asset_id"]]
+        assert f'"attachment_number":{number},"asset_id":"{asset["asset_id"]}"' in prompt
+    assert body["stream"] is False
 
 
 @pytest.mark.parametrize("mode", [None, "local_only"])
@@ -278,7 +301,9 @@ def test_invalid_explicit_mode_is_not_silently_downgraded(mode):
 def test_visual_deepseek_output_budget_is_bounded_without_changing_text_budget(style):
     payload, image_data = _selection()
     context = replace(
-        _context(style), base_url="https://api.deepseek.com", model_id="deepseek-v4-pro"
+        _context(style),
+        base_url="https://api.deepseek.com",
+        model_id="deepseek-v4-flash-vision-exp",
     )
     transport = _Transport()
     provider = module.StructuredPreparationProvider(context, transport=transport)
@@ -367,13 +392,12 @@ def test_visual_transport_cancellation_is_reported_once_without_retry():
     assert len(transport.requests) == 1
 
 
-def test_visual_selection_over_twelve_images_is_rejected_before_transport():
-    payload, image_data = _selection()
-    payload["image_assets"] = payload["image_assets"] * 5
+def test_visual_selection_over_max_images_is_rejected_before_transport():
+    payload, image_data = _selection(MAX_IMAGES + 1)
     transport = _Transport()
     with pytest.raises(module.DesktopPreparationProviderError) as caught:
         module.StructuredPreparationProvider(_context(), transport=transport).generate(
             payload, image_data=image_data
         )
-    assert "最多选择12张" in caught.value.message_zh
+    assert f"最多选择{MAX_IMAGES}张" in caught.value.message_zh
     assert transport.requests == []

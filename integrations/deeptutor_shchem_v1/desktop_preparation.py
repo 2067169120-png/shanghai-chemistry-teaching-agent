@@ -41,6 +41,7 @@ from .desktop_preparation_images import (
     normalize_slide_image,
     slide_image_schema,
 )
+from .desktop_preparation_limits import MAX_MATERIALS
 from .desktop_preparation_visual import (
     ComparisonRowCountError,
     normalize_slide_visual,
@@ -404,15 +405,17 @@ def _reject_sensitive(value: Any) -> None:
             _reject_sensitive(item)
 
 
-def _text(value: Any, field: str, *, allow_empty: bool = False) -> str:
+def _text(
+    value: Any, field: str, *, allow_empty: bool = False, limit: int = _MAX_TEXT
+) -> str:
     if not isinstance(value, str):
         raise DesktopPreparationError(
             "preparation_payload_invalid", f"{field}必须是文字。"
         )
     normalized = value.strip()
-    if (not allow_empty and not normalized) or len(normalized) > _MAX_TEXT:
+    if (not allow_empty and not normalized) or len(normalized) > limit:
         raise DesktopPreparationError(
-            "preparation_payload_invalid", f"{field}未填写或过长。"
+            "preparation_payload_invalid", f"{field}未填写或超过{limit}字。"
         )
     if "\x00" in normalized:
         raise DesktopPreparationError(
@@ -509,7 +512,7 @@ def normalize_preparation_payload(payload: Mapping[str, Any]) -> dict[str, Any]:
             "total_minutes": periods * minutes,
         },
         "objective": _text(payload.get("objective"), "目标/考试定位"),
-        "materials": _text(payload.get("materials"), "本次资料范围"),
+        "materials": _text(payload.get("materials"), "本次资料范围", limit=MAX_MATERIALS),
         "advanced": advanced,
         "source_basis": {
             "mode": "teacher_input_only",

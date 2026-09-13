@@ -97,14 +97,19 @@ def test_reject_invalid_metadata(tmp_path, case):
         normalize_image_assets(rows)
 
 
-def test_twelve_distinct_images_survive_draft_provider_and_real_pptx(tmp_path):
+def test_twenty_eight_distinct_images_survive_draft_provider_and_real_pptx(tmp_path):
     manager = DesktopPreparationManager(
         tmp_path / "manager", NativePreparationRenderer()
     )
     assets, originals = [], []
-    for number in range(12):
+    image_count = 28
+    for number in range(image_count):
         stream = io.BytesIO()
-        Image.new("RGB", (160, 90), (number * 20, 40, 80)).save(stream, format="PNG")
+        Image.new(
+            "RGB",
+            (160 + number, 90),
+            ((number * 7) % 256, (40 + number * 11) % 256, (80 + number * 13) % 256),
+        ).save(stream, format="PNG")
         originals.append(stream.getvalue())
         assets.append(
             manager.image_store.import_bytes(
@@ -114,13 +119,16 @@ def test_twelve_distinct_images_survive_draft_provider_and_real_pptx(tmp_path):
                 "检查原图嵌入顺序",
             )
         )
-    assert MAX_IMAGES == 12
+    assert MAX_IMAGES == 48
     assert normalize_image_assets(assets) == assets
-    extra = deepcopy(assets[-1])
-    extra["sha256"] = "f" * 64
-    extra["asset_id"] = "IMG-" + extra["sha256"]
-    with pytest.raises(PreparationImageError, match="最多选择12张"):
-        normalize_image_assets([*assets, extra])
+    too_many = list(assets)
+    for number in range(image_count, MAX_IMAGES + 1):
+        extra = deepcopy(assets[0])
+        extra["sha256"] = f"{number + 100000:064x}"
+        extra["asset_id"] = "IMG-" + extra["sha256"]
+        too_many.append(extra)
+    with pytest.raises(PreparationImageError, match=rf"最多选择{MAX_IMAGES}张"):
+        normalize_image_assets(too_many)
     payload = {**_payload(output_kind="ppt"), "image_assets": assets}
     assert normalize_preparation_payload(payload)["image_assets"] == assets
     raw = _raw_candidate()
@@ -143,11 +151,28 @@ def test_twelve_distinct_images_survive_draft_provider_and_real_pptx(tmp_path):
     assert len(provider.calls) == 1
     pptx, _ = manager.artifact_path(result["task_id"], "pptx")
     deck = Presentation(pptx)
-    assert len(deck.slides) == 12
+    assert len(deck.slides) == image_count
     for slide, expected in zip(deck.slides, originals, strict=True):
         pictures = [shape for shape in slide.shapes if shape.shape_type == 13]
         assert len(pictures) == 1
         assert pictures[0].image.blob == expected
+
+
+def test_preparation_materials_use_extended_40000_character_limit():
+    from integrations.deeptutor_shchem_v1.desktop_preparation_sources import (
+        MAX_MATERIALS,
+    )
+
+    assert MAX_MATERIALS == 40_000
+    materials = "资料" * (MAX_MATERIALS // 2)
+    normalized = normalize_preparation_payload(
+        {**_payload(), "materials": materials}
+    )
+    assert normalized["materials"] == materials
+    with pytest.raises(DesktopPreparationError, match=rf"超过{MAX_MATERIALS}字"):
+        normalize_preparation_payload(
+            {**_payload(), "materials": materials + "多"}
+        )
 
 
 def test_invalid_animation_and_orientation_rejected():

@@ -125,6 +125,22 @@ def _endpoint(context: ModelProviderProbeContext) -> tuple[str, str, int, str, s
     )
 
 
+def inline_image_payload_size(sizes: Sequence[int]) -> int:
+    """Check the base64 portion before allocating a potentially huge request.
+
+    This is a lower bound for the full JSON body, not a replacement for the
+    final exact wire-size check including the prompt, schema and image headers.
+    """
+    if any(type(size) is not int or size < 0 for size in sizes):
+        raise VisualProviderRuntimeError("image_size_invalid", "image size is invalid")
+    encoded_bytes = sum(4 * ((size + 2) // 3) for size in sizes)
+    if encoded_bytes > MAX_VISUAL_REQUEST_BYTES:
+        raise VisualProviderRuntimeError(
+            "visual_request_too_large", "page images exceed the visual request limit", 409
+        )
+    return encoded_bytes
+
+
 def build_structured_visual_request(
     context: ModelProviderProbeContext,
     *,
@@ -154,6 +170,9 @@ def build_structured_visual_request(
         raise VisualProviderRuntimeError(
             "max_output_tokens_invalid", "visual output limit is invalid"
         )
+    if any(not isinstance(raw, bytes) for _mime, raw in pages):
+        raise VisualProviderRuntimeError("image_data_invalid", "image data is invalid")
+    inline_image_payload_size([len(raw) for _mime, raw in pages])
     api_style, host, port, path, endpoint_scope = _endpoint(context)
     if api_style == "responses":
         content: list[dict[str, Any]] = [{"type": "input_text", "text": prompt}]
@@ -576,6 +595,7 @@ __all__ = [
     "build_structured_text_request",
     "build_structured_visual_request",
     "canonical_json_bytes",
+    "inline_image_payload_size",
     "parse_structured_visual_response",
     "prepare_egress_image",
     "strict_json_loads",

@@ -7,6 +7,7 @@ import pytest
 from docx import Document
 from docx.oxml import OxmlElement
 
+from integrations.deeptutor_shchem_v1.desktop_preparation_limits import MAX_MATERIALS
 from integrations.deeptutor_shchem_v1.desktop_preparation_sources import (
     CONCEPTS,
     PreparationSourceError,
@@ -197,7 +198,8 @@ def test_stale_or_invalid_selection_is_not_compiled(source_service, tmp_path, ca
 
 def test_long_material_fails_without_truncation(source_service, tmp_path):
     document = Document()
-    document.add_paragraph("长资料" * 7000)
+    unit = "长资料"
+    document.add_paragraph(unit * (MAX_MATERIALS // len(unit) + 1))
     path = tmp_path / "long.docx"
     document.save(path)
     preview = source_service.word_preview(path)

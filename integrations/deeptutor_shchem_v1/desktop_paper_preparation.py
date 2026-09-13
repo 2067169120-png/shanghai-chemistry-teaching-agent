@@ -201,7 +201,7 @@ def paper_preparation_reference(
     if len(materials) > MAX_MATERIALS:
         raise BlueprintDraftError(
             "paper_reference_too_large",
-            "所选组卷参考超过20000字，未截断。请减少大题范围后导入。",
+            f"所选组卷参考超过{MAX_MATERIALS}字，未截断。请减少大题范围后导入。",
         )
     return {
         "materials": materials,

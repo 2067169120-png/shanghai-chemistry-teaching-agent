@@ -16,6 +16,7 @@ from integrations.deeptutor_shchem_v1.desktop_blueprint_review import (
     REVIEW_KIND,
     candidate_revision,
 )
+from integrations.deeptutor_shchem_v1.desktop_preparation_limits import MAX_MATERIALS
 from integrations.deeptutor_shchem_v1.desktop_state import DesktopStateStore
 
 PREVIEW_ID = "BLUEPRINT-PREPARATION-1"
@@ -328,7 +329,7 @@ def test_options_and_reference_do_not_change_state_file_bytes(tmp_path):
 
 def test_reference_rejects_materials_over_limit_without_truncating(tmp_path):
     value = _candidate()
-    value["unknowns"] = ["待核验信息：" + "X" * 21_000]
+    value["unknowns"] = ["待核验信息：" + "X" * MAX_MATERIALS]
     state = _state(tmp_path)
     state.save_draft(PREVIEW_ID, _root_record(PREVIEW_ID, value))
     service = BlueprintPreparationService(state)
@@ -356,9 +357,9 @@ def test_append_reference_preserves_existing_text_and_rejects_duplicate(tmp_path
 
 def test_append_reference_rejects_over_limit_without_returning_truncated_text():
     existing = "原有资料"
-    reference = "R" * 20_000
+    reference = "R" * MAX_MATERIALS
 
     with pytest.raises(BlueprintDraftError) as error:
         append_reference(existing, reference)
     assert error.value.code == "blueprint_preparation_too_large"
-    assert len(reference) == 20_000
+    assert len(reference) == MAX_MATERIALS

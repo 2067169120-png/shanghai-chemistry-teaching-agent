@@ -21,6 +21,7 @@ from integrations.deeptutor_shchem_v1.desktop_library_preparation import (
 from integrations.deeptutor_shchem_v1.desktop_preparation import (
     normalize_preparation_payload,
 )
+from integrations.deeptutor_shchem_v1.desktop_preparation_limits import MAX_MATERIALS
 from integrations.deeptutor_shchem_v1.desktop_preparation_provider import _prompt
 from integrations.deeptutor_shchem_v1.desktop_workbench.library_page import LibraryPage
 from integrations.deeptutor_shchem_v1.desktop_workbench.library_preparation_dialog import (
@@ -180,7 +181,9 @@ def test_total_material_limit_preserves_existing_form(app, monkeypatch):
     page = window.preparation_page
     page._availability_timer.stop()
     _fill_preparation_page(page)
-    page.materials.setPlainText("已填教材资料" * 3333)
+    existing = "已填教材资料"
+    existing *= MAX_MATERIALS // len(existing) + 1
+    page.materials.setPlainText(existing)
     before = page._payload()
     assert not page.import_library_reference(_detail("A", "甲"))
     assert page._payload() == before

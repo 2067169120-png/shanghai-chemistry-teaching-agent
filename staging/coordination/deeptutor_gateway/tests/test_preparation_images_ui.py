@@ -54,30 +54,30 @@ class _ImageFacade:
         return self.result
 
 
-def test_twelve_images_reload_and_limit_match_backend(qt_app, image_asset):
+def test_maximum_images_reload_and_limit_match_backend(qt_app, image_asset):
     from integrations.deeptutor_shchem_v1.desktop_preparation_images import MAX_IMAGES
 
     widget = PreparationImagesWidget(_ImageFacade())
     assets = []
-    for number in range(13):
+    for number in range(MAX_IMAGES + 1):
         sha = f"{number:064x}"
         assets.append({**image_asset, "asset_id": "IMG-" + sha, "sha256": sha})
-    assert widget.MAX_ASSETS == MAX_IMAGES == 12
-    for asset in assets[:12]:
+    assert widget.MAX_ASSETS == MAX_IMAGES == 48
+    for asset in assets[:MAX_IMAGES]:
         assert widget.append_asset(asset)
     assert not widget.add_button.isEnabled()
-    assert not widget.append_asset(assets[12])
-    assert "12张" in widget.status.text()
-    assert widget.assets() == assets[:12]
+    assert not widget.append_asset(assets[MAX_IMAGES])
+    assert f"{MAX_IMAGES}张" in widget.status.text()
+    assert widget.assets() == assets[:MAX_IMAGES]
     reopened = PreparationImagesWidget(_ImageFacade())
     reopened.set_assets(widget.assets())
-    assert reopened.assets() == assets[:12]
-    assert reopened.asset_list.count() == 12
-    reopened.asset_list.setCurrentRow(11)
+    assert reopened.assets() == assets[:MAX_IMAGES]
+    assert reopened.asset_list.count() == MAX_IMAGES
+    reopened.asset_list.setCurrentRow(MAX_IMAGES - 1)
     reopened._remove_selected()
     assert reopened.add_button.isEnabled()
-    assert reopened.append_asset(assets[12])
-    assert reopened.assets()[-1] == assets[12]
+    assert reopened.append_asset(assets[MAX_IMAGES])
+    assert reopened.assets()[-1] == assets[MAX_IMAGES]
     widget.close()
     reopened.close()
 
@@ -87,13 +87,14 @@ def test_strict_batch_replacement_is_atomic_without_truncation(
     qt_app, image_asset, fault
 ):
     from integrations.deeptutor_shchem_v1.desktop_preparation_images import (
+        MAX_IMAGES,
         PreparationImageError,
     )
 
     widget = PreparationImagesWidget(_ImageFacade())
     widget.set_assets_strict([image_asset])
     values = []
-    for number in range(13 if fault == "too_many" else 2):
+    for number in range(MAX_IMAGES + 1 if fault == "too_many" else 2):
         sha = f"{number:064x}"
         values.append({**image_asset, "asset_id": "IMG-" + sha, "sha256": sha})
     if fault == "malformed":
@@ -103,6 +104,29 @@ def test_strict_batch_replacement_is_atomic_without_truncation(
     with pytest.raises(PreparationImageError):
         widget.set_assets_strict(values)
     assert widget.assets() == [image_asset]
+    widget.close()
+
+
+def test_set_assets_over_limit_keeps_existing_state(qt_app, image_asset):
+    from integrations.deeptutor_shchem_v1.desktop_preparation_images import MAX_IMAGES
+
+    widget = PreparationImagesWidget(SimpleNamespace())
+    widget.set_assets([image_asset])
+    before = widget.assets()
+    oversized = []
+    for number in range(MAX_IMAGES + 1):
+        sha = f"{number + 1:064x}"
+        oversized.append(
+            {
+                **image_asset,
+                "asset_id": "IMG-" + sha,
+                "sha256": sha,
+            }
+        )
+    with pytest.raises(ValueError, match=rf"超过{MAX_IMAGES}张"):
+        widget.set_assets(oversized)
+    assert widget.assets() == before
+    assert widget.asset_list.count() == 1
     widget.close()
 
 

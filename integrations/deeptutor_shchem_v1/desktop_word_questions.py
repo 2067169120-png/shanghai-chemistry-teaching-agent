@@ -866,8 +866,10 @@ class WordQuestionService:
         if warnings:
             lines.extend(["", "原文缺口与待核对提醒", *warnings])
         materials = "\n".join(lines)
-        if len(materials) > 20000:
-            raise WordQuestionError("所选题目超过备课20000字上限，未截断；请减少题目。")
+        from .desktop_preparation_limits import MAX_MATERIALS
+
+        if len(materials) > MAX_MATERIALS:
+            raise WordQuestionError(f"所选题目超过备课{MAX_MATERIALS}字上限，未截断；请减少题目。")
         from .desktop_preparation import _reject_sensitive
 
         _reject_sensitive(materials)
