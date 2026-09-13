@@ -1,0 +1,58 @@
+{
+  "version": "0.1.85",
+  "source_commit": "c2c55509c10fe04ccbe7f4301e84abf4e82e50bc",
+  "platform": "Windows-2025Server-10.0.26100-SP0",
+  "python": "3.12.10",
+  "qt": "6.11.2",
+  "tests": {
+    "tests": 240,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "screenshots": [
+    {
+      "file": "selection-all.png",
+      "width": 1440,
+      "height": 980,
+      "sha256": "6afc5a567e7bef008e8e373de48a90cac7c8590372700aea34f73c1e7c519e8e"
+    },
+    {
+      "file": "selection-filtered.png",
+      "width": 1440,
+      "height": 980,
+      "sha256": "22c0b6161df7af59d59ec8510d4d682d44cdaa4fb8d1590210be31e3a9908ec4"
+    },
+    {
+      "file": "selection-basket.png",
+      "width": 680,
+      "height": 650,
+      "sha256": "9ce51e372b72f6661c6eec1d92524d41bf7a5989ab3b13c9b1205f6c3c605855"
+    },
+    {
+      "file": "selection-pagination-student.png",
+      "width": 900,
+      "height": 850,
+      "sha256": "792e7d0eb5caf59a767c8a40582cef9ca28d72f737e705ac13348da5079b756c"
+    },
+    {
+      "file": "selection-pagination-teacher.png",
+      "width": 900,
+      "height": 850,
+      "sha256": "f4a4abe6b77378e8adf1ae24aeea4ea18e99538639c4a14660560a181536f3f7"
+    },
+    {
+      "file": "selection-compact.png",
+      "width": 800,
+      "height": 700,
+      "sha256": "f28110b6b7cecc31655ebfb406983eb1def8b5de9e0d1c4c1001572fcbf4d725"
+    }
+  ],
+  "uncaught_errors": [],
+  "real_pagination_pages": {
+    "student": 1,
+    "teacher": 1
+  },
+  "workflow_run": "34781109760",
+  "scope": "Actual isolated Word import, saved synthetic tags, native facet checkboxes, durable basket, real LibreOffice/Word DOCX-to-PDF pagination. No private materials, model calls or full chemical/production EXE acceptance."
+}
