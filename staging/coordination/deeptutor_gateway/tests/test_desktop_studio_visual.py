@@ -62,3 +62,34 @@ def test_my_work_reopens_the_requested_draft_without_rewriting_saved_state(windo
     assert prep.topic.text() == "较早的一份合成草稿"
     assert prep.materials.toPlainText() == "保留这份原材料。"
     assert win.facade.state_store.snapshot() == before
+
+
+def test_missing_requested_draft_never_falls_back_to_another_record(window, monkeypatch):
+    from integrations.deeptutor_shchem_v1.desktop_workbench.preparation_draft_dialog import PreparationDraftDialog
+    win, _ = window
+    prep = win.preparation_page
+    prep.apply_studio_template("concept", "仍然存在的合成草稿", "高二")
+    prep.materials.setPlainText("当前原材料保持不变。")
+    win.facade.create_preparation_draft(prep._payload())
+    before_payload = prep._payload()
+    before_state = win.facade.state_store.snapshot()
+    def should_not_open(dialog):
+        pytest.fail("A missing ID must not display an unrelated default draft")
+    monkeypatch.setattr(PreparationDraftDialog, "exec", should_not_open)
+    prep._open_draft("no-longer-in-current-list")
+    assert "已不在当前草稿列表" in prep.status.text()
+    assert prep._payload() == before_payload
+    assert win.facade.state_store.snapshot() == before_state
+
+
+def test_return_to_preparation_is_named_as_navigation_and_keeps_edits(window):
+    win, _ = window
+    prep = win.preparation_page
+    prep.topic.setText("教师正在编辑的课题")
+    prep.materials.setPlainText("尚未保存但应当保留的原材料")
+    before = prep._payload()
+    win.navigate("mywork")
+    assert win.my_work_page.resume_button.text() == "返回备课继续编辑"
+    win.my_work_page.resume_button.click()
+    assert win.stack.currentWidget() is prep
+    assert prep._payload() == before

@@ -51,10 +51,10 @@ class MyWorkPage(QWidget):
         self.open_button = QPushButton("打开选中记录 →")
         self.open_button.setEnabled(False)
         self.open_button.clicked.connect(self._open)
-        new = QPushButton("新建备课")
-        new.setObjectName("QuietButton")
-        new.clicked.connect(lambda: self.navigate_requested.emit("preparation"))
-        for button in (self.refresh_button, new, self.open_button):
+        self.resume_button = QPushButton("返回备课继续编辑")
+        self.resume_button.setObjectName("QuietButton")
+        self.resume_button.clicked.connect(lambda: self.navigate_requested.emit("preparation"))
+        for button in (self.refresh_button, self.resume_button, self.open_button):
             buttons.addWidget(button)
         root.addLayout(buttons)
         root.addWidget(text_label("离线草稿先预览再载入；生成任务只查看已有状态和结果，不在这里自动续跑或收费。"))

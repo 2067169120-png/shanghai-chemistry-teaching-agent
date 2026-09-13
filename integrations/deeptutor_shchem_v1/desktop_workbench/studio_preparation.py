@@ -49,10 +49,16 @@ class StudioPreparationPage(PreparationPage):
             return
         dialog = PreparationDraftDialog(self.facade, self)
         if isinstance(draft_id, str):
-            for index in range(dialog.source.count()):
-                if dialog.source.itemData(index).get("draft_id") == draft_id:
-                    dialog.source.setCurrentIndex(index)
-                    break
+            target_index = next(
+                (index for index in range(dialog.source.count())
+                 if dialog.source.itemData(index).get("draft_id") == draft_id),
+                None,
+            )
+            if target_index is None:
+                dialog.deleteLater()
+                set_status(self.status, "attention", "这份草稿已不在当前草稿列表中。请返回“我的备课”刷新后重选；当前填写未改变，也没有改开其他草稿。")
+                return
+            dialog.source.setCurrentIndex(target_index)
         if dialog.exec() != dialog.DialogCode.Accepted or dialog.selected is None:
             dialog.deleteLater()
             return
