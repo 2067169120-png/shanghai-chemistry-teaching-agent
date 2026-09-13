@@ -104,9 +104,13 @@ def test_other_routes_preserve_exact_original_schema(changes: dict[str, Any]) ->
         context.base_url, context.model_id, context.api_style
     ) == {
         "max_output_tokens": 8000,
+        "max_input_tokens": None,
         "timeout_seconds": 90,
         "schema_dialect": "canonical-v2",
-        "observation_prompt_version": "normalized-xywh-roles-pages-v4",
+        "observation_prompt_version": "normalized-xywh-roles-pages-v5",
+        "crop_review_version": "source-page-actual-crops-v1",
+        "crop_review_batch_limit": 8,
+        "crop_review_required": True,
     }
 
 
@@ -122,9 +126,13 @@ def test_official_endpoint_url_variants_are_supported(base_url: str) -> None:
         base_url, "deepseek-v4-flash-vision-exp", "responses"
     ) == {
         "max_output_tokens": 32000,
+        "max_input_tokens": None,
         "timeout_seconds": 300,
         "schema_dialect": "inline-v1",
-        "observation_prompt_version": "normalized-xywh-roles-pages-v4",
+        "observation_prompt_version": "normalized-xywh-roles-pages-v5",
+        "crop_review_version": "source-page-actual-crops-v1",
+        "crop_review_batch_limit": 8,
+        "crop_review_required": True,
     }
 
 
@@ -318,6 +326,16 @@ class _CaptureTransport:
         assert deadline_monotonic > 0
         self.requests.append(request)
         self.deadlines.append(deadline_monotonic)
+        wire_body = json.loads(request.body)
+        result = self.fragment
+        if wire_body["text"]["format"]["name"] == "shchem_visual_crop_review_v1":
+            payload = json.loads(wire_body["input"][0]["content"][0]["text"].split("\n", 1)[1])
+            result = {
+                "request_digest": payload["request_digest"],
+                "checks": [{**{key: item[key] for key in ("evidence_id", "page_sha256", "crop_sha256")},
+                            "status": "pass", "reason": "合成传输复核", "issue_codes": []}
+                           for item in payload["checks"]],
+            }
         body = {
             "status": "completed",
             "output": [
@@ -325,7 +343,7 @@ class _CaptureTransport:
                     "content": [
                         {
                             "type": "output_text",
-                            "text": json.dumps(self.fragment),
+                            "text": json.dumps(result),
                         }
                     ]
                 }
@@ -434,15 +452,13 @@ def test_wrong_role_response_is_rejected_locally_without_discarding_records(
     request = _lean_shard(role)
     invalid = _wrong_role_fragment(request)
     before = deepcopy(invalid)
-    adapter = adapters.StructuredVisualShardProviderAdapter(
-        _context(), transport=_CaptureTransport(invalid)
-    )
-    decoded = adapter.analyze_shard(request)
-    assert decoded == before
+    transport = _CaptureTransport(invalid)
+    adapter = adapters.StructuredVisualShardProviderAdapter(_context(), transport=transport)
     with pytest.raises(core.IntakeBatchV2Error) as raised:
-        core._validate_fragment(decoded, request=request)
+        adapter.analyze_shard(request)
     assert raised.value.code == "provider_output_role_invalid"
-    assert decoded == before
+    assert invalid == before
+    assert len(transport.requests) == 1  # Invalid first pass never triggers paid review.
 
 
 def test_role_schema_rejects_unknown_role_or_missing_required_array() -> None:
@@ -582,11 +598,10 @@ def test_adapter_binds_independent_jpeg_page_one_and_never_rewrites_returned_ide
     adapter = adapters.StructuredVisualShardProviderAdapter(
         context, transport=transport
     )
-    decoded = adapter.analyze_shard(request)
-    assert decoded == before
     with pytest.raises(core.IntakeBatchV2Error, match="not bound to pixels"):
-        core._validate_fragment(decoded, request=request)
-    assert decoded == before
+        adapter.analyze_shard(request)
+    assert fragment == before
+    assert len(transport.requests) == 1
     body = json.loads(transport.requests[0].body)
     content = body["input"][0]["content"]
     assert [
@@ -642,10 +657,10 @@ def test_adapter_sends_strict_schema_and_pixel_only_prompt(
         context, transport=transport
     )
     assert adapter.analyze_shard(request) == fragment
-    assert len(transport.requests) == 1
+    assert len(transport.requests) == 2
     body = json.loads(transport.requests[0].body)
     assert body["max_output_tokens"] == (32000 if official else 8000)
-    assert transport.deadlines == [1300.0 if official else 1090.0]
+    assert transport.deadlines == [1300.0 if official else 1090.0] * 2
     output = body["text"]["format"]
     assert output["strict"] is True
     assert output["schema"] == wire.desktop_visual_wire_schema(
@@ -703,7 +718,7 @@ def test_prompt_defines_normalized_xywh_and_correct_synthetic_example() -> None:
     prompt = adapters.StructuredVisualShardProviderAdapter._prompt(request)
     payload = json.loads(prompt.split("\n", 1)[1])
     contract = payload["bbox_contract"]
-    assert payload["observation_prompt_version"] == "normalized-xywh-roles-pages-v4"
+    assert payload["observation_prompt_version"] == "normalized-xywh-roles-pages-v5"
     assert "归一化左上角 xywh 字典" in prompt
     assert contract["object_with_exact_keys"] == ["x", "y", "width", "height"]
     assert contract["coordinate_space"] == "normalized_xywh"
@@ -767,14 +782,12 @@ def test_invalid_returned_bbox_is_rejected_without_clamping_or_unit_conversion(
     request = _lean_shard("question")
     fragment = _lean_question_fragment(request)
     fragment["evidence"][0]["bbox"] = deepcopy(bbox)
-    adapter = adapters.StructuredVisualShardProviderAdapter(
-        _context(), transport=_CaptureTransport(fragment)
-    )
-    decoded = adapter.analyze_shard(request)
-    assert decoded["evidence"][0]["bbox"] == bbox
+    transport = _CaptureTransport(fragment)
+    adapter = adapters.StructuredVisualShardProviderAdapter(_context(), transport=transport)
     with pytest.raises(core.IntakeBatchV2Error, match="bbox is out of bounds"):
-        core._validate_fragment(decoded, request=request)
-    assert decoded["evidence"][0]["bbox"] == bbox
+        adapter.analyze_shard(request)
+    assert fragment["evidence"][0]["bbox"] == bbox
+    assert len(transport.requests) == 1
 
 
 @pytest.mark.parametrize("official", [True, False])

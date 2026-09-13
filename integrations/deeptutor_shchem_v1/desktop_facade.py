@@ -59,7 +59,11 @@ from .desktop_visual_import_v2 import (
 )
 from .master_direct_visual_scan import MasterDirectVisualScanReader
 from .master_wave1_workbench import MasterWave1WorkbenchReader
-from .model_provider_settings import ModelProviderSettingsStore
+from .model_provider_settings import (
+    ModelProviderSettingsError,
+    ModelProviderSettingsStore,
+    validate_model_token_limit,
+)
 from .paper_export_renderer import ARTIFACT_FILENAMES
 from .paper_export_workbench import (
     PaperExportJobManager,
@@ -178,6 +182,26 @@ _VISUAL_FAILURE_GUIDANCE = {
         "模型输出达到上限，识别结果格式不完整，本次未生成候选。",
         "减少单批页面或提高服务端允许的输出上限后再手动重试。",
     ),
+    "input_budget_exceeded": (
+        "本次请求的本机输入估算超过用户设置；没有发送该超限请求，也没有截断文字或图片。",
+        "请在模型设置增大输入预算或分批；若此前提取已调用，可能已计费。这不是 DNS 或网络错误，不会自动重试。",
+    ),
+    "max_input_tokens_invalid": (
+        "模型输入上限设置无效，本次未完成导入。",
+        "请在模型设置输入 1 至 1000000 的正整数，或留空采用默认；这不是 DNS 或网络错误。",
+    ),
+    "max_output_tokens_invalid": (
+        "模型输出上限设置无效，本次未完成导入。",
+        "请在模型设置输入 1 至 1000000 的正整数，或留空采用默认；这不是 DNS 或网络错误。",
+    ),
+    "user_input_budget_invalid": (
+        "模型输入上限设置无效，本次未完成导入。",
+        "请在模型设置输入 1 至 1000000 的正整数，或留空采用默认；这不是 DNS 或网络错误。",
+    ),
+    "user_output_budget_invalid": (
+        "模型输出上限设置无效，本次未完成导入。",
+        "请在模型设置输入 1 至 1000000 的正整数，或留空采用默认；这不是 DNS 或网络错误。",
+    ),
     "provider_response_refused": (
         "服务端拒绝返回可核对的识别结果，本次未生成候选。",
         "核对模型和接口的结果格式设置后再手动重试。",
@@ -217,6 +241,30 @@ _VISUAL_FAILURE_GUIDANCE = {
     "visual_candidate_schema_invalid": (
         "视觉识别结果不符合本机格式要求，本次未生成候选。",
         "核对模型返回的 JSON 结果格式后再手动重试。",
+    ),
+    "visual_crop_review_failed": (
+        "裁片复核未通过，识别结果未作为完成候选入库。",
+        "这不是 DNS 或网络错误的自动重试流程；请回到原页核对并调整输入后再处理，不会自动重试。",
+    ),
+    "visual_crop_review_invalid": (
+        "裁片复核未完成，复核结果无法校验，识别结果未作为完成候选入库。",
+        "这不是 DNS 或网络错误的自动重试流程；请回到原页核对并调整输入后再处理，不会自动重试。",
+    ),
+    "visual_crop_review_limit": (
+        "裁片复核未完成，达到本次复核处理上限，识别结果未作为完成候选入库。",
+        "这不是 DNS 或网络错误的自动重试流程；请回到原页缩小输入范围后再处理，不会自动重试。",
+    ),
+    "visual_crop_review_cancelled": (
+        "裁片复核未完成，本次复核已取消，识别结果未作为完成候选入库。",
+        "这不是 DNS 或网络错误的自动重试流程；请回到原页核对并调整输入后再处理，不会自动重试。",
+    ),
+    "visual_crop_review_blank_crop": (
+        "裁片复核未通过，发现空白裁片，识别结果未作为完成候选入库。",
+        "这不是 DNS 或网络错误的自动重试流程；请回到原页调整输入与题目范围后再处理，不会自动重试。",
+    ),
+    "visual_crop_review_schema_unsupported": (
+        "裁片复核未完成，当前模型接口不支持所需复核结果格式，识别结果未作为完成候选入库。",
+        "这不是 DNS 或网络错误的自动重试流程；请核对模型结构化输出能力，回到原页调整输入后再处理，不会自动重试。",
     ),
     "page_renderer_required": (
         "文档页面没有可用的本机渲染器，本次未生成候选。",
@@ -485,6 +533,8 @@ class ProviderProfileInput:
     profile_id: str = "desktop-default"
     vision_enabled: bool = True
     key_value: str = field(default="", repr=False, compare=False)
+    max_input_tokens: int | None = None
+    max_output_tokens: int | None = None
 
 
 @dataclass(frozen=True)
@@ -498,6 +548,8 @@ class ProviderProfileSummary:
     key_saved: bool
     revision: str
     last_connection_test: ProviderConnectionResult | None = None
+    max_input_tokens: int | None = None
+    max_output_tokens: int | None = None
 
 
 @dataclass(frozen=True)
@@ -1825,10 +1877,31 @@ class DesktopWorkbenchFacade:
         self._state.clear_basket()
 
     @staticmethod
-    def _profile_summary(value: Mapping[str, Any]) -> ProviderProfileSummary:
+    def _effective_profile_capabilities(value: Mapping[str, Any]) -> tuple[str, ...]:
         capabilities = (
-            value.get("effective_capabilities") or value.get("capabilities") or []
+            value["effective_capabilities"]
+            if "effective_capabilities" in value
+            else value.get("capabilities", ())
         )
+        if not isinstance(capabilities, (list, tuple)) or not all(
+            isinstance(item, str) for item in capabilities
+        ):
+            return ()
+        return tuple(capabilities)
+
+    @staticmethod
+    def _profile_token_limit(value: Any, *, field: str) -> int | None:
+        try:
+            return validate_model_token_limit(value, field=field)
+        except ModelProviderSettingsError as exc:
+            label = "输入" if field == "max_input_tokens" else "输出"
+            raise DesktopFacadeError(
+                exc.code, f"模型{label}上限须留空，或填写 1 至 1000000 的整数。"
+            ) from None
+
+    @staticmethod
+    def _profile_summary(value: Mapping[str, Any]) -> ProviderProfileSummary:
+        capabilities = DesktopWorkbenchFacade._effective_profile_capabilities(value)
         last_probe = value.get("last_probe")
         last_test = (
             connection_result_from_state(last_probe)
@@ -1843,10 +1916,16 @@ class DesktopWorkbenchFacade:
             base_url=str(value.get("base_url") or ""),
             model_id=str(value.get("model_id") or ""),
             api_style=str(value.get("api_style") or "responses"),
-            capabilities=tuple(item for item in capabilities if isinstance(item, str)),
+            capabilities=capabilities,
             key_saved=value.get("credential_state") == "configured",
             revision=str(value.get("revision") or ""),
             last_connection_test=last_test,
+            max_input_tokens=DesktopWorkbenchFacade._profile_token_limit(
+                value.get("max_input_tokens"), field="max_input_tokens"
+            ),
+            max_output_tokens=DesktopWorkbenchFacade._profile_token_limit(
+                value.get("max_output_tokens"), field="max_output_tokens"
+            ),
         )
 
     def list_provider_profiles(self) -> tuple[ProviderProfileSummary, ...]:
@@ -1857,6 +1936,13 @@ class DesktopWorkbenchFacade:
     def save_provider_profile(
         self, request: ProviderProfileInput
     ) -> ProviderProfileSummary:
+        # Validate before any metadata or credential mutation (including rotation).
+        max_input_tokens = self._profile_token_limit(
+            request.max_input_tokens, field="max_input_tokens"
+        )
+        max_output_tokens = self._profile_token_limit(
+            request.max_output_tokens, field="max_output_tokens"
+        )
         existing = {
             str(value.get("profile_id")): value
             for value in self._providers.list_metadata()
@@ -1880,6 +1966,8 @@ class DesktopWorkbenchFacade:
             "capabilities": capabilities,
             "allowed_data_classes": data_classes,
             "image_egress": image_egress,
+            "max_input_tokens": max_input_tokens,
+            "max_output_tokens": max_output_tokens,
         }
         expected_revision = str(existing.get("revision")) if existing else None
         if existing and existing.get("credential_state") == "configured":
@@ -2940,12 +3028,9 @@ class DesktopWorkbenchFacade:
             raise DesktopFacadeError(
                 "visual_profile_stale", "视觉模型配置已变化，请刷新后重新确认。"
             )
-        capabilities = profile.get("effective_capabilities") or profile.get(
-            "capabilities"
-        )
+        capabilities = self._effective_profile_capabilities(profile)
         if (
             profile.get("credential_state") != "configured"
-            or not isinstance(capabilities, list)
             or not {"vision", "structured_output"}.issubset(capabilities)
         ):
             raise DesktopFacadeError(

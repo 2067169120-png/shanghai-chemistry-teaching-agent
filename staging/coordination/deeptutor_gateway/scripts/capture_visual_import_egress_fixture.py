@@ -13,6 +13,12 @@ sys.path.insert(0, str(ROOT))
 from PySide6.QtCore import QBuffer, QIODevice, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QImage, QPainter
 
+from integrations.deeptutor_shchem_v1.desktop_visual_egress import (
+    DesktopVisualEgressService,
+)
+from integrations.deeptutor_shchem_v1.desktop_visual_schema import (
+    visual_import_request_policy,
+)
 from integrations.deeptutor_shchem_v1.desktop_workbench.app import create_application
 from integrations.deeptutor_shchem_v1.desktop_workbench.main_window import (
     install_font_fallbacks,
@@ -73,14 +79,15 @@ def main():
             "page_number": 1, "width": 1050, "height": 740,
             "sha256": hashlib.sha256(raw).hexdigest(), "mime_type": "image/png",
         })
+    policy = visual_import_request_policy("https://example.com/v1", "synthetic-model", "responses")
     plan = {
         "preview_id": "synthetic-preview", "revision": "synthetic-revision",
         "batch_id": "synthetic-batch", "model_label": "示例视觉模型（没有调用）",
         "pages": pages,
-        "request_policy": {"max_output_tokens": 32000, "timeout_seconds": 300},
-        "confirmation_text": "接收模型：示例视觉模型（合成演示，无网络调用）。\n"
-        "发送本窗口预览的3页整页像素，包含题目、共同材料、参考答案与讲义。\n"
-        "请确认来源授权及隐私；实际调用可能产生费用。返回不会发送。",
+        "request_policy": policy,
+        "confirmation_text": DesktopVisualEgressService._confirmation_text(
+            "示例视觉模型（合成演示，无网络调用）", pages, policy
+        ),
     }
     dialog = VisualImportEgressDialog(plan, lambda page_id: contents[page_id])
     dialog.resize(args.width, args.height)

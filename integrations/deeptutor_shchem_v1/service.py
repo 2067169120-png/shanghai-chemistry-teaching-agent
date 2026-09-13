@@ -3822,6 +3822,8 @@ class GatewayService:
             "api_style",
             "local_endpoint_policy",
             "capabilities",
+            "max_input_tokens",
+            "max_output_tokens",
         }
         provider_kind = payload.get("provider_kind", "preset")
         custom_required = {
@@ -3866,6 +3868,8 @@ class GatewayService:
             "allowed_data_classes": payload["allowed_data_classes"],
             "image_egress": payload["image_egress"],
             "last_probe": None,
+            "max_input_tokens": payload.get("max_input_tokens"),
+            "max_output_tokens": payload.get("max_output_tokens"),
         }
         self._cancel_model_provider_probe_for_mutation(
             profile_id, expected_revision=payload["expected_revision"]

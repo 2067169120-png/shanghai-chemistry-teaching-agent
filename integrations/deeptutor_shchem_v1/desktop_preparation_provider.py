@@ -550,6 +550,9 @@ class StructuredPreparationProvider:
             ) from exc
         except (VisualProviderRuntimeError, TypeError, ValueError) as exc:
             message = (
+                "完整输入的本机估算超过自定输入预算；未截断、未发送该请求。请到模型设置调整输入预算或减少材料后重新确认。"
+                if getattr(exc, "code", None) == "input_budget_exceeded"
+                else
                 "所选图片与备课文字合计超过模型请求大小上限；本次未发送，请减少图片后重试。"
                 if getattr(exc, "code", None) == "visual_request_too_large"
                 else "备课模型请求无法创建，请检查模型设置后重试。"

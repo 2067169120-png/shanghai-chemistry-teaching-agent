@@ -4,7 +4,7 @@ import threading
 from contextlib import suppress
 
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QCloseEvent, QResizeEvent
+from PySide6.QtGui import QCloseEvent, QIntValidator, QResizeEvent
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -29,6 +29,7 @@ from ..desktop_facade import (
     ProviderProfileSummary,
 )
 from ..desktop_provider_probe import ProviderConnectionResult
+from ..desktop_visual_schema import visual_import_request_policy
 from ..model_provider_probe import FIXED_SYNTHETIC_PROMPT
 from .components import (
     VISUAL_IMPORT_SOURCE_SUFFIXES,
@@ -646,7 +647,12 @@ class ImportDialog(QDialog):
         ):
             profiles = ()
         for profile in profiles:
-            capabilities = set(getattr(profile, "capabilities", ()))
+            # Profile summaries already contain authoritative effective capabilities.
+            capabilities = getattr(profile, "capabilities", ())
+            if not isinstance(capabilities, (list, tuple)) or not all(
+                isinstance(item, str) for item in capabilities
+            ):
+                continue
             if getattr(profile, "key_saved", False) is not True or not {
                 "vision",
                 "structured_output",
@@ -1110,6 +1116,10 @@ class SettingsDialog(QDialog):
             )
         )
 
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(16)
         form_card = CardFrame()
         form = QFormLayout(form_card)
         self._settings_form = form
@@ -1125,6 +1135,28 @@ class SettingsDialog(QDialog):
         self.model_id = QLineEdit()
         self.model_id.setPlaceholderText("直接填写模型名称，包括实验版模型")
         self.model_id.setAccessibleName("模型名称")
+        self.max_input_tokens = QLineEdit()
+        self.max_input_tokens.setAccessibleName("输入预算，估算 tokens；留空未设置")
+        self.max_input_tokens.setValidator(QIntValidator(1, 1_000_000, self.max_input_tokens))
+        self.max_input_tokens.setClearButtonEnabled(True)
+        self.max_output_tokens = QLineEdit()
+        self.max_output_tokens.setAccessibleName("输出上限，tokens；留空未设置")
+        self.max_output_tokens.setValidator(QIntValidator(1, 1_000_000, self.max_output_tokens))
+        self.max_output_tokens.setClearButtonEnabled(True)
+        self.budget_reference = QLabel()
+        self.budget_reference.setWordWrap(True)
+        self.budget_reference.setObjectName("MutedLabel")
+        self.use_reference_button = QPushButton("采用参考值")
+        self.use_reference_button.setAccessibleName("填写输入预算和视觉导入输出参考值，仍可修改")
+        self.use_reference_button.setAutoDefault(False)
+        self.use_reference_button.clicked.connect(self._use_reference_budgets)
+        budget_note = QLabel(
+            "留空表示未设置，采用各功能默认值；也可填写 1–1,000,000 的整数。"
+            "输入预算包含图片的本地估算，不等同于服务端真实 token 计数或计费；"
+            "输出上限仍受服务商限制。参考值不是服务商容量保证。"
+        )
+        budget_note.setWordWrap(True)
+        budget_note.setObjectName("MutedLabel")
         self.key_input = QLineEdit()
         self.key_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.key_input.setPlaceholderText("留空则保持当前保存状态")
@@ -1135,9 +1167,14 @@ class SettingsDialog(QDialog):
         form.addRow("服务商名称", self.provider_name)
         form.addRow("接口地址（Base URL）", self.base_url)
         form.addRow("模型名称（Model ID）", self.model_id)
+        form.addRow("输入预算（估算 tokens）", self.max_input_tokens)
+        form.addRow("输出上限（tokens）", self.max_output_tokens)
+        form.addRow("", self.budget_reference)
+        form.addRow("", self.use_reference_button)
+        form.addRow("", budget_note)
         form.addRow("API 密钥（API Key）", self.key_input)
         form.addRow("", self.key_state)
-        root.addWidget(form_card)
+        content_layout.addWidget(form_card)
 
         advanced = CollapsibleSection("高级设置")
         advanced_form = QFormLayout()
@@ -1157,13 +1194,15 @@ class SettingsDialog(QDialog):
         advanced_form.addRow("图片识别", self.vision)
         advanced_form.addRow("", capability_note)
         advanced.content_layout.addLayout(advanced_form)
-        root.addWidget(advanced)
+        content_layout.addWidget(advanced)
+        self.scroll = page_scroll(content)
+        self.scroll.setObjectName("SettingsScroll")
+        root.addWidget(self.scroll, 1)
 
         self.status = QLabel("保存设置后可测试连接；测试前会显示出站内容与费用提示。")
         self.status.setObjectName("StatusInfo")
         self.status.setWordWrap(True)
         root.addWidget(self.status)
-        root.addStretch(1)
         actions = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         actions.rejected.connect(self.reject)
         close_action = actions.button(QDialogButtonBox.StandardButton.Close)
@@ -1187,11 +1226,18 @@ class SettingsDialog(QDialog):
         self.stop_test_button.clicked.connect(self._stop_test)
         actions.addButton(self.stop_test_button, QDialogButtonBox.ButtonRole.ActionRole)
         root.addWidget(actions)
-        for field in (self.provider_name, self.base_url, self.model_id, self.key_input):
+        for field in (
+            self.provider_name, self.base_url, self.model_id, self.key_input,
+            self.max_input_tokens, self.max_output_tokens,
+        ):
             field.textChanged.connect(self._refresh_test_enabled)
+        self.base_url.textChanged.connect(self._refresh_budget_reference)
+        self.model_id.textChanged.connect(self._refresh_budget_reference)
+        self.api_style.currentIndexChanged.connect(self._refresh_budget_reference)
         self.api_style.currentIndexChanged.connect(self._refresh_test_enabled)
         self.vision.toggled.connect(self._refresh_test_enabled)
         self.tasks.task_finished.connect(self._task_finished)
+        self._refresh_budget_reference()
         self._load()
 
     def resizeEvent(self, event: QResizeEvent) -> None:
@@ -1204,6 +1250,10 @@ class SettingsDialog(QDialog):
 
     def _matches_saved(self) -> bool:
         profile = self._profile
+        try:
+            input_tokens, output_tokens = self._token_limits()
+        except ValueError:
+            return False
         return bool(
             profile
             and not self.key_input.text()
@@ -1212,7 +1262,45 @@ class SettingsDialog(QDialog):
             and self.model_id.text().strip() == profile.model_id
             and self.api_style.currentData() == profile.api_style
             and self.vision.isChecked() == ("vision" in profile.capabilities)
+            and input_tokens == profile.max_input_tokens
+            and output_tokens == profile.max_output_tokens
         )
+
+    @staticmethod
+    def _token_limit(field: QLineEdit, label: str) -> int | None:
+        text = field.text().strip()
+        if not text:
+            return None
+        if not text.isascii() or not text.isdecimal() or not 1 <= int(text) <= 1_000_000:
+            raise ValueError(f"{label}请留空，或填写 1–1,000,000 的整数。")
+        return int(text)
+
+    def _token_limits(self) -> tuple[int | None, int | None]:
+        return (
+            self._token_limit(self.max_input_tokens, "输入预算"),
+            self._token_limit(self.max_output_tokens, "输出上限"),
+        )
+
+    def _reference_budgets(self) -> tuple[int, int]:
+        policy = visual_import_request_policy(
+            self.base_url.text().strip(), self.model_id.text().strip(),
+            str(self.api_style.currentData()),
+        )
+        return 64000, int(policy["max_output_tokens"])
+
+    def _refresh_budget_reference(self) -> None:
+        input_tokens, output_tokens = self._reference_budgets()
+        self.max_input_tokens.setPlaceholderText(f"未设置；输入参考 {input_tokens:,}")
+        self.max_output_tokens.setPlaceholderText(f"未设置；视觉导入参考 {output_tokens:,}")
+        self.budget_reference.setText(
+            f"可选参考：输入预算 {input_tokens:,}；视觉导入输出 {output_tokens:,} tokens。"
+            "仅供参考，填写后仍可自行调整。"
+        )
+
+    def _use_reference_budgets(self) -> None:
+        input_tokens, output_tokens = self._reference_budgets()
+        self.max_input_tokens.setText(str(input_tokens))
+        self.max_output_tokens.setText(str(output_tokens))
 
     def _refresh_test_enabled(self) -> None:
         ready = bool(self._profile and self._profile.key_saved and self._matches_saved())
@@ -1222,7 +1310,11 @@ class SettingsDialog(QDialog):
         )
 
     def _set_form_enabled(self, enabled: bool) -> None:
-        for field in (self.provider_name, self.base_url, self.model_id, self.key_input, self.api_style, self.vision):
+        for field in (
+            self.provider_name, self.base_url, self.model_id, self.key_input,
+            self.api_style, self.vision, self.max_input_tokens,
+            self.max_output_tokens, self.use_reference_button,
+        ):
             field.setEnabled(enabled)
         self.save_button.setEnabled(enabled)
         self.test_button.setEnabled(False)
@@ -1250,6 +1342,12 @@ class SettingsDialog(QDialog):
         self.provider_name.setText(profile.provider_name)
         self.base_url.setText(profile.base_url)
         self.model_id.setText(profile.model_id)
+        self.max_input_tokens.setText(
+            "" if profile.max_input_tokens is None else str(profile.max_input_tokens)
+        )
+        self.max_output_tokens.setText(
+            "" if profile.max_output_tokens is None else str(profile.max_output_tokens)
+        )
         index = self.api_style.findData(profile.api_style)
         if index >= 0:
             self.api_style.setCurrentIndex(index)
@@ -1268,6 +1366,11 @@ class SettingsDialog(QDialog):
     def _save(self) -> None:
         if self._active_task_id:
             return
+        try:
+            input_tokens, output_tokens = self._token_limits()
+        except ValueError as exc:
+            set_status(self.status, "error", str(exc))
+            return
         request = ProviderProfileInput(
             provider_name=self.provider_name.text().strip(),
             base_url=self.base_url.text().strip(),
@@ -1276,6 +1379,8 @@ class SettingsDialog(QDialog):
             vision_enabled=self.vision.isChecked(),
             key_value=self.key_input.text(),
             profile_id=self._profile.profile_id if self._profile else "desktop-default",
+            max_input_tokens=input_tokens,
+            max_output_tokens=output_tokens,
         )
         self.key_input.clear()
         self._set_form_enabled(False)

@@ -432,9 +432,12 @@ def test_catalog_and_detail_project_cas_hierarchy_with_role_separated_images(
     assert "电子由铜电极流向银电极" in items[1]["question_text"]
     assert {image["role"] for image in items[0]["images"]} == {
         "shared_material",
-        "question",
         "answer",
     }
+    assert {image["evidence_id"] for image in items[0]["images"] if image["role"] != "answer"} == {
+        "EV-SRC-Q-A", "EV-SRC-Q-B",
+    }
+    assert len(items[0]["images"]) == len({image["evidence_id"] for image in items[0]["images"]})
     assert all(item["candidate_sha256"] for item in items)
     assert all(item["candidate_revision"] for item in items)
     assert imported_visual_batch["service"].detail(
@@ -458,8 +461,11 @@ def test_option_and_shared_visual_edges_keep_independent_evidence_and_chemistry(
     }
     assert "选项独立化学表达式" in items[1]["question_text"]
     assert "EV-OPTION-Q-C" in second_question_images
-    assert "EV-SRC-Q-B" in second_question_images
+    assert "EV-SRC-Q-B" not in second_question_images
     assert "EV-SRC-Q-B" in shared_images
+    assert "EV-SRC-Q-B" in {
+        image["evidence_id"] for image in items[1]["images"] if image["role"] == "shared_material"
+    }
 
 
 def test_image_returns_exact_original_or_distinct_review_crop(
@@ -468,7 +474,7 @@ def test_image_returns_exact_original_or_distinct_review_crop(
     context = imported_visual_batch
     item = _items(context)[0]
     question_image = next(
-        image for image in item["images"] if image["role"] == "question"
+        image for image in item["images"] if image["role"] != "answer"
     )
     original = context["service"].image(
         BATCH_ID, item["key"], item["revision"], question_image["image_id"], original=True
@@ -597,7 +603,7 @@ def test_source_or_page_byte_change_is_rejected_without_partial_import(
     context = imported_visual_batch
     item = _items(context)[0]
     question_image = next(
-        image for image in item["images"] if image["role"] == "question"
+        image for image in item["images"] if image["role"] != "answer"
     )
     page_path = context["paths"].state_root / "visual-import-v2" / "pages"
     candidate = bridge.CandidateCAS.open(

@@ -6,6 +6,9 @@ from contextlib import contextmanager
 
 import pytest
 from test_desktop_visual_import_facade import (
+    _png,
+)
+from test_desktop_visual_import_facade import (
     desktop_paths as desktop_paths,  # noqa: PLC0414
 )
 from test_word_semantic_tags import (
@@ -40,16 +43,23 @@ class BudgetProvider(SemanticProvider):
         base_url: str,
         api_style: str = "responses",
         vision: bool = True,
+        max_input_tokens: int | None = None,
+        max_output_tokens: int | None = None,
     ) -> None:
         super().__init__(vision=vision)
         self.model_id = model_id
         self.base_url = base_url
         self.api_style = api_style
+        self.max_input_tokens = max_input_tokens
+        self.max_output_tokens = max_output_tokens
+        self.context_budget_overrides = {}
 
     def list_metadata(self):
         rows = super().list_metadata()
         rows[0]["model_id"] = self.model_id
         rows[0]["api_style"] = self.api_style
+        rows[0]["max_input_tokens"] = self.max_input_tokens
+        rows[0]["max_output_tokens"] = self.max_output_tokens
         return rows
 
     @contextmanager
@@ -57,6 +67,11 @@ class BudgetProvider(SemanticProvider):
         assert profile_id == "semantic"
         assert expected_revision == self.revision
         self.borrow_calls += 1
+        limits = {
+            "max_input_tokens": self.max_input_tokens,
+            "max_output_tokens": self.max_output_tokens,
+            **self.context_budget_overrides,
+        }
         yield ModelProviderProbeContext(
             profile_id=profile_id,
             provider_id="openai_compatible",
@@ -68,13 +83,21 @@ class BudgetProvider(SemanticProvider):
             provider_kind="openai_compatible",
             api_style=self.api_style,
             local_endpoint_policy="deny",
+            **limits,
         )
 
     def invocation_policy(self, profile_id: str, *, expected_revision: str):
         policy = super().invocation_policy(
             profile_id, expected_revision=expected_revision
         )
-        policy.update({"base_url": self.base_url, "model_id": self.model_id})
+        policy.update(
+            {
+                "base_url": self.base_url,
+                "model_id": self.model_id,
+                "max_input_tokens": self.max_input_tokens,
+                "max_output_tokens": self.max_output_tokens,
+            }
+        )
         return policy
 
 
@@ -181,7 +204,9 @@ def test_run_uses_disclosed_budget_for_text_and_image_requests(
     desktop_paths, tmp_path, image
 ):
     provider = BudgetProvider(
-        model_id="deepseek-v4-pro", base_url=OFFICIAL_DEEPSEEK, vision=True
+        model_id="deepseek-v4-flash-vision-exp" if image else "deepseek-v4-pro",
+        base_url=OFFICIAL_DEEPSEEK,
+        vision=True,
     )
     transport = DeadlineTransport(image_evidence=image)
     facade = _make_facade(
@@ -194,6 +219,9 @@ def test_run_uses_disclosed_budget_for_text_and_image_requests(
     )
     choices = _choices(facade, 2 if image else 1)
     plan = facade.word_semantic_tag_preview(choices, "semantic", provider.revision)
+    units = facade._word_semantic_tags()._plans[plan["plan_id"]]["units"]
+    assert len(units) == (2 if image else 1)
+    assert all(unit["status"] == "ready" for unit in units)
 
     result = facade.word_semantic_tag_run(
         plan["plan_id"], plan["revision"], confirmed=True
@@ -237,6 +265,187 @@ def test_run_uses_small_budget_and_timeout_for_non_official_endpoint(
 
     assert transport.calls[0]["body"]["max_output_tokens"] == 8192
     assert 174 <= transport.deadlines[0] - time.monotonic() <= 181
+
+
+@pytest.mark.parametrize("image", [False, True])
+@pytest.mark.parametrize("output_budget", [128, 50000])
+@pytest.mark.parametrize("input_budget", [None, 500000])
+def test_user_budgets_match_preview_frozen_policy_and_actual_wire(
+    desktop_paths, tmp_path, image, output_budget, input_budget
+):
+    provider = BudgetProvider(
+        model_id="deepseek-v4-flash-vision-exp" if image else "deepseek-v4-pro",
+        base_url=OFFICIAL_DEEPSEEK,
+        vision=image,
+        max_input_tokens=input_budget,
+        max_output_tokens=output_budget,
+    )
+    transport = DeadlineTransport(image_evidence=image)
+    facade = _make_facade(
+        desktop_paths,
+        tmp_path,
+        provider,
+        transport,
+        image=image,
+        question_count=2 if image else 1,
+    )
+    plan = facade.word_semantic_tag_preview(
+        _choices(facade, 2 if image else 1), "semantic", provider.revision
+    )
+    expected = {"max_output_tokens": output_budget, "timeout_seconds": 300}
+    if input_budget is not None:
+        expected["max_input_tokens"] = input_budget
+    assert plan["request_policy"] == expected
+    frozen = facade._word_semantic_tags()._plans[plan["plan_id"]]
+    assert frozen["request_policy"] == expected
+    assert len(frozen["units"]) == (2 if image else 1)
+    assert all(unit["status"] == "ready" for unit in frozen["units"])
+
+    result = facade.word_semantic_tag_run(
+        plan["plan_id"], plan["revision"], confirmed=True
+    )
+
+    assert result["finished"] is True
+    assert all(item["status"] == "ready" for item in result["items"])
+    assert len(transport.calls) == (2 if image else 1)
+    assert all(
+        call["body"]["max_output_tokens"] == output_budget for call in transport.calls
+    )
+    assert all("max_input_tokens" not in call["body"] for call in transport.calls)
+
+
+@pytest.mark.parametrize("field", ["max_input_tokens", "max_output_tokens"])
+@pytest.mark.parametrize("changed_at", ["policy", "borrowed_context"])
+def test_budget_drift_is_blocked_before_transport(
+    desktop_paths, tmp_path, field, changed_at
+):
+    provider = BudgetProvider(
+        model_id="deepseek-v4-pro",
+        base_url=OFFICIAL_DEEPSEEK,
+        vision=False,
+        max_input_tokens=500000,
+        max_output_tokens=50000,
+    )
+    transport = DeadlineTransport()
+    facade = _make_facade(
+        desktop_paths, tmp_path, provider, transport, question_count=1
+    )
+    plan = facade.word_semantic_tag_preview(
+        _choices(facade, 1), "semantic", provider.revision
+    )
+    replacement = 400000 if field == "max_input_tokens" else 40000
+    if changed_at == "policy":
+        setattr(provider, field, replacement)
+        with pytest.raises(semantic.WordSemanticTagError, match="重新预览"):
+            facade.word_semantic_tag_run(
+                plan["plan_id"], plan["revision"], confirmed=True
+            )
+        assert provider.borrow_calls == 0
+    else:
+        provider.context_budget_overrides[field] = replacement
+        result = facade.word_semantic_tag_run(
+            plan["plan_id"], plan["revision"], confirmed=True
+        )
+        assert len(result["items"]) == 1
+        assert result["items"][0]["status"] == "failed"
+        assert "输入或输出预算已变" in result["items"][0]["note"]
+    assert transport.calls == []
+
+
+def test_disclosed_input_budget_can_reject_locally_without_transport(
+    desktop_paths, tmp_path
+):
+    provider = BudgetProvider(
+        model_id="deepseek-v4-pro",
+        base_url=OFFICIAL_DEEPSEEK,
+        vision=False,
+        max_input_tokens=1,
+        max_output_tokens=50000,
+    )
+    transport = DeadlineTransport()
+    facade = _make_facade(
+        desktop_paths, tmp_path, provider, transport, question_count=1
+    )
+    plan = facade.word_semantic_tag_preview(
+        _choices(facade, 1), "semantic", provider.revision
+    )
+    assert plan["request_policy"]["max_input_tokens"] == 1
+    result = facade.word_semantic_tag_run(
+        plan["plan_id"], plan["revision"], confirmed=True
+    )
+    assert result["items"][0]["status"] == "failed"
+    assert transport.calls == []
+
+
+def test_word_image_policy_receives_dimensions_from_verified_source_bytes(
+    desktop_paths, tmp_path, monkeypatch
+):
+    provider = BudgetProvider(
+        model_id="deepseek-v4-flash-vision-exp",
+        base_url=OFFICIAL_DEEPSEEK,
+        max_output_tokens=50000,
+    )
+    transport = DeadlineTransport(image_evidence=True)
+    facade = _make_facade(
+        desktop_paths, tmp_path, provider, transport, image=True, question_count=2
+    )
+    captured = []
+    original_policy = facade._preparation_image_policy
+
+    def verified_policy(payload, *args):
+        captured.extend(payload["image_assets"])
+        return original_policy(payload, *args)
+
+    monkeypatch.setattr(facade, "_preparation_image_policy", verified_policy)
+    plan = facade.word_semantic_tag_preview(
+        _choices(facade, 2), "semantic", provider.revision
+    )
+    image_unit = next(unit for unit in plan["units"] if unit["images"])
+    sha = image_unit["images"][0]["sha256"]
+    assert facade.word_semantic_tag_image(plan["plan_id"], sha) == _png("blue")
+    assert captured and all(
+        (row["width"], row["height"]) == (24, 32) for row in captured
+    )
+    assert all(row["sha256"] == sha for row in captured)
+    assert all(unit["status"] == "ready" for unit in plan["units"])
+    assert provider.borrow_calls == 0 and transport.calls == []
+
+
+def test_changed_source_image_bytes_invalidate_frozen_plan_before_borrow_or_send(
+    desktop_paths, tmp_path, monkeypatch
+):
+    provider = BudgetProvider(
+        model_id="deepseek-v4-flash-vision-exp",
+        base_url=OFFICIAL_DEEPSEEK,
+        max_output_tokens=50000,
+    )
+    transport = DeadlineTransport(image_evidence=True)
+    facade = _make_facade(
+        desktop_paths, tmp_path, provider, transport, image=True, question_count=2
+    )
+    plan = facade.word_semantic_tag_preview(
+        _choices(facade, 2), "semantic", provider.revision
+    )
+    assert all(unit["status"] == "ready" for unit in plan["units"])
+    reader = facade._word_questions().reader
+    original_read = reader.word_asset_bytes
+
+    def changed_pixels(*args, **kwargs):
+        return {**original_read(*args, **kwargs), "bytes": _png("red")}
+
+    monkeypatch.setattr(reader, "word_asset_bytes", changed_pixels)
+    with pytest.raises(semantic.WordSemanticTagError, match="重新预览"):
+        facade.word_semantic_tag_run(plan["plan_id"], plan["revision"], confirmed=True)
+    assert provider.borrow_calls == 0 and transport.calls == []
+
+
+@pytest.mark.parametrize("field", ["max_input_tokens", "max_output_tokens"])
+@pytest.mark.parametrize("value", [0, True, 1.5, "50000", 1000001])
+def test_invalid_explicit_tag_budget_cannot_silently_use_recommendation(field, value):
+    with pytest.raises(semantic.WordSemanticTagError) as error:
+        semantic.tag_request_policy({field: value})
+    assert error.value.code == field + "_invalid"
+    assert "重新保存模型配置" in str(error.value)
 
 
 def test_budget_is_bound_to_plan_and_changed_budget_stops_before_transport(

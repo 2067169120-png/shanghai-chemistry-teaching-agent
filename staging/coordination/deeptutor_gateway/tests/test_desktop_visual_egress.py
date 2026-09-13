@@ -122,6 +122,15 @@ def test_preview_freezes_rendered_pages_and_reader_returns_exact_bytes():
     assert "冻结" in plan["confirmation_text"]
     assert "学校授权" in plan["confirmation_text"]
     assert "个人信息" in plan["confirmation_text"]
+    assert "每个分片先发送 1 次提取请求" in plan["confirmation_text"]
+    assert "最多 8 条证据裁片" in plan["confirmation_text"]
+    assert "追加 1 次原页与对应实际裁片" in plan["confirmation_text"]
+    assert "按提取后的裁片数分组调用并计费" in plan["confirmation_text"]
+    assert "总请求次数在提取完成后才能确定" in plan["confirmation_text"]
+    assert "尚未在本次发送前预览中展示" in plan["confirmation_text"]
+    assert "不加入任何未预览的源页" in plan["confirmation_text"]
+    assert "提取或复核失败时不完成导入，不会默认为通过" in plan["confirmation_text"]
+    assert "不会自动重试或自动修复" in plan["confirmation_text"]
     assert len(plan["pages"]) == 1
     page = plan["pages"][0]
     assert {
@@ -149,7 +158,11 @@ def test_preview_freezes_rendered_pages_and_reader_returns_exact_bytes():
 
 @pytest.mark.parametrize("changed_field,changed_value", [
     ("max_output_tokens", 8000),
+    ("max_input_tokens", 64000),
     ("observation_prompt_version", "synthetic-changed-v2"),
+    ("crop_review_version", "synthetic-review-v2"),
+    ("crop_review_batch_limit", 4),
+    ("crop_review_required", False),
 ])
 def test_official_visual_budget_is_disclosed_and_frozen(monkeypatch, changed_field, changed_value):
     import integrations.deeptutor_shchem_v1.desktop_visual_egress as module
@@ -177,6 +190,27 @@ def test_official_visual_budget_is_disclosed_and_frozen(monkeypatch, changed_fie
                                 sources=(facade.source,))
     changed_plan = service.preview(**args)
     assert changed_plan["revision"] != plan["revision"]
+    assert facade.provider_borrows == 0
+
+
+@pytest.mark.parametrize("field", ["max_input_tokens", "max_output_tokens"])
+def test_user_limits_are_visible_and_changing_either_invalidates_confirmation(monkeypatch, field):
+    facade = _PreviewFacade()
+    profile = facade._visual_import_profile("profile", "revision")
+    profile.update(max_input_tokens=150000, max_output_tokens=50000)
+    monkeypatch.setattr(facade, "_visual_import_profile", lambda *_: dict(profile))
+    service = DesktopVisualEgressService(facade)
+    args = {"batch_id": facade.descriptor["batch_id"], "profile_id": "profile",
+            "expected_profile_revision": "revision"}
+    plan = service.preview(**args)
+    assert plan["request_policy"]["max_input_tokens"] == 150000
+    assert plan["request_policy"]["max_output_tokens"] == 50000
+    assert "150000" in plan["confirmation_text"] and "50000" in plan["confirmation_text"]
+    assert "估算，非服务商精确用量" in plan["confirmation_text"]
+    profile[field] += 1
+    with pytest.raises(VisualEgressError, match="预算或处理规则已变化"):
+        service.frozen_renderer(**args, preview_id=plan["preview_id"], revision=plan["revision"],
+                                sources=(facade.source,))
     assert facade.provider_borrows == 0
 
 

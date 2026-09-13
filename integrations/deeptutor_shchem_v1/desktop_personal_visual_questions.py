@@ -187,6 +187,40 @@ def _evidence_and_visuals(nodes):
     return refs, visual_refs
 
 
+def _visual_evidence(theme, visual_refs):
+    """Resolve explicit visual IDs; an absent edge never borrows a nearby figure."""
+    known = {visual["visual_object_id"] for visual in theme["visual_objects"]}
+    warnings = (["部分图形引用尚未对应到本主题的明确图形，请对照原页核对；未借用其他图形。"]
+                if visual_refs - known else [])
+    return [ref for visual in theme["visual_objects"]
+            if visual["visual_object_id"] in visual_refs for ref in visual["evidence_refs"]], warnings
+
+
+def _shared_projection(theme, nodes=None):
+    """All theme materials for compilation, or only a question's explicit edges."""
+    materials = theme["shared_materials"]
+    warnings = []
+    if nodes is not None:
+        requested = {ref for node in nodes for ref in node.get("shared_material_refs", [])}
+        known = {material["shared_material_id"] for material in materials}
+        if requested - known:
+            warnings.append("部分共同材料引用尚未对应到本主题的明确材料，请对照原页核对；未推测关联。")
+        if (materials or _text(theme["context"])) and not requested:
+            warnings.append("本题与主题共同材料的关联尚未明确，暂未显示未关联材料，请对照原页核对。")
+        materials = [material for material in materials if material["shared_material_id"] in requested]
+    refs, visual_refs = _evidence_and_visuals(materials)
+    visual_evidence, visual_warnings = _visual_evidence(theme, visual_refs)
+    refs.extend(visual_evidence)
+    warnings.extend(visual_warnings)
+    # Theme context can summarize unrelated subquestions. Keep it at the theme
+    # boundary; only material IDs establish a per-question text association.
+    parts = [_text(theme["context"])] if nodes is None else []
+    parts.extend("\n".join(filter(None, [_text(material["content"])] + [
+        _text(expression["raw"]) for expression in material.get("chemical_expressions", [])
+    ])) for material in materials)
+    return "\n\n".join(filter(None, parts)), refs, warnings
+
+
 def _answer_text(atomic):
     answer = atomic["answer"]
     label = _text(atomic["part_label"])
@@ -334,24 +368,20 @@ class PersonalVisualQuestionService:
         result = []
         for theme in paper["theme_big_questions"]:
             theme_key = "visual-theme:" + _digest([batch_id, theme["theme_big_question_id"]])
-            shared_refs, shared_visuals = _evidence_and_visuals(theme["shared_materials"])
-            shared_refs += [ref for visual in theme["visual_objects"]
-                            if visual["visual_object_id"] in shared_visuals for ref in visual["evidence_refs"]]
-            shared_text = "\n\n".join(filter(None, [_text(theme["context"])] + [
-                "\n".join(filter(None, [_text(row["content"])] + [
-                    _text(expression["raw"]) for expression in row.get("chemical_expressions", [])
-                ])) for row in theme["shared_materials"]
-            ]))
-            shared_images = self._images(shared_refs, "shared_material", evidence, pages, crop_states)
             for printed in theme["printed_questions"]:
                 atomics = printed["atomic_parts"]
+                shared_text, shared_refs, scope_warnings = _shared_projection(theme, [printed, *atomics])
+                shared_images = self._images(shared_refs, "shared_material", evidence, pages, crop_states)
                 refs, visual_refs = _evidence_and_visuals([printed, *atomics])
                 # Visual references are explicit graph edges, not guessed from captions.
-                refs += [ref for visual in theme["visual_objects"]
-                         if visual["visual_object_id"] in visual_refs for ref in visual["evidence_refs"]]
+                visual_evidence, visual_warnings = _visual_evidence(theme, visual_refs)
+                refs.extend(visual_evidence)
+                scope_warnings.extend(visual_warnings)
                 answers = [row["answer"] for row in atomics if row["answer"]["status"] != "missing"]
                 answer_refs, _ = _evidence_and_visuals(answers)
-                question_images = self._images(refs, "question", evidence, pages, crop_states)
+                shared_ids = set(shared_refs)
+                question_images = self._images([ref for ref in refs if ref not in shared_ids],
+                                               "question", evidence, pages, crop_states)
                 answer_images = self._images(answer_refs, "answer", evidence, pages, crop_states)
                 knowledge = sorted({tag for row in atomics for name in ("primary_knowledge_K", "supporting_knowledge_K")
                                     for tag in row["classification"][name] if tag in known_knowledge})
@@ -372,6 +402,7 @@ class PersonalVisualQuestionService:
                                     facets[group].append(value)
                 facets = {group: list(dict.fromkeys(values)) or [_UNKNOWN] for group, values in facets.items()}
                 warnings = ["文字与裁剪范围为AI识别候选，请对照原页检查；未作教师化学审核。"]
+                warnings.extend(scope_warnings)
                 if theme["merge_status"] != "complete":
                     warnings.append("主题存在跨页拼接或内容冲突，目前不能带入备课。")
                 if len(answers) != len(atomics):
@@ -395,7 +426,7 @@ class PersonalVisualQuestionService:
                     "images": shared_images + question_images + answer_images,
                     "facets": facets,
                     "curriculum_paths": curriculum_paths,
-                    "selection_ready": theme["merge_status"] == "complete" and bool(question_images),
+                    "selection_ready": theme["merge_status"] == "complete" and bool(refs),
                     "candidate_revision": snapshot["revision_token"],
                     "candidate_sha256": snapshot["candidate_sha256"],
                     "teacher_reviewed": False,
@@ -737,30 +768,37 @@ class PersonalVisualQuestionService:
     def _compile_reference(self, selections):
         selected, normalized = self._resolve(selections)
         themes = {(row["batch_id"], row["theme_key"]) for row in selected}
-        rows, contexts, crop_heads = [], {}, {}
+        rows, contexts, crop_heads, crop_records, theme_contexts = [], {}, {}, {}, {}
         for batch in dict.fromkeys(row["batch_id"] for row in selected):
             snapshot, pages = self._batch(batch)
             if any(row["candidate_revision"] != snapshot["revision_token"] for row in selected if row["batch_id"] == batch):
                 raise PersonalVisualQuestionError("图片题目版本已变化，请重新预览。")
             contexts[batch] = (snapshot, pages)
             crops = self.crop_store.get_batch(batch)
+            crop_records[batch] = crops
             crop_heads[batch] = self.crop_store.batch_revision(crops)
             rows.extend(row for row in self._rows(batch, snapshot, pages, crops) if (batch, row["theme_key"]) in themes)
+            effective, states = self._effective_evidence(batch, snapshot, pages, crops)
+            for theme in snapshot["candidate"]["paper"]["theme_big_questions"]:
+                theme_key = "visual-theme:" + _digest([batch, theme["theme_big_question_id"]])
+                if (batch, theme_key) not in themes:
+                    continue
+                shared_text, shared_refs, shared_warnings = _shared_projection(theme)
+                theme_contexts[(batch, theme_key)] = (
+                    shared_text, self._images(shared_refs, "shared_material", effective, pages, states),
+                    shared_warnings,
+                )
         if any(not row["selection_ready"] for row in rows):
             raise PersonalVisualQuestionError("所选主题存在拼接冲突或缺少题面，请先核对原页。")
         texts = ["【个人图片题备课参考：AI识别候选，须对照原图】",
                  "本次按完整主题带入共同材料、全部小题与独立参考答案；不将图片转写冒充教材原句。"]
         seen_themes, assets, raw_images, warnings, raw_pages = set(), {}, {}, [], {}
-        for row in rows:
-            if row["theme_key"] not in seen_themes:
-                texts.extend([f"主题：{row['theme_title']}\n来源：{row['source_name']}", row["shared_text"]])
-                seen_themes.add(row["theme_key"])
-            texts.extend([f"第{row['question_number']}题\n{row['question_text']}",
-                          "【教师参考答案／AI识别，未独立核验】\n" + row["answer_text"]])
-            warnings.extend(row["warnings"])
-            for descriptor in row["images"]:
+
+        def append_images(row, descriptors, prefix):
+            for descriptor in descriptors:
                 response = self._image_for_row(
-                    row, *contexts[row["batch_id"]], descriptor["image_id"], raw_pages=raw_pages
+                    row, *contexts[row["batch_id"]], descriptor["image_id"], raw_pages=raw_pages,
+                    crop_records=crop_records[row["batch_id"]],
                 )
                 raw = response["bytes"]
                 digest = hashlib.sha256(raw).hexdigest()
@@ -778,7 +816,24 @@ class PersonalVisualQuestionService:
                     # restrictive use and every occurrence instead of masking answers.
                     assets[digest]["purpose"] = "教师参考答案，不用于学生题面"
                     warnings.append("一张相同图片同时被题面和答案引用；已限定为教师参考，请核对范围后使用。")
-                texts.append(f"第{row['question_number']}题 · {descriptor['caption']}：" + assets[digest]["caption"])
+                texts.append(f"{prefix} · {descriptor['caption']}：" + assets[digest]["caption"])
+
+        for row in rows:
+            theme_identity = (row["batch_id"], row["theme_key"])
+            if theme_identity not in seen_themes:
+                shared_text, shared_images, shared_warnings = theme_contexts[theme_identity]
+                texts.extend([f"主题：{row['theme_title']}\n来源：{row['source_name']}", shared_text])
+                warnings.extend(shared_warnings)
+                # Compilation has the whole theme's scope, including shared
+                # materials that no printed question references. This internal
+                # projection uses the same source/role/crop checks as a detail.
+                append_images({**row, "images": shared_images}, shared_images, "主题共同材料")
+                seen_themes.add(theme_identity)
+            texts.extend([f"第{row['question_number']}题\n{row['question_text']}",
+                          "【教师参考答案／AI识别，未独立核验】\n" + row["answer_text"]])
+            warnings.extend(row["warnings"])
+            append_images(row, [image for image in row["images"] if image["role"] != "shared_material"],
+                          f"第{row['question_number']}题")
         for batch, (snapshot, _) in contexts.items():
             current, _ = self._batch(batch)
             if current["revision_token"] != snapshot["revision_token"]:

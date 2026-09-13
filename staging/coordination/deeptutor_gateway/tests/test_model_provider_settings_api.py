@@ -647,6 +647,81 @@ def test_custom_openai_compatible_https_profile_is_normalized_and_keyless():
         _assert_tree_does_not_contain(metadata_root, "Authorization")
 
 
+def test_api_token_budgets_roundtrip_clear_and_reject_invalid_without_invocation():
+    contract = yaml.safe_load(OPENAPI.read_text(encoding="utf-8"))
+    with _provider_server() as (server, _state, _metadata, backend):
+        current = _create_profile(server)
+        assert current["max_input_tokens"] is current["max_output_tokens"] is None
+        legacy_response = dict(current)
+        legacy_response.pop("max_input_tokens")
+        legacy_response.pop("max_output_tokens")
+        _validate_openapi_instance(contract, "ModelProviderProfile", legacy_response)
+        payloads = [
+            _profile_payload(),
+            {
+                "provider_kind": "openai_compatible", "display_name": "合成预算配置",
+                "base_url": "https://gateway.example.test/v1", "api_style": "responses",
+                "model_id": "synthetic-model", "capabilities": ["text", "structured_output"],
+                "allowed_data_classes": ["synthetic_only"], "image_egress": "deny",
+                "expected_revision": None,
+            },
+        ]
+        for base_payload in payloads:
+            for limits in (
+                {"max_input_tokens": 64000, "max_output_tokens": 65536},
+                {"max_input_tokens": 1, "max_output_tokens": 1_000_000},
+                {"max_input_tokens": None, "max_output_tokens": None},
+                {},
+            ):
+                payload = {**base_payload, **limits, "expected_revision": current["revision"]}
+                _validate_openapi_instance(contract, "ModelProviderProfileUpsertRequest", payload)
+                status, body, _ = request(
+                    server, "PUT", PROFILE_ROUTE, payload=payload, headers=_browser_headers(server),
+                )
+                assert status == 200, body
+                updated = _data(body)["profile"]
+                _validate_openapi_instance(contract, "ModelProviderProfileWriteEnvelope", body)
+                assert updated["revision"] != current["revision"]
+                assert updated["max_input_tokens"] == limits.get("max_input_tokens")
+                assert updated["max_output_tokens"] == limits.get("max_output_tokens")
+                current = updated
+        for field in ("max_input_tokens", "max_output_tokens"):
+            for invalid in (True, False, 0, -1, 1.0, 8000.5, "8000", [], {}, 1_000_001):
+                status, body, _ = request(
+                    server, "PUT", PROFILE_ROUTE,
+                    payload={**payloads[-1], "expected_revision": current["revision"], field: invalid},
+                    headers=_browser_headers(server),
+                )
+                assert status == 400, body
+                assert _error_code(body) == f"{field}_invalid"
+        assert _current_profile(server) == current
+        assert server.fake_model_provider_probe_transport.calls == 0
+        assert not backend.reads
+        assert not backend.writes
+        assert not backend.deletes
+
+
+def test_openapi_token_budgets_remain_optional_nullable_and_bounded_in_all_variants():
+    contract = yaml.safe_load(OPENAPI.read_text(encoding="utf-8"))
+    schemas = contract["components"]["schemas"]
+    names = [
+        "ModelProviderProfile", "ModelProviderOpenAIPresetUpsertRequest",
+        "ModelProviderDeepSeekPresetUpsertRequest", "ModelProviderCustomPublicUpsertRequest",
+        "ModelProviderCustomLoopbackUpsertRequest",
+    ]
+    for name in names:
+        schema = schemas[name]
+        assert schema["additionalProperties"] is False
+        for field in ("max_input_tokens", "max_output_tokens"):
+            assert field not in schema["required"]
+            limit_schema = {**schema["properties"][field], "components": contract["components"]}
+            validator = Draft202012Validator(limit_schema)
+            for value in (None, 1, 64000, 65536, 1_000_000):
+                assert not list(validator.iter_errors(value))
+            for value in (True, False, 0, -1, 1.5, "8000", [], {}, 1_000_001):
+                assert list(validator.iter_errors(value))
+
+
 @pytest.mark.parametrize(
     ("base_url", "local_policy", "expected_code"),
     [

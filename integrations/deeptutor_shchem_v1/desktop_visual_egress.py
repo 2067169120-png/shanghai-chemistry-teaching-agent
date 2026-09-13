@@ -101,6 +101,8 @@ def _request_policy(profile: Mapping[str, Any]) -> dict[str, Any]:
         str(profile.get("base_url") or ""),
         str(profile.get("model_id") or ""),
         profile.get("api_style"),
+        max_input_tokens=profile.get("max_input_tokens"),
+        max_output_tokens=profile.get("max_output_tokens"),
     )
 
 
@@ -308,10 +310,20 @@ class DesktopVisualEgressService:
     ) -> str:
         lines = [
             f"接收模型：{model_label}。",
-            f"发送内容：本批次已冻结的 {len(pages)} 张原始或本机渲染页面像素。",
+            f"首轮发送内容：本批次已冻结的 {len(pages)} 张原始或本机渲染页面像素。",
             f"每次请求输出上限 {policy['max_output_tokens']} tokens（包含模型推理）；最长等待 {policy['timeout_seconds']} 秒。",
-            "题目、答案、讲义分别分批请求；不会自动重试，失败时不采用残缺结果。",
-            "请在图片预览中逐页检查题面、公共材料、答案页与化学图形；确认后只发送这些冻结像素。",
+            (f"本机输入预算 {policy['max_input_tokens']} tokens（文字及图片估算，非服务商精确用量）。"
+             if policy.get("max_input_tokens") is not None else
+             "未设置本机输入tokens预算（可在模型设置调整，参考64000）；仍保留文件与请求体安全限制。"),
+            "输入超预算不会静默截断，请分批或调整预算；输出上限使用用户设置，实际限制以服务商为准。",
+            "题目、答案、讲义分别分片；每个分片先发送 1 次提取请求。",
+            f"追加图像复核：提取后，每最多 {policy['crop_review_batch_limit']} 条证据裁片分为一组，追加 1 次原页与对应实际裁片的视觉复核请求。",
+            "费用与请求次数：追加复核按提取后的裁片数分组调用并计费；总请求次数在提取完成后才能确定，实际费用按服务商规则计算。",
+            "当前图片预览可查看全部冻结源页；实际裁片在提取后才能生成，尚未在本次发送前预览中展示。",
+            "复核只发送本次冻结源页及从这些页面生成的实际裁片，不加入任何未预览的源页。",
+            "复核也会携带首轮AI观察得到的题目结构、文字和引用关系作为待核对数据，不附加其他本地资料。",
+            "提取或复核失败时不完成导入，不会默认为通过；不会自动重试或自动修复，也不采用残缺结果。",
+            "请在图片预览中逐页检查题面、公共材料、答案页与化学图形，并核对上述追加复核范围。",
             "图内全部可见内容及文件元数据会离开本机；请先核对学校授权，并确认不含未经授权的个人信息。",
         ]
         for index, page in enumerate(pages, 1):
@@ -322,7 +334,7 @@ class DesktopVisualEgressService:
         lines.extend(
             (
                 "确认前不会调用模型；本地预览不会发送页面。",
-                "本次调用可能产生费用，重试可能再次计费。",
+                "本次提取与追加复核均可能产生费用；以后手动重新发起可能再次计费。",
             )
         )
         return "\n".join(lines)

@@ -9,6 +9,7 @@ their own schemas and persistence models.
 """
 
 import base64
+import io
 import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -24,11 +25,18 @@ from .intake_imports import (
     VisualTransport,
     _egress_image,
 )
-from .model_provider_settings import ModelProviderProbeContext
+from .model_provider_settings import MAX_MODEL_TOKEN_LIMIT, ModelProviderProbeContext
 
 MAX_VISUAL_REQUEST_BYTES = 48 * 1024 * 1024
 MAX_VISUAL_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_STRUCTURED_TEXT_REQUEST_BYTES = 2 * 1024 * 1024
+MAX_USER_TOKEN_LIMIT = MAX_MODEL_TOKEN_LIMIT
+MAX_INPUT_IMAGE_PIXELS = 64_000_000
+MAX_TOTAL_INPUT_IMAGE_PIXELS = 320_000_000
+INPUT_TOKEN_FRAMING_RESERVE = 1024
+INPUT_IMAGE_TILE_SIDE = 512
+INPUT_IMAGE_BASE_TOKENS = 256
+INPUT_IMAGE_TILE_TOKENS = 1024
 
 
 class VisualProviderRuntimeError(ValueError):
@@ -136,9 +144,155 @@ def inline_image_payload_size(sizes: Sequence[int]) -> int:
     encoded_bytes = sum(4 * ((size + 2) // 3) for size in sizes)
     if encoded_bytes > MAX_VISUAL_REQUEST_BYTES:
         raise VisualProviderRuntimeError(
-            "visual_request_too_large", "page images exceed the visual request limit", 409
+            "visual_request_too_large",
+            "page images exceed the visual request limit",
+            409,
         )
     return encoded_bytes
+
+
+def _optional_token_limit(context: ModelProviderProbeContext, field: str) -> int | None:
+    value = getattr(context, field, None)
+    if value is not None and (
+        type(value) is not int or not 1 <= value <= MAX_USER_TOKEN_LIMIT
+    ):
+        raise VisualProviderRuntimeError(
+            f"{field}_invalid", "provider token limit is invalid"
+        )
+    return value
+
+
+def _effective_output_limit(
+    context: ModelProviderProbeContext, caller_limit: int, legacy_maximum: int
+) -> int:
+    selected = _optional_token_limit(context, "max_output_tokens")
+    if selected is not None:
+        return selected
+    if type(caller_limit) is not int or not 256 <= caller_limit <= legacy_maximum:
+        raise VisualProviderRuntimeError(
+            "max_output_tokens_invalid", "structured output limit is invalid"
+        )
+    return caller_limit
+
+
+def estimate_input_tokens(prompt: str, pages: Sequence[tuple[str, bytes]]) -> int:
+    """Return a local conservative planning estimate, never provider usage.
+
+    Text contributes one token per UTF-8 byte (a deliberately generous byte
+    bound, not a tokenizer), plus 1,024 reserved framing tokens. Each verified
+    static image contributes 256 + 1,024 * ceil(width/512) * ceil(height/512).
+    Native dimensions are used without vendor downsampling. Image accounting
+    is a conservative software heuristic, not a universal upper bound on
+    vendor-specific tokenization. Builders additionally include schema/model
+    text. No network, paths, OCR, resizing, truncation or credential access.
+
+    The image bytes, format and dimensions are verified before they contribute
+    an estimate; decoding is sequential and bounded. Empty pages is valid for
+    the structured-text sibling. Nothing is sent by this function.
+    """
+    from PIL import Image
+
+    if not isinstance(prompt, str):
+        raise VisualProviderRuntimeError("prompt_invalid", "input prompt is invalid")
+    try:
+        text_size = len(prompt.encode("utf-8"))
+    except UnicodeEncodeError:
+        raise VisualProviderRuntimeError(
+            "prompt_invalid", "input prompt is invalid"
+        ) from None
+    if text_size > MAX_VISUAL_REQUEST_BYTES:
+        raise VisualProviderRuntimeError(
+            "visual_request_too_large", "input exceeds the request limit", 409
+        )
+    if not isinstance(pages, Sequence) or isinstance(pages, (str, bytes)):
+        raise VisualProviderRuntimeError("image_data_invalid", "image data is invalid")
+    if len(pages) > 60:
+        raise VisualProviderRuntimeError(
+            "page_count_unsupported", "visual page count is unsupported", 409
+        )
+    if any(
+        not isinstance(page, (tuple, list))
+        or len(page) != 2
+        or not isinstance(page[0], str)
+        or not isinstance(page[1], bytes)
+        or not page[1]
+        for page in pages
+    ):
+        raise VisualProviderRuntimeError("image_data_invalid", "image data is invalid")
+    inline_image_payload_size([len(raw) for _mime, raw in pages])
+    estimate = text_size + INPUT_TOKEN_FRAMING_RESERVE
+    total_pixels = 0
+    mime_types = {"PNG": "image/png", "JPEG": "image/jpeg", "WEBP": "image/webp"}
+    for mime, raw in pages:
+        try:
+            with Image.open(io.BytesIO(raw)) as source:
+                width, height = source.size
+                if (
+                    mime_types.get(source.format) != mime
+                    or getattr(source, "n_frames", 1) != 1
+                    or width < 1
+                    or height < 1
+                ):
+                    raise VisualProviderRuntimeError(
+                        "image_data_invalid", "image data is invalid"
+                    )
+                total_pixels += width * height
+                if (
+                    width * height > MAX_INPUT_IMAGE_PIXELS
+                    or total_pixels > MAX_TOTAL_INPUT_IMAGE_PIXELS
+                ):
+                    raise VisualProviderRuntimeError(
+                        "image_resource_limit",
+                        "image decoding exceeds the resource limit",
+                        409,
+                    )
+                source.verify()
+            with Image.open(io.BytesIO(raw)) as source:
+                source.load()
+        except VisualProviderRuntimeError:
+            raise
+        except Exception:  # noqa: BLE001 - no decoder text or source bytes may escape
+            raise VisualProviderRuntimeError(
+                "image_data_invalid", "image data is invalid"
+            ) from None
+        tiles = ((width + INPUT_IMAGE_TILE_SIDE - 1) // INPUT_IMAGE_TILE_SIDE) * (
+            (height + INPUT_IMAGE_TILE_SIDE - 1) // INPUT_IMAGE_TILE_SIDE
+        )
+        estimate += INPUT_IMAGE_BASE_TOKENS + INPUT_IMAGE_TILE_TOKENS * tiles
+    return estimate
+
+
+def _check_input_budget(
+    context: ModelProviderProbeContext,
+    *,
+    prompt: str,
+    schema: Mapping[str, Any],
+    schema_name: str,
+    pages: Sequence[tuple[str, bytes]],
+) -> None:
+    selected = _optional_token_limit(context, "max_input_tokens")
+    if selected is None:
+        # Existing profiles did not impose a token estimate. Do not apply a
+        # new default to a previously accepted long lesson or source bundle.
+        return
+    try:
+        auxiliary_text = canonical_json_bytes(
+            {
+                "schema": dict(schema),
+                "schema_name": schema_name,
+                "model": context.model_id,
+            }
+        ).decode("utf-8")
+    except (ValueError, TypeError, UnicodeError, RecursionError):
+        raise VisualProviderRuntimeError(
+            "schema_invalid", "structured schema is invalid"
+        ) from None
+    if estimate_input_tokens(prompt + auxiliary_text, pages) > selected:
+        raise VisualProviderRuntimeError(
+            "input_budget_exceeded",
+            "本次完整输入的本机估算 token 超过自定上限；未截断文字或图片，未发送请求。",
+            409,
+        )
 
 
 def build_structured_visual_request(
@@ -152,8 +306,10 @@ def build_structured_visual_request(
 ) -> VisualProviderRequest:
     """Attach page bytes directly to a strict multimodal request.
 
-    ``prompt`` must contain only caller-approved manifest/rubric data.  No
-    recognized text, derived text boxes, or fallback text parameter exists.
+    ``prompt`` contains caller-approved instructions and source manifest data.
+    A crop-review call may also include prior visual-model observations as
+    explicitly untrusted context to compare against the attached real pixels.
+    No OCR/document-text fallback parameter replaces the images.
     """
 
     if not isinstance(prompt, str) or not prompt.strip():
@@ -166,13 +322,13 @@ def build_structured_visual_request(
         raise VisualProviderRuntimeError(
             "page_count_unsupported", "visual page count is unsupported", 409
         )
-    if not 256 <= max_output_tokens <= 32000:
-        raise VisualProviderRuntimeError(
-            "max_output_tokens_invalid", "visual output limit is invalid"
-        )
+    max_output_tokens = _effective_output_limit(context, max_output_tokens, 32000)
     if any(not isinstance(raw, bytes) for _mime, raw in pages):
         raise VisualProviderRuntimeError("image_data_invalid", "image data is invalid")
     inline_image_payload_size([len(raw) for _mime, raw in pages])
+    _check_input_budget(
+        context, prompt=prompt, schema=schema, schema_name=schema_name, pages=pages
+    )
     api_style, host, port, path, endpoint_scope = _endpoint(context)
     if api_style == "responses":
         content: list[dict[str, Any]] = [{"type": "input_text", "text": prompt}]
@@ -263,12 +419,16 @@ def build_structured_visual_request(
 
 
 def structured_text_output_limit(context: ModelProviderProbeContext) -> int:
-    """Bound known V4 reasoning+text budgets without changing other providers.
+    """Return the user's output choice, otherwise the legacy recommendation.
 
     Official Responses docs count reasoning inside max_output_tokens. The
-    documented V4 maximum is larger; 65,536 is our bounded preparation budget.
+    documented V4 maximum is larger; 65,536 is our default preparation budget.
+    Recommendations do not constrain an explicit user setting.
     https://api-docs.deepseek.com/quick_start/pricing/
     """
+    selected = _optional_token_limit(context, "max_output_tokens")
+    if selected is not None:
+        return selected
     if urlsplit(
         context.base_url
     ).hostname == "api.deepseek.com" and context.model_id in {
@@ -308,14 +468,12 @@ def build_structured_text_request(
         raise VisualProviderRuntimeError(
             "schema_name_invalid", "structured text schema name is invalid"
         )
-    if type(
-        max_output_tokens
-    ) is not int or not 256 <= max_output_tokens <= structured_text_output_limit(
-        context
-    ):
-        raise VisualProviderRuntimeError(
-            "max_output_tokens_invalid", "structured output limit is invalid"
-        )
+    max_output_tokens = _effective_output_limit(
+        context, max_output_tokens, structured_text_output_limit(context)
+    )
+    _check_input_budget(
+        context, prompt=prompt, schema=schema, schema_name=schema_name, pages=()
+    )
     api_style, host, port, path, endpoint_scope = _endpoint(context)
     if api_style == "responses":
         body_value: dict[str, Any] = {
@@ -595,9 +753,11 @@ __all__ = [
     "build_structured_text_request",
     "build_structured_visual_request",
     "canonical_json_bytes",
+    "estimate_input_tokens",
     "inline_image_payload_size",
     "parse_structured_visual_response",
     "prepare_egress_image",
     "strict_json_loads",
     "structured_response_summary",
+    "structured_text_output_limit",
 ]

@@ -5,6 +5,7 @@ import json
 import zipfile
 from collections.abc import Mapping
 from copy import deepcopy
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,7 @@ from integrations.deeptutor_shchem_v1.desktop_facade import (
     DesktopFacadeError,
     DesktopWorkbenchFacade,
     ProviderProfileInput,
+    _visual_failure_codes_from_blockers,
 )
 from integrations.deeptutor_shchem_v1.desktop_paths import DesktopPaths
 from integrations.deeptutor_shchem_v1.desktop_state import DesktopStateStore
@@ -533,6 +535,143 @@ def test_provider_facade_uses_secure_store_and_never_returns_or_writes_key(
     for path in desktop_paths.settings_root.iterdir():
         if path.is_file():
             assert secret.encode() not in path.read_bytes()
+
+
+@pytest.mark.parametrize("limits", [
+    {}, {"max_input_tokens": None, "max_output_tokens": None},
+    {"max_input_tokens": 64000, "max_output_tokens": 65536},
+    {"max_input_tokens": 1, "max_output_tokens": 1_000_000},
+])
+def test_provider_facade_roundtrips_optional_token_limits(
+    desktop_paths: DesktopPaths, limits: dict[str, int | None],
+) -> None:
+    backend = FakeCredentialBackend()
+    store = ModelProviderSettingsStore(
+        desktop_paths.settings_root, project_root=desktop_paths.workspace_root,
+        credential_backend=backend,
+    )
+    facade = build_facade(desktop_paths, provider=store)
+    request = ProviderProfileInput(
+        provider_name="合成配置", base_url="https://models.example/v1",
+        model_id="synthetic-model", **limits,
+    )
+    summary = facade.save_provider_profile(request)
+    assert summary.max_input_tokens == limits.get("max_input_tokens")
+    assert summary.max_output_tokens == limits.get("max_output_tokens")
+    assert facade.list_provider_profiles() == (summary,)
+    updated = facade.save_provider_profile(replace(
+        request, max_input_tokens=128000, max_output_tokens=128000,
+    ))
+    assert updated.revision != summary.revision
+    assert updated.max_input_tokens == updated.max_output_tokens == 128000
+    cleared = facade.save_provider_profile(replace(
+        request, max_input_tokens=None, max_output_tokens=None,
+    ))
+    assert cleared.max_input_tokens is cleared.max_output_tokens is None
+    assert not backend.values
+
+
+@pytest.mark.parametrize("field", ["max_input_tokens", "max_output_tokens"])
+@pytest.mark.parametrize("invalid", [True, False, 0, -1, 1.5, "8000", [], {}, 1_000_001])
+def test_provider_facade_rejects_invalid_token_limits_before_store_access(
+    desktop_paths: DesktopPaths, field: str, invalid: object,
+) -> None:
+    class NoAccessStore(EmptyProviderStore):
+        def list_metadata(self) -> list[dict[str, Any]]:
+            raise AssertionError("Invalid limits cannot read or mutate provider state")
+
+    facade = build_facade(desktop_paths, provider=NoAccessStore())
+    request = ProviderProfileInput(
+        provider_name="合成配置", base_url="https://models.example/v1",
+        model_id="synthetic-model", **{field: invalid},
+    )
+    with pytest.raises(DesktopFacadeError) as caught:
+        facade.save_provider_profile(request)
+    assert caught.value.code == f"{field}_invalid"
+    assert "1 至 1000000" in caught.value.message_zh
+
+
+def test_legacy_profile_summary_keeps_none_and_authoritative_empty_capabilities() -> None:
+    summary = DesktopWorkbenchFacade._profile_summary({
+        "profile_id": "synthetic", "capabilities": ["text", "vision", "structured_output"],
+        "effective_capabilities": [],
+    })
+    assert summary.max_input_tokens is summary.max_output_tokens is None
+    assert summary.capabilities == ()
+
+
+def test_clearing_token_limits_invalidates_previous_test_without_touching_key(
+    desktop_paths: DesktopPaths, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    backend = FakeCredentialBackend()
+    store = ModelProviderSettingsStore(
+        desktop_paths.settings_root, project_root=desktop_paths.workspace_root,
+        credential_backend=backend,
+    )
+    facade = build_facade(desktop_paths, provider=store)
+    request = ProviderProfileInput(
+        provider_name="合成配置", base_url="https://models.example/v1",
+        model_id="synthetic-model", max_input_tokens=64000, max_output_tokens=65536,
+    )
+    configured = facade.save_provider_profile(replace(
+        request, key_value="sk-test-only-not-a-real-key-clear-budget",
+    ))
+    failed_probe = {
+        "status": "failed", "checked_at": "2026-09-13T01:00:00Z",
+        "error_code": "timeout", "model_invoked": False,
+        "probe_run_id": "probe_" + "a" * 32,
+        "receipt_id": "probe-receipt-" + "b" * 32,
+        "receipt_sha256": "c" * 64, "latency_ms": 100,
+    }
+    assert store.commit_probe_result(
+        request.profile_id, expected_revision=configured.revision, last_probe=failed_probe,
+    )
+    tested = facade.list_provider_profiles()[0]
+    assert tested.last_connection_test is not None
+    saved_fake_values = dict(backend.values)
+
+    def no_credential_access(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("A token budget edit cannot borrow or mutate a credential")
+
+    for method in ("read", "write", "delete"):
+        monkeypatch.setattr(backend, method, no_credential_access)
+    cleared = facade.save_provider_profile(replace(
+        request, max_input_tokens=None, max_output_tokens=None,
+    ))
+    assert cleared.revision != tested.revision
+    assert cleared.last_connection_test is None
+    assert cleared.key_saved is True
+    assert cleared.max_input_tokens is cleared.max_output_tokens is None
+    assert store.list_metadata()[0]["last_probe"] is None
+    assert backend.values == saved_fake_values
+    assert not store.commit_probe_result(
+        request.profile_id, expected_revision=tested.revision, last_probe=failed_probe,
+    )
+
+
+@pytest.mark.parametrize("code", [
+    "input_budget_exceeded", "max_input_tokens_invalid", "max_output_tokens_invalid",
+    "user_input_budget_invalid", "user_output_budget_invalid",
+])
+def test_user_budget_failure_guidance_is_actionable_without_provider_diagnostics(code: str) -> None:
+    private = "synthetic-private-provider-response-do-not-display"
+    codes = _visual_failure_codes_from_blockers(
+        [{"code": code, "message": private, "api_key": private}], failed=True
+    )
+    assert codes == (code,)
+    message = DesktopWorkbenchFacade._visual_import_message("failed", "failed", codes)
+    assert private not in message
+    assert "模型设置" in message
+    assert "不是 DNS 或网络错误" in message
+    if code == "input_budget_exceeded":
+        assert "没有发送该超限请求" in message
+        assert "没有截断" in message
+        assert "可能已计费" in message
+        assert "不会自动重试" in message
+    else:
+        assert "1 至 1000000" in message
+        assert "留空采用默认" in message
+    assert "已读取" not in message
 
 
 def test_paper_and_preparation_drafts_have_honest_blockers(

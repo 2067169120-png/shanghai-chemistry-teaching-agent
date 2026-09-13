@@ -8,6 +8,7 @@ import hashlib
 import json
 import threading
 import time
+from collections.abc import Mapping
 from copy import deepcopy
 from urllib.parse import urlsplit
 from uuid import uuid4
@@ -27,6 +28,10 @@ from .desktop_word_question_attributes import (
     validate_attributes,
 )
 from .intake_imports import PinnedVisualTransport
+from .model_provider_settings import (
+    ModelProviderSettingsError,
+    validate_model_token_limit,
+)
 from .visual_provider_runtime import (
     build_structured_text_request,
     build_structured_visual_request,
@@ -34,15 +39,16 @@ from .visual_provider_runtime import (
     structured_response_summary,
 )
 
-REVISION = "word-semantic-tags-20260913-v3-output-budget"
+REVISION = "word-semantic-tags-20260913-v4-user-token-budget"
 
 
 def tag_request_policy(policy):
-    """Keep reasoning enabled, with a disclosed, provider-specific hard cap.
+    """Disclose the exact user budget, otherwise retain route recommendations.
 
     DeepSeek Responses counts reasoning inside max_output_tokens:
     https://api-docs.deepseek.com/api/create-response/
-    Unknown/custom endpoints and models retain the existing small budget.
+    Empty user settings retain the existing provider-specific route budget.
+    Input budgets are local estimates only, never a fabricated API parameter.
     """
     known_v4 = False
     try:
@@ -64,10 +70,21 @@ def tag_request_policy(policy):
         )
     except (ValueError, TypeError, AttributeError):
         pass
-    return {
+    result = {
         "max_output_tokens": 32000 if known_v4 else 8192,
         "timeout_seconds": 300 if known_v4 else 180,
     }
+    values = policy if isinstance(policy, Mapping) else {}
+    for field in ("max_input_tokens", "max_output_tokens"):
+        try:
+            selected = validate_model_token_limit(values.get(field), field=field)
+        except ModelProviderSettingsError as exc:
+            raise WordSemanticTagError(
+                "模型输入或输出预算无效，请重新保存模型配置。", code=exc.code
+            ) from None
+        if selected is not None:
+            result[field] = selected
+    return result
 
 
 class WordSemanticTagError(ValueError):
@@ -330,6 +347,7 @@ class WordSemanticTagService:
                 for block, kind in source_blocks
             ]
             try:
+                dimension_assets = []
                 for (block, _kind), entry in zip(
                     source_blocks, unit["input"]["blocks"], strict=True
                 ):
@@ -340,10 +358,10 @@ class WordSemanticTagService:
                             "原题含尚不可读的公式或图形，请先核对原Word"
                         )
                     for asset in block.get("assets", []):
-                        self.facade._preparation_image_policy(
-                            {"image_input_mode": "vision", "image_assets": [asset]},
-                            profile_id,
-                            profile_revision,
+                        require_preparation_vision_policy(
+                            self.facade._providers.invocation_policy(
+                                profile_id, expected_revision=profile_revision
+                            )
                         )
                         value = self.words.reader.word_asset_bytes(
                             inventory[row["source_id"]][0].content,
@@ -353,7 +371,6 @@ class WordSemanticTagService:
                         )
                         raw = value["bytes"]
                         sha = hashlib.sha256(raw).hexdigest()
-                        info = image_info(raw)
                         if value.get("derived_preview") is True:
                             if (
                                 value.get("original_sha256") != asset["sha256"]
@@ -362,8 +379,10 @@ class WordSemanticTagService:
                                 raise WordSemanticTagError("原图转换摘要不一致")
                         elif sha != asset["sha256"]:
                             raise WordSemanticTagError("原图摘要不一致")
+                        info = image_info(raw)
                         entry["image_sha256s"].append(sha)
                         if sha not in {i["sha256"] for i in unit["images"]}:
+                            dimension_assets.append({**asset, **info})
                             unit["images"].append(
                                 {
                                     "sha256": sha,
@@ -376,6 +395,18 @@ class WordSemanticTagService:
                             total_bytes += len(raw)
                 if len(unit["images"]) > 60:
                     raise WordSemanticTagError("单题图片超过60张，请先核对题目范围")
+                if dimension_assets:
+                    # Word asset descriptors have no dimensions. Use only
+                    # hash-bound decoded bytes, and check the complete image
+                    # count together for count-dependent vendor limits.
+                    self.facade._preparation_image_policy(
+                        {
+                            "image_input_mode": "vision",
+                            "image_assets": dimension_assets,
+                        },
+                        profile_id,
+                        profile_revision,
+                    )
             except (ValueError, RuntimeError, OSError, KeyError, TypeError) as exc:
                 unit.update(
                     status="blocked",
@@ -504,12 +535,18 @@ class WordSemanticTagService:
                                 {
                                     "base_url": context.base_url,
                                     "model_id": context.model_id,
+                                    "max_input_tokens": getattr(
+                                        context, "max_input_tokens", None
+                                    ),
+                                    "max_output_tokens": getattr(
+                                        context, "max_output_tokens", None
+                                    ),
                                 }
                             )
                             != plan["request_policy"]
                         ):
                             raise WordSemanticTagError(
-                                "模型输出预算已变，请重新预览；本题未调用。"
+                                "模型输入或输出预算已变，请重新预览；本题未调用。"
                             )
                         if unit["images"]:
                             require_preparation_vision_policy(

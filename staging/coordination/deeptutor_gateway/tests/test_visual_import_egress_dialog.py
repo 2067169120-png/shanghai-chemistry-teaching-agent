@@ -18,6 +18,12 @@ import pytest
 from PIL import Image
 from PySide6.QtWidgets import QApplication, QDialog
 
+from integrations.deeptutor_shchem_v1.desktop_visual_egress import (
+    DesktopVisualEgressService,
+)
+from integrations.deeptutor_shchem_v1.desktop_visual_schema import (
+    visual_import_request_policy,
+)
 from integrations.deeptutor_shchem_v1.desktop_workbench.preparation_images_widget import (
     _LocalImagePreview,
 )
@@ -60,14 +66,17 @@ def _plan_for(
                 "mime_type": "image/png",
             }
         )
+    model_label = "合成视觉模型 / 不调用网络"
+    policy = visual_import_request_policy("https://example.invalid/v1", "synthetic-vision", "responses")
     return (
         {
             "preview_id": "PREVIEW-SYNTHETIC-1",
             "revision": "REV-SYNTHETIC-1",
             "batch_id": "BATCH-SYNTHETIC-1",
-            "model_label": "合成视觉模型 / 不调用网络",
+            "model_label": model_label,
             "pages": pages,
-            "confirmation_text": "仅用于合成测试的冻结导入清单；确认前不会调用模型。",
+            "request_policy": policy,
+            "confirmation_text": DesktopVisualEgressService._confirmation_text(model_label, pages, policy),
         },
         contents,
     )
@@ -184,6 +193,25 @@ def test_request_budget_is_visible_alongside_image_not_only_in_fee_tab(app):
     _flush(app, dialog)
     assert "32000" in dialog.summary.text() and "300" in dialog.summary.text()
     assert dialog.tabs.currentIndex() == 0 and dialog.image_preview.has_image
+    _close(dialog)
+
+
+def test_default_gallery_discloses_additional_review_cost_and_uncreated_crops(app):
+    plan, contents = _plan_for([
+        ("冻结题目原页", "question", (200, 20, 20), (48, 32)),
+        ("冻结答案原页", "answer", (20, 200, 20), (48, 32)),
+    ])
+    dialog, _ = _dialog_for(plan, contents)
+    _flush(app, dialog)
+    assert dialog.tabs.currentIndex() == 0
+    assert dialog.image_list.count() == len(plan["pages"]) == 2
+    assert "提取后追加原页与实际裁片的图像复核" in dialog.summary.text()
+    assert "每组最多 8 条裁片" in dialog.summary.text()
+    assert "按裁片数分组计费，请求次数在提取后确定" in dialog.summary.text()
+    assert "复核失败不完成导入，不会自动重试" in dialog.summary.text()
+    assert "当前预览为全部冻结源页；实际裁片提取后才能生成，仅来自这些源页" in dialog.summary.text()
+    assert "尚未在本次发送前预览中展示" in dialog.disclosure.toPlainText()
+    assert dialog.confirm_button.isEnabled() and dialog.image_preview.has_image
     _close(dialog)
 
 

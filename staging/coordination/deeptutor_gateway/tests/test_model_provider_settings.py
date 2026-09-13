@@ -111,6 +111,162 @@ def create_profile(store: ModelProviderSettingsStore) -> dict[str, object]:
     return store.upsert_metadata(profile(), expected_revision=None)
 
 
+@pytest.mark.parametrize("limits", [
+    {}, {"max_input_tokens": None, "max_output_tokens": None},
+    {"max_input_tokens": 1}, {"max_output_tokens": 1},
+    {"max_input_tokens": 64000, "max_output_tokens": 65536},
+    {"max_input_tokens": 1_000_000, "max_output_tokens": 1_000_000},
+])
+def test_user_token_limits_roundtrip_without_credential_access(
+    store: ModelProviderSettingsStore,
+    roots: tuple[Path, Path],
+    backend: FakeCredentialBackend,
+    limits: dict[str, int | None],
+) -> None:
+    created = store.upsert_metadata(profile(**limits), expected_revision=None)
+    reloaded = ModelProviderSettingsStore(
+        roots[1], project_root=roots[0], credential_backend=backend
+    )
+    listed = reloaded.list_metadata()[0]
+    policy = reloaded.invocation_policy(
+        "teacher-default", expected_revision=str(created["revision"])
+    )
+    stored = json.loads((roots[1] / SETTINGS_FILE_NAME).read_text(encoding="utf-8"))
+    for field in ("max_input_tokens", "max_output_tokens"):
+        for value in (created, listed, policy, stored["profiles"][0]):
+            assert value[field] == limits.get(field)
+    assert listed["revision"] == created["revision"]
+    assert not backend.read_calls
+    assert not backend.write_calls
+    assert not backend.delete_calls
+
+
+@pytest.mark.parametrize("field", ["max_input_tokens", "max_output_tokens"])
+@pytest.mark.parametrize("invalid", [True, False, 0, -1, 1.0, 8000.5, "8000", [], {}, 1_000_001])
+def test_invalid_user_token_limit_is_rejected_before_mutation(
+    store: ModelProviderSettingsStore,
+    roots: tuple[Path, Path],
+    backend: FakeCredentialBackend,
+    field: str,
+    invalid: object,
+) -> None:
+    with pytest.raises(ModelProviderSettingsError) as caught:
+        store.upsert_metadata(profile(**{field: invalid}), expected_revision=None)
+    assert caught.value.code == f"{field}_invalid"
+    assert not (roots[1] / SETTINGS_FILE_NAME).exists()
+    assert not backend.read_calls
+    assert not backend.write_calls
+    assert not backend.delete_calls
+
+
+@pytest.mark.parametrize("field", ["max_input_tokens", "max_output_tokens"])
+def test_token_limit_change_and_clear_rotate_revision_without_touching_key(
+    store: ModelProviderSettingsStore, backend: FakeCredentialBackend, field: str,
+) -> None:
+    created = create_profile(store)
+    changed = store.upsert_metadata(
+        profile(**{field: 65536}), expected_revision=str(created["revision"])
+    )
+    cleared = store.upsert_metadata(
+        profile(**{field: None}), expected_revision=str(changed["revision"])
+    )
+    assert len({created["revision"], changed["revision"], cleared["revision"]}) == 3
+    assert changed[field] == 65536
+    assert cleared[field] is None
+    with pytest.raises(ModelProviderSettingsError) as caught:
+        store.invocation_policy("teacher-default", expected_revision=str(changed["revision"]))
+    assert caught.value.code == "revision_conflict"
+    assert not backend.read_calls
+    assert not backend.write_calls
+    assert not backend.delete_calls
+
+
+@pytest.mark.parametrize("limits", [
+    {}, {"max_input_tokens": 64000, "max_output_tokens": 65536},
+])
+@pytest.mark.parametrize("method", ["borrow_probe_context", "borrow_invocation_context"])
+def test_borrowed_context_keeps_user_token_limits_or_none(
+    store: ModelProviderSettingsStore,
+    backend: FakeCredentialBackend,
+    limits: dict[str, int],
+    method: str,
+) -> None:
+    created = store.upsert_metadata(profile(**limits), expected_revision=None)
+    configured = store.put_credential(
+        "teacher-default", SECRET_ONE, expected_revision=str(created["revision"])
+    )
+    backend.read_calls.clear()
+    with getattr(store, method)(
+        "teacher-default", expected_revision=str(configured["revision"])
+    ) as context:
+        assert context.max_input_tokens == limits.get("max_input_tokens")
+        assert context.max_output_tokens == limits.get("max_output_tokens")
+        assert SECRET_ONE not in repr(context)
+    assert len(backend.read_calls) == 1
+
+
+@pytest.mark.parametrize("legacy", [False, True])
+@pytest.mark.parametrize("present_limit", [None, "max_input_tokens", "max_output_tokens"])
+def test_old_metadata_load_keeps_bytes_revision_and_does_not_borrow(
+    store: ModelProviderSettingsStore,
+    roots: tuple[Path, Path],
+    backend: FakeCredentialBackend,
+    monkeypatch: pytest.MonkeyPatch,
+    legacy: bool,
+    present_limit: str | None,
+) -> None:
+    created = create_profile(store)
+    settings_path = roots[1] / SETTINGS_FILE_NAME
+    raw = json.loads(settings_path.read_text(encoding="utf-8"))
+    stored = raw["profiles"][0]
+    stored.pop("max_input_tokens")
+    stored.pop("max_output_tokens")
+    if present_limit:
+        stored[present_limit] = 65536
+    if legacy:
+        for field in ("provider_kind", "display_name", "base_url", "api_style",
+                      "local_endpoint_policy", "endpoint_scope"):
+            stored.pop(field)
+    settings_path.write_text(json.dumps(raw), encoding="utf-8")
+    before = settings_path.read_bytes()
+    reloaded = ModelProviderSettingsStore(
+        roots[1], project_root=roots[0], credential_backend=backend
+    )
+    def reject_write(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("Read-only load cannot migrate metadata")
+    monkeypatch.setattr(ModelProviderSettingsStore, "_save_unlocked", reject_write)
+    listed = reloaded.list_metadata()[0]
+    for field in ("max_input_tokens", "max_output_tokens"):
+        assert listed[field] == (65536 if field == present_limit else None)
+    assert listed["revision"] == created["revision"]
+    assert settings_path.read_bytes() == before
+    assert not backend.read_calls
+    assert not backend.write_calls
+    assert not backend.delete_calls
+
+
+@pytest.mark.parametrize("field", ["max_input_tokens", "max_output_tokens"])
+@pytest.mark.parametrize("invalid", [True, 0, -1, 8.5, "65536", {}, 1_000_001])
+def test_invalid_stored_token_limit_fails_closed_without_mutation(
+    store: ModelProviderSettingsStore,
+    roots: tuple[Path, Path],
+    backend: FakeCredentialBackend,
+    field: str,
+    invalid: object,
+) -> None:
+    create_profile(store)
+    settings_path = roots[1] / SETTINGS_FILE_NAME
+    raw = json.loads(settings_path.read_text(encoding="utf-8"))
+    raw["profiles"][0][field] = invalid
+    settings_path.write_text(json.dumps(raw), encoding="utf-8")
+    before = settings_path.read_bytes()
+    with pytest.raises(ModelProviderSettingsError) as caught:
+        store.list_metadata()
+    assert caught.value.code == "settings_corrupt"
+    assert settings_path.read_bytes() == before
+    assert not backend.read_calls
+
+
 def test_metadata_and_credential_are_strictly_separated_and_responses_are_redacted(
     store: ModelProviderSettingsStore,
     roots: tuple[Path, Path],

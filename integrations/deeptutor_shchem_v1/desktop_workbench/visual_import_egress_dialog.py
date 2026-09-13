@@ -78,11 +78,22 @@ class VisualImportEgressDialog(PreparationEgressDialog):
                 budget = (
                     f"\n单次输出上限 {policy['max_output_tokens']} tokens（含推理）"
                     f" · 最长等待 {policy['timeout_seconds']} 秒"
+                    + (f"\n输入预算 {policy['max_input_tokens']} tokens（估算）"
+                       if policy.get("max_input_tokens") is not None else
+                       "\n输入预算未设置（参考 64000）；可在模型设置调整输入与输出限额")
                 )
             self.summary.setText(
                 f"接收模型：{self._plan['model_label']}\n"
-                f"{len(assets)} 页整页图片 · 点击缩略图切换，放大检查内容与边界"
+                f"{len(assets)} 页冻结源页 · 点击缩略图切换，放大检查内容与边界"
                 + budget
+                + (
+                    f"\n提取后追加原页与实际裁片的图像复核，每组最多 {policy['crop_review_batch_limit']} 条裁片。"
+                    "\n追加调用按裁片数分组计费，请求次数在提取后确定；复核失败不完成导入，不会自动重试。"
+                    "\n当前预览为全部冻结源页；实际裁片提取后才能生成，仅来自这些源页。"
+                    if isinstance(policy, dict) and policy.get("crop_review_required") is True
+                    and type(policy.get("crop_review_batch_limit")) is int
+                    and policy["crop_review_batch_limit"] > 0 else ""
+                )
             )
         self.image_list.setAccessibleName("本次实际发送的题目、答案与讲义页面")
         self.confirm_button.setText("确认发送并识别")

@@ -16,7 +16,9 @@ from .model_provider_settings import ModelProviderProbeContext
 
 _MAX_SCHEMA_DEPTH = 64
 _MAX_SCHEMA_NODES = 10_000
-VISUAL_OBSERVATION_PROMPT_VERSION = "normalized-xywh-roles-pages-v4"
+VISUAL_OBSERVATION_PROMPT_VERSION = "normalized-xywh-roles-pages-v5"
+VISUAL_CROP_REVIEW_VERSION = "source-page-actual-crops-v1"
+VISUAL_CROP_REVIEW_BATCH_LIMIT = 8
 _SCHEMA_KEYS = {
     "$ref",
     "type",
@@ -35,9 +37,20 @@ class DesktopVisualSchemaError(ValueError):
 
 
 def visual_import_request_policy(
-    base_url: str, model_id: str, api_style: str
+    base_url: str, model_id: str, api_style: str, *,
+    max_input_tokens: int | None = None, max_output_tokens: int | None = None,
 ) -> dict[str, Any]:
     """Expose the same route-specific limits to approval and request building."""
+    for value in (max_input_tokens, max_output_tokens):
+        if value is not None and (type(value) is not int or not 1 <= value <= 1_000_000):
+            raise DesktopVisualSchemaError("user token budget is invalid")
+    review_policy = {
+        "max_input_tokens": max_input_tokens,
+        "observation_prompt_version": VISUAL_OBSERVATION_PROMPT_VERSION,
+        "crop_review_version": VISUAL_CROP_REVIEW_VERSION,
+        "crop_review_batch_limit": VISUAL_CROP_REVIEW_BATCH_LIMIT,
+        "crop_review_required": True,
+    }
     try:
         endpoint = urlsplit(base_url)
         official_endpoint = (
@@ -60,16 +73,16 @@ def visual_import_request_policy(
         # reasoning and returned no fragment. Keep reasoning enabled and make
         # the bounded increase visible in the matching approval snapshot.
         return {
-            "max_output_tokens": 32000,
+            "max_output_tokens": max_output_tokens if max_output_tokens is not None else 32000,
             "timeout_seconds": 300,
             "schema_dialect": "inline-v1",
-            "observation_prompt_version": VISUAL_OBSERVATION_PROMPT_VERSION,
+            **review_policy,
         }
     return {
-        "max_output_tokens": 8000,
+        "max_output_tokens": max_output_tokens if max_output_tokens is not None else 8000,
         "timeout_seconds": 90,
         "schema_dialect": "canonical-v2",
-        "observation_prompt_version": VISUAL_OBSERVATION_PROMPT_VERSION,
+        **review_policy,
     }
 
 
@@ -262,6 +275,8 @@ def _inline_observation_schema(schema: Mapping[str, Any]) -> dict[str, Any]:
 
 
 __all__ = [
+    "VISUAL_CROP_REVIEW_BATCH_LIMIT",
+    "VISUAL_CROP_REVIEW_VERSION",
     "VISUAL_OBSERVATION_PROMPT_VERSION",
     "DesktopVisualSchemaError",
     "desktop_visual_page_schema",

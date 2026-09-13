@@ -22,10 +22,11 @@ def test_desktop_entrypoints_exist_and_default_to_native_app() -> None:
     assert "desktop_teacher_workbench.pyw" in start_text
     assert 'appname & ".exe"' in start_text
     package_entries = re.findall(
-        r"desktop_(?:package|dist)_[0-9.]+(?:-wmf|-tags|-lessons|-visual-questions|-egress|-import-feedback|-import-roles|-visual-tags|-crop-preview)?(?:-r[0-9]+)?", start_text
+        r"desktop_(?:package|dist)_[0-9.]+(?:-wmf|-tags|-lessons|-visual-questions|-egress|-import-feedback|-import-roles|-visual-tags|-crop-preview|-api-crop-review)?(?:-r[0-9]+)?", start_text
     )
     assert package_entries == [
-        f"desktop_dist_{DESKTOP_VERSION}-crop-preview",
+        f"desktop_dist_{DESKTOP_VERSION}-api-crop-review-r2",
+        "desktop_dist_0.1.79-crop-preview",
         "desktop_dist_0.1.78-visual-tags",
         "desktop_dist_0.1.77-import-roles",
         "desktop_dist_0.1.76-import-feedback-r2",

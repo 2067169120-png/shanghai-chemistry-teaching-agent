@@ -349,7 +349,7 @@ def initial_attributes(row, snapshot, pages, printed, catalog):
                         image["role"] == "answer" for image in images
                     ),
                     "missing_visual": not any(
-                        image["role"] == "question" for image in images
+                        image["role"] != "answer" for image in images
                     ),
                     "missing_context": False,
                     "warnings": deepcopy(row["warnings"]),

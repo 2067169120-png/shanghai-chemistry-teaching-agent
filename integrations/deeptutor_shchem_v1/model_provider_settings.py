@@ -23,6 +23,8 @@ SETTINGS_FILE_NAME = "model-provider-settings.v1.json"
 LOCK_FILE_NAME = ".model-provider-settings.v1.lock"
 CREDENTIAL_TARGET_PREFIX = "ShanghaiChemWorkbench/model-provider/"
 MODEL_PROVIDER_SETTINGS_WRITE_CAPABILITY = "model_provider_settings_write"
+# A local resource safety ceiling, not a claim about any model's capabilities.
+MAX_MODEL_TOKEN_LIMIT = 1_000_000
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
 _MODEL_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,239}$")
@@ -120,6 +122,20 @@ class CredentialBackendUnavailable(ModelProviderSettingsError):
         )
 
 
+def validate_model_token_limit(value: Any, *, field: str) -> int | None:
+    """Keep None as the route recommendation; reject coercion and unsafe limits."""
+
+    if field not in {"max_input_tokens", "max_output_tokens"}:
+        raise ModelProviderSettingsError("token_limit_invalid", "token limit field is invalid")
+    if value is not None and (
+        type(value) is not int or not 1 <= value <= MAX_MODEL_TOKEN_LIMIT
+    ):
+        raise ModelProviderSettingsError(
+            f"{field}_invalid", "token limit must be an integer from 1 to 1000000 or null"
+        )
+    return value
+
+
 class CredentialBackend(Protocol):
     """Minimal injectable credential backend.
 
@@ -175,6 +191,10 @@ class ModelProviderProbeContext:
     provider_kind: str = "preset"
     api_style: str = ""
     local_endpoint_policy: str = "deny"
+    # None leaves recommendation selection to the caller. Input is a local
+    # estimate budget, not a generic provider API parameter.
+    max_input_tokens: int | None = None
+    max_output_tokens: int | None = None
 
     def __repr__(self) -> str:
         return (
@@ -1187,6 +1207,8 @@ class ModelProviderSettingsStore:
             "allowed_data_classes",
             "image_egress",
             "last_probe",
+            "max_input_tokens",
+            "max_output_tokens",
         }:
             raise ModelProviderSettingsError(
                 "profile_invalid", "invalid model provider profile"
@@ -1201,6 +1223,12 @@ class ModelProviderSettingsStore:
         model_id = _validate_model_id(value.get("model_id"))
         base_url_policy = value.get("base_url_policy")
         supplied_capabilities = value.get("capabilities")
+        max_input_tokens = validate_model_token_limit(
+            value.get("max_input_tokens"), field="max_input_tokens"
+        )
+        max_output_tokens = validate_model_token_limit(
+            value.get("max_output_tokens"), field="max_output_tokens"
+        )
         if provider_kind == "preset":
             if not isinstance(provider_id, str):
                 raise ModelProviderSettingsError(
@@ -1384,6 +1412,8 @@ class ModelProviderSettingsStore:
             "allowed_data_classes": list(data_classes),
             "image_egress": image_egress,
             "last_probe": _validate_last_probe(value.get("last_probe")),
+            "max_input_tokens": max_input_tokens,
+            "max_output_tokens": max_output_tokens,
         }
 
     def _validate_stored_profile(self, value: Any) -> dict[str, Any]:
@@ -1407,10 +1437,10 @@ class ModelProviderSettingsStore:
             "local_endpoint_policy",
             "endpoint_scope",
         }
-        if not isinstance(value, dict) or frozenset(value) not in {
-            frozenset(legacy_fields),
-            frozenset(current_fields),
-        }:
+        optional_token_fields = {"max_input_tokens", "max_output_tokens"}
+        if not isinstance(value, dict) or frozenset(value.keys() - optional_token_fields) not in (
+            frozenset(legacy_fields), frozenset(current_fields)
+        ):
             raise ModelProviderSettingsError(
                 "settings_corrupt", "model provider settings are invalid", 503
             )
@@ -1792,6 +1822,8 @@ class ModelProviderSettingsStore:
                 provider_kind=profile["provider_kind"],
                 api_style=profile["api_style"],
                 local_endpoint_policy=profile["local_endpoint_policy"],
+                max_input_tokens=profile["max_input_tokens"],
+                max_output_tokens=profile["max_output_tokens"],
             )
         try:
             yield context
@@ -1922,6 +1954,8 @@ class ModelProviderSettingsStore:
             "allowed_data_classes": list(profile["allowed_data_classes"]),
             "image_egress": profile["image_egress"],
             "revision": profile["revision"],
+            "max_input_tokens": profile["max_input_tokens"],
+            "max_output_tokens": profile["max_output_tokens"],
         }
 
 
@@ -1929,6 +1963,7 @@ __all__ = [
     "CREDENTIAL_TARGET_PREFIX",
     "DEFAULT_PROVIDER_POLICIES",
     "LOCK_FILE_NAME",
+    "MAX_MODEL_TOKEN_LIMIT",
     "MODEL_PROVIDER_SETTINGS_WRITE_CAPABILITY",
     "SETTINGS_FILE_NAME",
     "SETTINGS_SCHEMA_VERSION",
@@ -1940,4 +1975,5 @@ __all__ = [
     "ModelProviderSettingsStore",
     "ProviderPolicy",
     "WindowsCredentialManagerBackend",
+    "validate_model_token_limit",
 ]

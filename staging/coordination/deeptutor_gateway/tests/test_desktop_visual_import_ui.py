@@ -15,6 +15,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from integrations.deeptutor_shchem_v1.desktop_facade import (
     DesktopVisualImportReceipt,
     DesktopVisualImportSourceSummary,
+    DesktopWorkbenchFacade,
     ProviderProfileSummary,
 )
 
@@ -560,6 +561,74 @@ def test_model_filter_empty_hint_and_internal_values_never_rendered(
     assert receipt.batch_id not in text
     assert "NO-KEY" not in text
     assert "NO-STRUCTURED" not in text
+
+
+@pytest.mark.parametrize("effective", [
+    [], (), None, "vision structured_output", {}, ["vision"], ["structured_output"],
+    ["vision", "structured_output", None],
+])
+def test_effective_denial_survives_summary_and_keeps_visual_action_disabled(qt_app, effective):
+    from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
+
+    profile = DesktopWorkbenchFacade._profile_summary({
+        "profile_id": "effective-denial", "display_name": "合成能力测试",
+        "model_id": "synthetic", "revision": "synthetic-revision",
+        "credential_state": "configured",
+        "effective_capabilities": effective,
+        "capabilities": ["vision", "structured_output"],
+    })
+    facade = _Facade(profiles=(profile,))
+    tasks = _manual_task_bridge()
+    dialog = ImportDialog(facade, tasks)
+    dialog._saved_visual_receipt = _receipt()
+    dialog._show_saved_receipt(dialog._saved_visual_receipt)
+    _settle(qt_app)
+    assert dialog.provider_combo.count() == 0
+    assert not dialog.generate_button.isEnabled()
+    dialog.generate_button.click()
+    _settle(qt_app)
+    assert not facade.visual_preview_calls
+    assert not facade.run_calls
+    assert not tasks.pending
+    dialog.close()
+
+
+@pytest.mark.parametrize("capabilities", [None, "vision structured_output", [["vision"]]])
+def test_invalid_profile_summary_capabilities_fail_closed_without_ui_error(qt_app, capabilities):
+    from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
+
+    facade = _Facade(profiles=(replace(_visual_profile(), capabilities=capabilities),))
+    dialog = ImportDialog(facade, _manual_task_bridge())
+    dialog._saved_visual_receipt = _receipt()
+    dialog._show_saved_receipt(dialog._saved_visual_receipt)
+    _settle(qt_app)
+    assert dialog.provider_combo.count() == 0
+    assert not dialog.generate_button.isEnabled()
+    assert not facade.run_calls
+    dialog.close()
+
+
+@pytest.mark.parametrize("code", [
+    "visual_crop_review_failed", "visual_crop_review_invalid", "visual_crop_review_limit",
+    "visual_crop_review_cancelled", "visual_crop_review_blank_crop", "visual_crop_review_schema_unsupported",
+])
+def test_crop_review_failure_is_visible_without_automatic_resend(qt_app, code):
+    from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
+
+    message = DesktopWorkbenchFacade._visual_import_message("failed", "failed", [code])
+    receipt = replace(_receipt(status="failed", visual_status="failed"), message_zh=message)
+    facade = _Facade(profiles=(_visual_profile(),))
+    tasks = _manual_task_bridge()
+    dialog = ImportDialog(facade, tasks)
+    dialog._visual_completed(receipt)
+    _settle(qt_app)
+    assert message in dialog.status.text()
+    assert "未作为完成候选入库" in dialog.status.text()
+    assert code not in _visible_text(dialog)
+    assert not facade.run_calls
+    assert not facade.visual_preview_calls
+    assert not tasks.pending
+    dialog.close()
 
 
 def test_resumable_batch_has_teacher_card_without_restoring_source_paths(
