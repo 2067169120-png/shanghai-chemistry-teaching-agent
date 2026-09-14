@@ -1,3 +1,3 @@
-"""Native desktop source version, independent of local material revisions."""
+"""Version of the native Windows teacher workbench."""
 
-DESKTOP_VERSION = "0.1.86"
+DESKTOP_VERSION = "0.1.87"
