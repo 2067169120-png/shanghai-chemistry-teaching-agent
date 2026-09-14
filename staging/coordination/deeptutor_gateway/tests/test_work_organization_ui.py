@@ -157,3 +157,18 @@ def test_narrow_layout_keeps_all_management_actions_inside_page(window):
     assert page.shelves.width() <= page.width()
     for button in (page.rename_button, page.archive_button, page.trash_button):
         assert button.isVisible() and button.geometry().right() <= button.parentWidget().width()
+
+
+def test_acceptance_probe_handles_an_existing_topic_without_overwriting_old_drafts(window):
+    from integrations.deeptutor_shchem_v1.desktop_work_organization_probe import exercise
+    win, app = window
+    win.preparation_page.apply_studio_template("concept", "已有课题", "软件验收")
+    win.facade.create_preparation_draft(win.preparation_page._payload())
+    before = deepcopy(win.facade.state_store.snapshot()["drafts"])
+    screenshots = []
+    result = exercise(win, lambda condition=lambda: True: settle(app, condition),
+                      lambda widget, name: screenshots.append(name))
+    after = win.facade.state_store.snapshot()["drafts"]
+    assert all(after[key] == record for key, record in before.items())
+    assert result["draft_lifecycle"] and result["task_lifecycle"]
+    assert result["model_calls"] == 0 and len(screenshots) == 5

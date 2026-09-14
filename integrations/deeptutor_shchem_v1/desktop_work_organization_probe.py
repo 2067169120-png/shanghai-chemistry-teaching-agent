@@ -7,6 +7,10 @@ import hashlib
 def exercise(window, settle, capture):
     facade, page, prep = window.facade, window.my_work_page, window.preparation_page
     prep.apply_studio_template("concept", "合成原课题：证据与解释", "软件验收")
+    # The template correctly preserves an existing topic; explicitly edit the
+    # synthetic form here instead of expecting template application to replace it.
+    prep.topic.setText("合成原课题：证据与解释")
+    prep.audience.setText("软件验收")
     prep.materials.setPlainText("软件验收合成材料；公共材料和原课题不因整理作品而变化。")
     facade.create_preparation_draft(prep._payload())
     identity = facade.preparation_draft_options()[0]["draft_id"]
