@@ -52,7 +52,10 @@ def main():
         env=os.environ.copy()
         for key in ('PYTHONHOME','PYTHONPATH','SHCHEM_WORKSPACE_ROOT','QT_QPA_PLATFORM','QT_PLUGIN_PATH','QML2_IMPORT_PATH'):
             env.pop(key,None)
-        env['PATH']=os.pathsep.join((str(Path(env['SystemRoot'])/'System32'),env['SystemRoot']))
+        system_root = os.environ.get('SystemRoot') or os.environ.get('SYSTEMROOT')
+        if not system_root:
+            raise RuntimeError('Windows system directory is unavailable')
+        env['PATH']=os.pathsep.join((str(Path(system_root)/'System32'),system_root))
         env['LOCALAPPDATA']=str(temp/'profile')
         normal=subprocess.Popen([str(exe)],cwd=temp,env=env)
         found=[]
@@ -79,6 +82,8 @@ def main():
             assert normal.wait(timeout=20)==0
         finally:
             if normal.poll() is None: normal.kill();normal.wait()
+            for file in (temp/'profile').rglob('startup-error.log'):
+                shutil.copyfile(file,qa/'normal-startup-error.log')
         errors=list((temp/'profile').rglob('startup-error.log'))
         for file in errors: shutil.copyfile(file,qa/'normal-startup-error.log')
         assert not errors, 'Normal executable wrote startup error'
