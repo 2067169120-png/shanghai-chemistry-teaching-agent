@@ -247,7 +247,7 @@ def test_operation_errors_do_not_unlock_or_silently_mutate(make_page, stage):
         card.view_button.click()
         tasks.take("查看推荐完整大题").failure("完整材料读取失败")
         assert not card.add_button.isEnabled()
-        assert "未解锁" in card.status.text()
+        assert "暂不能加入题篮" in card.status.text()
     else:
         card = recommend(page, tasks)
         open_detail(page, tasks, card)

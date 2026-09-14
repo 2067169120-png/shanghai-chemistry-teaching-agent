@@ -1206,11 +1206,12 @@ def test_changed_image_manifest_rejects_confirmation(qt_app):
 
 def test_over_limit_images_are_visible_and_never_silently_truncated(qt_app):
     dialog, facade, tasks = _loaded()
-    facade.image_assets = [_preparation_asset(n) for n in range(13)]
+    from integrations.deeptutor_shchem_v1.desktop_preparation_images import MAX_IMAGES
+    facade.image_assets = [_preparation_asset(n) for n in range(MAX_IMAGES + 1)]
     _check(dialog, "Q1")
     dialog.preview_button.click()
     tasks.finish("预览 Word 选题")
-    assert "13 张原图" in dialog.preview.toPlainText()
+    assert f"{MAX_IMAGES + 1} 张原图" in dialog.preview.toPlainText()
     assert not dialog.import_button.isEnabled()
     _cleanup(dialog, tasks)
 

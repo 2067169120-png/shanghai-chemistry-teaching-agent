@@ -556,7 +556,7 @@ def test_model_filter_empty_hint_and_internal_values_never_rendered(
     assert dialog.provider_combo.count() == 0
     assert not dialog.generate_button.isEnabled()
     assert "设置" in dialog.provider_note.text()
-    assert "离线候选不受影响" in dialog.provider_note.text()
+    assert "已导入资料仍会保留" in dialog.provider_note.text()
     text = _visible_text(dialog)
     assert receipt.batch_id not in text
     assert "NO-KEY" not in text

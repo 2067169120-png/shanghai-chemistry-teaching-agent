@@ -57,7 +57,7 @@ class BlueprintReviewDialog(QDialog):
         self._resume_review_id: str | None = None
         self._active_review_id: str | None = None
         self._stop = Event()
-        self.setWindowTitle("蓝图审校与修订")
+        self.setWindowTitle('检查与修改命题方案')
         self.setWindowModality(Qt.WindowModality.WindowModal)
         self.resize(900, 780)
         self.setMinimumSize(360, 540)
@@ -86,7 +86,7 @@ class BlueprintReviewDialog(QDialog):
         self.focus.setMaximumHeight(85)
         root.addWidget(self.focus)
         self.history = QComboBox()
-        self.history.addItem("正在读取此蓝图的审校历史…")
+        self.history.addItem('正在读取这份命题方案的审校历史…')
         self.history.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         self.history.setMinimumContentsLength(16)
         self.history.setSizeAdjustPolicy(
@@ -117,7 +117,7 @@ class BlueprintReviewDialog(QDialog):
         self.findings = QPlainTextEdit()
         self.revised = QPlainTextEdit()
         for label, widget in (
-            ("教师待审稿" if source_draft_id else "原始蓝图", self.original),
+            ("教师待审稿" if source_draft_id else '原命题方案', self.original),
             ("问题与理由", self.findings),
             ("修订稿", self.revised),
         ):
@@ -269,7 +269,7 @@ class BlueprintReviewDialog(QDialog):
             else "第1步：正在诊断，最长等待5分钟；可以停止。"
         )
         self.tasks.submit_progress(
-            "审校与修订主题蓝图",
+            '审校与修订主题命题方案',
             lambda progress, cancelled: self.facade.review_prompt_blueprint(
                 self.preview_id,
                 self.source_revision,
@@ -354,7 +354,7 @@ class BlueprintReviewDialog(QDialog):
             return
         self._running = False
         self._busy(False)
-        self.status.setText(message + " 待审稿与原始蓝图均未修改。")
+        self.status.setText(message + ' 待审稿与原命题方案均未修改。')
         self.tasks.submit(
             "读取已保存的诊断",
             self._read_history,

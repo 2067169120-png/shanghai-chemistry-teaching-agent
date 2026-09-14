@@ -89,7 +89,7 @@ def test_return_to_preparation_is_named_as_navigation_and_keeps_edits(window):
     prep.materials.setPlainText("尚未保存但应当保留的原材料")
     before = prep._payload()
     win.navigate("mywork")
-    assert win.my_work_page.resume_button.text() == "返回备课继续编辑"
+    assert win.my_work_page.resume_button.text() == "继续编辑备课"
     win.my_work_page.resume_button.click()
     assert win.stack.currentWidget() is prep
     assert prep._payload() == before

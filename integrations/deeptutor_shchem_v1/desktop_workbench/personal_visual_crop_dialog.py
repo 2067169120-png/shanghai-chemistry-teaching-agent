@@ -236,7 +236,7 @@ class PersonalVisualCropDialog(QDialog):
         self._task_id = None
         self._size = (1, 1)
         self._initial_bounds = (0, 0, 1, 1)
-        self.setWindowTitle("调整这张裁片 · 先预览再保存")
+        self.setWindowTitle('调整题图截取范围')
         self.resize(1160, 820)
         self.setMinimumSize(420, 600)
         root = QVBoxLayout(self)
@@ -309,8 +309,8 @@ class PersonalVisualCropDialog(QDialog):
                 QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding
             )
             preview.layout().setStretch(0, 1)
-        self.previews.addTab(self.new_image, "新裁片预览")
-        self.previews.addTab(self.current_image, "当前裁片对照")
+        self.previews.addTab(self.new_image, '调整后')
+        self.previews.addTab(self.current_image, '调整前')
         self.splitter.addWidget(self.previews)
         self.splitter.setSizes([650, 450])
         root.addWidget(self.splitter, 1)
@@ -324,7 +324,7 @@ class PersonalVisualCropDialog(QDialog):
         root.addWidget(self.status)
         controls = QHBoxLayout()
         self.cancel_button = QPushButton("取消")
-        self.preview_button = QPushButton("预览新裁片")
+        self.preview_button = QPushButton('预览截取结果')
         self.save_button = QPushButton("确认保存裁剪")
         self.save_button.setObjectName("PrimaryButton")
         for button in (self.cancel_button, self.preview_button, self.save_button):

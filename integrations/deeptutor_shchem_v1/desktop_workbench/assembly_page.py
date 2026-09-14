@@ -1916,7 +1916,7 @@ class MixedPaperPaginationDialog(QDialog):
         self._pending.discard(key)
         self.review.failed = True
         if key == self._current():
-            self._labels[key[0]].setText("本页缺失、无法读取或与冻结版本不一致；不能确认，请返回重新生成预览。")
+            self._labels[key[0]].setText('这一页无法读取或已发生变化，请重新生成预览后核对。')
         self._update_confirmation()
 
     def _fit_page(self, *_args):
@@ -2048,7 +2048,7 @@ class MixedPaperPanel(QWidget):
                 "MutedLabel",
             )
         )
-        self.summary = _label("正在读取统一题篮…", "CardTitle")
+        self.summary = _label('正在读取选题篮…', "CardTitle")
         root.addWidget(self.summary)
         self.sections = QListWidget()
         self.sections.setAccessibleName("当前卷完整题目顺序")
@@ -2109,7 +2109,7 @@ class MixedPaperPanel(QWidget):
             self.artifact_buttons[key] = button
         root.addWidget(
             _label(
-                "导出学生、教师两版 DOCX 和 PDF，共四个文件，复用本次已核对的冻结文档。分页确认不代表已完成人工化学审核。",
+                '导出学生、教师两版 DOCX 和 PDF，共四个文件，复用本次已核对的预览时已核对的文件。分页确认不代表已完成人工化学审核。',
                 "MutedLabel",
             )
         )
@@ -2441,7 +2441,7 @@ class MixedPaperPanel(QWidget):
         self._edited()
         request, generation = self.request(), self._generation
         self._busy = True
-        self.status.setText("正在冻结本次完整图文，未修改原始资料…")
+        self.status.setText('正在准备试卷预览，原题不会改变…')
         self._update_actions()
 
         def ready(value):
@@ -2453,7 +2453,7 @@ class MixedPaperPanel(QWidget):
                 not isinstance(data, Mapping)
                 or data.get("schema_version") != "shchem.desktop-mixed-paper-preview.v1"
             ):
-                failed("未收到混合图文预览，未解锁导出。")
+                failed('未收到混合图文预览，暂不能导出。')
                 return
             if [
                 section.get("key")
@@ -2582,7 +2582,7 @@ class MixedPaperPanel(QWidget):
                 button.show()
             self.status.setText(
                 str(result.get("message_zh") or "已保存学生、教师版 DOCX 和 PDF。")
-                + "\n四个文件来自本次已核对的冻结文档；编辑 DOCX 后应重新检查分页。"
+                + '\n四个文件来自本次已核对的预览时已核对的文件；编辑 DOCX 后应重新检查分页。'
             )
             self._update_actions()
 
@@ -2840,7 +2840,7 @@ class PaperPage(QWidget):
 
         actions = QHBoxLayout()
         self.preview_button = QPushButton("整卷预览")
-        self.preview_button.setToolTip("冻结当前顺序、分值和答题空间后查看整卷")
+        self.preview_button.setToolTip('按当前顺序、分值和答题空间预览整卷')
         self.preview_button.clicked.connect(self._preview)
         self.export_button = QPushButton("导出")
         self.export_button.setEnabled(False)

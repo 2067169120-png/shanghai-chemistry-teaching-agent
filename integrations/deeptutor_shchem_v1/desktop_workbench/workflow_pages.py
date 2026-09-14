@@ -136,7 +136,7 @@ class PreparationPage(QWidget):
         root.addWidget(
             section_title(
                 "备课与课件",
-                "填写一次教学要求，生成可编辑 PPT 和教案候选；所有结果均需教师复核。",
+                '填写教学要求，选好资料，再生成教案和课件。生成后可继续修改。',
             )
         )
         output_card = CardFrame()
@@ -156,7 +156,7 @@ class PreparationPage(QWidget):
         output_layout.addWidget(self.output_kind, 1)
         root.addWidget(output_card)
 
-        self.open_draft_button = QPushButton("打开已保存备课草稿…")
+        self.open_draft_button = QPushButton('打开已有备课…')
         self.open_draft_button.setObjectName("QuietButton")
         self.open_draft_button.setAccessibleName("预览并载入已保存备课草稿，不调用模型")
         self.open_draft_button.clicked.connect(self._open_draft)
@@ -170,7 +170,7 @@ class PreparationPage(QWidget):
         self.topic.setPlaceholderText("课题或教材章节")
         self.topic.setAccessibleName("课题或教材章节")
         self.audience = QLineEdit()
-        self.audience.setPlaceholderText("年级 / 最近班级")
+        self.audience.setPlaceholderText('例如：高二（3）班')
         self.audience.setAccessibleName("授课对象")
         self.route = QComboBox()
         self.route.setAccessibleName("课程类型")
@@ -192,10 +192,10 @@ class PreparationPage(QWidget):
         timing_layout.addWidget(_stacked_field("课时数", self.lesson_count), 1)
         timing_layout.addWidget(_stacked_field("每课时分钟数", self.lesson_minutes), 1)
         self.objective = QPlainTextEdit()
-        self.objective.setPlaceholderText("可观察、可评价的教学目标，或目标考试定位")
+        self.objective.setPlaceholderText('这节课希望学生会解释什么、能完成什么任务？')
         self.objective.setMinimumHeight(76)
         self.objective.setMaximumHeight(120)
-        self.objective.setAccessibleName("目标或考试定位")
+        self.objective.setAccessibleName('教学目标')
         self.materials = QPlainTextEdit()
         self.materials.setPlaceholderText(
             "教材页、完整大题、试卷、学生分析或已核验热点；图片发送方式在下方选择"
@@ -207,16 +207,16 @@ class PreparationPage(QWidget):
         form.addWidget(_stacked_field("2　授课对象", self.audience))
         form.addWidget(_stacked_field("3　课程类型", self.route))
         form.addWidget(_stacked_field("4　课时与时长", timing))
-        form.addWidget(_stacked_field("5　目标/考试定位", self.objective))
-        form.addWidget(_stacked_field("6　本次资料与补充说明", self.materials))
-        self.blueprint_import_button = QPushButton("从已保存命题蓝图导入参考…")
+        form.addWidget(_stacked_field('5\u3000教学目标', self.objective))
+        form.addWidget(_stacked_field('6\u3000备课资料与说明', self.materials))
+        self.blueprint_import_button = QPushButton('从命题方案添加参考…')
         self.blueprint_import_button.setObjectName("QuietButton")
         self.blueprint_import_button.setAccessibleName(
-            "预览命题蓝图并追加到备课资料，不调用模型"
+            '预览命题方案并追加到备课资料，不调用模型'
         )
         self.blueprint_import_button.clicked.connect(self._import_blueprint)
         form.addWidget(self.blueprint_import_button)
-        self.source_import_button = QPushButton("从 Word 与教材知识点导入参考…")
+        self.source_import_button = QPushButton('添加Word内容与教材知识点…')
         self.source_import_button.setObjectName("QuietButton")
         self.source_import_button.setAccessibleName(
             "预览 Word 与教材知识点并追加备课参考，不调用模型"
@@ -226,11 +226,11 @@ class PreparationPage(QWidget):
         # form as a small native view-model.
         self.preparation_sources_import_button = self.source_import_button
         form.addWidget(self.source_import_button)
-        self.lecture_library_button = QPushButton("查找已导入的原教案（知识、例题与原图）…")
+        self.lecture_library_button = QPushButton('从已有教案选取内容…')
         self.lecture_library_button.setObjectName("QuietButton")
         self.lecture_library_button.clicked.connect(self._import_lecture)
         form.addWidget(self.lecture_library_button)
-        self.word_questions_button = QPushButton("按本课知识点选题（完整题面与答案）…")
+        self.word_questions_button = QPushButton('按本课知识点选题…')
         self.word_questions_button.setObjectName("QuietButton")
         self.word_questions_button.clicked.connect(self._import_word_questions)
         form.addWidget(self.word_questions_button)
@@ -240,7 +240,7 @@ class PreparationPage(QWidget):
         form.addWidget(self.image_assets_widget)
         root.addWidget(form_card)
 
-        self.advanced = CollapsibleSection("精细设置（默认收起）")
+        self.advanced = CollapsibleSection('更多教学要求')
         self.learning_detail = QLineEdit()
         self.learning_detail.setPlaceholderText("详细学情、分层与实验条件")
         self.learning_detail.setAccessibleName("学情与实验条件")
@@ -258,7 +258,7 @@ class PreparationPage(QWidget):
         design_layout.addWidget(
             _stacked_field("授课结构与学生笔记（可修改）", self.template_detail)
         )
-        self.design_starter_button = QPushButton("按当前课题与课型填入建议结构")
+        self.design_starter_button = QPushButton('填入教学结构建议')
         self.design_starter_button.setAccessibleName("填入可编辑的课题与课型建议，不调用模型")
         self.design_starter_button.clicked.connect(self._insert_design_starter)
         design_layout.addWidget(self.design_starter_button)
@@ -272,12 +272,12 @@ class PreparationPage(QWidget):
         design_layout.addWidget(design_hint)
         root.addWidget(design_card)
         self.strategy_detail = QLineEdit()
-        self.strategy_detail.setPlaceholderText("作业与生成策略")
-        self.strategy_detail.setAccessibleName("作业与生成策略")
+        self.strategy_detail.setPlaceholderText('作业安排与教学建议')
+        self.strategy_detail.setAccessibleName('作业安排与教学建议')
         advanced_form = QVBoxLayout()
         advanced_form.setSpacing(10)
         advanced_form.addWidget(_stacked_field("学情/实验", self.learning_detail))
-        advanced_form.addWidget(_stacked_field("作业/策略", self.strategy_detail))
+        advanced_form.addWidget(_stacked_field('作业安排', self.strategy_detail))
         self.advanced.content_layout.addLayout(advanced_form)
         root.addWidget(self.advanced)
 
@@ -311,9 +311,9 @@ class PreparationPage(QWidget):
         self.save_button.setObjectName("QuietButton")
         self.save_button.setAccessibleName("保存备课草稿，不调用模型")
         self.save_button.clicked.connect(self._save)
-        self.generate_button = QPushButton("生成备课候选")
+        self.generate_button = QPushButton('生成初稿')
         self.generate_button.setObjectName("PrimaryAction")
-        self.generate_button.setAccessibleName("确认后调用模型生成备课候选")
+        self.generate_button.setAccessibleName('确认后调用模型生成备课初稿')
         self.generate_button.setEnabled(False)
         self.generate_button.clicked.connect(self._generate)
         actions.addWidget(self.save_button)
@@ -321,7 +321,7 @@ class PreparationPage(QWidget):
         actions.addStretch(1)
         generation_layout.addLayout(actions)
         self.status = QLabel(
-            "可先填写六个常用字段并离线保存；生成前会再次确认模型调用。"
+            '填写后可先保存草稿。生成前会显示将发送的资料和模型设置。'
         )
         self.status.setObjectName("MutedLabel")
         self.status.setWordWrap(True)
@@ -339,21 +339,21 @@ class PreparationPage(QWidget):
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)
         self.progress.setValue(0)
-        self.progress.setAccessibleName("备课候选生成进度")
+        self.progress.setAccessibleName('备课初稿生成进度')
         progress_layout.addWidget(self.progress)
         self.progress_message = QLabel("任务尚未开始。")
         self.progress_message.setObjectName("MutedLabel")
         self.progress_message.setWordWrap(True)
-        self.progress_message.setAccessibleName("备课候选生成阶段")
+        self.progress_message.setAccessibleName('备课初稿生成阶段')
         progress_layout.addWidget(self.progress_message)
         self.stop_button = QPushButton("停止任务")
         self.stop_button.setObjectName("QuietButton")
-        self.stop_button.setAccessibleName("停止当前备课候选生成任务")
+        self.stop_button.setAccessibleName('停止当前备课初稿生成任务')
         self.stop_button.clicked.connect(self._stop_generation)
         progress_layout.addWidget(self.stop_button)
         self.task_action_button = QPushButton("继续生成")
         self.task_action_button.setObjectName("PrimaryAction")
-        self.task_action_button.setAccessibleName("继续当前备课候选生成任务")
+        self.task_action_button.setAccessibleName('继续当前备课初稿生成任务')
         self.task_action_button.clicked.connect(self._activate_current_task)
         self.task_action_button.hide()
         progress_layout.addWidget(self.task_action_button)
@@ -369,15 +369,15 @@ class PreparationPage(QWidget):
         result_layout.addWidget(result_title)
         self.result_summary = QLabel("")
         self.result_summary.setWordWrap(True)
-        self.result_summary.setAccessibleName("备课候选结果摘要")
+        self.result_summary.setAccessibleName('备课初稿结果摘要')
         result_layout.addWidget(self.result_summary)
         self.result_actions = QBoxLayout(QBoxLayout.Direction.LeftToRight)
         self.result_actions.setSpacing(8)
         self.open_ppt_button = QPushButton("打开 PPT")
-        self.open_ppt_button.setAccessibleName("打开生成的 PPT 候选")
+        self.open_ppt_button.setAccessibleName('打开生成的 PPT初稿')
         self.open_ppt_button.clicked.connect(lambda: self._open_artifact("pptx"))
         self.open_lesson_button = QPushButton("打开教案")
-        self.open_lesson_button.setAccessibleName("打开生成的教案候选")
+        self.open_lesson_button.setAccessibleName('打开生成的教案初稿')
         self.open_lesson_button.clicked.connect(
             lambda: self._open_artifact("lesson_plan_docx")
         )
@@ -404,19 +404,19 @@ class PreparationPage(QWidget):
             self.result_actions.addWidget(button)
         self.result_actions.addStretch(1)
         result_layout.addLayout(self.result_actions)
-        self.review_structure_button = QPushButton("检查课堂结构与笔记")
+        self.review_structure_button = QPushButton('查看教学安排与笔记')
         self.review_structure_button.setAccessibleName("检查课件课堂结构与学生笔记")
         self.review_structure_button.clicked.connect(self._open_classroom_review)
         self.review_structure_button.hide()
         result_layout.addWidget(self.review_structure_button)
-        self.revise_content_button = QPushButton("修订课件与教案…")
+        self.revise_content_button = QPushButton('修改课件与教案…')
         self.revise_content_button.setAccessibleName(
             "本地修订课件与教案并另存，不调用模型"
         )
         self.revise_content_button.clicked.connect(self._open_revision)
         self.revise_content_button.hide()
         result_layout.addWidget(self.revise_content_button)
-        self.recover_returned_button = QPushButton("检查返回内容／本地修复表格…")
+        self.recover_returned_button = QPushButton('查看已返回内容并修复…')
         self.recover_returned_button.setAccessibleName(
             "查看失败备课的已返回内容并本地修复比较表，不调用模型"
         )
@@ -445,7 +445,8 @@ class PreparationPage(QWidget):
         root.addStretch(1)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
-        outer.addWidget(page_scroll(content))
+        self.editor_scroll = page_scroll(content)
+        outer.addWidget(self.editor_scroll, 1)
         self.tasks.task_cancelled.connect(self._qt_task_cancelled)
         self.tasks.task_finished.connect(self._qt_task_finished)
         self._availability_timer = QTimer(self)
@@ -541,7 +542,7 @@ class PreparationPage(QWidget):
         set_status(
             self.status,
             "success",
-            "蓝图参考已追加，其他填写内容未变；请核对课题、对象和目标后保存或生成。尚未调用模型。",
+            '命题方案参考已追加，其他填写内容未变；请核对课题、对象和目标后保存或生成。尚未调用模型。',
         )
 
     def _import_lecture(self) -> None:
@@ -1294,16 +1295,16 @@ class PreparationPage(QWidget):
         self._hide_result_artifacts()
         self.result_card.hide()
         self.progress.setValue(0)
-        self.progress_message.setText("已准备，正在启动候选生成…")
+        self.progress_message.setText('正在开始生成…')
         self.stop_button.setEnabled(True)
         self.stop_button.show()
         self.task_action_button.hide()
         self.save_button.setEnabled(False)
         self.generate_button.setEnabled(False)
         self.image_assets_widget.set_editing_enabled(False)
-        set_status(self.status, "info", "正在生成备课候选，请保持工作台打开。")
+        set_status(self.status, "info", '正在生成备课初稿，请保持工作台打开。')
         self._generation_qt_task_id = self.tasks.submit_progress(
-            "生成备课候选",
+            '生成初稿',
             lambda progress, cancelled: self.facade.generate_preparation(
                 task_id,
                 teacher_confirmed=True,
@@ -1332,7 +1333,7 @@ class PreparationPage(QWidget):
         except (TypeError, ValueError):
             percent = self.progress.value()
         self.progress.setValue(percent)
-        message = str(self._field(value, "message_zh", "正在生成备课候选…"))
+        message = str(self._field(value, "message_zh", '正在生成备课初稿…'))
         self.progress_message.setText(message)
 
     def _activate_current_task(self) -> None:
@@ -1362,7 +1363,7 @@ class PreparationPage(QWidget):
         if local_only:
             title = "确认本地重新导出"
         elif is_retry:
-            title = "确认重试备课候选"
+            title = '确认重新生成'
             if self._current_returned_available:
                 message = (
                     "这个任务已有本地保存的模型返回稿，但尚未通过结构检查。"
@@ -1372,7 +1373,7 @@ class PreparationPage(QWidget):
         else:
             title = "确认继续生成"
         if not self._confirm_egress(title, message, preview):
-            set_status(self.status, "info", "已取消；没有继续生成备课候选。")
+            set_status(self.status, "info", '已取消；没有继续生成备课初稿。')
             return
         try:
             summary = (
@@ -1499,15 +1500,15 @@ class PreparationPage(QWidget):
         self.task_action_button.hide()
         if status == "prepared":
             self.task_action_button.setText(
-                "本地导出修订版" if local_revision else "开始生成候选"
+                '导出修改后的版本' if local_revision else '开始生成'
             )
-            self.task_action_button.setAccessibleName("开始生成已准备的备课候选")
+            self.task_action_button.setAccessibleName('开始生成已准备的备课初稿')
             self.task_action_button.show()
         elif status in {"failed", "cancelled"} and retryable:
             self.task_action_button.setText(
                 "重试本地导出" if local_revision else "重试生成"
             )
-            self.task_action_button.setAccessibleName("重试当前备课候选生成任务")
+            self.task_action_button.setAccessibleName('重试当前备课初稿生成任务')
             self.task_action_button.show()
         if status == "completed":
             artifact_ids = {
@@ -1516,11 +1517,11 @@ class PreparationPage(QWidget):
             slide_count = int(self._field(summary, "slide_count", 0) or 0)
             output_kind = str(self._field(summary, "output_kind", "joint"))
             kind_zh = {
-                "ppt": "PPT 候选",
-                "lesson_plan": "教案候选",
-                "joint": "PPT 与教案候选",
-                "linked_bundle": "PPT 与教案候选",
-            }.get(output_kind, "备课候选")
+                "ppt": 'PPT初稿',
+                "lesson_plan": '教案初稿',
+                "joint": 'PPT与教案初稿',
+                "linked_bundle": 'PPT与教案初稿',
+            }.get(output_kind, '备课初稿')
             page_text = f"，共 {slide_count} 页课件" if slide_count else ""
             self.result_summary.setText(
                 ("本地修订版 · " if local_revision else "")
@@ -1540,7 +1541,7 @@ class PreparationPage(QWidget):
             set_status(
                 self.status,
                 "success",
-                "备课候选已生成，待教师复核；尚未作为正式教学成品发布。",
+                '初稿已生成。请检查内容和排版，再用于授课。',
             )
         elif status in {"failed", "blocked"}:
             if status == "failed" and self._current_returned_available:
@@ -1555,7 +1556,7 @@ class PreparationPage(QWidget):
             set_status(self.status, "error", message)
         elif status == "cancelled":
             self.result_card.hide()
-            set_status(self.status, "attention", "备课候选生成已停止。")
+            set_status(self.status, "attention", '已停止生成。')
         else:
             self.result_card.hide()
             set_status(self.status, "info", message)
@@ -1595,7 +1596,7 @@ class PreparationPage(QWidget):
 
     def _open_revision(self) -> None:
         if not self._preparation_task_id or self._current_task_status != "completed":
-            set_status(self.status, "attention", "请先选择已完成的备课候选。")
+            set_status(self.status, "attention", '请先选择已完成的备课初稿。')
             return
         try:
             source = self.facade.preparation_revision_source(self._preparation_task_id)
@@ -1614,7 +1615,7 @@ class PreparationPage(QWidget):
 
     def _open_classroom_review(self) -> None:
         if not self._preparation_task_id or self._current_task_status != "completed":
-            set_status(self.status, "attention", "请先选择已完成的课件候选。")
+            set_status(self.status, "attention", '请先选择已完成的课件初稿。')
             return
         try:
             report = self.facade.preparation_classroom_review(self._preparation_task_id)
@@ -1627,7 +1628,7 @@ class PreparationPage(QWidget):
 
     def _open_artifact(self, artifact_id: str) -> None:
         if not self._preparation_task_id:
-            set_status(self.status, "error", "当前没有可打开的备课候选。")
+            set_status(self.status, "error", '当前没有可打开的备课初稿。')
             return
         try:
             path = self.facade.preparation_artifact_path(
@@ -1664,7 +1665,7 @@ class PreparationPage(QWidget):
             "queued": "排队中",
             "running": "生成中",
             "cancel_requested": "正在停止",
-            "completed": "候选已生成",
+            "completed": '初稿已生成',
             "failed": "生成失败",
             "cancelled": "已停止",
             "blocked": "暂不可继续",

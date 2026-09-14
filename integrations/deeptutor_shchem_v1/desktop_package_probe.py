@@ -126,6 +126,8 @@ def run_probe(output: Path) -> int:
                 backup = backup_exercise(window, settle, capture, output / 'backup-demo')
                 from .desktop_teacher_desk_probe import exercise as desk_exercise
                 desk = desk_exercise(window, settle, capture, output / 'desk-demo')
+                from .desktop_paper_numbering_probe import exercise as paper_exercise
+                paper = paper_exercise(window, settle, capture, output / 'numbering-demo')
                 result = NativePreparationRenderer().render(synthetic_candidate(), output_kind='joint', output_dir=output/'synthetic-render')
                 artifacts = {row['artifact_id']:row for row in result['artifacts']}
                 assert len(Presentation(artifacts['pptx']['path']).slides)==5
@@ -142,7 +144,7 @@ def run_probe(output: Path) -> int:
         report = dict(version=DESKTOP_VERSION, frozen=frozen, module_origin='bundle' if frozen else 'source',
             platform=platform.platform(), python=platform.python_version(), qt=qVersion(),
             qt_platform=os.environ.get('QT_QPA_PLATFORM'), routes_opened=list(ALL_ROUTES),
-            local_draft_saved=True, work_organization=organization, lesson_backup=backup, teacher_desk=desk, editable_pptx_slides=5, lesson_docx_created=True, pdf_pages=pdf_pages,
+            local_draft_saved=True, work_organization=organization, lesson_backup=backup, teacher_desk=desk, paper_numbering=paper, editable_pptx_slides=5, lesson_docx_created=True, pdf_pages=pdf_pages,
             environment=environment, screenshots=screenshots, output_files=file_checks,
             uncaught_errors=errors, scope='Isolated native bundle navigation, settings, saved draft and production renderer DOCX/PPTX creation. Not live API, Office-PPTX visual parity, original library or classroom acceptance.')
         (output/'package-probe.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')

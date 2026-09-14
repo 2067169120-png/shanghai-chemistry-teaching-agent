@@ -338,11 +338,11 @@ class FeedbackPanel(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(24, 24, 24, 24)
         root.setSpacing(14)
-        root.addWidget(text_label("出口检测 · 把本节反馈带回下一次备课", "CardTitle"))
+        root.addWidget(text_label('随堂反馈 · 把本节反馈带回下一次备课', "CardTitle"))
         root.addWidget(text_label("由教师手动汇总，不是学生端联网投票，也不自动判定知识掌握。"))
         self.question = QLineEdit()
         self.question.setPlaceholderText("本次检测目标或问题，例如：解释平衡时正逆速率的关系")
-        self.question.setAccessibleName("课堂出口检测问题")
+        self.question.setAccessibleName('课堂随堂反馈问题')
         root.addWidget(self.question)
         form = QFormLayout()
         self.counts = []
@@ -378,7 +378,7 @@ class FeedbackPanel(QWidget):
         except ValueError as exc:
             set_status(self.status, "attention", str(exc))
             return
-        text = ("【课堂出口检测 · 教师手动汇总】\n" + report["created_at"] + "\n问题：" + report["question"] +
+        text = ('【课堂随堂反馈 · 教师手动汇总】\n' + report["created_at"] + "\n问题：" + report["question"] +
                 "\n" + "；".join(f"{k} {v}人" for k, v in report["counts"].items()) +
                 "\n教师备注：" + report["notes"] + "\n仅为本次任务反馈，不直接推断长期掌握程度。")
         self.reference_requested.emit(text)
@@ -389,7 +389,7 @@ class FeedbackPanel(QWidget):
         except ValueError as exc:
             set_status(self.status, "attention", str(exc))
             return
-        path, _ = QFileDialog.getSaveFileName(self, "保存课堂反馈", "课堂出口检测.json", "JSON (*.json)")
+        path, _ = QFileDialog.getSaveFileName(self, "保存课堂反馈", '课堂随堂反馈.json', "JSON (*.json)")
         if not path:
             return
         try:
@@ -417,7 +417,7 @@ class ClassroomPage(QWidget):
         self.equilibrium = EquilibriumPanel()
         self.feedback = FeedbackPanel()
         for title, panel in (("倒计时", self.timer_panel), ("点名与分组", self.participation),
-                             ("动态平衡", self.equilibrium), ("出口检测", self.feedback)):
+                             ("动态平衡", self.equilibrium), ('随堂反馈', self.feedback)):
             self.tabs.addTab(panel, title)
         self.feedback.reference_requested.connect(self.reference_requested)
         root.addWidget(self.tabs, 1)

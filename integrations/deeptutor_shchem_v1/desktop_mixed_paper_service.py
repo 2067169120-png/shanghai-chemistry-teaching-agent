@@ -1155,7 +1155,7 @@ class MixedPaperService:
         model.pop("preview_snapshot_sha256")
         model["pagination"] = {"status": "rendered_pending_review", "documents": documents,
                                "manifest_sha256": manifest["manifest_sha256"]}
-        model["notices"] = ["以下为已生成DOCX的真实PDF分页；逐页核对后，导出保持相同文件。"]
+        model["notices"] = ["题号按本卷顺序重新编排，学生版与教师版保持一致。以下为实际PDF分页，导出使用同一份文件。", *payload.get("warnings", [])]
         model["preview_snapshot_sha256"] = _digest(model)
         snapshot["preview_hash"] = model["preview_snapshot_sha256"]
         self._pagination(folder, snapshot)

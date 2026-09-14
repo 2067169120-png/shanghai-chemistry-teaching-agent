@@ -95,7 +95,7 @@ def _validate(item, assets):
     return content, images
 
 
-def build_theme_blocks(item, assets, audience, *, show_scores=False):
+def build_theme_blocks(item, assets, audience, *, show_scores=False, start_number=None):
     """Return mixed text/image blocks without duplicating image-backed OCR.
 
     Direct node evidence selects image-first presentation. A visual-object edge
@@ -107,8 +107,41 @@ def build_theme_blocks(item, assets, audience, *, show_scores=False):
     if audience not in {"student", "teacher"} or type(show_scores) is not bool:
         _fail("题目版本或来源分值显示选项无效。")
     content, images = _validate(item, assets)
+    original_numbers = {}
+    if start_number is not None:
+        from copy import deepcopy
+        from .desktop_paper_numbering import leading_label, rewrite_references
+        content = deepcopy(content)
+        rows = content["theme"]["printed_questions"]
+        mapping = {str(q["question_number"]): start_number + i for i, q in enumerate(rows)}
+        def rewrite(node):
+            if isinstance(node, dict):
+                for key, value in node.items():
+                    if key in {"content", "question_body", "answer_body", "analysis", "context", "stem", "text"} and isinstance(value, str):
+                        node[key] = rewrite_references(value, mapping)
+                    elif isinstance(value, (dict, list)):
+                        rewrite(value)
+            elif isinstance(node, list):
+                for child in node:
+                    rewrite(child)
+        rewrite(content["theme"])
+        for index, question in enumerate(rows):
+            original_numbers[start_number + index] = str(question["question_number"])
+            question["question_number"] = start_number + index
     theme, blocks, shown = content["theme"], [], set()
     group_id, segment_id = "theme:context", "theme:context"
+
+    def without_original_label(value, printed):
+        if start_number is None or not isinstance(value, str):
+            return value
+        from .desktop_paper_numbering import leading_label, ANSWER_INTRO
+        intro = ANSWER_INTRO.match(value)
+        offset = intro.end() if intro else 0
+        label = leading_label(value[offset:])
+        current = printed['question_number']
+        if label and label[1] in {str(current), original_numbers[current]}:
+            return value[:offset] + value[offset + label[0]:]
+        return value
 
     def block_metadata():
         # Additive layout hints only: do not change the frozen source graph.
@@ -162,7 +195,7 @@ def build_theme_blocks(item, assets, audience, *, show_scores=False):
         segment_id = group_id + ":stem"
         text(f"第{printed['question_number']}题", style="heading")
         if not has_body_image(printed):
-            text(_question_text(printed))
+            text(without_original_label(_question_text(printed), printed))
         pictures(printed["image_refs"], "question")
         for atomic_index, atomic in enumerate(printed["atomic_parts"]):
             segment_id = group_id + f":atomic:{atomic_index}"
@@ -171,19 +204,19 @@ def build_theme_blocks(item, assets, audience, *, show_scores=False):
                 # Same typed parent text may be copied into a no-image atomic;
                 # omit only literal equality, not semantic/chemistry rewriting.
                 if value and value != _question_text(printed):
-                    text(((atomic.get("part_label") or "") + " " + value).strip())
+                    text(((atomic.get("part_label") or "") + " " + without_original_label(value, printed)).strip())
             pictures(atomic["image_refs"], "question")
         if audience == "teacher":
             group_id = f"answer:{printed_index}"
             segment_id = group_id + ":atomic:0"
-            text("来源参考答案", style="heading")
+            text(f"第{printed['question_number']}题参考答案" if start_number is not None else "来源参考答案", style="heading")
             for atomic_index, atomic in enumerate(printed["atomic_parts"]):
                 segment_id = group_id + f":atomic:{atomic_index}"
                 answer = atomic["answer"]
                 if answer["status"] == "missing":
                     text(f"{atomic.get('part_label') or ''} 来源答案待补充，未推导或借用其他题答案。")
                 elif not has_body_image(answer):
-                    text(answer.get("answer_body"))
+                    text(without_original_label(answer.get("answer_body"), printed))
                     text(answer.get("analysis"))
                     for expression in answer.get("chemical_expressions", []):
                         text(expression.get("raw"))
@@ -306,7 +339,7 @@ def _keep_groups(layout, capacity):
         start = end
 
 
-def append_personal_visual_theme(document, item, assets, audience, ordinal=1, show_scores=False):
+def append_personal_visual_theme(document, item, assets, audience, ordinal=1, show_scores=False, start_number=None):
     """Append the exact block projection to a configured python-docx document.
 
     Whole images retain a consistent source-page pixel density; no crop,
@@ -319,7 +352,7 @@ def append_personal_visual_theme(document, item, assets, audience, ordinal=1, sh
 
     if type(ordinal) is not int or ordinal < 1:
         _fail("完整主题顺序无效。")
-    blocks = build_theme_blocks(item, assets, audience, show_scores=show_scores)
+    blocks = build_theme_blocks(item, assets, audience, show_scores=show_scores, start_number=start_number)
 
     def style(name):
         return name if name in document.styles else "Normal"

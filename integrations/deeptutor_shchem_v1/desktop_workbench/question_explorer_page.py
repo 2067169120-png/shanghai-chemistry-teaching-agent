@@ -214,7 +214,7 @@ class QuestionExplorerPage(QWidget):
     def scope_changed(self, *_):
         self.filters, self.curriculum, self._base_facets = {}, {}, {}
         self._page, self._cursors = 0, [None]
-        self.advanced_button.setText("裁片与标签管理" if self.scope.currentData() == "visual_native" else "Word原文与标签管理")
+        self.advanced_button.setText('题图与标签管理' if self.scope.currentData() == "visual_native" else "Word原文与标签管理")
         self._render_tree()
         self.search()
 

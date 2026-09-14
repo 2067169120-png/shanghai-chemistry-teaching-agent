@@ -186,7 +186,7 @@ class WordQuestionAttributesDialog(QDialog):
         )
         self.curriculum_search = QLineEdit()
         self.curriculum_search.setPlaceholderText("搜索教材节名称或编号")
-        self.curriculum_search.setAccessibleName("筛选教材节候选")
+        self.curriculum_search.setAccessibleName('筛选建议对应的教材小节')
         form.addRow("教材节（可多选；不勾选表示待映射）", self.curriculum_search)
         self.curriculum_list = _checklist(
             "现有教材节目录，可多选",
@@ -302,7 +302,7 @@ class WordQuestionAttributesDialog(QDialog):
             set_status(
                 self.status,
                 "error",
-                getattr(error, "message_zh", "标签候选暂时无法读取，请关闭后重试。"),
+                getattr(error, "message_zh", '标签建议暂时无法读取，请关闭后重试。'),
             )
             return
         old, new = attribute_summary(self.attributes), attribute_summary(after)

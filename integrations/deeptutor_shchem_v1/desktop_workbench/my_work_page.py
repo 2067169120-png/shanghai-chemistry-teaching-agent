@@ -112,7 +112,7 @@ class MyWorkPage(QWidget):
         self.open_button = QPushButton("打开选中")
         self.open_button.setEnabled(False)
         self.open_button.clicked.connect(self._open)
-        self.resume_button = QPushButton("返回备课继续编辑")
+        self.resume_button = QPushButton('继续编辑备课')
         self.resume_button.setObjectName("QuietButton")
         self.resume_button.clicked.connect(lambda: self.navigate_requested.emit("preparation"))
         for button in (self.refresh_button, self.resume_button, self.open_button):

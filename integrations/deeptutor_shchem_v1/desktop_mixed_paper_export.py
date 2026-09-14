@@ -114,7 +114,26 @@ def build_mixed_paper_docx(
         (item["preset"] for kind, item, _root in prepared if kind == "core_plan"),
         default_shanghai_theme_preset(),
     )
-    outputs, warnings = {}, []
+    from .desktop_paper_numbering import plan_word, rewrite_core_text, word_reference_maps, RASTER_NOTICE
+    numbering, cursor = [], 1
+    for kind, item, _root in prepared:
+        if kind == "word_question":
+            plan = plan_word(item, cursor)
+            numbering.append(plan)
+            cursor += plan.count
+        else:
+            numbering.append(cursor)
+            cursor += (len(item["content"]["theme"]["printed_questions"])
+                       if kind == "personal_visual_theme"
+                       else len(item["student_plan"]["visible"]["theme_sections"][0]["printed_questions"]))
+    refs = word_reference_maps([item for kind, item, _ in prepared if kind == "word_question"],
+                               [plan for (kind, _, _), plan in zip(prepared, numbering) if kind == "word_question"])
+    raster = any(kind != "word_question" and (
+        bool(item["content"]["images"]) if kind == "personal_visual_theme" else
+        any(part.get("question_blocks") and any(b.get("asset_ref") for b in part["question_blocks"])
+            for q in item["student_plan"]["visible"]["theme_sections"][0]["printed_questions"] for part in q["atomic_parts"]))
+        for kind, item, _root in prepared)
+    outputs, warnings = {}, ([RASTER_NOTICE] if raster else [])
     for audience in ("student", "teacher"):
         teacher = audience == "teacher"
         scores = teacher or show_student_scores
@@ -139,6 +158,8 @@ def build_mixed_paper_docx(
             document.add_paragraph(
                 "姓名：____________　班级：____________", "ShChemPaperMeta"
             )
+        if raster:
+            document.add_paragraph(RASTER_NOTICE, "ShChemQuiet")
         writer = _Writer(document)
         for ordinal, (kind, item, asset_root) in enumerate(prepared, 1):
             if kind == "personal_visual_theme":
@@ -147,7 +168,8 @@ def build_mixed_paper_docx(
                 )
 
                 append_personal_visual_theme(document, item, asset_root, audience,
-                                             ordinal=ordinal, show_scores=show_student_scores)
+                                             ordinal=ordinal, show_scores=show_student_scores,
+                                             start_number=numbering[ordinal - 1])
                 continue
             if kind == "word_question":
                 score = f"（{item.points:g} 分）" if scores else ""
@@ -157,14 +179,16 @@ def build_mixed_paper_docx(
                 if item.context:
                     document.add_paragraph("公共材料", "ShChemQuestion")
                     writer.append(item.source, item.context)
-                writer.append(item.source, item.question, keep_question=True)
+                plan = numbering[ordinal - 1]
+                writer.append(item.source, item.question, keep_question=True, numbering=plan, references=refs[item.source.digest])
                 if teacher:
-                    document.add_paragraph(f"来源：{item.source_name}", "ShChemQuiet")
+                    old = "、".join(f"原第{k}题 → 本卷第{v}题" for k, v in plan.mapping.items())
+                    document.add_paragraph(f"来源：{item.source_name}" + (" · " + old if old else ""), "ShChemQuiet")
                     document.add_paragraph(
                         f"参考答案 · 本题 {item.points:g} 分", "ShChemQuestion"
                     )
                     if item.answer:
-                        writer.append(item.source, item.answer)
+                        writer.append(item.source, item.answer, numbering=plan, answer=True, references=refs[item.source.digest])
                     else:
                         document.add_paragraph(
                             "当前选定范围未识别到本题答案，请核对原教案与题答边界；这不表示原文没有答案。"
@@ -173,6 +197,7 @@ def build_mixed_paper_docx(
 
             plan = item[audience + "_plan"]
             visible = deepcopy(plan["visible"])
+            rewrite_core_text(visible, item["blueprint"], numbering[ordinal - 1])
             theme = visible["theme_sections"][0]
             blueprint_theme = item["blueprint"]["theme_bundles"][0]
             source_heading = _display_theme_heading(theme, blueprint_theme)
@@ -192,6 +217,7 @@ def build_mixed_paper_docx(
                 blueprint=item["blueprint"],
                 suppressed_shared_keys=suppressed,
                 show_question_scores=scores,
+                new_paper_numbers=True,
             )
         document.core_properties.subject = (
             "本地混合选编练习；题目来源见教师版；不可发布"

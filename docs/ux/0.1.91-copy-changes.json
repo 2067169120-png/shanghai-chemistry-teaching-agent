@@ -1,0 +1,986 @@
+[
+  {
+    "file": "assembly_page.py",
+    "line": 1919,
+    "before": "本页缺失、无法读取或与冻结版本不一致；不能确认，请返回重新生成预览。",
+    "after": "这一页无法读取或已发生变化，请重新生成预览后核对。"
+  },
+  {
+    "file": "assembly_page.py",
+    "line": 2051,
+    "before": "正在读取统一题篮…",
+    "after": "正在读取选题篮…"
+  },
+  {
+    "file": "assembly_page.py",
+    "line": 2444,
+    "before": "正在冻结本次完整图文，未修改原始资料…",
+    "after": "正在准备试卷预览，原题不会改变…"
+  },
+  {
+    "file": "blueprint_draft_dialog.py",
+    "line": 55,
+    "before": "教师修订蓝图 · 本地草稿",
+    "after": "编辑命题方案"
+  },
+  {
+    "file": "blueprint_draft_dialog.py",
+    "line": 152,
+    "before": "原始蓝图",
+    "after": "原命题方案"
+  },
+  {
+    "file": "blueprint_preparation_dialog.py",
+    "line": 24,
+    "before": "从命题蓝图导入备课参考",
+    "after": "从命题方案添加备课参考"
+  },
+  {
+    "file": "blueprint_review_dialog.py",
+    "line": 60,
+    "before": "蓝图审校与修订",
+    "after": "检查与修改命题方案"
+  },
+  {
+    "file": "blueprint_review_dialog.py",
+    "line": 120,
+    "before": "原始蓝图",
+    "after": "原命题方案"
+  },
+  {
+    "file": "classroom_page.py",
+    "line": 420,
+    "before": "出口检测",
+    "after": "随堂反馈"
+  },
+  {
+    "file": "dialogs.py",
+    "line": 187,
+    "before": "第二步：生成视觉候选",
+    "after": "第二步：识别扫描件与图片"
+  },
+  {
+    "file": "dialogs.py",
+    "line": 191,
+    "before": "仅处理上一步已保存的待视觉资料及其渲染页面；结果仍是候选，须由教师逐页复核。",
+    "after": "识别上一步保存的扫描件和图片。完成后请核对题目、答案和截取范围。"
+  },
+  {
+    "file": "dialogs.py",
+    "line": 674,
+    "before": "尚无可用视觉模型。请关闭本窗口后到“设置”保存支持图片与结构化输出的模型；离线候选不受影响。",
+    "after": "还没有可用的识图模型。请在“设置”中配置支持图片和结构化输出的模型；已导入资料仍会保留。"
+  },
+  {
+    "file": "dialogs.py",
+    "line": 1057,
+    "before": "视觉候选仍在生成；可请求停止，但需等待当前页处理结束后再关闭。",
+    "after": "图片仍在识别。可以停止，当前页处理结束后即可关闭。"
+  },
+  {
+    "file": "dialogs.py",
+    "line": 1075,
+    "before": "视觉候选仍在生成；请先请求停止并等待当前页处理结束。",
+    "after": "图片仍在识别，请先停止，待当前页处理结束后再关闭。"
+  },
+  {
+    "file": "dialogs.py",
+    "line": 1210,
+    "before": "保存设置后可测试连接；测试前会显示出站内容与费用提示。",
+    "after": "保存后可测试连接；发送前会显示测试内容与费用提示。"
+  },
+  {
+    "file": "import_word_dialog.py",
+    "line": 234,
+    "before": "同时带入所选区块的原图（默认；无法处理时会提示）",
+    "after": "同时添加这些段落中的原图（无法读取时会提示）"
+  },
+  {
+    "file": "import_word_dialog.py",
+    "line": 361,
+    "before": "按章节定位，或手动选择区块",
+    "after": "按章节查找，或手动选择段落"
+  },
+  {
+    "file": "library_preparation_dialog.py",
+    "line": 50,
+    "before": "包含参考答案与候选解路（供讲评，仍须核验）",
+    "after": "包含参考答案与解题思路（使用前请核对）"
+  },
+  {
+    "file": "my_work_page.py",
+    "line": 115,
+    "before": "返回备课继续编辑",
+    "after": "继续编辑备课"
+  },
+  {
+    "file": "personal_visual_crop_dialog.py",
+    "line": 239,
+    "before": "调整这张裁片 · 先预览再保存",
+    "after": "调整题图截取范围"
+  },
+  {
+    "file": "personal_visual_crop_dialog.py",
+    "line": 312,
+    "before": "新裁片预览",
+    "after": "调整后"
+  },
+  {
+    "file": "personal_visual_crop_dialog.py",
+    "line": 313,
+    "before": "当前裁片对照",
+    "after": "调整前"
+  },
+  {
+    "file": "personal_visual_crop_dialog.py",
+    "line": 327,
+    "before": "预览新裁片",
+    "after": "预览截取结果"
+  },
+  {
+    "file": "personal_visual_question_dialog.py",
+    "line": 838,
+    "before": "恢复题面裁片",
+    "after": "返回题目图片"
+  },
+  {
+    "file": "personal_visual_question_dialog.py",
+    "line": 847,
+    "before": "调整这张裁片…",
+    "after": "调整截取范围…"
+  },
+  {
+    "file": "preparation_draft_dialog.py",
+    "line": 79,
+    "before": "载入到备课表单",
+    "after": "打开这份备课"
+  },
+  {
+    "file": "preparation_draft_dialog.py",
+    "line": 199,
+    "before": "草稿无法载入，请关闭窗口重新选择。",
+    "after": "这份备课暂时无法打开，请刷新后重试。"
+  },
+  {
+    "file": "preparation_draft_dialog.py",
+    "line": 220,
+    "before": "作业/策略",
+    "after": "作业安排"
+  },
+  {
+    "file": "preparation_draft_dialog.py",
+    "line": 227,
+    "before": "离线读取完成。载入不等于生成；再次保存会新增一份草稿，旧稿保留。",
+    "after": "内容已读取。打开后可继续编辑；再次保存会保留为新草稿，原稿不变。"
+  },
+  {
+    "file": "preparation_recovery.py",
+    "line": 51,
+    "before": "自动恢复已启用：编辑后约2秒保存本机副本；正式版本仍使用“保存草稿”。",
+    "after": "已启用自动恢复。需要保留当前版本时，请点击“保存草稿”。"
+  },
+  {
+    "file": "preparation_recovery.py",
+    "line": 57,
+    "before": "立即保存恢复副本",
+    "after": "立即更新自动恢复副本"
+  },
+  {
+    "file": "preparation_sources_dialog.py",
+    "line": 133,
+    "before": "Word 区块（段落/表格）",
+    "after": "Word段落与表格"
+  },
+  {
+    "file": "preparation_sources_dialog.py",
+    "line": 162,
+    "before": "区块范围",
+    "after": "段落范围"
+  },
+  {
+    "file": "preparation_sources_dialog.py",
+    "line": 322,
+    "before": "Word 区块（段落/表格）",
+    "after": "Word段落与表格"
+  },
+  {
+    "file": "preparation_sources_dialog.py",
+    "line": 451,
+    "before": "Word 未返回可选区块；请改用教材知识点或重新选择。",
+    "after": "没有找到可选的Word段落，请重新选择文件或改用教材知识点。"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 126,
+    "before": "最近保存的蓝图（选择后查看）",
+    "after": "最近的命题方案"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 153,
+    "before": "生成蓝图",
+    "after": "生成命题方案"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 167,
+    "before": "审校与修订已生成蓝图",
+    "after": "检查已生成的命题方案"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 171,
+    "before": "教师修订 / 打开本地蓝图草稿",
+    "after": "打开并修改命题方案"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 187,
+    "before": "生成蓝图",
+    "after": "生成命题方案"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 299,
+    "before": "最近保存的蓝图（选择后查看）",
+    "after": "最近的命题方案"
+  },
+  {
+    "file": "question_explorer_page.py",
+    "line": 217,
+    "before": "裁片与标签管理",
+    "after": "题图与标签管理"
+  },
+  {
+    "file": "student_page.py",
+    "line": 1019,
+    "before": "6　候选结果与教师复核",
+    "after": "6　分析结果与教师确认"
+  },
+  {
+    "file": "student_page.py",
+    "line": 1029,
+    "before": "正在读取候选复核状态…",
+    "after": "正在读取教师确认记录…"
+  },
+  {
+    "file": "word_question_dialog.py",
+    "line": 335,
+    "before": "定位题面开始区块",
+    "after": "定位题干开头"
+  },
+  {
+    "file": "word_question_dialog.py",
+    "line": 840,
+    "before": "加入统一题篮",
+    "after": "加入选题篮"
+  },
+  {
+    "file": "word_question_dialog.py",
+    "line": 2365,
+    "before": "加入统一题篮",
+    "after": "加入选题篮"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 139,
+    "before": "填写一次教学要求，生成可编辑 PPT 和教案候选；所有结果均需教师复核。",
+    "after": "填写教学要求，选好资料，再生成教案和课件。生成后可继续修改。"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 159,
+    "before": "打开已保存备课草稿…",
+    "after": "打开已有备课…"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 173,
+    "before": "年级 / 最近班级",
+    "after": "例如：高二（3）班"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 195,
+    "before": "可观察、可评价的教学目标，或目标考试定位",
+    "after": "这节课希望学生会解释什么、能完成什么任务？"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 198,
+    "before": "目标或考试定位",
+    "after": "教学目标"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 210,
+    "before": "5　目标/考试定位",
+    "after": "5　教学目标"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 211,
+    "before": "6　本次资料与补充说明",
+    "after": "6　备课资料与说明"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 212,
+    "before": "从已保存命题蓝图导入参考…",
+    "after": "从命题方案添加参考…"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 219,
+    "before": "从 Word 与教材知识点导入参考…",
+    "after": "添加Word内容与教材知识点…"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 229,
+    "before": "查找已导入的原教案（知识、例题与原图）…",
+    "after": "从已有教案选取内容…"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 233,
+    "before": "按本课知识点选题（完整题面与答案）…",
+    "after": "按本课知识点选题…"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 243,
+    "before": "精细设置（默认收起）",
+    "after": "更多教学要求"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 261,
+    "before": "按当前课题与课型填入建议结构",
+    "after": "填入教学结构建议"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 275,
+    "before": "作业与生成策略",
+    "after": "作业安排与教学建议"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 276,
+    "before": "作业与生成策略",
+    "after": "作业安排与教学建议"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 280,
+    "before": "作业/策略",
+    "after": "作业安排"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 314,
+    "before": "生成备课候选",
+    "after": "生成初稿"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 324,
+    "before": "可先填写六个常用字段并离线保存；生成前会再次确认模型调用。",
+    "after": "填写后可先保存草稿。生成前会显示将发送的资料和模型设置。"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 407,
+    "before": "检查课堂结构与笔记",
+    "after": "查看教学安排与笔记"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 412,
+    "before": "修订课件与教案…",
+    "after": "修改课件与教案…"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 419,
+    "before": "检查返回内容／本地修复表格…",
+    "after": "查看已返回内容并修复…"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1298,
+    "before": "已准备，正在启动候选生成…",
+    "after": "正在开始生成…"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1307,
+    "before": "生成备课候选",
+    "after": "生成初稿"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1503,
+    "before": "本地导出修订版",
+    "after": "导出修改后的版本"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1503,
+    "before": "开始生成候选",
+    "after": "开始生成"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1520,
+    "before": "PPT 候选",
+    "after": "PPT初稿"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1521,
+    "before": "教案候选",
+    "after": "教案初稿"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1522,
+    "before": "PPT 与教案候选",
+    "after": "PPT与教案初稿"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1523,
+    "before": "PPT 与教案候选",
+    "after": "PPT与教案初稿"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1524,
+    "before": "备课候选",
+    "after": "备课初稿"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1544,
+    "before": "备课候选已生成，待教师复核；尚未作为正式教学成品发布。",
+    "after": "初稿已生成。请检查内容和排版，再用于授课。"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1559,
+    "before": "备课候选生成已停止。",
+    "after": "已停止生成。"
+  },
+  {
+    "file": "assembly_page.py",
+    "line": 2112,
+    "before": "导出学生、教师两版 DOCX 和 PDF，共四个文件，复用本次已核对的冻结文档。分页确认不代表已完成人工化学审核。",
+    "after": "导出学生、教师两版 DOCX 和 PDF，共四个文件，复用本次已核对的预览时已核对的文件。分页确认不代表已完成人工化学审核。"
+  },
+  {
+    "file": "assembly_page.py",
+    "line": 2456,
+    "before": "未收到混合图文预览，未解锁导出。",
+    "after": "未收到混合图文预览，暂不能导出。"
+  },
+  {
+    "file": "assembly_page.py",
+    "line": 2585,
+    "before": "\n四个文件来自本次已核对的冻结文档；编辑 DOCX 后应重新检查分页。",
+    "after": "\n四个文件来自本次已核对的预览时已核对的文件；编辑 DOCX 后应重新检查分页。"
+  },
+  {
+    "file": "assembly_page.py",
+    "line": 2843,
+    "before": "冻结当前顺序、分值和答题空间后查看整卷",
+    "after": "按当前顺序、分值和答题空间预览整卷"
+  },
+  {
+    "file": "blueprint_draft_dialog.py",
+    "line": 323,
+    "before": "正在核验这份蓝图引用的讲义版本…",
+    "after": "正在核验这份命题方案引用的讲义版本…"
+  },
+  {
+    "file": "blueprint_preparation_dialog.py",
+    "line": 30,
+    "before": "选择最近30份已完成蓝图中的原稿、教师草稿或AI修订稿。",
+    "after": "选择最近30份已完成的命题方案中的原稿、教师草稿或AI修订稿。"
+  },
+  {
+    "file": "blueprint_preparation_dialog.py",
+    "line": 31,
+    "before": "先预览，再追加到备课资料；不会改动原蓝图或自动调用模型。",
+    "after": "先预览，再追加到备课资料；不会改动原命题方案或自动调用模型。"
+  },
+  {
+    "file": "blueprint_preparation_dialog.py",
+    "line": 36,
+    "before": "选择已保存蓝图版本作为备课参考",
+    "after": "选择已保存的命题方案版本作为备课参考"
+  },
+  {
+    "file": "blueprint_preparation_dialog.py",
+    "line": 45,
+    "before": "即将导入的蓝图参考全文",
+    "after": "即将导入的命题方案参考全文"
+  },
+  {
+    "file": "blueprint_preparation_dialog.py",
+    "line": 65,
+    "before": "暂无可导入蓝图。请先在教材/命题蓝图入口生成并保存蓝图。",
+    "after": "暂无可添加命题方案。请先在教材/命题方案入口生成并保存命题方案。"
+  },
+  {
+    "file": "blueprint_preparation_dialog.py",
+    "line": 68,
+    "before": "本地蓝图列表读取失败，备课内容未变。请关闭后重试。",
+    "after": "本地命题方案列表读取失败，备课内容未变。请关闭后重试。"
+  },
+  {
+    "file": "blueprint_preparation_dialog.py",
+    "line": 91,
+    "before": "化学事实、答案与课堂适用性仍需教师核验。生成时将按原有流程确认文字出站。",
+    "after": "化学事实、答案与课堂适用性仍需教师核验。生成时将按原有流程确认发送文字给模型。"
+  },
+  {
+    "file": "blueprint_review_dialog.py",
+    "line": 89,
+    "before": "正在读取此蓝图的审校历史…",
+    "after": "正在读取这份命题方案的审校历史…"
+  },
+  {
+    "file": "blueprint_review_dialog.py",
+    "line": 272,
+    "before": "审校与修订主题蓝图",
+    "after": "审校与修订主题命题方案"
+  },
+  {
+    "file": "blueprint_review_dialog.py",
+    "line": 357,
+    "before": " 待审稿与原始蓝图均未修改。",
+    "after": " 待审稿与原命题方案均未修改。"
+  },
+  {
+    "file": "classroom_page.py",
+    "line": 341,
+    "before": "出口检测 · 把本节反馈带回下一次备课",
+    "after": "随堂反馈 · 把本节反馈带回下一次备课"
+  },
+  {
+    "file": "classroom_page.py",
+    "line": 345,
+    "before": "课堂出口检测问题",
+    "after": "课堂随堂反馈问题"
+  },
+  {
+    "file": "classroom_page.py",
+    "line": 381,
+    "before": "【课堂出口检测 · 教师手动汇总】\n",
+    "after": "【课堂随堂反馈 · 教师手动汇总】\n"
+  },
+  {
+    "file": "classroom_page.py",
+    "line": 392,
+    "before": "课堂出口检测.json",
+    "after": "课堂随堂反馈.json"
+  },
+  {
+    "file": "dialogs.py",
+    "line": 708,
+    "before": "尚无可用视觉模型；请先到“设置”完成模型与 Key 配置。离线候选已保存。",
+    "after": "还没有可用的识图模型，请先在“设置”填写模型和密钥。已导入资料会保留。"
+  },
+  {
+    "file": "library_detail.py",
+    "line": 496,
+    "before": "答案与解路按作答单元分别展示。参考答案、模型候选分析与",
+    "after": "答案与解题思路按作答单元分别展示。参考答案、模型候选分析与"
+  },
+  {
+    "file": "library_detail.py",
+    "line": 539,
+    "before": "模型候选解路",
+    "after": "AI解题思路（待核对）"
+  },
+  {
+    "file": "library_detail.py",
+    "line": 542,
+    "before": "暂无模型候选解路。",
+    "after": "暂无AI解题思路（待核对）。"
+  },
+  {
+    "file": "personal_visual_question_dialog.py",
+    "line": 1448,
+    "before": "正在编译选中题所属完整主题、全部小题与公共材料…",
+    "after": "正在整理所选题目的完整主题、小题和公共材料…"
+  },
+  {
+    "file": "preparation_egress_dialog.py",
+    "line": 180,
+    "before": "仅使用已保存的冻结候选继续导出。",
+    "after": "只使用已保存的初稿继续导出，不重新调用模型。"
+  },
+  {
+    "file": "preparation_sources_dialog.py",
+    "line": 91,
+    "before": "确认时会重新编译同一选择。不会自动匹配，也不会调用模型。",
+    "after": "确认时会再次核对所选资料。不自动匹配其他内容，也不调用模型。"
+  },
+  {
+    "file": "preparation_sources_dialog.py",
+    "line": 99,
+    "before": "只有在生成备课候选时，才会按原有确认流程处理文字出站。",
+    "after": "只有在生成备课初稿时，才会按原有确认流程处理发送文字给模型。"
+  },
+  {
+    "file": "preparation_sources_dialog.py",
+    "line": 290,
+    "before": "确认时会重新编译同一选择。不会自动匹配，也不会调用模型。",
+    "after": "确认时会再次核对所选资料。不自动匹配其他内容，也不调用模型。"
+  },
+  {
+    "file": "preparation_sources_dialog.py",
+    "line": 293,
+    "before": "候选/部分 Word 对象可能不完整，需教师核验；生成时才处理文字出站。",
+    "after": "候选/部分 Word 对象可能不完整，需教师核验；生成时才处理发送文字给模型。"
+  },
+  {
+    "file": "preparation_sources_dialog.py",
+    "line": 296,
+    "before": "只有在生成备课候选时，才会按原有确认流程处理文字出站。",
+    "after": "只有在生成备课初稿时，才会按原有确认流程处理发送文字给模型。"
+  },
+  {
+    "file": "preparation_sources_dialog.py",
+    "line": 753,
+    "before": "参考编译失败，未导入。",
+    "after": "资料整理失败，尚未添加。"
+  },
+  {
+    "file": "preparation_sources_dialog.py",
+    "line": 782,
+    "before": "确认前重新编译失败，未导入。",
+    "after": "确认前重新核对资料失败，尚未添加。"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 53,
+    "before": "编译不消耗模型额度；确认后可生成并保存主题命题蓝图。",
+    "after": "编译不消耗模型额度；确认后可生成并保存主题命题方案。"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 54,
+    "before": "蓝图不是完整试卷，题面、数据与答案仍需完善和核验。",
+    "after": "命题方案不是完整试卷，题面、数据与答案仍需完善和核验。"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 128,
+    "before": "最近蓝图",
+    "after": "最近命题方案"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 150,
+    "before": "编译本地提示",
+    "after": "整理命题要求"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 207,
+    "before": "读取蓝图模型与历史",
+    "after": "读取命题模型与历史"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 395,
+    "before": "正在核验本地来源并编译提示…",
+    "after": "正在核对所选资料并整理命题要求…"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 399,
+    "before": "编译教材命题提示",
+    "after": "整理教材命题要求"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 448,
+    "before": "确认生成主题蓝图",
+    "after": "确认生成主题命题方案"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 462,
+    "before": "请在提示和资料依据标签页核对内容。此调用可能产生费用，结果仅为待完善的主题蓝图。是否继续？",
+    "after": "请在提示和资料依据标签页核对内容。此调用可能产生费用，结果仅为待完善的主题命题方案。是否继续？"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 478,
+    "before": "正在生成主题命题蓝图，最长等待 5 分钟，可随时停止；完成后自动保存到本机…",
+    "after": "正在生成主题命题方案，最长等待 5 分钟，可随时停止；完成后自动保存到本机…"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 481,
+    "before": "生成主题命题蓝图",
+    "after": "生成主题命题方案"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 513,
+    "before": "蓝图已保存 · ",
+    "after": "命题方案已保存 · "
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 514,
+    "before": "可从最近蓝图重新打开；完善题面和核验答案后再使用。",
+    "after": "可从最近命题方案重新打开；完善题面和核验答案后再使用。"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 521,
+    "before": "读取已保存蓝图",
+    "after": "读取已保存的命题方案"
+  },
+  {
+    "file": "prompt_blueprint_dialog.py",
+    "line": 612,
+    "before": "章节、目标或参考选题已修改，请重新编译本地提示。",
+    "after": "章节、目标或参考题目已修改，请重新整理命题要求。"
+  },
+  {
+    "file": "student_page.py",
+    "line": 50,
+    "before": "按题目页面顺序添加；题面模糊、裁切或缺页会保留为候选阻断。",
+    "after": "按题目页面顺序添加；题面模糊、裁切或缺页会保留为需要补充的信息。"
+  },
+  {
+    "file": "student_page.py",
+    "line": 480,
+    "before": "模型候选置信度未提供",
+    "after": "模型自报置信度未提供"
+  },
+  {
+    "file": "student_page.py",
+    "line": 482,
+    "before": "模型候选置信度 ",
+    "after": "模型自报置信度 "
+  },
+  {
+    "file": "student_page.py",
+    "line": 582,
+    "before": "接受候选",
+    "after": "采纳分析建议"
+  },
+  {
+    "file": "student_page.py",
+    "line": 584,
+    "before": "驳回候选",
+    "after": "不采纳分析建议"
+  },
+  {
+    "file": "student_page.py",
+    "line": 600,
+    "before": "如何处理候选",
+    "after": "如何处理分析建议"
+  },
+  {
+    "file": "student_page.py",
+    "line": 1742,
+    "before": "正在冻结本次页面与模型发送范围…",
+    "after": "正在整理本次要发送的页面…"
+  },
+  {
+    "file": "student_page.py",
+    "line": 2132,
+    "before": "全局候选阻断：\n",
+    "after": "全局需要补充的信息：\n"
+  },
+  {
+    "file": "student_page.py",
+    "line": 2333,
+    "before": " 尚未完成预览，未解锁加入题篮。",
+    "after": " 尚未完成预览，暂不能加入题篮。"
+  },
+  {
+    "file": "studio_navigation.py",
+    "line": 13,
+    "before": "倒计时 / 点名 / 分组 / 动态平衡 / 出口检测",
+    "after": "倒计时 / 点名 / 分组 / 动态平衡 / 随堂反馈"
+  },
+  {
+    "file": "studio_navigation.py",
+    "line": 94,
+    "before": "<h3>1. 首次使用</h3><p>没有原题库也能打开。先在“设置”配置模型，或直接使用教学模板与离线课堂工具。旧资料保留在原目录；不要为升级重复导入。</p>\n<h3>2. 从模板到教案与PPT</h3><p>首页“新建备课” → 填授课对象与材料 → 保存草稿 → 确认生成。需要教学结构时，从“教学模板”预览后带入。模板不会替换已填材料或原图，也不会自动调用AI。</p>\n<h3>3. 选题与组卷</h3><p>题库按知识点与教材目录查找，保留完整主题及公共材料后入篮。组卷先核对学生/教师两版；Word优先原生提取，不再裁成整页图片。</p>\n<h3>4. 课堂工具</h3><p>倒计时、点名、随机分组及动态平衡模型离线运行。模型是一级可逆A⇌B的示意，不是实测化学数据。出口检测由教师录入，可追加回备课资料。</p>\n<h3>5. 找回工作</h3><p>“我的备课”按作品名称或原课题搜索，再按当前、归档、回收站分页显示。重命名只改显示名称；移入回收站不删文件，先还原再打开。生成中的任务暂不能整理。载入草稿前预览；查看历史结果不会自动重试收费。“题库进度”只读取本机现存目录，不使用历史统计充数。</p>\n<h3>6. 恢复上次编辑</h3><p>备课表单约每2秒保存本机恢复副本，关闭时保存最后修改；重开恢复，不自动调用AI。正式“保存草稿”仍单独保留版本。新建空白备课会确认后清当前表单，不删除正式草稿和原图。恢复文件不可读时保留原件并暂停覆盖；异常退出仅恢复最后成功落盘的内容。</p>\n<h3>7. 连接设置与本机检查</h3><p>设置页先填服务商、接口地址、模型、密钥与接口格式；高级预算默认收起，留空沿用各功能默认值。原预算不会因为折叠而清空。允许发送图片不代表模型已经通过识图测试；短文本测试不验证化学图或切题质量。右下角“本机检查”显示源码/打包模式、组件、图标、个人目录与Office安装发现，不调用模型。可复制或导出不含本机路径、教材与模型配置的报告。</p>\n<h3>快捷键</h3><p>Ctrl+K：搜索功能与模板。Ctrl+1～5：首页、题库、组卷、学生分析、备课。F1：本帮助。Esc：关闭当前对话框或计时投屏。</p>\n<h3>遇到问题</h3><p>没有题库结果：先检查实际资料目录和导入历史。扫描件无法识别：核对具体模型是否支持图片，文本联通不证明识图能力。旧VBS仍显示旧版：请改用“启动源码桌面版.cmd”。</p>",
+    "after": "<h3>1. 首次使用</h3><p>没有原题库也能打开。先在“设置”配置模型，或直接使用教学模板与离线课堂工具。旧资料保留在原目录；不要为升级重复导入。</p>\n<h3>2. 从模板到教案与PPT</h3><p>首页“新建备课” → 填授课对象与材料 → 保存草稿 → 确认生成。需要教学结构时，从“教学模板”预览后带入。模板不会替换已填材料或原图，也不会自动调用AI。</p>\n<h3>3. 选题与组卷</h3><p>题库按知识点与教材目录查找，保留完整主题及公共材料后入篮。组卷先核对学生/教师两版；Word优先原生提取，不再裁成整页图片。</p>\n<h3>4. 课堂工具</h3><p>倒计时、点名、随机分组及动态平衡模型离线运行。模型是一级可逆A⇌B的示意，不是实测化学数据。随堂反馈由教师录入，可追加回备课资料。</p>\n<h3>5. 找回工作</h3><p>“我的备课”按作品名称或原课题搜索，再按当前、归档、回收站分页显示。重命名只改显示名称；移入回收站不删文件，先还原再打开。生成中的任务暂不能整理。载入草稿前预览；查看历史结果不会自动重试收费。“题库进度”只读取本机现存目录，不使用历史统计充数。</p>\n<h3>6. 恢复上次编辑</h3><p>备课表单约每2秒保存本机恢复副本，关闭时保存最后修改；重开恢复，不自动调用AI。正式“保存草稿”仍单独保留版本。新建空白备课会确认后清当前表单，不删除正式草稿和原图。恢复文件不可读时保留原件并暂停覆盖；异常退出仅恢复最后成功落盘的内容。</p>\n<h3>7. 连接设置与本机检查</h3><p>设置页先填服务商、接口地址、模型、密钥与接口格式；高级预算默认收起，留空沿用各功能默认值。原预算不会因为折叠而清空。允许发送图片不代表模型已经通过识图测试；短文本测试不验证化学图或切题质量。右下角“本机检查”显示源码/打包模式、组件、图标、个人目录与Office安装发现，不调用模型。可复制或导出不含本机路径、教材与模型配置的报告。</p>\n<h3>快捷键</h3><p>Ctrl+K：搜索功能与模板。Ctrl+1～5：首页、题库、组卷、学生分析、备课。F1：本帮助。Esc：关闭当前对话框或计时投屏。</p>\n<h3>遇到问题</h3><p>没有题库结果：先检查实际资料目录和导入历史。扫描件无法识别：核对具体模型是否支持图片，文本联通不证明识图能力。旧VBS仍显示旧版：请改用“启动源码桌面版.cmd”。</p>"
+  },
+  {
+    "file": "textbook_source_dialog.py",
+    "line": 46,
+    "before": "待核对的教材蒸馏候选，不是教材原句",
+    "after": "待核对的教材整理出的知识摘要，不是教材原句"
+  },
+  {
+    "file": "textbook_source_dialog.py",
+    "line": 164,
+    "before": "蒸馏候选（请对照原页，不是教材原句）：\n",
+    "after": "整理出的知识摘要（请对照原页，不是教材原句）：\n"
+  },
+  {
+    "file": "visual_import_egress_dialog.py",
+    "line": 87,
+    "before": " 页冻结源页 · 点击缩略图切换，放大检查内容与边界",
+    "after": " 页本次选定的源页 · 点击缩略图切换，放大检查内容与边界"
+  },
+  {
+    "file": "visual_import_egress_dialog.py",
+    "line": 92,
+    "before": "\n当前预览为全部冻结源页；实际裁片提取后才能生成，仅来自这些源页。",
+    "after": "\n当前预览为全部本次选定的源页；实际裁片提取后才能生成，仅来自这些源页。"
+  },
+  {
+    "file": "word_question_attributes_dialog.py",
+    "line": 189,
+    "before": "筛选教材节候选",
+    "after": "筛选建议对应的教材小节"
+  },
+  {
+    "file": "word_question_attributes_dialog.py",
+    "line": 305,
+    "before": "标签候选暂时无法读取，请关闭后重试。",
+    "after": "标签建议暂时无法读取，请关闭后重试。"
+  },
+  {
+    "file": "word_question_dialog.py",
+    "line": 166,
+    "before": "教材章节点候选：",
+    "after": "建议对应的教材章节："
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 215,
+    "before": "预览命题蓝图并追加到备课资料，不调用模型",
+    "after": "预览命题方案并追加到备课资料，不调用模型"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 316,
+    "before": "确认后调用模型生成备课候选",
+    "after": "确认后调用模型生成备课初稿"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 342,
+    "before": "备课候选生成进度",
+    "after": "备课初稿生成进度"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 347,
+    "before": "备课候选生成阶段",
+    "after": "备课初稿生成阶段"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 351,
+    "before": "停止当前备课候选生成任务",
+    "after": "停止当前备课初稿生成任务"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 356,
+    "before": "继续当前备课候选生成任务",
+    "after": "继续当前备课初稿生成任务"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 372,
+    "before": "备课候选结果摘要",
+    "after": "备课初稿结果摘要"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 377,
+    "before": "打开生成的 PPT 候选",
+    "after": "打开生成的 PPT初稿"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 380,
+    "before": "打开生成的教案候选",
+    "after": "打开生成的教案初稿"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 545,
+    "before": "蓝图参考已追加，其他填写内容未变；请核对课题、对象和目标后保存或生成。尚未调用模型。",
+    "after": "命题方案参考已追加，其他填写内容未变；请核对课题、对象和目标后保存或生成。尚未调用模型。"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1305,
+    "before": "正在生成备课候选，请保持工作台打开。",
+    "after": "正在生成备课初稿，请保持工作台打开。"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1336,
+    "before": "正在生成备课候选…",
+    "after": "正在生成备课初稿…"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1366,
+    "before": "确认重试备课候选",
+    "after": "确认重新生成"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1376,
+    "before": "已取消；没有继续生成备课候选。",
+    "after": "已取消；没有继续生成备课初稿。"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1505,
+    "before": "开始生成已准备的备课候选",
+    "after": "开始生成已准备的备课初稿"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1511,
+    "before": "重试当前备课候选生成任务",
+    "after": "重试当前备课初稿生成任务"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1599,
+    "before": "请先选择已完成的备课候选。",
+    "after": "请先选择已完成的备课初稿。"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1618,
+    "before": "请先选择已完成的课件候选。",
+    "after": "请先选择已完成的课件初稿。"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1631,
+    "before": "当前没有可打开的备课候选。",
+    "after": "当前没有可打开的备课初稿。"
+  },
+  {
+    "file": "workflow_pages.py",
+    "line": 1668,
+    "before": "候选已生成",
+    "after": "初稿已生成"
+  }
+]

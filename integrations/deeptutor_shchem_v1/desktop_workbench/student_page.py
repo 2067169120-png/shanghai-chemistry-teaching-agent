@@ -47,7 +47,7 @@ _FILE_ROLES = (
     (
         "question_pages",
         "题目页面（必需）",
-        "按题目页面顺序添加；题面模糊、裁切或缺页会保留为候选阻断。",
+        '按题目页面顺序添加；题面模糊、裁切或缺页会保留为需要补充的信息。',
         "题目页面",
     ),
     (
@@ -477,9 +477,9 @@ class ReviewItemCard(CardFrame):
         maximum = float(_field(item, "maximum_score", 0.0) or 0.0)
         confidence = _field(item, "confidence")
         confidence_text = (
-            "模型候选置信度未提供"
+            '模型自报置信度未提供'
             if confidence is None
-            else f"模型候选置信度 {max(0.0, min(1.0, float(confidence))) * 100:.0f}%"
+            else f"模型自报置信度 {max(0.0, min(1.0, float(confidence))) * 100:.0f}%"
         )
         metadata = QLabel(
             f"题号：{_field(item, 'question_number', '待核对')}　·　"
@@ -579,9 +579,9 @@ class ReviewItemCard(CardFrame):
         self.decision = QComboBox()
         self.decision.setAccessibleName(f"{title_text}诊断处理")
         for text, value in (
-            ("接受候选", "accept"),
+            ('采纳分析建议', "accept"),
             ("教师修订", "edit"),
-            ("驳回候选", "reject"),
+            ('不采纳分析建议', "reject"),
             ("暂不决定", "pending"),
         ):
             self.decision.addItem(text, value)
@@ -597,7 +597,7 @@ class ReviewItemCard(CardFrame):
             self.result.addItem(text, value)
         self.diagnosis_row = QBoxLayout(QBoxLayout.Direction.LeftToRight)
         self.diagnosis_row.setSpacing(8)
-        self.diagnosis_row.addWidget(_stacked_field("如何处理候选", self.decision), 1)
+        self.diagnosis_row.addWidget(_stacked_field('如何处理分析建议', self.decision), 1)
         self.diagnosis_row.addWidget(_stacked_field("教师确认结果", self.result), 1)
         root.addLayout(self.diagnosis_row)
 
@@ -1016,7 +1016,7 @@ class StudentPage(QWidget):
         review_layout = QVBoxLayout(self.review_card)
         review_layout.setContentsMargins(18, 16, 18, 16)
         review_layout.setSpacing(10)
-        review_title = QLabel("6　候选结果与教师复核")
+        review_title = QLabel('6\u3000分析结果与教师确认')
         review_title.setObjectName("CardTitle")
         review_layout.addWidget(review_title)
         self.candidate_boundary = QLabel(
@@ -1026,7 +1026,7 @@ class StudentPage(QWidget):
         self.candidate_boundary.setAccessibleName("学生分析候选边界")
         set_status(self.candidate_boundary, "attention")
         review_layout.addWidget(self.candidate_boundary)
-        self.review_status = QLabel("正在读取候选复核状态…")
+        self.review_status = QLabel('正在读取教师确认记录…')
         self.review_status.setWordWrap(True)
         self.review_status.setAccessibleName("学生分析教师复核状态")
         self.review_status.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -1739,7 +1739,7 @@ class StudentPage(QWidget):
             self.model_status.setFocus(Qt.FocusReason.OtherFocusReason)
             return
         self.analyze_button.setEnabled(False)
-        set_status(self.model_status, "info", "正在冻结本次页面与模型发送范围…")
+        set_status(self.model_status, "info", '正在整理本次要发送的页面…')
         generation = self._view_generation
         student_id = str(_field(student, "student_id"))
         submission_id = str(_field(summary, "submission_id"))
@@ -2129,7 +2129,7 @@ class StudentPage(QWidget):
             set_status(self.review_status, "attention", message + counts)
         if blockers:
             blocker_label = QLabel(
-                "全局候选阻断：\n" + "\n".join(f"• {value}" for value in blockers)
+                '全局需要补充的信息：\n' + "\n".join(f"• {value}" for value in blockers)
             )
             blocker_label.setWordWrap(True)
             set_status(blocker_label, "attention")
@@ -2330,7 +2330,7 @@ class StudentPage(QWidget):
         def failed(message: str) -> None:
             self._practice_detail_task_id = None
             self._practice_viewed_keys.discard(candidate_key)
-            set_status(card.status, "error", message + " 尚未完成预览，未解锁加入题篮。")
+            set_status(card.status, "error", message + ' 尚未完成预览，暂不能加入题篮。')
             self._update_practice_enabled()
 
         def loaded(detail: object) -> None:

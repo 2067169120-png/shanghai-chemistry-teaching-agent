@@ -1602,6 +1602,7 @@ def _add_theme_sections(
     blueprint: Mapping[str, Any] | None = None,
     suppressed_shared_keys: set[str] | frozenset[str] = frozenset(),
     show_question_scores: bool = True,
+    new_paper_numbers: bool = False,
 ) -> None:
     seen_materials: set[str] = set()
     blueprint_sections = _blueprint_theme_sections(visible, blueprint)
@@ -1646,6 +1647,8 @@ def _add_theme_sections(
             source_number = _source_question_number(
                 printed, blueprint_printed[printed_index] if blueprint_printed else None
             )
+            if new_paper_numbers:
+                source_number = None
             display_number = source_number or printed["question_number"]
             atomic_parts = printed["atomic_parts"]
             printed_blocks, _shared_question_image = _printed_question_blocks(atomic_parts)
@@ -1678,12 +1681,18 @@ def _add_theme_sections(
                 rendered_answer_lines = answer_lines if audience == "student" else 0
                 source_image_question = _is_source_image_question(atomic)
                 question = None
-                if show_question_scores or not source_image_question:
+                if show_question_scores or not source_image_question or (new_paper_numbers and atomic_index == 0):
                     question = doc.add_paragraph(style="ShChemQuiet" if source_image_question else "ShChemQuestion")
                     question.paragraph_format.space_before = Pt(1 if source_image_question else 3)
                     question.paragraph_format.space_after = Pt(0)
                     question.paragraph_format.keep_with_next = True
-                    if compact_source_scores:
+                    if new_paper_numbers and source_image_question and atomic_index == 0:
+                        question.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                        prefix = f"第{display_number}题 "
+                        if show_question_scores:
+                            prefix += (f"（共 {_format_score(sum(part['score'] for part in atomic_parts))} 分）"
+                                       if compact_source_scores else f"（{_format_score(atomic['score'])} 分）")
+                    elif compact_source_scores:
                         question.alignment = WD_ALIGN_PARAGRAPH.LEFT
                         prefix = f"第{display_number}题（共 {_format_score(sum(part['score'] for part in atomic_parts))} 分）"
                     elif source_image_question:
@@ -1740,6 +1749,16 @@ def _add_theme_sections(
                     )
 
 
+def _current_paper_plan(plan, blueprint):
+    """Project the real composer plan without altering its source contract."""
+    if "题目来源见教师版" not in str(plan["visible"].get("version_label_zh") or ""):
+        return plan
+    from .desktop_paper_numbering import rewrite_core_text
+    projected = deepcopy(plan)
+    rewrite_core_text(projected["visible"], blueprint, 1)
+    return projected
+
+
 def build_docx_from_plan(
     plan: Mapping[str, Any],
     *,
@@ -1749,6 +1768,7 @@ def build_docx_from_plan(
     blueprint: Mapping[str, Any] | None = None,
     suppressed_shared_keys: set[str] | frozenset[str] | None = None,
 ) -> None:
+    plan = _current_paper_plan(plan, blueprint)
     audience = plan["audience"]
     if audience not in {"student", "teacher"}:
         raise PaperExportRendererError("audience_invalid", "文档受众不正确。")
@@ -1763,6 +1783,12 @@ def build_docx_from_plan(
                 "suppressed_shared_keys"
             ]
         )
+    is_local_basket_export = "题目来源见教师版" in str(visible.get("version_label_zh") or "")
+    if is_local_basket_export and any(_is_source_image_question(part)
+            for theme in visible["theme_sections"] for question in theme["printed_questions"]
+            for part in question["atomic_parts"]):
+        from .desktop_paper_numbering import RASTER_NOTICE
+        doc.add_paragraph(RASTER_NOTICE, style="ShChemQuiet")
     _add_theme_sections(
         doc,
         visible,
@@ -1773,6 +1799,7 @@ def build_docx_from_plan(
         blueprint=blueprint,
         suppressed_shared_keys=suppressed_shared_keys,
         show_question_scores=preset["student_version"]["show_item_scores"],
+        new_paper_numbers=is_local_basket_export,
     )
 
     is_local_basket_export = "题目来源见教师版" in str(
@@ -1946,6 +1973,8 @@ def _score_labels_present(
                     printed,
                     blueprint_printed[printed_index] if printed_index < len(blueprint_printed) else None,
                 )
+                if "题目来源见教师版" in str(plan["visible"].get("version_label_zh") or ""):
+                    source_number = None
                 labels = [_teacher_scoring_label(printed, index, source_number=source_number) for index in range(len(parts))]
             elif len(parts) > 1 and all(_is_source_image_question(part) and part["answer_space"]["lines"] == 0 for part in parts):
                 labels = [f"（共 {_format_score(sum(part['score'] for part in parts))} 分）"]
@@ -1987,6 +2016,7 @@ def audit_docx(
     preset: Mapping[str, Any],
     blueprint: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
+    plan = _current_paper_plan(plan, blueprint)
     audience = plan["audience"]
     show_scores = preset["student_version"]["show_item_scores"]
     doc = Document(path)
@@ -2350,6 +2380,7 @@ def _pdf_text_audit(
     path: Path, *, plan: Mapping[str, Any], preset: Mapping[str, Any] | None = None,
     blueprint: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
+    plan = _current_paper_plan(plan, blueprint)
     audience = plan["audience"]
     show_scores = preset["student_version"]["show_item_scores"] if preset else True
     text = _pdf_text(path)

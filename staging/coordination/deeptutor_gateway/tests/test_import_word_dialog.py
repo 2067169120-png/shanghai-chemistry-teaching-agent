@@ -87,7 +87,7 @@ class _Facade:
                     "asset_id": "internal-unsupported",
                     "label": "区块 2 · 旧式公式对象",
                     "block_index": 2,
-                    "mime_type": "image/x-wmf",
+                    "mime_type": "application/x-oleobject",
                     "preview_supported": False,
                 },
             ],

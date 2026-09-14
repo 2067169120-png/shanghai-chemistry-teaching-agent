@@ -12,6 +12,8 @@ class StudioPreparationPage(PreparationPage):
         from .preparation_recovery import PreparationRecoveryController
         state_root = getattr(getattr(facade, "paths", None), "state_root", None)
         self.recovery = PreparationRecoveryController(self) if state_root is not None else None
+        from .preparation_workspace import PreparationWorkspace
+        self.workspace = PreparationWorkspace(self)
 
     def studio_busy(self) -> bool:
         return bool(self._save_task_id or self._generation_qt_task_id

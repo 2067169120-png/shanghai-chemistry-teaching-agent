@@ -88,7 +88,7 @@ class PreparationSourcesDialog(QDialog):
 
         self.intro_label = QLabel(
             "选择对应复习讲义的 Word 区块，并勾选教材知识点；先生成可核对的全文，"
-            "确认时会重新编译同一选择。不会自动匹配，也不会调用模型。"
+            '确认时会再次核对所选资料。不自动匹配其他内容，也不调用模型。'
         )
         self.intro_label.setWordWrap(True)
         self.intro_label.setObjectName("PageSubtitle")
@@ -96,7 +96,7 @@ class PreparationSourcesDialog(QDialog):
 
         self.warning_label = QLabel(
             "提示：候选知识点和部分 Word 对象可能不是完整原文，导入后仍需教师核验；"
-            "只有在生成备课候选时，才会按原有确认流程处理文字出站。"
+            '只有在生成备课初稿时，才会按原有确认流程处理发送文字给模型。'
         )
         self.warning_label.setWordWrap(True)
         self.warning_label.setObjectName("StatusAttention")
@@ -130,7 +130,7 @@ class PreparationSourcesDialog(QDialog):
         word_layout = QVBoxLayout(word_panel)
         word_layout.setContentsMargins(0, 0, 0, 0)
         word_layout.setSpacing(5)
-        self._word_heading = QLabel("Word 区块（段落/表格）")
+        self._word_heading = QLabel('Word段落与表格')
         self._word_heading.setObjectName("CardTitle")
         self._word_heading.setWordWrap(True)
         word_layout.addWidget(self._word_heading)
@@ -159,7 +159,7 @@ class PreparationSourcesDialog(QDialog):
         word_layout.addWidget(self.block_list, 1)
         range_row = QHBoxLayout()
         range_row.setSpacing(5)
-        range_row.addWidget(QLabel("区块范围"))
+        range_row.addWidget(QLabel('段落范围'))
         self.block_start = QSpinBox()
         self.block_start.setRange(0, 0)
         self.block_start.setAccessibleName("Word 区块起始序号")
@@ -287,13 +287,13 @@ class PreparationSourcesDialog(QDialog):
             "选 Word 区块和教材知识点，先预览，确认前会复核；不会自动匹配或调用模型。"
             if narrow
             else "选择对应复习讲义的 Word 区块，并勾选教材知识点；先生成可核对的全文，"
-            "确认时会重新编译同一选择。不会自动匹配，也不会调用模型。"
+            '确认时会再次核对所选资料。不自动匹配其他内容，也不调用模型。'
         )
         self.warning_label.setText(
-            "候选/部分 Word 对象可能不完整，需教师核验；生成时才处理文字出站。"
+            '候选/部分 Word 对象可能不完整，需教师核验；生成时才处理发送文字给模型。'
             if narrow
             else "提示：候选知识点和部分 Word 对象可能不是完整原文，导入后仍需教师核验；"
-            "只有在生成备课候选时，才会按原有确认流程处理文字出站。"
+            '只有在生成备课初稿时，才会按原有确认流程处理发送文字给模型。'
         )
         # The two small helper lines are redundant in the narrow view.  Their
         # counts remain available in the main status line and their detailed
@@ -319,7 +319,7 @@ class PreparationSourcesDialog(QDialog):
                 QTimer.singleShot(0, self._balance_wide_splitter)
         if self._word_heading is not None and self._concept_heading is not None:
             self._word_heading.setText(
-                "Word 区块" if narrow else "Word 区块（段落/表格）"
+                "Word 区块" if narrow else 'Word段落与表格'
             )
             self._concept_heading.setText(
                 "教材知识点" if narrow else "教材知识点（可多选）"
@@ -448,7 +448,7 @@ class PreparationSourcesDialog(QDialog):
                 self.block_start.setRange(0, 0)
                 self.block_end.setRange(0, 0)
                 self.block_hint.setText(
-                    "Word 未返回可选区块；请改用教材知识点或重新选择。"
+                    '没有找到可选的Word段落，请重新选择文件或改用教材知识点。'
                 )
             warnings = [
                 _text(item)
@@ -750,7 +750,7 @@ class PreparationSourcesDialog(QDialog):
         try:
             reference = self._compile_reference()
         except Exception as exc:  # noqa: BLE001 - local facade boundary
-            set_status(self.status, "error", _message(exc, "参考编译失败，未导入。"))
+            set_status(self.status, "error", _message(exc, '资料整理失败，尚未添加。'))
             self._update_actions()
             return
         self.reference = reference
@@ -779,7 +779,7 @@ class PreparationSourcesDialog(QDialog):
             current = self._compile_reference()
         except Exception as exc:  # noqa: BLE001 - local facade boundary
             set_status(
-                self.status, "error", _message(exc, "确认前重新编译失败，未导入。")
+                self.status, "error", _message(exc, '确认前重新核对资料失败，尚未添加。')
             )
             return
         if current != previous:

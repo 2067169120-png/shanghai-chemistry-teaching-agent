@@ -21,19 +21,19 @@ class BlueprintPreparationDialog(QDialog):
         super().__init__(parent)
         self.facade = facade
         self.reference: dict | None = None
-        self.setWindowTitle("从命题蓝图导入备课参考")
+        self.setWindowTitle('从命题方案添加备课参考')
         self.setWindowModality(Qt.WindowModality.WindowModal)
         self.resize(820, 720)
         self.setMinimumSize(360, 480)
         root = QVBoxLayout(self)
         intro = QLabel(
-            "选择最近30份已完成蓝图中的原稿、教师草稿或AI修订稿。"
-            "先预览，再追加到备课资料；不会改动原蓝图或自动调用模型。"
+            '选择最近30份已完成的命题方案中的原稿、教师草稿或AI修订稿。'
+            '先预览，再追加到备课资料；不会改动原命题方案或自动调用模型。'
         )
         intro.setWordWrap(True)
         root.addWidget(intro)
         self.source = QComboBox()
-        self.source.setAccessibleName("选择已保存蓝图版本作为备课参考")
+        self.source.setAccessibleName('选择已保存的命题方案版本作为备课参考')
         self.source.setMinimumContentsLength(8)
         self.source.setSizeAdjustPolicy(
             QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
@@ -42,7 +42,7 @@ class BlueprintPreparationDialog(QDialog):
         root.addWidget(self.source)
         self.preview = QPlainTextEdit()
         self.preview.setReadOnly(True)
-        self.preview.setAccessibleName("即将导入的蓝图参考全文")
+        self.preview.setAccessibleName('即将导入的命题方案参考全文')
         root.addWidget(self.preview, 1)
         self.status = QLabel()
         self.status.setWordWrap(True)
@@ -62,10 +62,10 @@ class BlueprintPreparationDialog(QDialog):
                 self.source.addItem(option["label"], option)
             if not options:
                 self.status.setText(
-                    "暂无可导入蓝图。请先在教材/命题蓝图入口生成并保存蓝图。"
+                    '暂无可添加命题方案。请先在教材/命题方案入口生成并保存命题方案。'
                 )
         except Exception:  # noqa: BLE001 - native boundary must not expose raw state errors
-            self.status.setText("本地蓝图列表读取失败，备课内容未变。请关闭后重试。")
+            self.status.setText('本地命题方案列表读取失败，备课内容未变。请关闭后重试。')
 
     def _select(self, _index: int) -> None:
         self.reference = None
@@ -88,7 +88,7 @@ class BlueprintPreparationDialog(QDialog):
         self.preview.setPlainText(reference["materials"])
         self.status.setText(
             f"共{len(reference['materials'])}字。仅导入资料快照与设计思路，不导入图片；"
-            "化学事实、答案与课堂适用性仍需教师核验。生成时将按原有流程确认文字出站。"
+            '化学事实、答案与课堂适用性仍需教师核验。生成时将按原有流程确认发送文字给模型。'
         )
         self.import_button.setEnabled(True)
 

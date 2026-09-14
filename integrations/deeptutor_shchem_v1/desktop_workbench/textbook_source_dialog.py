@@ -43,7 +43,7 @@ class TextbookSourceDialog(QDialog):
         self.summary = QPlainTextEdit()
         self.summary.setReadOnly(True)
         self.summary.setMaximumHeight(86)
-        self.summary.setAccessibleName("待核对的教材蒸馏候选，不是教材原句")
+        self.summary.setAccessibleName('待核对的教材整理出的知识摘要，不是教材原句')
         root.addWidget(self.summary)
         controls = QHBoxLayout()
         self.pages = QComboBox()
@@ -161,7 +161,7 @@ class TextbookSourceDialog(QDialog):
         self._source = source
         self.heading.setText(source["title"] + " · " + source["source_name"])
         self.summary.setPlainText(
-            "蒸馏候选（请对照原页，不是教材原句）：\n" + source["statement"]
+            '整理出的知识摘要（请对照原页，不是教材原句）：\n' + source["statement"]
         )
         self.buffer.setData(QByteArray(source["pdf_bytes"]))
         self.buffer.open(QIODevice.OpenModeFlag.ReadOnly)
