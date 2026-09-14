@@ -131,13 +131,21 @@ def main():
             for path in sorted((source / folder).rglob("*")):
                 if path.is_file(): archive_zip.write(path, str(path.relative_to(source)))
     import markdown
-    html = markdown.markdown(text, extensions=["tables", "fenced_code", "toc"])
+    from markdown.extensions.toc import slugify_unicode
+    html = markdown.markdown(text, extensions=["tables", "fenced_code", "toc"],
+        extension_configs={"toc": {"slugify": slugify_unicode}})
     def embed(match):
         path = ROOT / match[1]
         if path.is_file() and path.suffix == ".png":
             return 'src="data:image/png;base64,' + base64.b64encode(path.read_bytes()).decode() + '"'
         return match[0]
     html = re.sub(r'src="([^"]+)"', embed, html)
+    def link(match):
+        href = match[1]
+        if href.startswith(("#", "http:", "https:", "mailto:")):
+            return match[0]
+        return 'href="https://github.com/' + repo + '/blob/' + TAG + '/' + href + '"'
+    html = re.sub(r'href="([^"]+)"', link, html)
     (output / "ShanghaiChem-0.1.87-Guide.html").write_text('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>沪上化学智研台0.1.87</title><style>body{max-width:1050px;margin:40px auto;padding:0 24px;font:17px/1.8 system-ui}img{max-width:100%}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:8px}pre{overflow:auto;background:#f5f5f5;padding:16px}</style>' + html + '</html>', encoding="utf-8")
     files = [{"file": p.name, "bytes": p.stat().st_size, "sha256": hashlib.sha256(p.read_bytes()).hexdigest()}
              for p in sorted(output.iterdir()) if p.is_file()]
