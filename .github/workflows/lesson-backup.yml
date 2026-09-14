@@ -75,7 +75,7 @@ jobs:
           if-no-files-found: error
   publish:
     needs: verify
-    if: ${{ false }} # Enable after native restore review; do not publish an unchecked candidate
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write

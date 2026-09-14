@@ -81,6 +81,10 @@ def main():
                "便携程序还以--personal-state实际打开并关闭恢复窗口。8页及既有5页PPTX/2页教案PDF回归保留。"
                "以上为隔离合成数据验证，不代表全题库备份或真实课堂验收。")
     text = text.replace("{{VERIFICATION_SUMMARY}}", summary)
+    text = text.replace("关闭后再次打开默认EXE仍回到默认个人资料；再次进入此恢复副本可执行：",
+        "关闭后再次打开默认EXE仍回到默认个人资料。可在‘检查与恢复’中点击**‘打开已有的恢复目录…’**，选择先前创建的恢复目录再次打开，无须重复恢复。也可执行：")
+    text = text.replace("保存前逐文件核对，来源在操作中变化会要求刷新，不覆盖旧备份。",
+        "草稿与题篮按整理清单时的快照保存；此后继续编辑，要重新整理清单才会包含新内容。图片与任务文件在写入时再次核对，变化会要求刷新，不覆盖旧备份。")
     readme.write_text(text, encoding="utf-8")
     for image in re.findall(r"!\[[^\]]*\]\(([^)]+)\)", text):
         assert (ROOT / image).is_file(), image
