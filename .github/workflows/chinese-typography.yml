@@ -31,9 +31,16 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: python runtime/deeptutor_shchem/typography_ci.py --baseline baseline-font-source readiness-qa/font-baseline
+      - uses: actions/upload-artifact@v4
+        with:
+          name: original-font-baseline-${{ github.sha }}
+          path: readiness-qa/font-baseline/
+          retention-days: 14
+          if-no-files-found: error
       - name: Chinese fonts and existing desktop regression
+        timeout-minutes: 12
         run: >-
-          python -m pytest -q
+          python -X faulthandler -m pytest -vv -o faulthandler_timeout=90 --durations=15
           staging/coordination/deeptutor_gateway/tests/test_preparation_workspace.py
           staging/coordination/deeptutor_gateway/tests/test_desktop_environment.py
           staging/coordination/deeptutor_gateway/tests/test_desktop_package_resources.py
