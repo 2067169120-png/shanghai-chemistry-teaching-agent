@@ -1,0 +1,49 @@
+{
+  "version": "0.1.86",
+  "source_commit": "923b602f0b66aa52eab866c7a3c127d7253d05fd",
+  "platform": "Windows-2025Server-10.0.26100-SP0",
+  "python": "3.12.10",
+  "qt": "6.11.2",
+  "routes_opened": [
+    "home",
+    "library",
+    "paper",
+    "student",
+    "preparation",
+    "templates",
+    "classroom",
+    "mywork"
+  ],
+  "uncaught_errors": [],
+  "drafts_searched": 501,
+  "matched_oldest": 1,
+  "scope": "Native Qt source with isolated synthetic records. Abrupt-process recovery and normal-close flush verified. No provider calls, original library changes, packaged EXE or classroom acceptance.",
+  "normal_reopen_verified": true,
+  "abrupt_restart_verified": true,
+  "termination_method": "Parent process.kill after saved checkpoint, without child closeEvent or runtime teardown",
+  "screenshots": [
+    {
+      "file": "recovery-normal-reopen.png",
+      "sha256": "094e0b0f380ffa24cee18bcec4c34fa1fd4937f1174fd0e4dbc9c0acf7558ee2"
+    },
+    {
+      "file": "recovery-restored.png",
+      "sha256": "21567d1e8dd038bd2347ab6e9ef0e44ba564749c10544bf247e727132bd8594a"
+    },
+    {
+      "file": "work-search-all.png",
+      "sha256": "f7aea34886027dc91b1ea6386b8785c4dd3473aacef3f3ca35b878dd4be6cdbd"
+    },
+    {
+      "file": "work-search-oldest.png",
+      "sha256": "3ce6e09b6988fa4d619af7e179c659f822c281db33ac63434fded1d6993da153"
+    }
+  ],
+  "tests": {
+    "tests": 338,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "workflow_run": "34802751656"
+}
