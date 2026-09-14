@@ -16,7 +16,6 @@ def _show_startup_error(message: str) -> None:
 
 def _write_startup_error() -> None:
     """Keep a small local error log so a windowed build never fails silently."""
-
     try:
         base = os.environ.get("LOCALAPPDATA")
         if not base:
@@ -29,19 +28,22 @@ def _write_startup_error() -> None:
 
 
 def main() -> int:
-    workspace_root = Path(__file__).resolve().parents[2]
+    workspace_root = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2]))
     if str(workspace_root) not in sys.path:
         sys.path.insert(0, str(workspace_root))
+    if len(sys.argv) == 3 and sys.argv[1] == "--verify-package":
+        try:
+            from integrations.deeptutor_shchem_v1.desktop_package_probe import run_probe
+            return run_probe(Path(sys.argv[2]))
+        except Exception:
+            _write_startup_error()
+            return 5
     try:
-        from integrations.deeptutor_shchem_v1.desktop_workbench import (
-            run_desktop_workbench,
-        )
+        from integrations.deeptutor_shchem_v1.desktop_workbench import run_desktop_workbench
     except ModuleNotFoundError as exc:
         _write_startup_error()
         if exc.name and exc.name.startswith("PySide6"):
-            _show_startup_error(
-                "尚未安装桌面界面依赖。请按 desktop_requirements.txt 准备独立环境后重试。"
-            )
+            _show_startup_error("尚未安装桌面界面依赖。请按 desktop_requirements.txt 准备独立环境后重试。")
         else:
             _show_startup_error("桌面运行依赖不完整，应用无法启动。")
         return 2

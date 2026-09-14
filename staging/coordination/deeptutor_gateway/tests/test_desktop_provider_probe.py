@@ -7,7 +7,7 @@ from dataclasses import asdict, replace
 from types import SimpleNamespace
 
 import pytest
-from test_desktop_ui import _settle, qt_app  # noqa: F401
+from test_desktop_ui import _wait_until, qt_app  # noqa: F401
 from test_model_provider_probe import (
     SECRET,
     FakeCredentialBackend,
@@ -206,7 +206,7 @@ def test_native_settings_requires_saved_fields_and_confirmation(qt_app, monkeypa
     bridge = DesktopTaskBridge()
     dialog = SettingsDialog(facade, bridge)
     dialog.show()
-    _settle(qt_app)
+    assert _wait_until(qt_app, lambda: dialog._active_task_id is None, timeout=3)
     assert dialog.test_button.isEnabled()
     dialog.model_id.setText("changed")
     assert not dialog.test_button.isEnabled()
@@ -220,7 +220,7 @@ def test_native_settings_requires_saved_fields_and_confirmation(qt_app, monkeypa
     monkeypatch.setattr(dialog, "_confirm_connection_test", lambda _: True)
     dialog.test_button.click()
     assert not dialog.model_id.isEnabled()
-    _settle(qt_app)
+    assert _wait_until(qt_app, lambda: dialog._active_task_id is None, timeout=3)
     assert calls[0][0] == profile.profile_id
     assert calls[0][1]["expected_revision"] == "rev-before"
     assert calls[0][1]["confirmed"] is True
@@ -257,7 +257,7 @@ def test_native_settings_running_close_guard_and_stop(qt_app, monkeypatch):
     bridge = DesktopTaskBridge()
     dialog = SettingsDialog(facade, bridge)
     dialog.show()
-    _settle(qt_app)
+    assert _wait_until(qt_app, lambda: dialog._active_task_id is None, timeout=3)
     monkeypatch.setattr(dialog, "_confirm_connection_test", lambda _: True)
     dialog.test_button.click()
     assert entered.wait(1)
@@ -265,8 +265,40 @@ def test_native_settings_running_close_guard_and_stop(qt_app, monkeypatch):
     assert dialog.isVisible()
     dialog.stop_test_button.click()
     assert bridge.wait_for_done(2000)
-    _settle(qt_app)
+    assert _wait_until(qt_app, lambda: dialog._active_task_id is None, timeout=3)
     assert "已停止" in dialog.status.text()
     assert not dialog.stop_test_button.isVisible()
     dialog.close()
     bridge.shutdown()
+
+
+def test_native_settings_waits_for_delayed_profile_without_sending(qt_app):
+    """Background read completion, not a fixed event-loop count, enables testing."""
+    from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import SettingsDialog
+    from integrations.deeptutor_shchem_v1.desktop_workbench.tasks import DesktopTaskBridge
+    entered, release = threading.Event(), threading.Event()
+    def load():
+        entered.set()
+        assert release.wait(3), "test did not release profile reader"
+        return (_profile(),)
+    calls = []
+    facade = SimpleNamespace(list_provider_profiles=load,
+                             test_provider_connection=lambda *a, **k: calls.append(a))
+    bridge = DesktopTaskBridge()
+    dialog = SettingsDialog(facade, bridge)
+    try:
+        dialog.show()
+        assert _wait_until(qt_app, entered.is_set, timeout=2)
+        assert not dialog.test_button.isEnabled()
+        assert not calls
+        release.set()
+        assert _wait_until(qt_app, lambda: dialog._active_task_id is None, timeout=3)
+        assert dialog.test_button.isEnabled()
+        assert dialog._profile.profile_id == "desktop-default"
+        assert not calls
+    finally:
+        release.set()
+        bridge.wait_for_done(3000)
+        _wait_until(qt_app, lambda: dialog._active_task_id is None, timeout=3)
+        dialog.close()
+        bridge.shutdown()

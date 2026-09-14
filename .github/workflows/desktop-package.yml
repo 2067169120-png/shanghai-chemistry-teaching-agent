@@ -1,0 +1,51 @@
+name: Windows Trial 0.1.87
+on:
+  push:
+    branches: ["feature/desktop-onboarding-0.1.87"]
+    paths: ["integrations/**", "runtime/**", "staging/**", ".github/workflows/desktop-package.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: trial-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows-trial:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Verify settings and the production document renderer
+        run: >-
+          python -m pytest -q
+          staging/coordination/deeptutor_gateway/tests/test_desktop_onboarding_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_environment.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_package_resources.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_preparation_renderer.py
+          --junitxml=package-qa/pytest.xml
+      - name: Build the shipping entry point with declared resources
+        run: ./runtime/deeptutor_shchem/desktop_build.ps1 -BuildTag "ci${{ github.run_id }}"
+      - name: Install local Office converter for actual PDF verification
+        run: choco install libreoffice-fresh -y --no-progress
+      - name: Verify copied executable without source or Python search paths
+        run: python runtime/deeptutor_shchem/verify_packaged_trial.py "runtime/deeptutor_shchem/desktop_dist_ci${{ github.run_id }}/沪上化学智研台"
+      - name: Archive source matched to this binary
+        if: always()
+        run: |
+          New-Item -ItemType Directory -Force release-assets | Out-Null
+          git archive --format=zip --output=release-assets/ShanghaiChem-0.1.87-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: packaged-0.1.87-${{ github.sha }}
+          path: |
+            package-qa/
+            release-assets/
+          if-no-files-found: error
+          retention-days: 14

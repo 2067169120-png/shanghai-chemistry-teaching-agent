@@ -1102,8 +1102,8 @@ class SettingsDialog(QDialog):
         self._profile: ProviderProfileSummary | None = None
         self._testing = False
         self._probe_cancel = threading.Event()
-        self.setWindowTitle("设置")
-        self.resize(720, 650)
+        self.setWindowTitle("设置 · 连接与能力")
+        self.resize(760, 700)
         self.setMinimumWidth(420)
 
         root = QVBoxLayout(self)
@@ -1112,7 +1112,7 @@ class SettingsDialog(QDialog):
         root.addWidget(
             section_title(
                 "AI 模型设置",
-                "可自由填写服务商、接口地址和模型名称；实验版新模型也可直接输入，密钥只显示保存状态。",
+                "先填写连接信息；预算按需展开。保存和本机检查不会调用模型，测试连接会另行确认。",
             )
         )
 
@@ -1167,34 +1167,42 @@ class SettingsDialog(QDialog):
         form.addRow("服务商名称", self.provider_name)
         form.addRow("接口地址（Base URL）", self.base_url)
         form.addRow("模型名称（Model ID）", self.model_id)
-        form.addRow("输入预算（估算 tokens）", self.max_input_tokens)
-        form.addRow("输出上限（tokens）", self.max_output_tokens)
-        form.addRow("", self.budget_reference)
-        form.addRow("", self.use_reference_button)
-        form.addRow("", budget_note)
         form.addRow("API 密钥（API Key）", self.key_input)
         form.addRow("", self.key_state)
         content_layout.addWidget(form_card)
 
-        advanced = CollapsibleSection("高级设置")
+        self.advanced = CollapsibleSection("高级预算（可留空，沿用各功能默认值）")
         advanced_form = QFormLayout()
+        self._budget_form = advanced_form
+        advanced_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         self.api_style = QComboBox()
         self.api_style.setAccessibleName("接口格式")
         self.api_style.addItem("新式响应接口（Responses）", "responses")
         self.api_style.addItem("聊天补全接口（Chat Completions）", "chat_completions")
-        self.vision = QCheckBox("允许确认后发送原始页面")
-        self.vision.setAccessibleName("允许确认后发送原始页面")
+        self.vision = QCheckBox("允许逐次确认后发送图片")
+        self.vision.setAccessibleName("允许逐次确认后发送图片；不代表模型已通过识图测试")
         self.vision.setChecked(True)
-        capability_note = QLabel(
-            "要识别题目图片，所选模型需要支持图片输入和结构化结果；不支持时仍可使用本地题库。"
-        )
-        capability_note.setWordWrap(True)
-        capability_note.setObjectName("MutedLabel")
-        advanced_form.addRow("接口格式", self.api_style)
-        advanced_form.addRow("图片识别", self.vision)
-        advanced_form.addRow("", capability_note)
-        advanced.content_layout.addLayout(advanced_form)
-        content_layout.addWidget(advanced)
+        form.addRow("接口格式", self.api_style)
+        capability_card = CardFrame()
+        capability_layout = QVBoxLayout(capability_card)
+        capability_layout.setContentsMargins(18, 14, 18, 14)
+        capability_title = QLabel("使用范围与已知能力")
+        capability_title.setObjectName("CardTitle")
+        capability_layout.addWidget(capability_title)
+        capability_layout.addWidget(self.vision)
+        self.capability_note = QLabel()
+        self.capability_note.setWordWrap(True)
+        self.capability_note.setTextFormat(Qt.TextFormat.PlainText)
+        self.capability_note.setObjectName("MutedLabel")
+        capability_layout.addWidget(self.capability_note)
+        content_layout.addWidget(capability_card)
+        advanced_form.addRow("输入预算（估算 tokens）", self.max_input_tokens)
+        advanced_form.addRow("输出上限（tokens）", self.max_output_tokens)
+        advanced_form.addRow("", self.budget_reference)
+        advanced_form.addRow("", self.use_reference_button)
+        advanced_form.addRow("", budget_note)
+        self.advanced.content_layout.addLayout(advanced_form)
+        content_layout.addWidget(self.advanced)
         self.scroll = page_scroll(content)
         self.scroll.setObjectName("SettingsScroll")
         root.addWidget(self.scroll, 1)
@@ -1205,6 +1213,12 @@ class SettingsDialog(QDialog):
         root.addWidget(self.status)
         actions = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         actions.rejected.connect(self.reject)
+        self.environment_button = QPushButton("本机检查")
+        self.environment_button.setAutoDefault(False)
+        self.environment_button.setAccessibleName("检查运行版本、依赖、图标和本机排版工具；不调用模型")
+        self.environment_button.setEnabled(getattr(self.facade, "paths", None) is not None)
+        self.environment_button.clicked.connect(self._open_environment)
+        actions.addButton(self.environment_button, QDialogButtonBox.ButtonRole.ActionRole)
         close_action = actions.button(QDialogButtonBox.StandardButton.Close)
         if close_action is not None:
             close_action.setText("关闭")
@@ -1238,15 +1252,26 @@ class SettingsDialog(QDialog):
         self.vision.toggled.connect(self._refresh_test_enabled)
         self.tasks.task_finished.connect(self._task_finished)
         self._refresh_budget_reference()
+        self._refresh_test_enabled()
         self._load()
+
+    def _open_environment(self) -> None:
+        from .environment_dialog import EnvironmentDialog
+        paths = getattr(self.facade, "paths", None)
+        if paths is not None:
+            dialog = EnvironmentDialog(paths, self.tasks, self)
+            dialog.exec()
+            dialog.deleteLater()
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)
-        if hasattr(self, "_settings_form"):
-            self._settings_form.setRowWrapPolicy(
-                QFormLayout.RowWrapPolicy.WrapAllRows if self.width() < 580
-                else QFormLayout.RowWrapPolicy.WrapLongRows
-            )
+        for name in ("_settings_form", "_budget_form"):
+            form = getattr(self, name, None)
+            if form is not None:
+                form.setRowWrapPolicy(
+                    QFormLayout.RowWrapPolicy.WrapAllRows if self.width() < 580
+                    else QFormLayout.RowWrapPolicy.WrapLongRows
+                )
 
     def _matches_saved(self) -> bool:
         profile = self._profile
@@ -1303,7 +1328,12 @@ class SettingsDialog(QDialog):
         self.max_output_tokens.setText(str(output_tokens))
 
     def _refresh_test_enabled(self) -> None:
-        ready = bool(self._profile and self._profile.key_saved and self._matches_saved())
+        from ..desktop_settings_view import capability_summary
+        matches_saved = self._matches_saved()
+        self.capability_note.setText(capability_summary(
+            self._profile, matches_saved=matches_saved, vision_enabled=self.vision.isChecked()
+        ))
+        ready = bool(self._profile and self._profile.key_saved and matches_saved)
         self.test_button.setEnabled(ready and not self._active_task_id and not self._testing)
         self.test_button.setToolTip(
             "发送固定短文本，检查已保存的模型配置" if ready else "请先保存模型配置和密钥；修改后需重新保存"
@@ -1369,6 +1399,9 @@ class SettingsDialog(QDialog):
         try:
             input_tokens, output_tokens = self._token_limits()
         except ValueError as exc:
+            self.advanced.toggle.setChecked(True)
+            self.advanced._set_expanded(True)
+            self.scroll.ensureWidgetVisible(self.max_input_tokens)
             set_status(self.status, "error", str(exc))
             return
         request = ProviderProfileInput(
@@ -1430,7 +1463,7 @@ class SettingsDialog(QDialog):
         self._set_form_enabled(False)
         self.stop_test_button.setVisible(True)
         self.stop_test_button.setEnabled(True)
-        set_status(self.status, "info", "正在测试已保存的模型连接…仅发送固定短文本，通常约 10 秒内返回。")
+        set_status(self.status, "info", "正在测试已保存的模型连接…仅发送固定短文本，可点击“停止测试”。")
         self._active_task_id = self.tasks.submit(
             "测试模型连接",
             lambda: self.facade.test_provider_connection(

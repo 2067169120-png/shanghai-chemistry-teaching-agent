@@ -4,7 +4,6 @@
     [string]$BuildTag,
     [switch]$OneFile
 )
-
 $ErrorActionPreference = "Stop"
 $RuntimeRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $WorkspaceRoot = (Resolve-Path (Join-Path $RuntimeRoot "..\..")).Path
@@ -13,7 +12,6 @@ $DistRoot = Join-Path $RuntimeRoot "desktop_dist"
 $WorkRoot = Join-Path $RuntimeRoot "desktop_build"
 $SpecRoot = Join-Path $RuntimeRoot "desktop_spec"
 if ($BuildTag) {
-    # A named build keeps previously delivered binaries and build evidence intact.
     $DistRoot = Join-Path $RuntimeRoot "desktop_dist_$BuildTag"
     $WorkRoot = Join-Path $RuntimeRoot "desktop_build_$BuildTag"
     $SpecRoot = Join-Path $RuntimeRoot "desktop_spec_$BuildTag"
@@ -32,28 +30,32 @@ $BuildSearchPathEntries = @(
         }
 )
 try {
-    # Exclude private runtime ICU libraries from PyInstaller's dependency scan.
     $env:Path = [string]::Join([IO.Path]::PathSeparator, $BuildSearchPathEntries)
-    & $Python -c "import PySide6, PyInstaller, jsonschema, PIL, docx, pptx, pypdf; from PySide6 import QtPdf, QtPdfWidgets"
-    if ($LASTEXITCODE -ne 0) {
-        throw "桌面构建依赖不可用。请先在项目专用环境中安装 desktop_requirements.txt。"
-    }
-    $StudioAssets = Join-Path $WorkspaceRoot "integrations\deeptutor_shchem_v1\desktop_workbench\studio_assets"
+    & $Python -c "import PySide6, PyInstaller, jsonschema, PIL, docx, pptx, pypdf, pypdfium2; from PySide6 import QtPdf, QtPdfWidgets"
+    if ($LASTEXITCODE -ne 0) { throw "Desktop build dependencies are unavailable." }
+    $ResourceScript = Join-Path $RuntimeRoot "package_resources.py"
+    $ResourceJson = & $Python $ResourceScript --arguments
+    if ($LASTEXITCODE -ne 0) { throw "Declared software resources are incomplete." }
+    $ResourceArguments = @($ResourceJson | ConvertFrom-Json)
     $Arguments = @(
         "-m", "PyInstaller", "--windowed", "--noupx",
         "--name", "沪上化学智研台", "--paths", $WorkspaceRoot,
         "--distpath", $DistRoot, "--workpath", $WorkRoot, "--specpath", $SpecRoot,
-        "--add-data", ($StudioAssets + ":integrations/deeptutor_shchem_v1/desktop_workbench/studio_assets"),
+        "--hidden-import", "PySide6.QtSvg",
+        "--hidden-import", "PySide6.QtPdf",
+        "--hidden-import", "PySide6.QtPdfWidgets",
+        "--hidden-import", "pypdfium2",
         "--exclude-module", "integrations.deeptutor_shchem_v1.service",
         "--exclude-module", "integrations.deeptutor_shchem_v1.http_app",
         "--exclude-module", "integrations.deeptutor_shchem_v1.launcher",
         "--exclude-module", "PySide6.QtWebEngineCore",
         "--exclude-module", "PySide6.QtWebEngineWidgets"
     )
+    $Arguments += $ResourceArguments
     if ($OneFile) { $Arguments += "--onefile" }
     $Arguments += $EntryPoint
     & $Python @Arguments
-    if ($LASTEXITCODE -ne 0) { throw "桌面应用构建失败。" }
+    if ($LASTEXITCODE -ne 0) { throw "Desktop build failed." }
 }
 finally { $env:Path = $OriginalSearchPath }
 if (-not $OneFile) {
@@ -62,8 +64,6 @@ if (-not $OneFile) {
         Get-ChildItem -LiteralPath $InternalRoot -File -ErrorAction SilentlyContinue |
             Where-Object { $_.Name -eq "icuuc.dll" -or $_.Name -like "icudt*.dll" }
     )
-    if ($UnexpectedIcu.Count -gt 0) {
-        throw "桌面包误收集了外部 ICU DLL，请检查构建进程 PATH。"
-    }
+    if ($UnexpectedIcu.Count -gt 0) { throw "Unexpected external ICU DLL in package." }
 }
-Write-Host "构建完成：$DistRoot"
+Write-Host "Build completed: $DistRoot"

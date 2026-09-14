@@ -1,0 +1,44 @@
+{
+  "version": "0.1.87",
+  "source_commit": "0131d0ca394f0b47674e08fcca6161f3989b41a1",
+  "platform": "Windows-2025Server-10.0.26100-SP0",
+  "python": "3.12.10",
+  "qt": "6.11.2",
+  "routes_opened": [
+    "home",
+    "library",
+    "paper",
+    "student",
+    "preparation",
+    "templates",
+    "classroom",
+    "mywork"
+  ],
+  "screenshots": [
+    {
+      "file": "settings-basic.png",
+      "sha256": "50faa5da9038a80c46fab2d115020858dec456cfdbeebae4c1647c442454ed4f"
+    },
+    {
+      "file": "settings-advanced.png",
+      "sha256": "8717c49c9a88a8854323e766eece4431096112dbdb20c7fdf986904e1b0e3f5f"
+    },
+    {
+      "file": "settings-compact.png",
+      "sha256": "c0bed678487723fb4b90847f1503edce8a7c742ad86d020804950702c271d60f"
+    },
+    {
+      "file": "environment.png",
+      "sha256": "9274d570c7d3570e1c7d043f991ca54178f836d898153ff81d1f393ae1596eea"
+    }
+  ],
+  "uncaught_errors": [],
+  "scope": "Native source settings and local dependency checks, isolated empty state. No real API, private teaching material, packaged EXE or classroom acceptance.",
+  "tests": {
+    "tests": 263,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "workflow_run": "34811002982"
+}

@@ -178,3 +178,13 @@
 !/runtime/deeptutor_shchem/phase_a_ci_smoke.py
 !/runtime/deeptutor_shchem/benchmark_phase_a.py
 !/runtime/deeptutor_shchem/publish_phase_a_evidence.py
+
+# 0.1.87 local candidate: readiness, declared resources and Windows test workflow.
+!/README-0.1.86-archive.md
+!/检查运行环境.cmd
+!/.github/workflows/desktop-readiness.yml
+!/runtime/deeptutor_shchem/check_desktop_environment.py
+!/runtime/deeptutor_shchem/package_resources.py
+!/runtime/deeptutor_shchem/onboarding_ci_smoke.py
+!/docs/qa/0.1.87-readiness.md
+!/docs/qa/0.1.87-local-tests.json

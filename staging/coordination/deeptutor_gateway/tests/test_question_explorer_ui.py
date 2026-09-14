@@ -34,7 +34,7 @@ def test_left_facets_right_cards_and_readable_question(window):
 
 def test_filter_and_clear_preserve_cart(window):
     win,app=window;p=win.library_page
-    p.cards[0].add.click();settle(app,lambda:len(win.facade.basket())==1)
+    p.cards[0].add.click();settle(app,lambda:len(win.facade.basket())==1 and not p._adding and p.preview_button.isEnabled())
     before=win.facade.basket()
     p.filters={'knowledge':{'K09'},'exam':{'second_mock'}};p.search()
     settle(app,lambda:not p._loading and len(p.cards)==2 and p.cards[0].ready)
@@ -49,7 +49,7 @@ def test_cart_can_reorder_and_remove_only_selected_item(window):
     for i in (0,1):
         if p._active_card is not p.cards[i]:p.expand(p.cards[i])
         settle(app,lambda:p.cards[i].ready)
-        p.add(p.cards[i]);settle(app,lambda:len(win.facade.basket())==i+1)
+        p.add(p.cards[i]);settle(app,lambda:len(win.facade.basket())==i+1 and not p._adding)
     original=[r['key'] for r in win.facade.basket()]
     dialog=ExplorerBasketDialog(win.facade,win);dialog.show()
     dialog.down.click()
@@ -61,7 +61,7 @@ def test_cart_can_reorder_and_remove_only_selected_item(window):
 
 def test_preview_button_uses_real_composer_entry(window,monkeypatch):
     win,app=window;p=win.library_page
-    p.add(p.cards[0]);settle(app,lambda:len(win.facade.basket())==1)
+    p.add(p.cards[0]);settle(app,lambda:len(win.facade.basket())==1 and not p._adding and p.preview_button.isEnabled())
     calls=[]
     monkeypatch.setattr(win.paper_page,'request_layout_preview',lambda:calls.append('preview'))
     p.preview_button.click()
