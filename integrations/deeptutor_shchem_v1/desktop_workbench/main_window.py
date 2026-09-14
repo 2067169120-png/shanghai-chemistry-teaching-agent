@@ -256,6 +256,13 @@ class TeacherWorkbenchWindow(QMainWindow):
             self.navigate("preparation")
 
     def open_work_record(self, record: dict) -> None:
+        if "organization_revision" in record:
+            try:
+                record = self.facade.resolve_preparation_work(record)
+            except Exception as exc:
+                message = getattr(exc, "message_zh", "作品暂时无法打开，请刷新后重选；当前编辑未改变。")
+                self.statusBar().showMessage(message, 7000)
+                return
         if self.preparation_page.studio_busy():
             self.statusBar().showMessage("请等待当前备课保存或生成结束。", 5000)
             return

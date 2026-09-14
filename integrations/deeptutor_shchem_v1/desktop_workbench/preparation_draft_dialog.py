@@ -38,12 +38,12 @@ class PreparationDraftDialog(QDialog):
         self.setMinimumSize(360, 480)
         root = QVBoxLayout(self)
         intro = QLabel(
-            "默认列出最近50份；输入课题可检索全部历史草稿，翻页后仍按正确身份载入。不会改写原草稿或自动调用模型。"
+            "默认列出当前作品；按作品名称或原课题检索后分页。已归档草稿从“我的备课”打开，回收站草稿需先还原。"
         )
         intro.setWordWrap(True)
         root.addWidget(intro)
         self.query = QLineEdit()
-        self.query.setPlaceholderText("搜索全部已保存草稿的课题")
+        self.query.setPlaceholderText("搜索当前草稿的作品名称或原课题")
         self.query.setClearButtonEnabled(True)
         self.query.setAccessibleName("搜索全部已保存草稿")
         self.query.textChanged.connect(self._queue_search)

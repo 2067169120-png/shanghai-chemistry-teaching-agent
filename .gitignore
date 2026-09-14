@@ -188,3 +188,14 @@
 !/runtime/deeptutor_shchem/onboarding_ci_smoke.py
 !/docs/qa/0.1.87-readiness.md
 !/docs/qa/0.1.87-local-tests.json
+
+# A07 work organization source and isolated release evidence.
+!/README-0.1.87-archive.md
+!/docs/releases/
+!/docs/releases/0.1.88.md
+!/docs/qa/0.1.88-readiness.json
+!/docs/qa/0.1.88-package.json
+!/docs/qa/0.1.88-work-organization.md
+!/docs/screenshots/v0.1.88/
+!/runtime/deeptutor_shchem/prepare_verified_release.py
+!/.github/workflows/work-organization.yml
