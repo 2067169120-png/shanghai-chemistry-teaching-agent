@@ -358,6 +358,9 @@ class TeacherWorkbenchWindow(QMainWindow):
         super().resizeEvent(event)
 
     def closeEvent(self, event: QCloseEvent) -> None:
+        if self.preparation_page.recovery is not None and not self.preparation_page.recovery.prepare_close():
+            event.ignore()
+            return
         self._save_window_state()
         self.setEnabled(False)
         stop_readers = getattr(self.facade, "stop_background_readers", None)

@@ -145,13 +145,15 @@ def test_real_page_changes_keep_selected_questions_and_status(window, monkeypatc
     settle(app, lambda: not page._loading and len(page.cards) == 2 and page.cards[0].ready)
     first_key = page.cards[0].entry["key"]
     page.cards[0].add.click()
-    settle(app, lambda: len(win.facade.basket()) == 1)
+    settle(app, lambda: len(win.facade.basket()) == 1
+           and page.cards[0].add.text() == "已在题篮" and not page.cards[0].add.isEnabled())
     assert page.cards[0].add.text() == "已在题篮"
     page.next.click()
     settle(app, lambda: not page._loading and page._page == 1 and page.cards[0].ready)
     assert page.cards[0].entry["key"] != first_key
     page.cards[0].add.click()
-    settle(app, lambda: len(win.facade.basket()) == 2)
+    settle(app, lambda: len(win.facade.basket()) == 2
+           and page.cards[0].add.text() == "已在题篮" and not page.cards[0].add.isEnabled())
     page.previous.click()
     settle(app, lambda: not page._loading and page._page == 0 and page.cards[0].ready)
     assert page.cards[0].entry["key"] == first_key

@@ -164,3 +164,17 @@
 !/runtime/deeptutor_shchem/explorer_ci_smoke.py
 !/runtime/deeptutor_shchem/publish_explorer_screenshots.py
 !/.github/workflows/question-explorer.yml
+
+# Audit implementation batch A: source and isolated verification only.
+!/README-0.1.85-archive.md
+!/.github/workflows/desktop-reliability.yml
+!/docs/roadmaps/
+!/docs/roadmaps/audit-followup.md
+!/docs/qa/0.1.86-phase-a.md
+!/docs/qa/0.1.86-phase-a.json
+!/docs/qa/0.1.86-performance.json
+!/docs/screenshots/v0.1.86/
+!/docs/screenshots/v0.1.86/*.png
+!/runtime/deeptutor_shchem/phase_a_ci_smoke.py
+!/runtime/deeptutor_shchem/benchmark_phase_a.py
+!/runtime/deeptutor_shchem/publish_phase_a_evidence.py

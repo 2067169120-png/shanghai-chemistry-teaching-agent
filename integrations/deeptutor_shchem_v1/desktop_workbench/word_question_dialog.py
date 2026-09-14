@@ -37,7 +37,7 @@ from ..desktop_word_question_attributes import EXAM_TYPE_LABELS, validate_attrib
 from ..desktop_word_question_filters import (
     chapter_filter_id,
     compile_filter_options,
-    matches_question,
+    compile_question_matcher,
     section_filter_id,
 )
 from ..desktop_word_question_recommendations import lesson_knowledge_suggestions
@@ -1521,8 +1521,11 @@ class WordQuestionDialog(QDialog):
         self.question_list.blockSignals(True)
         self.question_list.clear()
         row_to_select = 0
+        matcher = compile_question_matcher(
+            {**self.multi_filter_panel.matching_selection(), "query": query}, self._attribute_catalog
+        )
         for key, value in self._items.items():
-            if not matches_question(value, {**self.multi_filter_panel.matching_selection(), "query": query}, self._attribute_catalog):
+            if not matcher(value):
                 continue
             question_text = " ".join(
                 _text(block.get("text"))

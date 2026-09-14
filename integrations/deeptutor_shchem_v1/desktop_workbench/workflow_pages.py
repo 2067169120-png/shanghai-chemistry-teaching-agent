@@ -130,6 +130,7 @@ class PreparationPage(QWidget):
         self._history_row_layouts: list[QBoxLayout] = []
         content = QWidget()
         root = QVBoxLayout(content)
+        self.content_layout = root
         root.setContentsMargins(28, 24, 28, 32)
         root.setSpacing(18)
         root.addWidget(

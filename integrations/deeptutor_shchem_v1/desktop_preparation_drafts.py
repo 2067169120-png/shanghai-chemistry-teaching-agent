@@ -130,39 +130,50 @@ class PreparationDraftService:
         return record, payload, revision
 
     def options(self) -> list[dict[str, Any]]:
-        """Return up to 50 valid drafts, newest first, without writing state."""
+        """Compatibility view of the 50 most recent valid drafts."""
+        return self.search(limit=50)["items"]
 
+    def option(self, draft_id: str) -> dict[str, Any]:
+        """Resolve one stable identity even when it lies outside the recent list."""
+        record, _payload, revision = self._record(draft_id)
+        return self._option(draft_id, record, revision)
+
+    @staticmethod
+    def _option(draft_id, record, revision):
+        return {"draft_id": draft_id, "revision": revision,
+                "title": str(record["core_fields"]["topic"]), "created_at": record["created_at"]}
+
+    def search(self, *, query: str = "", offset: int = 0, limit: int | None = 50) -> dict[str, Any]:
+        """Filter all saved titles before paging; reads never rewrite records.
+
+        ``limit=None`` is used by the unified local work list when merging
+        draft and generation results before one common pagination operation.
+        """
+        if (not isinstance(query, str) or type(offset) is not int or offset < 0
+                or (limit is not None and (type(limit) is not int or not 1 <= limit <= 200))):
+            raise self._invalid("草稿检索参数不正确。")
         records = self.state.snapshot().get("drafts")
-        if not isinstance(records, Mapping):
-            return []
-        valid: list[tuple[str, dict[str, Any], str]] = []
-        for draft_id, record in records.items():
-            if (
-                not isinstance(draft_id, str)
-                or not draft_id
-                or not isinstance(record, dict)
-            ):
+        valid, invalid = [], 0
+        needle = query.strip().casefold()
+        for draft_id, record in records.items() if isinstance(records, Mapping) else ():
+            if not isinstance(draft_id, str) or not draft_id or not isinstance(record, dict):
+                invalid += 1
+                continue
+            # Other draft types share the same personal state, not this list.
+            if record.get("kind") != DRAFT_KIND:
                 continue
             try:
-                self._payload(record)
-                revision = _revision(record)
+                payload = self._payload(record)
             except PreparationDraftError:
+                invalid += 1
                 continue
-            valid.append((draft_id, record, revision))
-
-        valid.sort(
-            key=lambda item: (str(item[1].get("created_at", "")), item[0]),
-            reverse=True,
-        )
-        return [
-            {
-                "draft_id": draft_id,
-                "revision": revision,
-                "title": str(record["core_fields"]["topic"]),
-                "created_at": record["created_at"],
-            }
-            for draft_id, record, revision in valid[:50]
-        ]
+            if needle not in payload["topic"].casefold():
+                continue
+            valid.append((draft_id, record))
+        valid.sort(key=lambda item: (str(item[1].get("created_at", "")), item[0]), reverse=True)
+        chosen = valid[offset:] if limit is None else valid[offset:offset + limit]
+        return {"items": [self._option(key, record, _revision(record)) for key, record in chosen],
+                "total": len(valid), "offset": offset, "limit": limit, "invalid_count": invalid}
 
     def load(self, draft_id: str, expected_revision: str) -> dict[str, Any]:
         """Load a draft only when its complete-record revision still matches."""

@@ -6200,6 +6200,23 @@ class DesktopWorkbenchFacade:
 
         return PreparationDraftService(self._state).options()
 
+    def preparation_draft_option(self, draft_id: str) -> dict[str, Any]:
+        from .desktop_preparation_drafts import PreparationDraftService
+        return PreparationDraftService(self._state).option(draft_id)
+
+    def search_preparation_drafts(self, *, query: str = "", offset: int = 0, limit: int | None = 50) -> dict[str, Any]:
+        from .desktop_preparation_drafts import PreparationDraftService
+        return PreparationDraftService(self._state).search(query=query, offset=offset, limit=limit)
+
+    def search_preparation_work(self, *, query: str = "", kind: str = "all", order: str = "newest",
+                                offset: int = 0, limit: int = 25) -> dict[str, Any]:
+        from .desktop_work_search import search_preparation_work
+        return search_preparation_work(self, query=query, kind=kind, order=order, offset=offset, limit=limit)
+
+    def search_preparation_tasks(self, *, query: str = "") -> dict[str, Any]:
+        result = self._preparation_manager_instance().search_tasks(query=query, limit=None)
+        return {**result, "items": tuple(self._preparation_summary(value) for value in result["items"])}
+
     def load_preparation_draft(
         self, draft_id: str, expected_revision: str
     ) -> dict[str, Any]:
