@@ -1,0 +1,66 @@
+name: Typography baseline
+on:
+  push:
+    branches: ["feature/chinese-typography-0.1.92"]
+    paths: [".github/workflows/font-baseline.yml"]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Inspect requested and actual Chinese glyph families
+        shell: python
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          import json, os, platform
+          from pathlib import Path
+          from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
+          from PySide6.QtGui import QFontDatabase, QFontInfo, QTextLayout, QFont
+          from integrations.deeptutor_shchem_v1.desktop_workbench.app import create_application
+          from integrations.deeptutor_shchem_v1.desktop_workbench.main_window import install_font_fallbacks
+          app=create_application(['font-baseline'])
+          chosen=install_font_fallbacks()
+          out=Path('font-baseline');out.mkdir()
+          def probe(font, text):
+              layout=QTextLayout(text,font);layout.beginLayout()
+              line=layout.createLine();line.setLineWidth(1200);layout.endLayout()
+              return {'requested':font.families(),'primary':QFontInfo(font).family(),
+                      'pixels':QFontInfo(font).pixelSize(),'weight':font.weight(),
+                      'runs':[{'family':r.rawFont().familyName(),'style':r.rawFont().styleName(),
+                               'missing_glyphs':sum(g==0 for g in r.glyphIndexes())} for r in layout.glyphRuns()]}
+          panel=QWidget();panel.setWindowTitle('0.1.91 字体基线');box=QVBoxLayout(panel)
+          records={}
+          for key,text in [('body','上海高中化学教师工作台，保存草稿，查看试卷。'),
+                           ('heading','教学要求 · 备课资料 · 进度与结果'),
+                           ('chemical','H₂SO₄  Fe³⁺  ⇌  pH  12.5  mol·L⁻¹')]:
+              label=QLabel(text);label.setObjectName('CardTitle' if key=='heading' else 'StatusInfo')
+              box.addWidget(label);label.ensurePolished();records[key]=probe(label.font(),text)
+          button=QPushButton('保存草稿');box.addWidget(button);button.ensurePolished()
+          records['button']=probe(button.font(),button.text())
+          panel.resize(880,280);panel.show();app.processEvents();panel.grab().save(str(out/'baseline.png'))
+          fonts={}
+          for family in ('Microsoft YaHei UI','Microsoft YaHei','SimHei','SimSun','DengXian','Segoe UI','Noto Sans CJK SC'):
+              fonts[family]={'installed':family in QFontDatabase.families(),'styles':QFontDatabase.styles(family),
+                             'sample':probe(QFont(family,11),'上海高中化学教师工作台 ABC123')}
+          windows=Path(os.environ.get('WINDIR','C:/Windows'))/'Fonts'
+          report={'version':'0.1.91','source_commit':os.environ['GITHUB_SHA'],'platform':platform.platform(),
+                  'selected_by_application':chosen,'widgets':records,'families':fonts,
+                  'local_files_present':{n:(windows/n).is_file() for n in ('msyh.ttc','msyhbd.ttc','msyhl.ttc','simhei.ttf','simsun.ttc','Deng.ttf','Dengb.ttf')},
+                  'scope':'Synthetic UI glyph inspection; does not inspect user computer or export font files.'}
+          (out/'baseline.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: font-baseline-${{ github.sha }}
+          path: font-baseline/
+          retention-days: 14
