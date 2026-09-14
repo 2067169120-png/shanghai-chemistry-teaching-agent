@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import shutil
 import sys
 import tempfile
 import time
@@ -86,7 +87,11 @@ def main():
             window.resize(1360, 900)
             organization = exercise(window, settle, lambda widget, name: capture(widget, "source-" + name))
             from integrations.deeptutor_shchem_v1.desktop_backup_probe import exercise as backup_exercise
-            backup = backup_exercise(window, settle, lambda widget, name: capture(widget, "source-" + name), output / "backup-demo")
+            # A restored personal profile, like the original one, lives outside
+            # the source checkout. Only its synthetic evidence is copied to QA.
+            with tempfile.TemporaryDirectory(prefix="shchem-backup-proof-") as demo:
+                backup = backup_exercise(window, settle, lambda widget, name: capture(widget, "source-" + name), demo)
+                shutil.copytree(demo, output / "backup-demo", dirs_exist_ok=True)
         finally:
             window.close(); app.processEvents()
         report = {"version": DESKTOP_VERSION, "source_commit": os.environ.get("SHCHEM_SOURCE_SHA", os.environ.get("GITHUB_SHA", "local")),

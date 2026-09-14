@@ -195,6 +195,11 @@ class BackupDialog(QDialog):
         if not parent:
             return
         target = Path(parent) / ("备课恢复-" + datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid4().hex[:6])
+        project = self.paths.workspace_root.resolve()
+        destination = target.resolve()
+        if destination.is_relative_to(project) or project.is_relative_to(destination):
+            set_status(self.status, "attention", "请选择软件或源码目录以外的位置，例如“文档”中的备份目录；当前没有写入恢复文件。")
+            return
         archive, rev = self.archive_path, manifest_revision(self.checked)
         def apply(result):
             self.restored_directory = result["directory"]

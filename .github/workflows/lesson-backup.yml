@@ -45,6 +45,7 @@ jobs:
           staging/coordination/deeptutor_gateway/tests/test_work_organization_ui.py
           staging/coordination/deeptutor_gateway/tests/test_lesson_backup.py
           staging/coordination/deeptutor_gateway/tests/test_lesson_backup_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_backup_restore_location_ui.py
           --junitxml=readiness-qa/pytest.xml
       - run: python runtime/deeptutor_shchem/package_resources.py --inventory readiness-qa/resources.json
       - name: Exercise local backup, independent restore and image reconnection
