@@ -163,6 +163,7 @@ def test_acceptance_probe_handles_an_existing_topic_without_overwriting_old_draf
     from integrations.deeptutor_shchem_v1.desktop_work_organization_probe import exercise
     win, app = window
     win.preparation_page.apply_studio_template("concept", "已有课题", "软件验收")
+    win.preparation_page.materials.setPlainText("已有合成资料，不应被作品整理修改。")
     win.facade.create_preparation_draft(win.preparation_page._payload())
     before = deepcopy(win.facade.state_store.snapshot()["drafts"])
     screenshots = []
