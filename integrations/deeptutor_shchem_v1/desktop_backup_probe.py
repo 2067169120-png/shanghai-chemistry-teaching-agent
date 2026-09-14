@@ -18,6 +18,7 @@ def exercise(window, settle, capture, output):
     from .desktop_paths import DesktopPaths
     from .desktop_facade import build_default_facade
     from .desktop_preparation_renderer import NativePreparationRenderer
+    from .desktop_workbench import backup_dialog as dialog_module
     from .desktop_workbench.backup_dialog import BackupDialog
     from .desktop_workbench.main_window import TeacherWorkbenchWindow
     output=Path(output);output.mkdir(parents=True,exist_ok=True)
@@ -54,6 +55,17 @@ def exercise(window, settle, capture, output):
     dialog=BackupDialog(facade.paths,window.tasks,window,flush_editor=prep.recovery.flush)
     saved_picker,open_picker,folder_picker=QFileDialog.getSaveFileName,QFileDialog.getOpenFileName,QFileDialog.getExistingDirectory
     restored=None
+    real_restore = dialog_module.restore_backup
+    def traced_restore(*args, **kwargs):
+        # Only this explicit synthetic acceptance helper prints detailed traces.
+        # The production dialog continues to present its actionable safe message.
+        try:
+            return real_restore(*args, **kwargs)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            raise
+    dialog_module.restore_backup = traced_restore
     try:
         dialog.show();dialog.images.setChecked(True);dialog.outputs.setChecked(True)
         dialog.plan_button.click();settle(lambda:dialog._active is None and dialog.plan is not None)
@@ -65,7 +77,8 @@ def exercise(window, settle, capture, output):
         dialog.inspect_button.click();settle(lambda:dialog._active is None and dialog.checked is not None)
         capture(dialog,'backup-checked.png')
         QFileDialog.getExistingDirectory=lambda *a,**k:str(output)
-        dialog.restore_button.click();settle(lambda:dialog._active is None and dialog.restored_directory is not None)
+        dialog.restore_button.click();settle(lambda:dialog._active is None)
+        assert dialog.restored_directory is not None, dialog.status.text()
         restored=Path(dialog.restored_directory)
         capture(dialog,'backup-restored.png')
         dialog.resize(520,580);settle();capture(dialog,'backup-compact.png')
@@ -111,4 +124,5 @@ def exercise(window, settle, capture, output):
             original_artifacts_equal=True,shelves_preserved=True,recovery_restored=True,
             image_reconnected=True,restored_production_export=True,restored_profile=restored.name,model_calls=0)
     finally:
+        dialog_module.restore_backup = real_restore
         QFileDialog.getSaveFileName=saved_picker;QFileDialog.getOpenFileName=open_picker;QFileDialog.getExistingDirectory=folder_picker

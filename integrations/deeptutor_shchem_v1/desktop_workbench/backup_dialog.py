@@ -73,6 +73,10 @@ class BackupDialog(QDialog):
         self.open_button.clicked.connect(self.open_restored)
         self.open_button.setEnabled(False); self.actions.append(self.open_button)
         lay.addWidget(self.open_button)
+        self.existing_button = QPushButton("打开已有的恢复目录…")
+        self.existing_button.setObjectName("QuietButton")
+        self.existing_button.clicked.connect(self.open_existing)
+        lay.addWidget(self.existing_button)
         self.tabs.addTab(restore, "检查与恢复")
         missing = QWidget(); lay = QVBoxLayout(missing)
         hint = QLabel("这里只检查备课图片引用；原Word/题库重新关联仍需在原导入流程处理。\n补回时必须是相同内容和尺寸的原图，不按文件名猜替换，不修改原草稿。")
@@ -206,6 +210,21 @@ class BackupDialog(QDialog):
             self.checked_output.appendPlainText("\n恢复目录：" + self.restored_directory + "\n当前工作台未被切换或覆盖。打开后检查作品与图片；该副本没有模型设置。")
             set_status(self.status, "success", "独立恢复完成。现在可在新窗口检查，原窗口继续保留。")
         self._run("恢复到独立目录", lambda cancel: restore_backup(archive, target, expected_manifest=rev, cancel=cancel), apply)
+
+    def open_existing(self):
+        if self._active:
+            return
+        selected = QFileDialog.getExistingDirectory(self, "选择已恢复的“备课恢复”目录")
+        if not selected:
+            return
+        try:
+            root = restored_profile(selected)
+        except Exception:
+            set_status(self.status, "error", "此目录不是已完成校验的恢复副本。请选择先前创建的“备课恢复”目录；未改变当前资料。")
+            return
+        self.restored_directory = str(root)
+        self._buttons()
+        self.open_restored()
 
     def open_restored(self):
         if not self.restored_directory or self._active:

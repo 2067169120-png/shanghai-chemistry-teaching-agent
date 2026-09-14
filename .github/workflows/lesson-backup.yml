@@ -46,6 +46,7 @@ jobs:
           staging/coordination/deeptutor_gateway/tests/test_lesson_backup.py
           staging/coordination/deeptutor_gateway/tests/test_lesson_backup_ui.py
           staging/coordination/deeptutor_gateway/tests/test_backup_restore_location_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_backup_reopen_ui.py
           --junitxml=readiness-qa/pytest.xml
       - run: python runtime/deeptutor_shchem/package_resources.py --inventory readiness-qa/resources.json
       - name: Exercise local backup, independent restore and image reconnection
@@ -73,7 +74,7 @@ jobs:
           if-no-files-found: error
   publish:
     needs: verify
-    if: github.event_name == 'push'
+    if: ${{ false }} # Enable after native restore review; do not publish an unchecked candidate
     runs-on: ubuntu-latest
     permissions:
       contents: write
