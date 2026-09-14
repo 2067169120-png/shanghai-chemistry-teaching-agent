@@ -1,0 +1,22 @@
+name: Backup source review
+on:
+  push:
+    branches: ["feature/lesson-backup-0.1.89"]
+    paths: [".github/workflows/backup-source-review.yml"]
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - run: git archive --format=zip --output=backup-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backup-source-${{ github.sha }}
+          path: backup-source.zip
+          retention-days: 7
+          if-no-files-found: error
