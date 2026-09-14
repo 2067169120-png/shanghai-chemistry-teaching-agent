@@ -199,3 +199,12 @@
 !/docs/screenshots/v0.1.88/
 !/runtime/deeptutor_shchem/prepare_verified_release.py
 !/.github/workflows/work-organization.yml
+
+# 0.1.89 explicit backup source workflow and public evidence.
+!/.github/workflows/lesson-backup.yml
+!/README-0.1.88-archive.md
+!/docs/releases/0.1.89.md
+!/docs/screenshots/v0.1.89/
+!/docs/qa/0.1.89-readiness.json
+!/docs/qa/0.1.89-package.json
+!/docs/qa/0.1.89-lesson-backup.md

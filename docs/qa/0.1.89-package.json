@@ -1,0 +1,314 @@
+{
+  "version": "0.1.89",
+  "frozen": true,
+  "module_origin": "bundle",
+  "platform": "Windows-2025Server-10.0.26100-SP0",
+  "python": "3.12.10",
+  "qt": "6.11.2",
+  "qt_platform": "offscreen",
+  "routes_opened": [
+    "home",
+    "library",
+    "paper",
+    "student",
+    "preparation",
+    "templates",
+    "classroom",
+    "mywork"
+  ],
+  "local_draft_saved": true,
+  "work_organization": {
+    "draft_lifecycle": true,
+    "task_lifecycle": true,
+    "original_drafts_unchanged": true,
+    "task_files_unchanged": true,
+    "unsaved_editor_preserved": true,
+    "recovery_file_unchanged": true,
+    "original_topic_search": true,
+    "model_calls": 0
+  },
+  "lesson_backup": {
+    "backup_created": true,
+    "restore_checked": true,
+    "source_records_unchanged": true,
+    "original_artifacts_equal": true,
+    "shelves_preserved": true,
+    "recovery_restored": true,
+    "image_reconnected": true,
+    "restored_production_export": true,
+    "restored_profile": "备课恢复-20260914-091650-2c582a",
+    "model_calls": 0,
+    "native_restored_cli_start_and_close": true
+  },
+  "editable_pptx_slides": 5,
+  "lesson_docx_created": true,
+  "pdf_pages": 2,
+  "environment": {
+    "schema_version": "shchem.environment.v1",
+    "version": "0.1.89",
+    "execution_mode": "packaged",
+    "platform": "Windows",
+    "python": "3.12.10",
+    "checks": [
+      {
+        "key": "python",
+        "title": "运行解释器",
+        "status": "ready",
+        "detail": "Python 3.12.10",
+        "affects": "应用运行",
+        "action": "源码推荐 Python 3.12；打包版使用随包解释器。"
+      },
+      {
+        "key": "qt_widgets",
+        "title": "原生桌面",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "打开桌面页面",
+        "action": ""
+      },
+      {
+        "key": "qt_svg",
+        "title": "SVG 图标",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "图标与 SVG 显示",
+        "action": ""
+      },
+      {
+        "key": "qt_pdf",
+        "title": "原生 PDF 组件",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "导入与教材 PDF 预览",
+        "action": ""
+      },
+      {
+        "key": "qt_pdf_widgets",
+        "title": "原生 PDF 视图",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "原页 PDF 查看窗口",
+        "action": ""
+      },
+      {
+        "key": "docx",
+        "title": "Word 文件支持",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "Word 导入与 DOCX 输出",
+        "action": ""
+      },
+      {
+        "key": "pptx",
+        "title": "PowerPoint 文件支持",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "PPTX 文件输出",
+        "action": ""
+      },
+      {
+        "key": "pillow",
+        "title": "图片处理",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "缩略图与图片处理",
+        "action": ""
+      },
+      {
+        "key": "pdfium",
+        "title": "PDF 页图支持",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "试卷分页和 PDF 预览",
+        "action": ""
+      },
+      {
+        "key": "pypdf",
+        "title": "PDF 读取",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "PDF 页面与文本读取",
+        "action": ""
+      },
+      {
+        "key": "jsonschema",
+        "title": "结构化结果校验",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "模型结果格式检查",
+        "action": ""
+      },
+      {
+        "key": "state",
+        "title": "个人数据目录",
+        "status": "ready",
+        "detail": "临时写入与清理成功。",
+        "affects": "草稿、题篮、恢复副本及个人设置",
+        "action": ""
+      },
+      {
+        "key": "icons",
+        "title": "输入控件图标资源",
+        "status": "ready",
+        "detail": "五项 SVG 资源存在。",
+        "affects": "下拉框、复选框和数值输入箭头",
+        "action": ""
+      },
+      {
+        "key": "resources",
+        "title": "已声明的软件资源",
+        "status": "ready",
+        "detail": "清单共 55 项，缺少 0 项。仅检查存在，不验证教学内容或全部动态脚本。",
+        "affects": "清单内的图标、JSON 约束与简明知识索引",
+        "action": ""
+      },
+      {
+        "key": "office",
+        "title": "Office 排版转换",
+        "status": "detected",
+        "detail": "发现 LibreOffice；尚未执行文档转换验证。",
+        "affects": "DOCX → PDF 真实试卷分页",
+        "action": "选一份小试卷运行“预览试卷排版”，确认本机实际转换效果。"
+      },
+      {
+        "key": "library",
+        "title": "题库目录",
+        "status": "empty",
+        "detail": "当前题库目录为空，不妨碍打开桌面或保存备课。",
+        "affects": "本机题目与教材检索",
+        "action": "从“导入资料”加入文件，或连接原工作区。"
+      }
+    ],
+    "network_requests": 0,
+    "scope": "本机组件加载、图标存在、目录可写与安装发现；不是模型能力、化学正确性或成品排版验收。报告不含本机路径、题目正文或模型配置。"
+  },
+  "screenshots": [
+    {
+      "file": "packaged-home.png",
+      "sha256": "427db05a858f36f6e89fca50834ede7a6425b2bc92a946fb656d4420dfae649f"
+    },
+    {
+      "file": "packaged-library.png",
+      "sha256": "a03e2011383c59e1aab0bc9f6e96b4e5926edebcb53a6ffb1227153d9aae612d"
+    },
+    {
+      "file": "packaged-paper.png",
+      "sha256": "f62b0f0acb40eb28fb0b48464ca30814837fd9994774ba0eabc728a604b4f08a"
+    },
+    {
+      "file": "packaged-student.png",
+      "sha256": "78949259110b09edc69308c5b2fd30570b51a4262c58d672a0fd267bacfcb1a6"
+    },
+    {
+      "file": "packaged-preparation.png",
+      "sha256": "0f919b25d4fdbb6115d4e55a9ff0d9f40782a6e4bde2a40d0ed2f0eee88c96bb"
+    },
+    {
+      "file": "packaged-templates.png",
+      "sha256": "ab3e959baf3bd7cb39aea178e09b90e237791ebc78215a078039f9e8be5179fb"
+    },
+    {
+      "file": "packaged-classroom.png",
+      "sha256": "bffc8f9dd43a4fcba21f4cfcb39e8963cd82710556d7a5a819acd1172ab3f47d"
+    },
+    {
+      "file": "packaged-mywork.png",
+      "sha256": "cba3e1a851179bf72c0fbeda860db4afba0e6bfca540df981c432ae44c845462"
+    },
+    {
+      "file": "packaged-settings.png",
+      "sha256": "50faa5da9038a80c46fab2d115020858dec456cfdbeebae4c1647c442454ed4f"
+    },
+    {
+      "file": "work-current.png",
+      "sha256": "56db179e7a12db1224329b0384108053766bda40fbb90abcf954fe1761054d50"
+    },
+    {
+      "file": "work-archived.png",
+      "sha256": "6d9db61a28f3f79d2271e399cec469e6c88c5c85b2148df7e04b0642399efca9"
+    },
+    {
+      "file": "work-trash.png",
+      "sha256": "b8cbcefb7d36037d06147ee56e911b111fad774dc53ba9d62169ad2e8b2aed31"
+    },
+    {
+      "file": "work-original-search.png",
+      "sha256": "b07a57e41bb54539e28bd1873f7c37543d71c190a133420e09b54c99f7e0cb19"
+    },
+    {
+      "file": "work-compact.png",
+      "sha256": "3b71e81c0950beb89d2b155748c7b9681f0b2c12416bee217f51d28aa28d0a45"
+    },
+    {
+      "file": "backup-plan.png",
+      "sha256": "5863cae18d40d96ed8732d7b251b03450af0e486890d45c2b6e5512b9c80eb83"
+    },
+    {
+      "file": "backup-checked.png",
+      "sha256": "236522d23c880a476f62cb50dbfeb7552610f437d9e39719d5263f905a243a80"
+    },
+    {
+      "file": "backup-restored.png",
+      "sha256": "f9be6ee6aef949bb37cc6ba7f9cde77887191aff5c34d5fcdd294651bce5e554"
+    },
+    {
+      "file": "backup-compact.png",
+      "sha256": "7a2a50e2570d74d68142e420c47a1cbcd0fa30308e030690d80bf67429c01aaf"
+    },
+    {
+      "file": "backup-opened.png",
+      "sha256": "78a0700efd1ac932349813f994d3ae0d31b673e8506722f4ae63274ce85f372f"
+    },
+    {
+      "file": "backup-missing-image.png",
+      "sha256": "f21b37b42a08fc57aaf657e5e5d76d620535fb0ddca0999c7a8ebcf3a6e3496c"
+    }
+  ],
+  "output_files": [
+    {
+      "artifact_id": "candidate_json",
+      "filename": "candidate.json",
+      "size": 2868,
+      "sha256": "0d337e1e2650c22c9cc6d9f4e0b46f306e78213fb5b7d5f24f6f3e53ee596a5a"
+    },
+    {
+      "artifact_id": "deck_json",
+      "filename": "deck.json",
+      "size": 6298,
+      "sha256": "a22cabb0967394b1a859323b72b1998506592ac02d20930c0f7b70bd63252c5a"
+    },
+    {
+      "artifact_id": "pptx",
+      "filename": "lesson_presentation.pptx",
+      "size": 43775,
+      "sha256": "6dffbd84b807b68525eaffb22f88cc977fbfe6715e2b7c0f2eeba45f67cb7478"
+    },
+    {
+      "artifact_id": "preview_montage",
+      "filename": "rendered_montage.png",
+      "size": 73135,
+      "sha256": "56b8c7ba481378fc219ffe7f6d96595ebc70a74d60cb803b606b368d8f6e56e2"
+    },
+    {
+      "artifact_id": "lesson_plan_docx",
+      "filename": "lesson_plan.docx",
+      "size": 37852,
+      "sha256": "1af13630dd9879aa725d456a68593c54aadeff4f0b9c4453db9763b29e1b0968"
+    },
+    {
+      "artifact_id": "qa_report",
+      "filename": "qa_report.json",
+      "size": 5777,
+      "sha256": "c08e9269ad547a10bac4b6f05fa46b764f1ec266b0944c95fb8a9fb30b5fac45"
+    }
+  ],
+  "uncaught_errors": [],
+  "scope": "Isolated native bundle navigation, settings, saved draft and production renderer DOCX/PPTX creation. Not live API, Office-PPTX visual parity, original library or classroom acceptance.",
+  "source_commit": "93eb43cf6a6e09625acdee3e51dbdfb97a4ba519",
+  "workflow_run": "34826334740",
+  "executable_sha256": "7c117314a1e60b5ba9988bae1a3829b64a2ee42c7c293e2be675edca0d4d829b",
+  "normal_native_start_and_close": true,
+  "detached_directory": true,
+  "cleared_python_and_workspace_environment": true,
+  "system_fonts_bundled": false
+}
