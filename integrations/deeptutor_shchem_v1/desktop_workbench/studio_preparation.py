@@ -7,6 +7,12 @@ from .components import set_status
 
 
 class StudioPreparationPage(PreparationPage):
+    def __init__(self, facade, tasks, parent=None):
+        super().__init__(facade, tasks, parent)
+        from .preparation_recovery import PreparationRecoveryController
+        state_root = getattr(getattr(facade, "paths", None), "state_root", None)
+        self.recovery = PreparationRecoveryController(self) if state_root is not None else None
+
     def studio_busy(self) -> bool:
         return bool(self._save_task_id or self._generation_qt_task_id
                     or self._active_preparation_task_id or self._word_import_in_flight)
@@ -48,17 +54,10 @@ class StudioPreparationPage(PreparationPage):
             set_status(self.status, "attention", "请先等待保存、导入或生成结束，再打开其他草稿。")
             return
         dialog = PreparationDraftDialog(self.facade, self)
-        if isinstance(draft_id, str):
-            target_index = next(
-                (index for index in range(dialog.source.count())
-                 if dialog.source.itemData(index).get("draft_id") == draft_id),
-                None,
-            )
-            if target_index is None:
-                dialog.deleteLater()
-                set_status(self.status, "attention", "这份草稿已不在当前草稿列表中。请返回“我的备课”刷新后重选；当前填写未改变，也没有改开其他草稿。")
-                return
-            dialog.source.setCurrentIndex(target_index)
+        if isinstance(draft_id, str) and not dialog.select_draft_id(draft_id):
+            dialog.deleteLater()
+            set_status(self.status, "attention", "这份草稿已不在当前草稿列表或已无法读取。请刷新后重选；当前填写未改变，也没有改开其他草稿。")
+            return
         if dialog.exec() != dialog.DialogCode.Accepted or dialog.selected is None:
             dialog.deleteLater()
             return

@@ -310,23 +310,36 @@ def _search_text(row, attributes, mappings):
     return "\n".join(parts).casefold()
 
 
-def matches_question(row, selection, catalog):
-    """Match checked stable IDs and optional query without mutating any input.
+def compile_question_matcher(selection, catalog):
+    """Compile one request's directory and selected IDs, with no global cache.
 
-    selection accepts sets/lists/tuples of IDs per FILTER_GROUPS; query is an
-    optional case-insensitive substring. knowledge_mode defaults to 'any';
-    'all' requires every selected ID in the primary/supporting knowledge union.
-    Unknown/malformed IDs never widen a
-    selected group. An empty selection keeps all rows, even without a catalog.
+    Each new search observes the current catalog. A matcher retains a snapshot
+    of its own selected IDs and directory so concurrent searches cannot reuse
+    another request's selections. Existing matching semantics stay unchanged.
     """
-    if not isinstance(row, Mapping) or not isinstance(selection, Mapping):
-        return False
+    if not isinstance(selection, Mapping):
+        return lambda row: False
     chosen = {group: _chosen(selection.get(group)) for group in FILTER_GROUPS}
-    if any(value is None for value in chosen.values()):
-        return False
     knowledge_mode = selection.get("knowledge_mode", "any")
-    if knowledge_mode not in ("any", "all"):
-        return False
+    if any(value is None for value in chosen.values()) or knowledge_mode not in ("any", "all"):
+        return lambda row: False
+    nodes = _directory(catalog)
+    query = selection.get("query", "")
+
+    def match(row):
+        if not isinstance(row, Mapping):
+            return False
+        return _matches_compiled(row, chosen, knowledge_mode, query, nodes)
+
+    return match
+
+
+def matches_question(row, selection, catalog):
+    """Single-row compatibility API; batch callers compile once per request."""
+    return compile_question_matcher(selection, catalog)(row)
+
+
+def _matches_compiled(row, chosen, knowledge_mode, query, nodes):
     attributes = _bound_attributes(row)
     values = {
         "source": {_text(row.get("source_id")) or UNKNOWN_ID},
@@ -343,7 +356,7 @@ def matches_question(row, selection, catalog):
         values["knowledge"]
     ):
         return False
-    mappings = _mappings(attributes, _directory(catalog))
+    mappings = _mappings(attributes, nodes)
     paths = [
         {
             "book": node["volume_id"],
@@ -362,7 +375,6 @@ def matches_question(row, selection, catalog):
         for path in paths
     ):
         return False
-    query = selection.get("query", "")
     return isinstance(query, str) and (
         not query.strip()
         or query.strip().casefold() in _search_text(row, attributes, mappings)

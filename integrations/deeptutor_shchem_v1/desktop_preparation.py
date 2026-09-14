@@ -2800,6 +2800,28 @@ class DesktopPreparationManager:
             }
             self._write_task(task)
 
+    def search_tasks(self, *, query: str = "", limit: int | None = 50) -> dict[str, Any]:
+        """Search all existing task titles; do not resume jobs or load artifacts."""
+        if not isinstance(query, str) or (limit is not None and (type(limit) is not int or not 1 <= limit <= 200)):
+            raise DesktopPreparationError("preparation_limit_invalid", "备课任务检索参数不正确。")
+        values, invalid = [], 0
+        needle = query.strip().casefold()
+        with self._lock:
+            for path in self.tasks_root.glob("PREP-*.json"):
+                if path.is_symlink() or _TASK_ID.fullmatch(path.stem) is None:
+                    continue
+                try:
+                    task = self._read_task(path.stem)
+                except DesktopPreparationError:
+                    invalid += 1
+                    continue
+                public = self._public_task(task)
+                if needle in str(public.get("topic", "")).casefold():
+                    values.append(public)
+        values.sort(key=lambda item: (str(item.get("updated_at") or item.get("created_at") or ""), item["task_id"]), reverse=True)
+        return {"items": tuple(values if limit is None else values[:limit]),
+                "total": len(values), "invalid_count": invalid}
+
     def list_tasks(self, limit: int = 50) -> tuple[dict[str, Any], ...]:
         if type(limit) is not int or not 1 <= limit <= 200:
             raise DesktopPreparationError(

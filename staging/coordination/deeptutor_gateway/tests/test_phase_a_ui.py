@@ -11,7 +11,7 @@ from integrations.deeptutor_shchem_v1.desktop_paths import DesktopPaths
 from integrations.deeptutor_shchem_v1.desktop_facade import build_default_facade
 from integrations.deeptutor_shchem_v1.desktop_workbench.main_window import TeacherWorkbenchWindow
 from integrations.deeptutor_shchem_v1.desktop_workbench.preparation_draft_dialog import PreparationDraftDialog
-from integrations.deeptutor_shchem_v1/desktop_workbench/my_work_page import MyWorkPage
+from integrations.deeptutor_shchem_v1.desktop_workbench.my_work_page import MyWorkPage
 
 
 def test_editor_close_reopen_restores_partial_fields_and_images(window, tmp_path):

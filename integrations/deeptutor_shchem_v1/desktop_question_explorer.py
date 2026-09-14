@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from copy import deepcopy
 
-from .desktop_word_question_filters import compile_filter_options, matches_question
+from .desktop_word_question_filters import compile_filter_options, compile_question_matcher
 from .desktop_personal_visual_questions import matches_personal_visual_filters
 
 PERSONAL_LANES = {"word_native", "visual_native"}
@@ -34,13 +34,14 @@ def personal_results(catalog: Mapping, lane: str, selection: Mapping, query: str
     if not isinstance(catalog.get("items"), list):
         raise ValueError("Personal catalog is unavailable")
     chosen = {**selection, "query": query}
+    matcher = compile_question_matcher(chosen, catalog.get("attribute_catalog")) if lane == "word_native" else None
     matches, seen = [], set()
     for row in catalog["items"]:
         if row.get("key") in seen:
             continue
         seen.add(row.get("key"))
         if lane == "word_native":
-            keep = matches_question(row, chosen, catalog.get("attribute_catalog"))
+            keep = matcher(row)
         else:
             search_text = "\n".join(str(row.get(name, "")) for name in
                                     ("title", "source_name", "question_text", "shared_text"))
