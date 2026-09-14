@@ -140,14 +140,14 @@ def test_unreadable_recovery_is_not_silently_normalized(tmp_path, mutation):
     import json
     store = PreparationRecoveryStore(tmp_path)
     store.save(_payload(), dirty=True, sequence=1)
-    record = json.loads(store.path.read_text())
+    record = json.loads(store.path.read_text(encoding="utf-8"))
     if mutation == "schema": record["schema_version"] = "future-version"
     elif mutation == "extra_field": record["payload"]["api_key"] = "placeholder-never-a-real-key"
     elif mutation == "image_field": record["payload"]["image_assets"] = [{"asset_id": "IMG-invalid"}]
     data = "broken-json" if mutation == "corrupt" else json.dumps(record)
-    store.path.write_text(data)
+    store.path.write_text(data, encoding="utf-8")
     with pytest.raises(PreparationRecoveryError): store.load()
-    assert store.path.read_text() == data
+    assert store.path.read_text(encoding="utf-8") == data
 
 
 def test_compilation_once_per_search_not_per_question(monkeypatch):
