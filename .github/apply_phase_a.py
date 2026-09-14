@@ -21,7 +21,6 @@ EXPECTED = {
 def main():
     bundles = sorted((ROOT / '.github').glob('phase-a-edits-*.json'))
     writes = {}
-    # Normalize one known transport typo; expected hash below fixes exact content.
     ui = 'staging/coordination/deeptutor_gateway/tests/test_phase_a_ui.py'
     lines = (ROOT / ui).read_bytes().decode('utf-8').splitlines(True)
     for i, line in enumerate(lines):
@@ -38,7 +37,8 @@ def main():
             name = entry['path']
             assert not Path(name).is_absolute() and '..' not in Path(name).parts
             assert name.startswith('integrations/') or name in ('.gitignore', 'README.md', 'CHANGELOG.md')
-            old = (ROOT / name).read_bytes()
+            # Use canonical committed bytes, not the runner's checkout EOL policy.
+            old = subprocess.check_output(['git', 'show', 'HEAD:' + name], cwd=ROOT)
             assert hashlib.sha256(old).hexdigest() == entry['before'], name + ': original mismatch'
             lines = old.decode('utf-8').splitlines(True)
             for begin, end, text in sorted(entry['edits'], reverse=True):
