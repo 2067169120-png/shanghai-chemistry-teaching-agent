@@ -1,0 +1,34 @@
+name: Apply reviewed typography source
+on:
+  push:
+    branches: ["feature/chinese-typography-0.1.92"]
+    paths: [".github/workflows/apply-typography192.yml"]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Apply exact reviewed source without changing workflow permissions
+        shell: python
+        run: |
+          import lzma, hashlib, pathlib, subprocess, os
+          def run(*args):
+              return subprocess.check_output(args, text=True).strip()
+          branch='feature/chinese-typography-0.1.92'
+          assert run('git','ls-remote','origin','refs/heads/'+branch).split()[0]==os.environ['GITHUB_SHA']
+          names=['.github/typography192.part'+str(i) for i in (1,2,3)]
+          patch=lzma.decompress(b''.join(pathlib.Path(n).read_bytes() for n in names))
+          assert hashlib.sha256(patch).hexdigest()=='8bdf86b3d6e101323595fd66041e4d936aab3451fdf8d785e91844f11ef22e5f'
+          assert b'diff --git a/.github/workflows/' not in patch
+          subprocess.run(['git','apply','--check','--unidiff-zero','--index','-'],input=patch,check=True)
+          subprocess.run(['git','apply','--unidiff-zero','--index','-'],input=patch,check=True)
+          run('git','rm','-f',*names)
+          run('git','config','user.name','github-actions[bot]')
+          run('git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
+          run('git','commit','-m','fix(0.1.92): unify verified Chinese UI fonts, readable sizes and glyph diagnostics')
+          run('git','push','origin','HEAD:refs/heads/'+branch)
