@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QHBoxLayout,
 
 from ..desktop_environment import collect_environment_report, report_text
 from .components import set_status
+from .typography import CHEMISTRY_SAMPLE, typography_report
 
 
 class EnvironmentDialog(QDialog):
@@ -31,6 +32,11 @@ class EnvironmentDialog(QDialog):
         self.status.setWordWrap(True)
         self.status.setTextFormat(Qt.TextFormat.PlainText)
         root.addWidget(self.status)
+        self.font_preview = QLabel("中文显示示例：上海高中化学 · 保存草稿 · 试卷预览\n" + CHEMISTRY_SAMPLE)
+        self.font_preview.setTextFormat(Qt.TextFormat.PlainText)
+        self.font_preview.setWordWrap(True)
+        self.font_preview.setAccessibleName("中文与化学符号字体示例")
+        root.addWidget(self.font_preview)
         self.output = QPlainTextEdit()
         self.output.setReadOnly(True)
         self.output.setAccessibleName("本机组件检查结果及处理建议")
@@ -64,6 +70,21 @@ class EnvironmentDialog(QDialog):
         if self._closed:
             return
         self._active = None
+        # Glyph inspection must stay on the GUI thread, not the dependency worker.
+        details = typography_report(self.font_preview)
+        report["typography"] = details
+        han_fonts = "、".join(dict.fromkeys(r["family"] for r in details["han"]["runs"]))
+        verified = details["chinese_sample_supported"] and details["han"]["missing_glyphs"] == 0
+        report["checks"].insert(0, {
+            "key": "ui_typography", "title": "中文界面字体",
+            "status": "ready" if verified else "missing",
+            "detail": f"界面字体：{details['family']}；中文样例实际字形：{han_fonts or '未取得'}。"
+                      f"正文 {details['body_points']:g} 磅，小字不低于 {details['small_points']:g} 磅。"
+                      f"当前窗口缩放 {details['device_pixel_ratio']:g} 倍。",
+            "affects": "按钮、菜单、输入框与界面文字；不改变原图、原Word或PPT排版",
+            "action": ("" if verified else
+                       "请通过系统语言设置安装简体中文字体后重启程序；不要用缩放图片代替字体安装。"),
+        })
         self.report = report
         self.output.setPlainText(report_text(report))
         self.refresh_button.setEnabled(True)

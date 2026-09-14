@@ -96,12 +96,14 @@ def main():
             desk = desk_exercise(window, settle, lambda widget, name: capture(widget, "source-" + name), output / "desk-demo")
             from integrations.deeptutor_shchem_v1.desktop_paper_numbering_probe import exercise as paper_exercise
             paper = paper_exercise(window, settle, lambda widget, name: capture(widget, "source-" + name), output / "numbering-demo")
+            from integrations.deeptutor_shchem_v1.desktop_typography_probe import exercise as font_exercise
+            typography = font_exercise(window, settle, lambda widget, name: capture(widget, "source-" + name))
         finally:
             window.close(); app.processEvents()
         report = {"version": DESKTOP_VERSION, "source_commit": os.environ.get("SHCHEM_SOURCE_SHA", os.environ.get("GITHUB_SHA", "local")),
                   "platform": platform.platform(), "python": platform.python_version(), "qt": qVersion(),
                   "routes_opened": list(ALL_ROUTES), "screenshots": captures, "uncaught_errors": errors,
-                  "work_organization": organization, "lesson_backup": backup, "teacher_desk": desk, "paper_numbering": paper,
+                  "work_organization": organization, "lesson_backup": backup, "teacher_desk": desk, "paper_numbering": paper, "typography": typography,
                   "scope": "Native source work organization, settings and local dependency checks, isolated empty state. No real API, private teaching material, packaged EXE or classroom acceptance."}
         assert not errors
         (output / "onboarding-smoke.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")

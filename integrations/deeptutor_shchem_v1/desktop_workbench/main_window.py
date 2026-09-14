@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 
 from PySide6.QtCore import QByteArray, Qt
-from PySide6.QtGui import QCloseEvent, QFont, QFontDatabase, QKeySequence, QResizeEvent, QShortcut
+from PySide6.QtGui import QCloseEvent, QKeySequence, QResizeEvent, QShortcut
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QFrame, QHBoxLayout, QLabel, QMainWindow,
     QPushButton, QSizePolicy, QStackedWidget, QStatusBar, QVBoxLayout, QWidget,
@@ -34,23 +34,9 @@ PAGE_TITLES = {"home": "首页", "library": "题库", "paper": "组卷", "studen
 
 
 def install_font_fallbacks() -> str:
-    """Load Windows Chinese faces for packaged and offscreen environments."""
-    database = QFontDatabase
-    preferred = "Microsoft YaHei UI"
-    if preferred not in database.families():
-        for filename in ("msyh.ttc", "seguisym.ttf", "simhei.ttf", "simsun.ttc"):
-            path = Path("C:/Windows/Fonts") / filename
-            if path.is_file():
-                database.addApplicationFont(str(path))
-    families = database.families()
-    chosen = next((value for value in ("Microsoft YaHei UI", "Microsoft YaHei", "SimHei", "SimSun")
-                   if value in families), preferred)
-    application = QApplication.instance()
-    if application is not None:
-        font = QFont(chosen)
-        font.setPointSize(10)
-        application.setFont(font)
-    return chosen
+    """Compatibility entry for existing source/EXE probes."""
+    from .typography import install_ui_font
+    return install_ui_font()
 
 
 class TeacherWorkbenchWindow(QMainWindow):

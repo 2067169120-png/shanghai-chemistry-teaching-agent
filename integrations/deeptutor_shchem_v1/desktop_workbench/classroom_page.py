@@ -1,6 +1,8 @@
 """Native offline classroom utilities. No student upload or model execution."""
 from __future__ import annotations
 
+from .typography import ui_font
+
 import json
 import time
 from datetime import datetime
@@ -208,7 +210,7 @@ class EquilibriumCanvas(QWidget):
         painter.fillRect(self.rect(), QColor("#F8FBF9"))
         width, height = self.width(), self.height()
         painter.setPen(QColor("#233A32"))
-        painter.setFont(QFont("Microsoft YaHei UI", 16))
+        painter.setFont(ui_font(16))
         painter.drawText(QRectF(0, 6, width, 32), Qt.AlignmentFlag.AlignCenter, "A  ⇌  B")
         colors = ("#3B9567", "#DCAC50")
         bar_width = max(24, min(70, width * .13))
@@ -223,7 +225,7 @@ class EquilibriumCanvas(QWidget):
             painter.setBrush(QColor(colors[i]))
             painter.drawRoundedRect(QRectF(x, area.bottom() - level, bar_width, level), 6, 6)
             painter.setPen(QColor("#233A32"))
-            painter.setFont(QFont("Microsoft YaHei UI", 11))
+            painter.setFont(ui_font(11))
             painter.drawText(QRectF(x - 20, area.bottom() + 8, bar_width + 40, 32), Qt.AlignmentFlag.AlignCenter, f"{name}  {value:.1f}")
         chart = QRectF(width * .55, 60, max(20, width * .4 - 12), height - 112)
         # Trace paths are lines, not closed areas. The bars above used a fill.
@@ -243,7 +245,7 @@ class EquilibriumCanvas(QWidget):
             painter.setPen(QPen(QColor(color), 2.5))
             painter.drawPath(path)
         painter.setPen(QColor("#60746B"))
-        painter.setFont(QFont("Microsoft YaHei UI", 9))
+        painter.setFont(ui_font(10))
         painter.drawText(QRectF(chart.left(), chart.bottom() + 10, chart.width(), 25), Qt.AlignmentFlag.AlignCenter, "最近过程 · 绿色A / 金色B")
 
 

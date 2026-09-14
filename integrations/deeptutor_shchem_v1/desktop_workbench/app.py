@@ -5,13 +5,13 @@ from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import QLockFile, QLibraryInfo, QTranslator
-from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from ..desktop_facade import build_default_facade
 from ..desktop_paths import DesktopPathError, DesktopPaths
 from ..desktop_version import DESKTOP_VERSION
 from .main_window import WORKBENCH_STYLE, TeacherWorkbenchWindow
+from .typography import install_ui_font
 
 
 class DesktopInstanceLockError(RuntimeError):
@@ -66,7 +66,7 @@ def create_application(argv: list[str] | None = None) -> QApplication:
     # Qt's Fusion indicators remain legible under the shared stylesheet,
     # including combobox arrows and spin controls on Windows CI and desktops.
     application.setStyle("Fusion")
-    application.setFont(QFont("Microsoft YaHei UI", 10))
+    install_ui_font(application)
     application.setStyleSheet(WORKBENCH_STYLE)
     return application
 

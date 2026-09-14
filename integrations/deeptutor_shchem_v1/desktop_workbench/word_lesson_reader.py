@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .typography import ui_font
+
 from copy import deepcopy
 from html import escape
 from typing import Any
@@ -335,7 +337,7 @@ class WordLessonReader(QWidget):
         html = [
             (
                 "<html><head><style>"
-                "body { color:#26362d; font-family:'Microsoft YaHei'; font-size:12pt; }"
+                "body { color:#26362d; font-size:12pt; }"
                 "h1 { font-size:20pt; font-weight:600; color:#214b3b; margin:8px 0 18px; }"
                 ".eyebrow { color:#557263; font-size:10pt; margin-top:12px; }"
                 ".block-label { color:#526c5b; font-size:10pt; margin-top:26px; }"
@@ -462,7 +464,7 @@ class WordLessonReader(QWidget):
                 )
         html.append("</body></html>")
         document = _LocalDocument(self.browser, images)
-        document.setDefaultFont(QFont("Microsoft YaHei", 12))
+        document.setDefaultFont(ui_font(12))
         document.setDocumentMargin(20)
         option = document.defaultTextOption()
         option.setWrapMode(QTextOption.WrapMode.WrapAtWordBoundaryOrAnywhere)
