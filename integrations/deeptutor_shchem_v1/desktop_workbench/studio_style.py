@@ -91,6 +91,12 @@ QTreeWidget#ExplorerFacetTree::item:hover {{ background: {t['surface_subtle']}; 
 QTreeWidget#ExplorerFacetTree::item:selected {{ background: {t['brand_soft']}; color: {t['brand_dark']}; }}
 QPushButton#ExplorerFilterChip {{ background: {t['brand_soft']}; color: {t['brand_dark']}; border: 1px solid #BFDFCD; padding: 3px 8px; min-height: 18px; border-radius: 5px; }}
 QPushButton#ExplorerBasketButton {{ background: white; color: {t['brand_dark']}; border-color: #9FC9AF; font-weight: 600; }}
+QFrame#DeskPanel {{ background: white; border: 1px solid {t['line']}; border-radius: 5px; }}
+QFrame#DeskEditing {{ background: #EDF3F0; border: 0; border-left: 3px solid {t['brand']}; }}
+QTableWidget#DeskWorkTable {{ border: 0; padding: 0; border-radius: 0; }}
+QTableWidget#DeskWorkTable::item {{ padding: 10px 12px; border-bottom: 1px solid #EDF1EF; }}
+QHeaderView::section {{ background: #F6F8F7; color: {t['ink_muted']}; padding: 12px; border: 0; border-bottom: 1px solid {t['line']}; text-align: left; }}
+QWidget#WorkActionBar {{ background: white; border-top: 1px solid {t['line']}; }}
 '''
 
 WORKBENCH_STYLE = _build_style(TOKENS) + control_style()

@@ -35,7 +35,7 @@ PAGE_TITLES = {"home": "首页", "library": "题库", "paper": "组卷", "studen
 
 def install_font_fallbacks() -> str:
     """Load Windows Chinese faces for packaged and offscreen environments."""
-    database = QFontDatabase()
+    database = QFontDatabase
     preferred = "Microsoft YaHei UI"
     if preferred not in database.families():
         for filename in ("msyh.ttc", "seguisym.ttf", "simhei.ttf", "simsun.ttc"):
@@ -78,7 +78,7 @@ class TeacherWorkbenchWindow(QMainWindow):
         side.setSpacing(4)
         self.brand = QLabel("沪上化学智研台")
         self.brand.setObjectName("Brand")
-        self.brand_sub = QLabel("CHEMISTRY TEACHING STUDIO")
+        self.brand_sub = QLabel("上海高中化学 · 教师工作台")
         self.brand_sub.setObjectName("BrandSub")
         side.addWidget(self.brand)
         side.addWidget(self.brand_sub)
@@ -150,6 +150,7 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.help_button.clicked.connect(self.open_help)
         top.addWidget(self.help_button)
         self.import_button = QPushButton("导入资料")
+        self.import_button.setObjectName("QuietButton")
         self.import_button.setAccessibleName("导入资料")
         self.import_button.setToolTip("导入试卷、教材、讲义或学生作答")
         self.import_button.clicked.connect(self.open_import)
@@ -173,7 +174,10 @@ class TeacherWorkbenchWindow(QMainWindow):
         work.addWidget(self.stack, 1)
         root.addWidget(work_area, 1)
         self.home_page.navigate_requested.connect(self.navigate)
-        self.home_page.template_requested.connect(self.open_template)
+        self.home_page.open_requested.connect(self.open_work_record)
+        self.home_page.new_requested.connect(self.new_preparation)
+        self.home_page.basket_requested.connect(self.open_home_basket)
+        self.home_page.preview_requested.connect(self.preview_selected_paper)
         self.template_page.template_requested.connect(self.open_template)
         self.my_work_page.navigate_requested.connect(self.navigate)
         self.my_work_page.open_requested.connect(self.open_work_record)
@@ -223,10 +227,28 @@ class TeacherWorkbenchWindow(QMainWindow):
         status.addPermanentWidget(self.version_label)
         status.showMessage("本地工作台已就绪")
         self._restore_window_state()
+        self.home_page.update_editor(self.preparation_page._payload())
 
     @property
     def primary_navigation_labels(self) -> tuple[str, ...]:
         return tuple(button.text() for button in self.nav_buttons)
+
+    def new_preparation(self):
+        self.navigate("preparation")
+        recovery = self.preparation_page.recovery
+        if recovery is not None:
+            recovery.new_blank()
+        self.preparation_page.topic.setFocus()
+
+    def open_home_basket(self):
+        from .explorer_basket import ExplorerBasketDialog
+        dialog = ExplorerBasketDialog(self.facade, self)
+        dialog.basket_changed.connect(self.paper_page.update_basket_count)
+        dialog.preview_requested.connect(self.preview_selected_paper)
+        dialog.edit_requested.connect(lambda: self.navigate("paper"))
+        dialog.exec()
+        dialog.deleteLater()
+        self.home_page.refresh()
 
     def preview_selected_paper(self):
         self.navigate("paper")
@@ -240,6 +262,9 @@ class TeacherWorkbenchWindow(QMainWindow):
             self.nav_buttons[ROUTE_ORDER.index(route)].setChecked(True)
         else:
             self.studio_nav_buttons[route].setChecked(True)
+        if route == "home":
+            self.home_page.update_editor(self.preparation_page._payload())
+            self.home_page.refresh()
         if route == "mywork":
             self.my_work_page.refresh()
         self.top_title.setText(PAGE_TITLES.get(route, "教师工作台"))
