@@ -151,6 +151,8 @@ class BackupPlan:
 def _task_reader(root):
     """Use existing read validators without initializing/recovering active tasks."""
     from .desktop_preparation import DesktopPreparationManager
+    # Match the normal manager constructor: Windows TEMP may use 8.3 aliases.
+    root = Path(root).resolve()
     reader = object.__new__(DesktopPreparationManager)
     reader.root = root / PREP
     reader.tasks_root = reader.root / "tasks"
