@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from base64 import b64decode, b64encode
 from pathlib import Path
+import sys
 
 from PySide6.QtCore import QByteArray, Qt
 from PySide6.QtGui import QCloseEvent, QFont, QFontDatabase, QKeySequence, QResizeEvent, QShortcut
@@ -206,6 +207,15 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.version_label = QLabel(f"v{DESKTOP_VERSION}")
         self.version_label.setObjectName("DesktopVersion")
         self.version_label.setToolTip("桌面程序版本；题库资料可独立更新")
+        self.mode_label = QLabel("打包版" if getattr(sys, "frozen", False) else "源码版")
+        self.mode_label.setObjectName("MutedLabel")
+        self.environment_button = QPushButton("本机检查")
+        self.environment_button.setObjectName("QuietButton")
+        self.environment_button.setAccessibleName("检查本机版本、依赖与排版工具")
+        self.environment_button.setEnabled(getattr(self.facade, "paths", None) is not None)
+        self.environment_button.clicked.connect(self.open_environment)
+        status.addPermanentWidget(self.environment_button)
+        status.addPermanentWidget(self.mode_label)
         status.addPermanentWidget(self.version_label)
         status.showMessage("本地工作台已就绪")
         self._restore_window_state()
@@ -266,7 +276,8 @@ class TeacherWorkbenchWindow(QMainWindow):
                 self.navigate(command)
             else:
                 {"import": self.open_import, "settings": self.open_settings,
-                 "progress": self.home_page.open_library_progress, "help": self.open_help}[command]()
+                 "progress": self.home_page.open_library_progress, "help": self.open_help,
+                 "environment": self.open_environment}[command]()
         dialog.deleteLater()
 
     def open_help(self) -> None:
@@ -319,7 +330,17 @@ class TeacherWorkbenchWindow(QMainWindow):
         dialog.deleteLater()
 
     def open_settings(self) -> None:
-        SettingsDialog(self.facade, self.tasks, self).exec()
+        dialog = SettingsDialog(self.facade, self.tasks, self)
+        dialog.exec()
+        dialog.deleteLater()
+
+    def open_environment(self) -> None:
+        from .environment_dialog import EnvironmentDialog
+        paths = getattr(self.facade, "paths", None)
+        if paths is not None:
+            dialog = EnvironmentDialog(paths, self.tasks, self)
+            dialog.exec()
+            dialog.deleteLater()
 
     def _restore_window_state(self) -> None:
         try:

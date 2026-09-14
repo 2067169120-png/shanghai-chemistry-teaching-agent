@@ -10,7 +10,7 @@ import pytest
 from integrations.deeptutor_shchem_v1.desktop_environment import (
     DEPENDENCIES, ICON_FILES, collect_environment_report, office_check, report_text,
 )
-from integrations.deeptutor_shchem_v1/desktop_paths import DesktopPaths
+from integrations.deeptutor_shchem_v1.desktop_paths import DesktopPaths
 from integrations.deeptutor_shchem_v1.desktop_settings_view import capability_summary
 
 

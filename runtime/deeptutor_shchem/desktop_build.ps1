@@ -34,22 +34,25 @@ $BuildSearchPathEntries = @(
 try {
     # Exclude private runtime ICU libraries from PyInstaller's dependency scan.
     $env:Path = [string]::Join([IO.Path]::PathSeparator, $BuildSearchPathEntries)
-    & $Python -c "import PySide6, PyInstaller, jsonschema, PIL, docx, pptx, pypdf; from PySide6 import QtPdf, QtPdfWidgets"
+    & $Python -c "import PySide6, PyInstaller, jsonschema, PIL, docx, pptx, pypdf, pypdfium2; from PySide6 import QtPdf, QtPdfWidgets"
     if ($LASTEXITCODE -ne 0) {
         throw "桌面构建依赖不可用。请先在项目专用环境中安装 desktop_requirements.txt。"
     }
-    $StudioAssets = Join-Path $WorkspaceRoot "integrations\deeptutor_shchem_v1\desktop_workbench\studio_assets"
+    $ResourceScript = Join-Path $RuntimeRoot "package_resources.py"
+    $ResourceJson = & $Python $ResourceScript --arguments
+    if ($LASTEXITCODE -ne 0) { throw "Declared software resources are incomplete." }
+    $ResourceArguments = @($ResourceJson | ConvertFrom-Json)
     $Arguments = @(
         "-m", "PyInstaller", "--windowed", "--noupx",
         "--name", "沪上化学智研台", "--paths", $WorkspaceRoot,
         "--distpath", $DistRoot, "--workpath", $WorkRoot, "--specpath", $SpecRoot,
-        "--add-data", ($StudioAssets + ":integrations/deeptutor_shchem_v1/desktop_workbench/studio_assets"),
         "--exclude-module", "integrations.deeptutor_shchem_v1.service",
         "--exclude-module", "integrations.deeptutor_shchem_v1.http_app",
         "--exclude-module", "integrations.deeptutor_shchem_v1.launcher",
         "--exclude-module", "PySide6.QtWebEngineCore",
         "--exclude-module", "PySide6.QtWebEngineWidgets"
     )
+    $Arguments += $ResourceArguments
     if ($OneFile) { $Arguments += "--onefile" }
     $Arguments += $EntryPoint
     & $Python @Arguments
