@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import QLockFile
@@ -73,6 +74,18 @@ def run_desktop_workbench(
     except DesktopPathError as exc:
         QMessageBox.critical(None, "无法启动", str(exc))
         return 2
+    arguments = list(sys.argv if argv is None else argv)
+    if "--personal-state" in arguments:
+        try:
+            from ..desktop_backup import restored_profile
+            index = arguments.index("--personal-state")
+            state_root = restored_profile(arguments[index + 1])
+            paths = DesktopPaths.from_workspace(paths.workspace_root, state_root=state_root)
+            # A restored window must not silently use the source checkout's old library.
+            paths = replace(paths, shchem_root=state_root / "library" / "sh-chem-db")
+        except (ValueError, IndexError, OSError):
+            QMessageBox.critical(None, "无法打开恢复副本", "请选择通过本工作台校验恢复的独立目录。")
+            return 2
     try:
         instance_lock = _acquire_desktop_instance_lock(paths.state_root)
     except DesktopInstanceLockError as exc:

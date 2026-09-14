@@ -10,6 +10,7 @@ SHELF_LABELS = {"current": "当前作品", "archived": "已归档", "trash": "�
 
 
 class MyWorkPage(QWidget):
+    backup_requested = Signal()
     open_requested = Signal(object)
     navigate_requested = Signal(str)
     PAGE_SIZE = 25
@@ -40,6 +41,10 @@ class MyWorkPage(QWidget):
             index = self.shelves.addTab(label)
             self.shelves.setTabData(index, key)
         root.addWidget(self.shelves)
+        self.backup_button = QPushButton("备份与恢复")
+        self.backup_button.setObjectName("QuietButton")
+        self.backup_button.clicked.connect(self.backup_requested.emit)
+        root.addWidget(self.backup_button)
         self.query = QLineEdit()
         self.query.setPlaceholderText("搜索作品名称或原课题，不限最近50条")
         self.query.setClearButtonEnabled(True)

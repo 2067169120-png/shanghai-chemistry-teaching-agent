@@ -177,6 +177,10 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.template_page.template_requested.connect(self.open_template)
         self.my_work_page.navigate_requested.connect(self.navigate)
         self.my_work_page.open_requested.connect(self.open_work_record)
+        self.my_work_page.backup_requested.connect(self.open_backup)
+        if getattr(self.facade, "paths", None) is not None and (self.facade.paths.state_root / "restored-profile.json").is_file():
+            self.setWindowTitle("沪上化学智研台 · 独立恢复副本")
+            self.brand_sub.setText("独立恢复副本 · 非默认资料")
         self.classroom_page.reference_requested.connect(self.append_classroom_feedback)
         self.library_page.basket_changed.connect(self.paper_page.update_basket_count)
         self.library_page.preview_requested.connect(self.preview_selected_paper)
@@ -284,7 +288,15 @@ class TeacherWorkbenchWindow(QMainWindow):
             else:
                 {"import": self.open_import, "settings": self.open_settings,
                  "progress": self.home_page.open_library_progress, "help": self.open_help,
-                 "environment": self.open_environment}[command]()
+                 "environment": self.open_environment, "backup": self.open_backup}[command]()
+        dialog.deleteLater()
+
+    def open_backup(self) -> None:
+        from .backup_dialog import BackupDialog
+        recovery = self.preparation_page.recovery
+        dialog = BackupDialog(self.facade.paths, self.tasks, self,
+                              flush_editor=recovery.flush if recovery else None)
+        dialog.exec()
         dialog.deleteLater()
 
     def open_help(self) -> None:
