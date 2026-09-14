@@ -130,6 +130,7 @@ class _Question:
     answer: tuple[int, ...]
     context: tuple[int, ...]
     points: float
+    nested_starts: tuple[int, ...] = ()
 
 
 def _prepare(questions: list[dict]) -> list[_Question]:
@@ -167,7 +168,11 @@ def _prepare(questions: list[dict]) -> list[_Question]:
         points = item.get("points", 2)
         if isinstance(points, bool) or not isinstance(points, (int, float)) or not isfinite(points) or not 0 < points <= 1000:
             _fail("每道题的本次分值须大于 0 且不超过 1000。")
-        result.append(_Question(source, str(item.get("source_name") or "Word 讲义"), question, answer, context, float(points)))
+        nested = item.get("nested_section_starts", [])
+        if (not isinstance(nested, list) or any(type(v) is not int or v not in question for v in nested)
+                or nested != sorted(set(nested))):
+            _fail("题组的小题起点已失效，请重新核对选题范围。")
+        result.append(_Question(source, str(item.get("source_name") or "Word 讲义"), question, answer, context, float(points), tuple(nested)))
     # A block recognized as an answer for any selected question may never
     # become another selected question's shared context/student content.
     answer_sets: dict[str, set[int]] = {}
@@ -420,7 +425,7 @@ class _Writer:
             self.images[key] = self.document.part.relate_to(image_part, RT.IMAGE)
         return self.images[key]
 
-    def append(self, source: _Source, indices: tuple[int, ...], *, keep_question: bool = False) -> None:
+    def append(self, source: _Source, indices: tuple[int, ...], *, keep_question: bool = False, numbering=None, answer: bool = False, references=None) -> None:
         reader = WordNativeTextReader(source.document.styles.element)
         for offset, index in enumerate(indices):
             original = source.blocks[index - 1]
@@ -451,6 +456,9 @@ class _Writer:
                         style = OxmlElement("w:tblStyle")
                         style.set(qn("w:val"), default)
                         node.tblPr.insert(0, style)
+            if numbering is not None:
+                from .desktop_paper_numbering import apply_word_numbering
+                apply_word_numbering(clone, index, numbering, answer=answer, references=references)
             self._references(clone, source)
             self._theme(clone, source)
             self._shapes(clone, source)
@@ -613,6 +621,13 @@ def export_word_questions(title: str, questions: list[dict], *, show_student_sco
     if type(show_student_scores) is not bool:
         _fail("题面分值开关无效，请重新选择。")
     items = _prepare(questions)
+    from .desktop_paper_numbering import plan_word, word_reference_maps
+    plans, cursor = [], 1
+    for item in items:
+        plan = plan_word(item, cursor)
+        plans.append(plan)
+        cursor += plan.count
+    refs = word_reference_maps(items, plans)
     outputs = {}
     warnings = []
     for role, teacher in (("student", False), ("teacher", True)):
@@ -627,14 +642,14 @@ def export_word_questions(title: str, questions: list[dict], *, show_student_sco
                 included_context.update((item.source.digest, n) for n in context)
             score = f"  {item.points:g} 分" if teacher or show_student_scores else ""
             document.add_paragraph(f"练习 {index}{score}", "Heading 1")
-            writer.append(item.source, item.question, keep_question=True)
+            writer.append(item.source, item.question, keep_question=True, numbering=plans[index - 1], references=refs[item.source.digest])
             if teacher:
                 reference = document.add_paragraph(f"来源：{item.source_name}")
                 for run in reference.runs:
                     run.font.size = Pt(10)
                 if item.answer:
                     document.add_paragraph("参考答案", "Heading 1")
-                    writer.append(item.source, item.answer)
+                    writer.append(item.source, item.answer, numbering=plans[index - 1], answer=True, references=refs[item.source.digest])
                 else:
                     document.add_paragraph("当前选定范围未识别到本题答案，请核对原教案与题答边界；这不表示原文没有答案。")
         output = BytesIO()

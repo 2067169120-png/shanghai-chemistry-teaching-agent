@@ -835,7 +835,7 @@ class PersonalVisualQuestionDialog(QDialog):
         original_button.setAccessibleName("查看个人图文题整页原图：" + caption)
         original_button.setEnabled(False)
         frame_layout.addWidget(original_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        crop_button = QPushButton("恢复题面裁片")
+        crop_button = QPushButton('返回题目图片')
         crop_button.setObjectName("QuietButton")
         crop_button.setAccessibleName("恢复个人图文题题面裁片：" + caption)
         crop_button.setEnabled(False)
@@ -844,7 +844,7 @@ class PersonalVisualQuestionDialog(QDialog):
         self._image_previews[image_key] = preview
         self._image_original_buttons[image_key] = original_button
         self._image_crop_buttons[image_key] = crop_button
-        edit_button = QPushButton("调整这张裁片…")
+        edit_button = QPushButton('调整截取范围…')
         edit_button.setObjectName("QuietButton")
         edit_button.setAccessibleName("调整个人图文题当前这张裁片：" + caption)
         edit_button.setEnabled(False)
@@ -1445,7 +1445,7 @@ class PersonalVisualQuestionDialog(QDialog):
         self._reference_busy = True
         self._reference_preview = None
         self._reference_selection_key = ()
-        self.reference_note.setText("正在编译选中题所属完整主题、全部小题与公共材料…")
+        self.reference_note.setText('正在整理所选题目的完整主题、小题和公共材料…')
         self.reference_materials.clear()
         self.reference_image_note.clear()
         self._update_actions()

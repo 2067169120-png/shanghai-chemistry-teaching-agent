@@ -84,12 +84,12 @@ class VisualImportEgressDialog(PreparationEgressDialog):
                 )
             self.summary.setText(
                 f"接收模型：{self._plan['model_label']}\n"
-                f"{len(assets)} 页冻结源页 · 点击缩略图切换，放大检查内容与边界"
+                f"{len(assets)} 页本次选定的源页 · 点击缩略图切换，放大检查内容与边界"
                 + budget
                 + (
                     f"\n提取后追加原页与实际裁片的图像复核，每组最多 {policy['crop_review_batch_limit']} 条裁片。"
                     "\n追加调用按裁片数分组计费，请求次数在提取后确定；复核失败不完成导入，不会自动重试。"
-                    "\n当前预览为全部冻结源页；实际裁片提取后才能生成，仅来自这些源页。"
+                    '\n当前预览包括本次选定的全部源页；识别后才会生成裁图，裁图仅来自这些页面。'
                     if isinstance(policy, dict) and policy.get("crop_review_required") is True
                     and type(policy.get("crop_review_batch_limit")) is int
                     and policy["crop_review_batch_limit"] > 0 else ""

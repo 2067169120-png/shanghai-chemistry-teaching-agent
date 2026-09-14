@@ -52,7 +52,7 @@ class BlueprintDraftDialog(QDialog):
         self._source: dict | None = None
         self._candidate: dict | None = None
         self._sources: list[dict] = []
-        self.setWindowTitle("教师修订蓝图 · 本地草稿")
+        self.setWindowTitle('编辑命题方案')
         self.setWindowModality(Qt.WindowModality.WindowModal)
         self.resize(920, 820)
         self.setMinimumSize(360, 540)
@@ -149,7 +149,7 @@ class BlueprintDraftDialog(QDialog):
         self.tabs.addTab(self.evidence_panel, "资料依据")
         self.original = self._text(0)
         self.original.setReadOnly(True)
-        self.tabs.addTab(self.original, "原始蓝图")
+        self.tabs.addTab(self.original, '原命题方案')
         self.preview = self._text(0)
         self.preview.setReadOnly(True)
         self.tabs.addTab(self.preview, "完整预览")
@@ -320,7 +320,7 @@ class BlueprintDraftDialog(QDialog):
                 "选择一条带原页绑定的讲义资料，可在此对照题面。这里只读本地图片，不发送给模型。"
             )
             return
-        self.source_page_hint.setText("正在核验这份蓝图引用的讲义版本…")
+        self.source_page_hint.setText('正在核验这份命题方案引用的讲义版本…')
         self.tasks.submit(
             "读取引用讲义原页",
             lambda: self.facade.prompt_blueprint_evidence_pages(

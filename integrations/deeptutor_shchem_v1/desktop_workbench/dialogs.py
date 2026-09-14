@@ -184,11 +184,11 @@ class ImportDialog(QDialog):
         provider_layout = QVBoxLayout(self.provider_card)
         provider_layout.setContentsMargins(16, 14, 16, 14)
         provider_layout.setSpacing(9)
-        provider_title = QLabel("第二步：生成视觉候选")
+        provider_title = QLabel('第二步：识别扫描件与图片')
         provider_title.setObjectName("CardTitle")
         provider_layout.addWidget(provider_title)
         provider_explanation = QLabel(
-            "仅处理上一步已保存的待视觉资料及其渲染页面；结果仍是候选，须由教师逐页复核。"
+            '识别上一步保存的扫描件和图片。完成后请核对题目、答案和截取范围。'
         )
         provider_explanation.setObjectName("MutedLabel")
         provider_explanation.setWordWrap(True)
@@ -671,7 +671,7 @@ class ImportDialog(QDialog):
                 self.provider_combo.setCurrentIndex(index)
         if self.provider_combo.count() == 0:
             self.provider_note.setText(
-                "尚无可用视觉模型。请关闭本窗口后到“设置”保存支持图片与结构化输出的模型；离线候选不受影响。"
+                '还没有可用的识图模型。请在“设置”中配置支持图片和结构化输出的模型；已导入资料仍会保留。'
             )
         else:
             self.provider_note.setText(
@@ -705,7 +705,7 @@ class ImportDialog(QDialog):
             set_status(
                 self.status,
                 "attention",
-                "尚无可用视觉模型；请先到“设置”完成模型与 Key 配置。离线候选已保存。",
+                '还没有可用的识图模型，请先在“设置”填写模型和密钥。已导入资料会保留。',
             )
             return
         profile_id, revision = selected
@@ -1054,7 +1054,7 @@ class ImportDialog(QDialog):
             set_status(self.status, "attention")
             if self._active_task_kind == "visual":
                 self.status.setText(
-                    "视觉候选仍在生成；可请求停止，但需等待当前页处理结束后再关闭。"
+                    '图片仍在识别。可以停止，当前页处理结束后即可关闭。'
                 )
             elif self._active_task_kind == "visual_preview":
                 self.status.setText("正在本机准备发送页面，未调用模型；可停止，等待当前文件处理结束后关闭。")
@@ -1072,7 +1072,7 @@ class ImportDialog(QDialog):
             set_status(self.status, "attention")
             if self._active_task_kind == "visual":
                 self.status.setText(
-                    "视觉候选仍在生成；请先请求停止并等待当前页处理结束。"
+                    '图片仍在识别，请先停止，待当前页处理结束后再关闭。'
                 )
             elif self._active_task_kind == "visual_preview":
                 self.status.setText("正在本机准备发送页面，未调用模型；请先停止并等待当前文件处理结束。")
@@ -1207,7 +1207,7 @@ class SettingsDialog(QDialog):
         self.scroll.setObjectName("SettingsScroll")
         root.addWidget(self.scroll, 1)
 
-        self.status = QLabel("保存设置后可测试连接；测试前会显示出站内容与费用提示。")
+        self.status = QLabel('保存后可测试连接；发送前会显示测试内容与费用提示。')
         self.status.setObjectName("StatusInfo")
         self.status.setWordWrap(True)
         root.addWidget(self.status)

@@ -76,7 +76,7 @@ class PreparationDraftDialog(QDialog):
         self.status.setWordWrap(True)
         self.status.setTextFormat(Qt.TextFormat.PlainText)
         root.addWidget(self.status)
-        self.load_button = QPushButton("载入到备课表单")
+        self.load_button = QPushButton('打开这份备课')
         self.load_button.setObjectName("PrimaryAction")
         self.load_button.setEnabled(False)
         self.load_button.clicked.connect(self._confirm)
@@ -196,7 +196,7 @@ class PreparationDraftDialog(QDialog):
             self.status.setText(exc.message_zh)
             return
         except Exception:  # noqa: BLE001 - sanitize local read errors at the UI boundary
-            self.status.setText("草稿无法载入，请关闭窗口重新选择。")
+            self.status.setText('这份备课暂时无法打开，请刷新后重试。')
             return
         payload = selected["payload"]
         lines = [
@@ -217,14 +217,14 @@ class PreparationDraftDialog(QDialog):
         for key, label in (
             ("learning_and_experiment", "学情/实验"),
             ("template_and_delivery", "模板/呈现"),
-            ("homework_and_strategy", "作业/策略"),
+            ("homework_and_strategy", '作业安排'),
         ):
             lines.extend(["", label + "：", payload["advanced"].get(key, "")])
         self.preview.setPlainText("\n".join(lines))
         self.selected = selected
         self.load_button.setEnabled(True)
         self.status.setText(
-            "离线读取完成。载入不等于生成；再次保存会新增一份草稿，旧稿保留。"
+            '内容已读取。打开后可继续编辑；再次保存会保留为新草稿，原稿不变。'
         )
 
     def _confirm(self):

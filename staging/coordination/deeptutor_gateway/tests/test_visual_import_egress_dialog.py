@@ -209,7 +209,7 @@ def test_default_gallery_discloses_additional_review_cost_and_uncreated_crops(ap
     assert "每组最多 8 条裁片" in dialog.summary.text()
     assert "按裁片数分组计费，请求次数在提取后确定" in dialog.summary.text()
     assert "复核失败不完成导入，不会自动重试" in dialog.summary.text()
-    assert "当前预览为全部冻结源页；实际裁片提取后才能生成，仅来自这些源页" in dialog.summary.text()
+    assert "当前预览包括本次选定的全部源页；识别后才会生成裁图，裁图仅来自这些页面" in dialog.summary.text()
     assert "尚未在本次发送前预览中展示" in dialog.disclosure.toPlainText()
     assert dialog.confirm_button.isEnabled() and dialog.image_preview.has_image
     _close(dialog)

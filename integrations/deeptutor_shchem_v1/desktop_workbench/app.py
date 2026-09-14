@@ -4,7 +4,7 @@ import sys
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QLockFile
+from PySide6.QtCore import QLockFile, QLibraryInfo, QTranslator
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication, QMessageBox
 
@@ -44,8 +44,20 @@ def _acquire_desktop_instance_lock(state_root: Path) -> QLockFile:
     )
 
 
+def install_chinese_translations(application):
+    """Use Qt's bundled Chinese labels; do not reinstall on repeated setup."""
+    if not hasattr(application, "_workbench_chinese_translator"):
+        translator = QTranslator(application)
+        loaded = translator.load("qtbase_zh_CN", QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath))
+        if loaded:
+            application.installTranslator(translator)
+        application._workbench_chinese_translator = translator
+        application._workbench_chinese_translation_loaded = loaded
+
+
 def create_application(argv: list[str] | None = None) -> QApplication:
     application = QApplication.instance() or QApplication(argv or sys.argv)
+    install_chinese_translations(application)
     application.setApplicationName("沪上化学智研台")
     application.setApplicationDisplayName("沪上化学智研台")
     application.setOrganizationName("ShanghaiChem")

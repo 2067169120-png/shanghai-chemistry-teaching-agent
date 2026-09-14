@@ -47,7 +47,7 @@ class LibraryPreparationDialog(QDialog):
             item.setCheckState(Qt.CheckState.Checked)
             self.units.addItem(item)
         root.addWidget(self.units)
-        self.include_answers = QCheckBox("包含参考答案与候选解路（供讲评，仍须核验）")
+        self.include_answers = QCheckBox('包含参考答案与解题思路（使用前请核对）')
         self.include_answers.setChecked(True)
         root.addWidget(self.include_answers)
         self.preview = QPlainTextEdit()

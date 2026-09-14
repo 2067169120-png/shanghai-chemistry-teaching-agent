@@ -493,7 +493,7 @@ class LibraryDetailDialog(QDialog):
         layout.setSpacing(12)
         layout.addWidget(
             _text_label(
-                "答案与解路按作答单元分别展示。参考答案、模型候选分析与"
+                '答案与解题思路按作答单元分别展示。参考答案、模型候选分析与'
                 "官方评分细则不是同一证据层。"
             )
         )
@@ -536,10 +536,10 @@ class LibraryDetailDialog(QDialog):
                 card_layout.addWidget(_text_label(part.supplemental_explanation_zh))
                 card_layout.addWidget(_text_label(SOURCE_LABEL, "MutedLabel"))
             elif part.analysis_zh:
-                card_layout.addWidget(_text_label("模型候选解路", "MutedLabel"))
+                card_layout.addWidget(_text_label('AI解题思路（待核对）', "MutedLabel"))
                 card_layout.addWidget(_text_label("\n".join(part.analysis_zh)))
             else:
-                card_layout.addWidget(_text_label("暂无模型候选解路。", "MutedLabel"))
+                card_layout.addWidget(_text_label('暂无AI解题思路（待核对）。', "MutedLabel"))
             if part.quality_notes_zh:
                 card_layout.addWidget(_text_label("质量与使用边界", "MutedLabel"))
                 card_layout.addWidget(_text_label("\n".join(part.quality_notes_zh)))

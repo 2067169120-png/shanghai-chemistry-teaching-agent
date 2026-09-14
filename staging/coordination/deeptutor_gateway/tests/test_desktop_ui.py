@@ -757,7 +757,7 @@ def test_main_generate_renders_reused_completion_without_generation(
     assert not facade.generate_calls
     assert facade.events == ["prepare"]
     assert page.progress.value() == 100
-    assert "待教师复核" in page.status.text()
+    assert "请检查内容和排版" in page.status.text()
     page.close()
     bridge.shutdown(1000)
 
@@ -804,8 +804,8 @@ def test_preparation_confirmed_generation_reports_candidate_and_opens_artifact(
         {"task_id": "PREP-INTERNAL-SECRET", "teacher_confirmed": True}
     ]
     assert page.progress.value() == 100
-    assert "待教师复核" in page.status.text()
-    assert "候选" in page.result_summary.text()
+    assert "请检查内容和排版" in page.status.text()
+    assert "初稿" in page.result_summary.text()
 
     opened: list[str] = []
     monkeypatch.setattr(
@@ -937,7 +937,7 @@ def test_preparation_stop_completion_race_keeps_completed_result(
     )
     assert facade.current_summary is facade.completed
     assert page.progress.value() == 100
-    assert "待教师复核" in page.status.text()
+    assert "请检查内容和排版" in page.status.text()
     assert "已停止" not in page.status.text()
     page.close()
     bridge.shutdown(1000)
@@ -987,7 +987,7 @@ def test_retryable_failed_history_retries_once_before_generation(
         qt_app,
         lambda: page._generation_qt_task_id is None and page.result_card.isVisible(),
     )
-    assert confirmation["title"] == "确认重试备课候选"
+    assert confirmation["title"] == "确认重新生成"
     assert "原任务冻结文字" in confirmation["message"]
     assert "不发送图片像素" in confirmation["message"]
     assert facade.retry_calls == ["PREP-INTERNAL-SECRET"]

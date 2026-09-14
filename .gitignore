@@ -208,3 +208,14 @@
 !/docs/qa/0.1.89-readiness.json
 !/docs/qa/0.1.89-package.json
 !/docs/qa/0.1.89-lesson-backup.md
+
+# 0.1.91 source, teacher copy and isolated verification (no private sources).
+!/README-0.1.90-archive.md
+!/.github/workflows/paper-numbering.yml
+!/docs/ux/0.1.91-numbering-and-copy.md
+!/docs/ux/0.1.91-copy-changes.json
+!/docs/qa/0.1.91-numbering-and-copy.md
+!/docs/qa/0.1.91-readiness.json
+!/docs/qa/0.1.91-package.json
+!/docs/releases/0.1.91.md
+!/docs/screenshots/v0.1.91/

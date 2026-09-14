@@ -67,8 +67,8 @@ class PreparationEgressDialog(QDialog):
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._check_next_image)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 20, 24, 20)
-        layout.setSpacing(12)
+        layout.setContentsMargins(20, 14, 20, 14)
+        layout.setSpacing(8)
 
         heading = QLabel("发送前核对" if not local_only else "本地导出确认")
         heading.setObjectName("PageTitle")
@@ -114,7 +114,7 @@ class PreparationEgressDialog(QDialog):
         self.image_details.setAccessibleName("当前图片完整图注、来源、用途及尺寸")
         self.image_details.setReadOnly(True)
         self.image_details.setTabChangesFocus(True)
-        self.image_details.setFixedHeight(96)
+        self.image_details.setFixedHeight(64)
         detail_panel = QWidget()
         details_layout = QVBoxLayout(detail_panel)
         details_layout.setContentsMargins(8, 0, 0, 0)
@@ -177,7 +177,7 @@ class PreparationEgressDialog(QDialog):
         reminder = QLabel(
             "调用可能产生费用，重试可能再次计费。确认前不会调用模型；取消不会发送新请求。"
             if not local_only
-            else "仅使用已保存的冻结候选继续导出。"
+            else '只使用已保存的初稿继续导出，不重新调用模型。'
         )
         reminder.setObjectName("MutedLabel")
         reminder.setWordWrap(True)

@@ -50,8 +50,8 @@ class PromptBlueprintDialog(QDialog):
         root = QVBoxLayout(self)
         introduction = QLabel(
             "选择教材章节，填写学习目标，可加入已保存的讲义选题与试题结构参考。"
-            "编译不消耗模型额度；确认后可生成并保存主题命题蓝图。"
-            "蓝图不是完整试卷，题面、数据与答案仍需完善和核验。"
+            '编译不消耗模型额度；确认后可生成并保存主题命题方案。'
+            '命题方案不是完整试卷，题面、数据与答案仍需完善和核验。'
         )
         introduction.setWordWrap(True)
         root.addWidget(introduction)
@@ -123,9 +123,9 @@ class PromptBlueprintDialog(QDialog):
         )
         self.history.setMinimumContentsLength(16)
         self.history.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
-        self.history.addItem("最近保存的蓝图（选择后查看）")
+        self.history.addItem('最近的命题方案')
         self.history.currentIndexChanged.connect(self._load_history)
-        form.addRow("最近蓝图", self.history)
+        form.addRow('最近命题方案', self.history)
         inputs_layout.addLayout(form)
         inputs_layout.addWidget(QLabel("教材章节　勾选 1—12 节"))
         self.sections = QListWidget()
@@ -147,10 +147,10 @@ class PromptBlueprintDialog(QDialog):
         self.inputs_scroll.setMaximumHeight(380)
         root.addWidget(self.inputs_scroll, 1)
         actions = QHBoxLayout()
-        self.compile_button = QPushButton("编译本地提示")
+        self.compile_button = QPushButton('整理命题要求')
         self.compile_button.setEnabled(False)
         self.compile_button.clicked.connect(self._compile)
-        self.generate_button = QPushButton("生成蓝图")
+        self.generate_button = QPushButton('生成命题方案')
         self.generate_button.setEnabled(False)
         self.generate_button.clicked.connect(self._generate)
         self.stop_button = QPushButton("停止")
@@ -164,11 +164,11 @@ class PromptBlueprintDialog(QDialog):
         actions.addStretch(1)
         actions.addWidget(self.close_button)
         root.addLayout(actions)
-        self.review_button = QPushButton("审校与修订已生成蓝图")
+        self.review_button = QPushButton('检查已生成的命题方案')
         self.review_button.setEnabled(False)
         self.review_button.clicked.connect(self._review)
         root.addWidget(self.review_button)
-        self.edit_button = QPushButton("教师修订 / 打开本地蓝图草稿")
+        self.edit_button = QPushButton('打开并修改命题方案')
         self.edit_button.setEnabled(False)
         self.edit_button.clicked.connect(self._edit)
         root.addWidget(self.edit_button)
@@ -184,7 +184,7 @@ class PromptBlueprintDialog(QDialog):
             ("资料依据", self.evidence_output),
             ("系统提示", self.system_output),
             ("本次任务提示", self.task_output),
-            ("生成蓝图", self.generated_output),
+            ('生成命题方案', self.generated_output),
         ):
             widget.setReadOnly(True)
             self.tabs.addTab(widget, label)
@@ -204,7 +204,7 @@ class PromptBlueprintDialog(QDialog):
             on_failure=self._failed,
         )
         self.tasks.submit(
-            "读取蓝图模型与历史",
+            '读取命题模型与历史',
             lambda: (
                 getattr(self.facade, "preparation_profiles", lambda: ())(),
                 getattr(self.facade, "prompt_blueprint_history", lambda: ())(),
@@ -296,7 +296,7 @@ class PromptBlueprintDialog(QDialog):
         self._history = list(history)
         self.history.blockSignals(True)
         self.history.clear()
-        self.history.addItem("最近保存的蓝图（选择后查看）")
+        self.history.addItem('最近的命题方案')
         for item in self._history:
             stamp = item.get("result", {}).get("created_at", "")
             try:
@@ -392,11 +392,11 @@ class PromptBlueprintDialog(QDialog):
         }
         self.compile_button.setEnabled(False)
         self._set_inputs_enabled(False)
-        self.status.setText("正在核验本地来源并编译提示…")
+        self.status.setText('正在核对所选资料并整理命题要求…')
         for widget in (self.evidence_output, self.system_output, self.task_output):
             widget.clear()
         self.tasks.submit(
-            "编译教材命题提示",
+            '整理教材命题要求',
             lambda: self.facade.compile_prompt_blueprint(payload),
             on_success=self._compiled,
             on_failure=self._failed,
@@ -445,7 +445,7 @@ class PromptBlueprintDialog(QDialog):
             return
         answer = QMessageBox.question(
             self,
-            "确认生成主题蓝图",
+            '确认生成主题命题方案',
             f"模型：{profile.provider_name} / {profile.model_id}\n\n"
             "将发送当前已编译的系统提示、本次任务提示、本地资料的提炼摘要及输出格式要求。"
             + (
@@ -459,7 +459,7 @@ class PromptBlueprintDialog(QDialog):
                 else ""
             )
             + "不发送来源文件、图片或学生资料。\n\n"
-            "请在提示和资料依据标签页核对内容。此调用可能产生费用，结果仅为待完善的主题蓝图。是否继续？",
+            '请在提示和资料依据标签页核对内容。此调用可能产生费用，结果仅为待完善的主题命题方案。是否继续？',
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
@@ -475,10 +475,10 @@ class PromptBlueprintDialog(QDialog):
         self.stop_button.setVisible(True)
         self.stop_button.setEnabled(True)
         self.status.setText(
-            "正在生成主题命题蓝图，最长等待 5 分钟，可随时停止；完成后自动保存到本机…"
+            '正在生成主题命题方案，最长等待 5 分钟，可随时停止；完成后自动保存到本机…'
         )
         self.tasks.submit_progress(
-            "生成主题命题蓝图",
+            '生成主题命题方案',
             lambda progress, cancelled: self.facade.generate_prompt_blueprint(
                 preview_id,
                 profile.profile_id,
@@ -510,15 +510,15 @@ class PromptBlueprintDialog(QDialog):
         self.generated_output.setPlainText(format_blueprint(result))
         self.tabs.setCurrentWidget(self.generated_output)
         self.status.setText(
-            f"蓝图已保存 · {result['model_id']} · {result['latency_ms'] / 1000:.1f} 秒。"
-            "可从最近蓝图重新打开；完善题面和核验答案后再使用。"
+            f"命题方案已保存 · {result['model_id']} · {result['latency_ms'] / 1000:.1f} 秒。"
+            '可从最近命题方案重新打开；完善题面和核验答案后再使用。'
         )
         self._update_generate_enabled()
 
         history_reader = getattr(self.facade, "prompt_blueprint_history", None)
         if callable(history_reader):
             self.tasks.submit(
-                "读取已保存蓝图",
+                '读取已保存的命题方案',
                 history_reader,
                 on_success=self._history_loaded,
                 on_failure=self._failed,
@@ -609,4 +609,4 @@ class PromptBlueprintDialog(QDialog):
             return
         for widget in (self.evidence_output, self.system_output, self.task_output):
             widget.clear()
-        self.status.setText("章节、目标或参考选题已修改，请重新编译本地提示。")
+        self.status.setText('章节、目标或参考题目已修改，请重新整理命题要求。')

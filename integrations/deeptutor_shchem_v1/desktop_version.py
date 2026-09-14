@@ -1,3 +1,3 @@
-"""Version of the native Windows trial build, independent of data revisions."""
+"""Native teacher workbench trial version."""
 
-DESKTOP_VERSION = "0.1.90"
+DESKTOP_VERSION = "0.1.91"

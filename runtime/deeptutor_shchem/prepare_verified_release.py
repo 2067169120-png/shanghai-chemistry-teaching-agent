@@ -16,8 +16,8 @@ import xml.etree.ElementTree as ET
 from zipfile import ZipFile, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = "0.1.90"
-BRANCH = "feature/teacher-desk-0.1.90"
+VERSION = "0.1.91"
+BRANCH = "feature/paper-numbering-0.1.91"
 TAG = "v" + VERSION
 
 
@@ -33,7 +33,7 @@ def write_json(path, value):
 def main():
     if os.environ.get("GITHUB_EVENT_NAME") != "push" or os.environ.get("GITHUB_REF_NAME") != BRANCH:
         raise RuntimeError("Only an explicit push to the version branch may publish")
-    sha, repo = os.environ["GITHUB_SHA"], os.environ["GITHUB_REPOSITORY"]
+    sha, repo = os.environ.get("SHCHEM_SOURCE_SHA", os.environ["GITHUB_SHA"]), os.environ["GITHUB_REPOSITORY"]
     assert command("git", "rev-parse", "HEAD") == sha
     assert command("git", "ls-remote", "origin", "refs/heads/" + BRANCH).split()[0] == sha, "Branch advanced"
     assert not command("git", "ls-remote", "--tags", "origin", "refs/tags/" + TAG), "Tag exists; never move it"
@@ -43,6 +43,10 @@ def main():
     for report in (ready, packaged):
         assert report["version"] == VERSION and report["source_commit"] == sha
         assert not report["uncaught_errors"] and len(report["routes_opened"]) == 8
+        numbering = report['paper_numbering']
+        assert numbering['model_calls'] == 0 and numbering['raster_numbers_auto_rewritten'] is False
+        assert all(numbering[k] for k in ('real_word_import', 'reordered_student_and_teacher',
+            'source_bytes_unchanged', 'reference_numbers_updated', 'fixed_actions_800x700', 'chinese_standard_buttons'))
         desk = report["teacher_desk"]
         assert desk["model_calls"] == 0 and all(desk[k] for k in (
             "recent_current_five", "real_word_basket", "resume_preserved_editor",
@@ -55,13 +59,14 @@ def main():
         assert backup["model_calls"] == 0
         assert all(backup[k] for k in ("backup_created", "restore_checked", "source_records_unchanged",
             "original_artifacts_equal", "shelves_preserved", "recovery_restored", "image_reconnected", "restored_production_export"))
+    assert all(packaged['paper_numbering']['actual_pdf_pages'][role] > 0 for role in ('student', 'teacher'))
     assert packaged["lesson_backup"]["native_restored_cli_start_and_close"]
     assert packaged["frozen"] and packaged["detached_directory"] and packaged["normal_native_start_and_close"]
     assert packaged["cleared_python_and_workspace_environment"] and not packaged["system_fonts_bundled"]
     assert packaged["editable_pptx_slides"] == 5 and packaged["pdf_pages"] == 2
     suites = list(ET.parse(source / "readiness-qa/pytest.xml").getroot().iter("testsuite"))
     tests = {key: sum(int(s.get(key, 0)) for s in suites) for key in ("tests", "failures", "errors", "skipped")}
-    assert tests["tests"] >= 406 and not any(tests[k] for k in ("failures", "errors", "skipped"))
+    assert tests["tests"] >= 800 and not any(tests[k] for k in ("failures", "errors", "skipped"))
     target = ROOT / "docs/screenshots" / TAG
     target.mkdir(parents=True, exist_ok=True)
     names = set()
@@ -80,9 +85,9 @@ def main():
     text = readme.read_text(encoding="utf-8")
     assert "{{VERIFICATION_SUMMARY}}" in text
     summary = (f"同一提交完成 **{tests['tests']}项Windows定向测试，0失败、0错误、0跳过**。"
-               "源码和同一发行EXE均检查最近作品、真实Word题篮、继续未保存编辑及800×700常驻作品操作区。"
-               "原作品整理、备课备份与独立恢复流程、8页导航、既有5页PPTX和2页教案PDF输出继续回归。"
-               "仅合成软件验收，无真实API调用或用户资料导入；未完成多屏、Windows缩放及真实课堂验收。")
+               "源码和同一发行EXE验证真实Word导入后乱序选题、学生/教师两版新题号与答案对应、原文件不变、备课固定操作及中文标准按钮。"
+               "独立EXE通过本机Office生成实际学生/教师PDF页图；原作品整理、备份恢复、8页导航和既有课件输出继续回归。"
+               "图片像素内旧号没有自动改写；仅合成资料验收，无真实API请求、全库导入、多屏缩放或课堂效果验证。")
     text = text.replace("{{VERIFICATION_SUMMARY}}", summary)
     text = text.replace("关闭后再次打开默认EXE仍回到默认个人资料；再次进入此恢复副本可执行：",
         "关闭后再次打开默认EXE仍回到默认个人资料。可在‘检查与恢复’中点击**‘打开已有的恢复目录…’**，选择先前创建的恢复目录再次打开，无须重复恢复。也可执行：")
@@ -96,7 +101,7 @@ def main():
     command("git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com")
     command("git", "add", "-f", "README.md", "docs/roadmaps/audit-followup.md", str(target.relative_to(ROOT)),
             f"docs/qa/{VERSION}-readiness.json", f"docs/qa/{VERSION}-package.json")
-    command("git", "commit", "-m", "docs: record 0.1.90 teacher desk and native screenshots [skip ci]")
+    command("git", "commit", "-m", "docs: record 0.1.91 numbering, teacher controls and Windows verification [skip ci]")
     delivery_sha = command("git", "rev-parse", "HEAD")
     command("git", "push", "origin", "HEAD:refs/heads/" + BRANCH)
     output = ROOT / "release-delivery"
@@ -143,7 +148,7 @@ def main():
     command("git", "tag", "-a", TAG, "-m", VERSION + " verified Windows trial; code " + sha)
     command("git", "push", "origin", "refs/tags/" + TAG)
     command("gh", "release", "create", TAG, "--repo", repo, "--verify-tag", "--draft", "--prerelease",
-        "--title", VERSION + " · 教师日常首页与界面改进", "--notes-file", f"docs/releases/{VERSION}.md",
+        "--title", VERSION + " · 本卷题号、中文文案与备课操作", "--notes-file", f"docs/releases/{VERSION}.md",
         *[str(p) for p in sorted(output.iterdir()) if p.is_file()])
     command("gh", "release", "edit", TAG, "--repo", repo, "--draft=false", "--latest=false")
     print("Published", TAG, "code", sha, "delivery", delivery_sha)

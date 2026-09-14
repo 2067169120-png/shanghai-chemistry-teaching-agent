@@ -131,7 +131,7 @@ def test_same_style_names_from_different_sources_keep_distinct_definitions():
         doc.add_paragraph(f"选题{i}", "SameName")
         sources.append(item(doc, [1], key=str(i)))
     result = output_doc(export_word_questions("练习", sources))
-    paragraphs = [p for p in result.paragraphs if p.text.startswith("选题")]
+    paragraphs = [p for p in result.paragraphs if p.text in ("1. 选题0", "2. 选题1")]
     assert [p.style.font.size for p in paragraphs] == [Pt(11), Pt(18)]
     assert len({p.style.style_id for p in paragraphs}) == 2
 
@@ -164,7 +164,7 @@ def test_shared_material_is_once_per_source_block_in_order():
     for role in ("student", "teacher"):
         paragraphs = [p.text for p in output_doc(result, role).paragraphs]
         assert paragraphs.count("公共实验材料") == 1
-        assert paragraphs.index("公共实验材料") < paragraphs.index("第一题") < paragraphs.index("第二题")
+        assert paragraphs.index("公共实验材料") < paragraphs.index("1. 第一题") < paragraphs.index("2. 第二题")
 
 
 @pytest.mark.parametrize("mutation,match", [
@@ -358,7 +358,7 @@ def test_generated_title_rules_are_removed_without_changing_source_decoration(mo
     for paragraph in result.paragraphs[:2]:
         assert not list(paragraph._p.iter(qn("w:pBdr")))
         assert all(run.font.underline is False for run in paragraph.runs)
-    original = next(p for p in result.paragraphs if p.text == "原题蓝色题号")
+    original = next(p for p in result.paragraphs if p.text == "1. 原题蓝色题号")
     assert original._p.xpath(".//w:color/@w:val") == ["0000FF"]
 
 
@@ -368,7 +368,7 @@ def test_question_chain_keeps_options_together_but_releases_before_answer():
         source.add_paragraph(value)
     result = output_doc(export_word_questions("课堂练习", [item(source, [1, 2, 3, 4], [5])]), "teacher")
     paragraphs = {p.text: p for p in result.paragraphs}
-    for value in ("题干", "装置说明", "A 选项"):
+    for value in ("1. 题干", "装置说明", "A 选项"):
         assert paragraphs[value].paragraph_format.keep_with_next is True
         assert paragraphs[value].paragraph_format.keep_together is True
     assert paragraphs["B 选项"].paragraph_format.keep_with_next is False
@@ -386,7 +386,7 @@ def test_terminal_question_table_releases_last_cell_paragraphs_only():
             cell.add_paragraph("说明")
     source.add_paragraph("【答案】参考")
     student = output_doc(export_word_questions("课堂练习", [item(source, [1, 2], [3])]))
-    assert next(p for p in student.paragraphs if p.text == "题干").paragraph_format.keep_with_next is True
+    assert next(p for p in student.paragraphs if p.text == "1. 题干").paragraph_format.keep_with_next is True
     exported = student.tables[0]
     for cell in exported.rows[0].cells:
         assert all(p.paragraph_format.keep_with_next is True for p in cell.paragraphs)

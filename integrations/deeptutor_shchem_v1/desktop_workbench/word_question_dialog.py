@@ -163,7 +163,7 @@ def _attribute_text(value: dict, *, details: bool = False) -> str:
         lines.append("教材章节点：待映射；知识主题建议不等于已确认教材归属。")
     for candidate in mappings:
         lines.append(
-            "教材章节点候选："
+            '建议对应的教材章节：'
             + _text(candidate.get("label"))
             + "〔"
             + _text(candidate.get("section_key"))
@@ -332,7 +332,7 @@ class WordQuestionRangeDialog(QDialog):
         self.reading_tabs.addTab(self.range_preview, "本次范围预览")
         self.reading_tabs.setTabEnabled(1, False)
         root.addWidget(self.reading_tabs)
-        self.locate_button = QPushButton("定位题面开始区块")
+        self.locate_button = QPushButton('定位题干开头')
         self.locate_button.setObjectName("QuietButton")
         self.locate_button.clicked.connect(self._locate)
         root.addWidget(self.locate_button)
@@ -837,7 +837,7 @@ class WordQuestionDialog(QDialog):
         root.addLayout(self.selection_row)
         self.basket_preview_button = QPushButton("查看入篮完整题面与答案")
         self.basket_preview_button.setObjectName("PrimaryAction")
-        self.basket_add_button = QPushButton("加入统一题篮")
+        self.basket_add_button = QPushButton('加入选题篮')
         self.basket_add_button.setEnabled(False)
         self.basket_preview_button.clicked.connect(self._preview_for_basket)
         self.basket_add_button.clicked.connect(self._add_to_basket)
@@ -2362,7 +2362,7 @@ class WordQuestionDialog(QDialog):
             set_status(self.status, "error", message)
             self._update_actions()
 
-        self._submit("加入统一题篮", lambda: facade.add_word_questions_to_basket(selections), ready, failed)
+        self._submit('加入选题篮', lambda: facade.add_word_questions_to_basket(selections), ready, failed)
 
     def _export(self) -> None:
         if not self.export_button.isEnabled():
