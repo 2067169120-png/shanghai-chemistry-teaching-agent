@@ -1,0 +1,85 @@
+name: Correct 0.1.88 guide navigation
+on:
+  push:
+    branches: ["docs/work-guide-0.1.88"]
+permissions:
+  contents: write
+jobs:
+  guide:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Download original published guide without changing it
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download v0.1.88 --pattern ShanghaiChem-0.1.88-Guide.html --dir .guide-input
+      - name: Correct the single anchor and check all guide links
+        shell: python
+        run: |
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          from html.parser import HTMLParser
+          tag = 'v0.1.88'
+          release_sha = '0b18738abfe44ebaa5602f36d747955160743c28'
+          branch = 'feature/work-organization-0.1.88'
+          def run(*args):
+              return subprocess.check_output(args, text=True).strip()
+          assert run('git', 'rev-parse', tag + '^{}') == release_sha
+          assert run('git', 'ls-remote', 'origin', 'refs/heads/' + branch).split()[0] == release_sha
+          original = Path('.guide-input/ShanghaiChem-0.1.88-Guide.html').read_bytes()
+          assert hashlib.sha256(original).hexdigest() == 'dbcbebe10a51734bd0e75a9a958000725b0f007588237bee32acc24384b17764'
+          html = original.decode('utf-8')
+          old = 'href="#08-我的备课"'
+          new = 'href="#08-我的备课名称归档与回收站"'
+          assert html.count(old) == 1
+          html = html.replace(old, new)
+          class Links(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.ids = set(); self.links = []
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  if 'id' in attrs: self.ids.add(attrs['id'])
+                  if tag == 'a': self.links.append(attrs.get('href', ''))
+          links = Links(); links.feed(html)
+          assert all(link[1:] in links.ids for link in links.links if link.startswith('#'))
+          readme = Path('README.md')
+          text = readme.read_text(encoding='utf-8')
+          assert text.count('(#08-我的备课)') == 1
+          readme.write_text(text.replace('(#08-我的备课)', '(#08-我的备课名称归档与回收站)'), encoding='utf-8')
+          note = Path('docs/releases/0.1.88-docs-r2.md')
+          note.write_text('# 0.1.88 使用指南文档修订 r2\n\n修正“我的备课”目录链接仍指向旧标题的问题。只修改README目录和独立HTML指南的一个锚点，不改程序、版本标签、原源码ZIP、便携包、验证报告或原发布附件。原附件及其校验清单保留；新增Guide-r2和DOCS-MANIFEST-r2明确记录此次文档修订。所有指南内部目录链接已检查。\n', encoding='utf-8')
+          run('git', 'config', 'user.name', 'github-actions[bot]')
+          run('git', 'config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com')
+          run('git', 'add', '-f', 'README.md', str(note))
+          run('git', 'commit', '-m', 'docs(0.1.88): correct work-section navigation without replacing release artifacts [skip ci]')
+          docs_sha = run('git', 'rev-parse', 'HEAD')
+          run('git', 'push', 'origin', 'HEAD:refs/heads/' + branch)
+          run('git', 'push', 'origin', 'HEAD:refs/heads/docs/work-guide-0.1.88')
+          output = Path('guide-correction'); output.mkdir()
+          guide = output / 'ShanghaiChem-0.1.88-Guide-r2.html'
+          guide.write_text(html, encoding='utf-8')
+          manifest = {'version': '0.1.88', 'documentation_revision': 'r2', 'release_tag': tag,
+              'release_commit_unchanged': release_sha, 'documentation_commit': docs_sha,
+              'original_guide_sha256': hashlib.sha256(original).hexdigest(),
+              'program_changed': False, 'internal_links_verified': True,
+              'file': guide.name, 'sha256': hashlib.sha256(guide.read_bytes()).hexdigest(),
+              'bytes': guide.stat().st_size}
+          (output / 'DOCS-MANIFEST-r2.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+      - name: Add corrected documentation as supplemental assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload v0.1.88 guide-correction/ShanghaiChem-0.1.88-Guide-r2.html guide-correction/DOCS-MANIFEST-r2.json
+          gh release view v0.1.88 --json body --jq .body > .guide-input/release-notes.md
+          printf '\n\n## 文档修订 r2\n\n使用指南的“我的备课”目录链接已修正，请使用新增附件 **ShanghaiChem-0.1.88-Guide-r2.html**。程序、版本标签和原始发布附件未改；修订来源与校验见 **DOCS-MANIFEST-r2.json**。\n' >> .guide-input/release-notes.md
+          gh release edit v0.1.88 --notes-file .guide-input/release-notes.md
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: guide-correction-0.1.88
+          path: guide-correction/
+          retention-days: 30
+          if-no-files-found: error

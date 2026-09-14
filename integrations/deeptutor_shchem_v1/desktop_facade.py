@@ -6204,14 +6204,47 @@ class DesktopWorkbenchFacade:
         from .desktop_preparation_drafts import PreparationDraftService
         return PreparationDraftService(self._state).option(draft_id)
 
-    def search_preparation_drafts(self, *, query: str = "", offset: int = 0, limit: int | None = 50) -> dict[str, Any]:
+    def search_preparation_drafts(self, *, query: str = "", offset: int = 0, limit: int | None = 50, include_hidden: bool = False) -> dict[str, Any]:
         from .desktop_preparation_drafts import PreparationDraftService
-        return PreparationDraftService(self._state).search(query=query, offset=offset, limit=limit)
+        return PreparationDraftService(self._state).search(query=query, offset=offset, limit=limit, include_hidden=include_hidden)
 
     def search_preparation_work(self, *, query: str = "", kind: str = "all", order: str = "newest",
-                                offset: int = 0, limit: int = 25) -> dict[str, Any]:
+                                offset: int = 0, limit: int = 25, shelf: str = "current") -> dict[str, Any]:
         from .desktop_work_search import search_preparation_work
-        return search_preparation_work(self, query=query, kind=kind, order=order, offset=offset, limit=limit)
+        return search_preparation_work(self, query=query, kind=kind, order=order, offset=offset, limit=limit, shelf=shelf)
+
+    def organize_preparation_work(self, kind: str, identity: str, action: str, *,
+                                  expected_source: str, expected_organization: str,
+                                  title: str | None = None) -> dict[str, Any]:
+        from .desktop_work_organization import change_work
+        kwargs = dict(expected_source=expected_source, expected_organization=expected_organization, title=title)
+        if kind == "task":
+            manager = self._preparation_manager_instance()
+            # Same lock/order as task transitions; no task can start midway through this change.
+            with manager._lock:
+                return change_work(self._state, kind, identity, action, task_reader=lambda key:
+                    self._preparation_summary(manager.get_task(key)), **kwargs)
+        return change_work(self._state, kind, identity, action, **kwargs)
+
+    def resolve_preparation_work(self, record: Mapping[str, Any]) -> dict[str, Any]:
+        """Recheck the displayed identity just before opening; never change its shelf."""
+        from .desktop_work_organization import presentation, revision, WorkOrganizationError
+        from .desktop_preparation_drafts import PreparationDraftService
+        kind, identity = record["kind"], record["id"]
+        if kind == "draft":
+            option = PreparationDraftService(self._state).option(identity)
+            view = option
+            value = option
+        else:
+            manager = self._preparation_manager_instance()
+            with manager._lock:
+                value = self._preparation_summary(manager.get_task(identity))
+                view = presentation(self._state.snapshot(), kind, identity, value.title_zh, revision(value), value.status)
+        if view["shelf"] == "trash":
+            raise WorkOrganizationError("作品在回收站中，请先还原后打开。")
+        if any(view[field] != record.get(field) for field in ("source_revision", "organization_revision")):
+            raise WorkOrganizationError("作品已变化，请刷新后重选；当前编辑未改变。")
+        return {**record, **view, "value": value}
 
     def search_preparation_tasks(self, *, query: str = "") -> dict[str, Any]:
         result = self._preparation_manager_instance().search_tasks(query=query, limit=None)

@@ -1,0 +1,74 @@
+{
+  "version": "0.1.88",
+  "source_commit": "82da2cb0e7bdd905ba1e34c1566e1e67aa21a74d",
+  "platform": "Windows-2025Server-10.0.26100-SP0",
+  "python": "3.12.10",
+  "qt": "6.11.2",
+  "routes_opened": [
+    "home",
+    "library",
+    "paper",
+    "student",
+    "preparation",
+    "templates",
+    "classroom",
+    "mywork"
+  ],
+  "screenshots": [
+    {
+      "file": "settings-basic.png",
+      "sha256": "50faa5da9038a80c46fab2d115020858dec456cfdbeebae4c1647c442454ed4f"
+    },
+    {
+      "file": "settings-advanced.png",
+      "sha256": "8717c49c9a88a8854323e766eece4431096112dbdb20c7fdf986904e1b0e3f5f"
+    },
+    {
+      "file": "settings-compact.png",
+      "sha256": "c0bed678487723fb4b90847f1503edce8a7c742ad86d020804950702c271d60f"
+    },
+    {
+      "file": "environment.png",
+      "sha256": "583b31dae5d66337371c49638b0d0c393afeb870e85a256e8ecac67b4ca1a15e"
+    },
+    {
+      "file": "source-work-current.png",
+      "sha256": "d81a8523229b6738b8712d8e9f7670d989c31e3b16cc95ff7c10262c051443a2"
+    },
+    {
+      "file": "source-work-archived.png",
+      "sha256": "60249670f580f59c3938b8ce04676173dc6dd576c1ef4bf2a8ef6b42a9923107"
+    },
+    {
+      "file": "source-work-trash.png",
+      "sha256": "40e7bc3ca70a251581df2828e38466e4ecd8d9ef815698bc4c0570a82b8da5ef"
+    },
+    {
+      "file": "source-work-original-search.png",
+      "sha256": "d6e412b90056a7238c93bb3a56683bad66e5bf97e72c4f0955a41989fb416d26"
+    },
+    {
+      "file": "source-work-compact.png",
+      "sha256": "76f44d77dca99e7260a0af0af7a2d34cd2e386e446a305aca549b714039ac3c9"
+    }
+  ],
+  "uncaught_errors": [],
+  "work_organization": {
+    "draft_lifecycle": true,
+    "task_lifecycle": true,
+    "original_drafts_unchanged": true,
+    "task_files_unchanged": true,
+    "unsaved_editor_preserved": true,
+    "recovery_file_unchanged": true,
+    "original_topic_search": true,
+    "model_calls": 0
+  },
+  "scope": "Native source work organization, settings and local dependency checks, isolated empty state. No real API, private teaching material, packaged EXE or classroom acceptance.",
+  "tests": {
+    "tests": 363,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "workflow_run": "34815243779"
+}

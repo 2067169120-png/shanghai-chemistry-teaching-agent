@@ -16,6 +16,7 @@ from typing import Any
 
 from .desktop_preparation import DesktopPreparationError, normalize_preparation_payload
 from .desktop_state import DesktopStateStore
+from .desktop_work_organization import draft_presentation, WorkOrganizationError
 
 DRAFT_KIND = "preparation"
 CONTRACT_VERSION = "lesson-blueprint/2.0.0"
@@ -119,7 +120,8 @@ class PreparationDraftService:
     def _record(self, draft_id: str) -> tuple[dict[str, Any], dict[str, Any], str]:
         if not isinstance(draft_id, str) or not draft_id:
             raise PreparationDraftError("preparation_draft_missing", "备课草稿不存在。")
-        records = self.state.snapshot().get("drafts")
+        snapshot = self.state.snapshot()
+        records = snapshot.get("drafts")
         if not isinstance(records, Mapping):
             raise PreparationDraftError("preparation_draft_missing", "备课草稿不存在。")
         record = records.get(draft_id)
@@ -127,6 +129,9 @@ class PreparationDraftService:
             raise PreparationDraftError("preparation_draft_missing", "备课草稿不存在。")
         payload = self._payload(record)
         revision = _revision(record)
+        view = draft_presentation(snapshot, draft_id, record, revision)
+        if view["shelf"] == "trash":
+            raise PreparationDraftError("preparation_draft_trashed", "草稿在回收站中，请先从“我的备课”还原。")
         return record, payload, revision
 
     def options(self) -> list[dict[str, Any]]:
@@ -136,14 +141,14 @@ class PreparationDraftService:
     def option(self, draft_id: str) -> dict[str, Any]:
         """Resolve one stable identity even when it lies outside the recent list."""
         record, _payload, revision = self._record(draft_id)
-        return self._option(draft_id, record, revision)
+        return self._option(draft_id, record, revision, self.state.snapshot())
 
     @staticmethod
-    def _option(draft_id, record, revision):
-        return {"draft_id": draft_id, "revision": revision,
-                "title": str(record["core_fields"]["topic"]), "created_at": record["created_at"]}
+    def _option(draft_id, record, revision, snapshot):
+        return {"draft_id": draft_id, "revision": revision, "created_at": record["created_at"],
+                **draft_presentation(snapshot, draft_id, record, revision)}
 
-    def search(self, *, query: str = "", offset: int = 0, limit: int | None = 50) -> dict[str, Any]:
+    def search(self, *, query: str = "", offset: int = 0, limit: int | None = 50, include_hidden: bool = False) -> dict[str, Any]:
         """Filter all saved titles before paging; reads never rewrite records.
 
         ``limit=None`` is used by the unified local work list when merging
@@ -152,7 +157,8 @@ class PreparationDraftService:
         if (not isinstance(query, str) or type(offset) is not int or offset < 0
                 or (limit is not None and (type(limit) is not int or not 1 <= limit <= 200))):
             raise self._invalid("草稿检索参数不正确。")
-        records = self.state.snapshot().get("drafts")
+        snapshot = self.state.snapshot()
+        records = snapshot.get("drafts")
         valid, invalid = [], 0
         needle = query.strip().casefold()
         for draft_id, record in records.items() if isinstance(records, Mapping) else ():
@@ -167,12 +173,16 @@ class PreparationDraftService:
             except PreparationDraftError:
                 invalid += 1
                 continue
-            if needle not in payload["topic"].casefold():
+            rev = _revision(record)
+            view = draft_presentation(snapshot, draft_id, record, rev)
+            if not include_hidden and view["shelf"] != "current":
+                continue
+            if needle not in view["title"].casefold() and needle not in payload["topic"].casefold():
                 continue
             valid.append((draft_id, record))
         valid.sort(key=lambda item: (str(item[1].get("created_at", "")), item[0]), reverse=True)
         chosen = valid[offset:] if limit is None else valid[offset:offset + limit]
-        return {"items": [self._option(key, record, _revision(record)) for key, record in chosen],
+        return {"items": [self._option(key, record, _revision(record), snapshot) for key, record in chosen],
                 "total": len(valid), "offset": offset, "limit": limit, "invalid_count": invalid}
 
     def load(self, draft_id: str, expected_revision: str) -> dict[str, Any]:
