@@ -7,7 +7,7 @@ from ..desktop_studio import TEMPLATES
 from .components import section_title
 
 COMMANDS = (
-    ("home", "首页", "备课想法 / 常用任务"), ("library", "题库", "教材 / 知识点 / 原题"),
+    ("home", "首页", "最近备课 / 继续编辑 / 选题篮"), ("library", "题库", "教材 / 知识点 / 原题"),
     ("paper", "组卷", "题篮 / 学生版 / 教师版"), ("student", "学生分析", "作答 / 诊断 / 练习"),
     ("preparation", "备课", "PPT / 教案 / 学习单"), ("templates", "教学模板", "场景 / 收藏 / 学习路径"),
     ("classroom", "课堂工具", "倒计时 / 点名 / 分组 / 动态平衡 / 出口检测"),
@@ -51,7 +51,7 @@ class CommandPalette(QDialog):
         self.resize(640, 500)
         root = QVBoxLayout(self)
         root.setContentsMargins(20, 20, 20, 20)
-        root.addWidget(section_title("你想完成什么？", "搜索功能或教学模板，按Enter打开；Esc返回。"))
+        root.addWidget(section_title("搜索功能", "搜索功能或教学模板，按Enter打开；Esc返回。"))
         self.query = QLineEdit()
         self.query.setPlaceholderText("例如：分组、PPT、原题、讲评")
         self.query.setAccessibleName("快捷入口搜索")
@@ -92,7 +92,7 @@ class HelpDialog(QDialog):
         view = QTextBrowser()
         view.setOpenExternalLinks(False)
         view.setHtml('''<h3>1. 首次使用</h3><p>没有原题库也能打开。先在“设置”配置模型，或直接使用教学模板与离线课堂工具。旧资料保留在原目录；不要为升级重复导入。</p>
-<h3>2. 从模板到教案与PPT</h3><p>首页填课题 → 预览模板 → 应用到备课 → 补授课对象与材料 → 保存草稿 → 确认生成。模板不会替换已填材料或原图，也不会自动调用AI。</p>
+<h3>2. 从模板到教案与PPT</h3><p>首页“新建备课” → 填授课对象与材料 → 保存草稿 → 确认生成。需要教学结构时，从“教学模板”预览后带入。模板不会替换已填材料或原图，也不会自动调用AI。</p>
 <h3>3. 选题与组卷</h3><p>题库按知识点与教材目录查找，保留完整主题及公共材料后入篮。组卷先核对学生/教师两版；Word优先原生提取，不再裁成整页图片。</p>
 <h3>4. 课堂工具</h3><p>倒计时、点名、随机分组及动态平衡模型离线运行。模型是一级可逆A⇌B的示意，不是实测化学数据。出口检测由教师录入，可追加回备课资料。</p>
 <h3>5. 找回工作</h3><p>“我的备课”按作品名称或原课题搜索，再按当前、归档、回收站分页显示。重命名只改显示名称；移入回收站不删文件，先还原再打开。生成中的任务暂不能整理。载入草稿前预览；查看历史结果不会自动重试收费。“题库进度”只读取本机现存目录，不使用历史统计充数。</p>
@@ -101,6 +101,6 @@ class HelpDialog(QDialog):
 <h3>快捷键</h3><p>Ctrl+K：搜索功能与模板。Ctrl+1～5：首页、题库、组卷、学生分析、备课。F1：本帮助。Esc：关闭当前对话框或计时投屏。</p>
 <h3>遇到问题</h3><p>没有题库结果：先检查实际资料目录和导入历史。扫描件无法识别：核对具体模型是否支持图片，文本联通不证明识图能力。旧VBS仍显示旧版：请改用“启动源码桌面版.cmd”。</p>''')
         root.addWidget(view, 1)
-        close = QPushButton("开始使用")
+        close = QPushButton("关闭帮助")
         close.clicked.connect(self.accept)
         root.addWidget(close)

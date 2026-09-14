@@ -92,12 +92,14 @@ def main():
             with tempfile.TemporaryDirectory(prefix="shchem-backup-proof-") as demo:
                 backup = backup_exercise(window, settle, lambda widget, name: capture(widget, "source-" + name), demo)
                 shutil.copytree(demo, output / "backup-demo", dirs_exist_ok=True)
+            from integrations.deeptutor_shchem_v1.desktop_teacher_desk_probe import exercise as desk_exercise
+            desk = desk_exercise(window, settle, lambda widget, name: capture(widget, "source-" + name), output / "desk-demo")
         finally:
             window.close(); app.processEvents()
         report = {"version": DESKTOP_VERSION, "source_commit": os.environ.get("SHCHEM_SOURCE_SHA", os.environ.get("GITHUB_SHA", "local")),
                   "platform": platform.platform(), "python": platform.python_version(), "qt": qVersion(),
                   "routes_opened": list(ALL_ROUTES), "screenshots": captures, "uncaught_errors": errors,
-                  "work_organization": organization, "lesson_backup": backup,
+                  "work_organization": organization, "lesson_backup": backup, "teacher_desk": desk,
                   "scope": "Native source work organization, settings and local dependency checks, isolated empty state. No real API, private teaching material, packaged EXE or classroom acceptance."}
         assert not errors
         (output / "onboarding-smoke.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")

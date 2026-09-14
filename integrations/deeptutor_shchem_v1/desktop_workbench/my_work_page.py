@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLineEdit, QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget, QTabBar, QInputDialog, QMessageBox, QBoxLayout
+from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLineEdit, QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget, QTabBar, QInputDialog, QMessageBox, QBoxLayout, QGridLayout, QAbstractItemView
 from .components import page_scroll, section_title, set_status
 from .studio_templates import text_label
 
@@ -30,9 +30,9 @@ class MyWorkPage(QWidget):
         self._selected_id = None
         content = QWidget()
         root = QVBoxLayout(content)
-        root.setContentsMargins(28, 24, 28, 28)
-        root.setSpacing(16)
-        root.addWidget(section_title("我的备课", "按作品名称或原课题查找、整理；归档和移入回收站均保留原文件。"))
+        root.setContentsMargins(20, 16, 20, 10)
+        root.setSpacing(10)
+        root.addWidget(section_title("我的备课"))
         self.shelves = QTabBar()
         self.shelves.setAccessibleName("作品范围")
         self.shelves.setExpanding(False)
@@ -44,13 +44,14 @@ class MyWorkPage(QWidget):
         self.backup_button = QPushButton("备份与恢复")
         self.backup_button.setObjectName("QuietButton")
         self.backup_button.clicked.connect(self.backup_requested.emit)
-        root.addWidget(self.backup_button)
+
         self.query = QLineEdit()
-        self.query.setPlaceholderText("搜索作品名称或原课题，不限最近50条")
+        self.query.setPlaceholderText("搜索作品名称或原课题")
         self.query.setClearButtonEnabled(True)
         self.query.setAccessibleName("搜索全部历史备课")
-        root.addWidget(self.query)
-        row = QHBoxLayout()
+        row = QBoxLayout(QBoxLayout.Direction.LeftToRight)
+        self.search_row = row
+        row.addWidget(self.query, 1)
         self.kind = QComboBox()
         for text, key in (("全部作品", "all"), ("离线草稿", "draft"), ("生成任务", "task")):
             self.kind.addItem(text, key)
@@ -61,12 +62,12 @@ class MyWorkPage(QWidget):
         self.order.setAccessibleName("作品排序")
         row.addWidget(self.kind)
         row.addWidget(self.order)
-        row.addStretch(1)
         root.addLayout(row)
         self.status = text_label("进入页面后读取本机作品；查看不会调用模型。")
         root.addWidget(self.status)
         self.results = QListWidget()
-        self.results.setMinimumHeight(270)
+        self.results.setMinimumHeight(90)
+        self.results.setVerticalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
         self.results.setWordWrap(True)
         self.results.setAccessibleName("当前页备课记录")
         root.addWidget(self.results, 1)
@@ -88,9 +89,9 @@ class MyWorkPage(QWidget):
         self.archive_button.clicked.connect(lambda: self._organize("unarchive" if self.shelf == "archived" else "archive"))
         self.trash_button.clicked.connect(lambda: self._organize("trash"))
         self.restore_button.clicked.connect(lambda: self._organize("restore"))
-        root.addLayout(self.management_row)
+
         self.selection_hint = text_label("选中一份作品即可整理。名称修改不改变原课题或已导出文件。")
-        root.addWidget(self.selection_hint)
+
         paging = QHBoxLayout()
         self.previous = QPushButton("上一页")
         self.next = QPushButton("下一页")
@@ -103,12 +104,12 @@ class MyWorkPage(QWidget):
         paging.addWidget(self.previous)
         paging.addWidget(self.page_label, 1)
         paging.addWidget(self.next)
-        root.addLayout(paging)
+
         buttons = QHBoxLayout()
         self.refresh_button = QPushButton("刷新")
         self.refresh_button.setObjectName("QuietButton")
         self.refresh_button.clicked.connect(self.refresh)
-        self.open_button = QPushButton("打开选中记录 →")
+        self.open_button = QPushButton("打开选中")
         self.open_button.setEnabled(False)
         self.open_button.clicked.connect(self._open)
         self.resume_button = QPushButton("返回备课继续编辑")
@@ -116,12 +117,29 @@ class MyWorkPage(QWidget):
         self.resume_button.clicked.connect(lambda: self.navigate_requested.emit("preparation"))
         for button in (self.refresh_button, self.resume_button, self.open_button):
             buttons.addWidget(button)
-        root.addLayout(buttons)
-        root.addWidget(text_label("离线草稿先预览再载入；任务只查看已有状态和结果，不自动续跑。排序时间：草稿保存时间 / 任务更新时间。"))
-        root.addStretch(1)
+
+        # The list owns its scrollbar; actions remain outside its viewport.
+        self.footer = QWidget()
+        self.footer.setObjectName("WorkActionBar")
+        foot = QVBoxLayout(self.footer)
+        foot.setContentsMargins(20, 8, 20, 12)
+        foot.setSpacing(6)
+        foot.addLayout(paging)
+        foot.addLayout(self.management_row)
+        foot.addWidget(self.selection_hint)
+        self.action_buttons = (self.backup_button, self.refresh_button, self.resume_button, self.open_button)
+        for item in self.action_buttons:
+            buttons.removeWidget(item)
+        self.action_grid = QGridLayout()
+        for index, item in enumerate(self.action_buttons):
+            self.action_grid.addWidget(item, 0, index)
+        foot.addLayout(self.action_grid)
+        self._compact_actions = False
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
-        outer.addWidget(page_scroll(content))
+        outer.setSpacing(0)
+        outer.addWidget(content, 1)
+        outer.addWidget(self.footer)
         self._timer = QTimer(self)
         self._timer.setSingleShot(True)
         self._timer.setInterval(250)
@@ -209,7 +227,7 @@ class MyWorkPage(QWidget):
         }[self.shelf])
         set_status(self.status, "attention" if warnings else "success" if self._notice else "info",
                    self._notice + f"{SHELF_LABELS[self.shelf]}匹配 {self._total} 条，本页 {len(self.records)} 条。" +
-                   ("；".join(warnings) if warnings else "页签数量随关键词和类型筛选；先检索全部记录再分页。"))
+                   ("；".join(warnings) if warnings else ""))
         if self._selected_id is not None:
             for index, row in enumerate(self.records):
                 if (row["kind"], row["id"]) == self._selected_id:
@@ -333,6 +351,14 @@ class MyWorkPage(QWidget):
         set_status(self.status, "attention", message + " 请点击刷新后重新选择。")
 
     def resizeEvent(self, event):
-        self.management_row.setDirection(QBoxLayout.Direction.TopToBottom if event.size().width() < 470
-                                         else QBoxLayout.Direction.LeftToRight)
+        compact = event.size().width() < 650
+        self.search_row.setDirection(QBoxLayout.Direction.TopToBottom if event.size().width() < 470 else QBoxLayout.Direction.LeftToRight)
+        if compact != self._compact_actions:
+            self._compact_actions = compact
+            for item in self.action_buttons:
+                self.action_grid.removeWidget(item)
+            columns = 2 if compact else 4
+            for index, item in enumerate(self.action_buttons):
+                self.action_grid.addWidget(item, index // columns, index % columns)
+        self.management_row.setDirection(QBoxLayout.Direction.LeftToRight)
         super().resizeEvent(event)

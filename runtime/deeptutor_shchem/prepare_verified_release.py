@@ -16,8 +16,8 @@ import xml.etree.ElementTree as ET
 from zipfile import ZipFile, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = "0.1.89"
-BRANCH = "feature/lesson-backup-0.1.89"
+VERSION = "0.1.90"
+BRANCH = "feature/teacher-desk-0.1.90"
 TAG = "v" + VERSION
 
 
@@ -43,6 +43,10 @@ def main():
     for report in (ready, packaged):
         assert report["version"] == VERSION and report["source_commit"] == sha
         assert not report["uncaught_errors"] and len(report["routes_opened"]) == 8
+        desk = report["teacher_desk"]
+        assert desk["model_calls"] == 0 and all(desk[k] for k in (
+            "recent_current_five", "real_word_basket", "resume_preserved_editor",
+            "home_did_not_write_state", "collapsed_diagnostics", "actions_visible_800x700"))
         organization = report["work_organization"]
         assert organization["model_calls"] == 0
         assert all(organization[key] for key in ("draft_lifecycle", "task_lifecycle", "original_drafts_unchanged",
@@ -57,7 +61,7 @@ def main():
     assert packaged["editable_pptx_slides"] == 5 and packaged["pdf_pages"] == 2
     suites = list(ET.parse(source / "readiness-qa/pytest.xml").getroot().iter("testsuite"))
     tests = {key: sum(int(s.get(key, 0)) for s in suites) for key in ("tests", "failures", "errors", "skipped")}
-    assert tests["tests"] > 363 and not any(tests[k] for k in ("failures", "errors", "skipped"))
+    assert tests["tests"] >= 406 and not any(tests[k] for k in ("failures", "errors", "skipped"))
     target = ROOT / "docs/screenshots" / TAG
     target.mkdir(parents=True, exist_ok=True)
     names = set()
@@ -76,10 +80,9 @@ def main():
     text = readme.read_text(encoding="utf-8")
     assert "{{VERIFICATION_SUMMARY}}" in text
     summary = (f"同一提交完成 **{tests['tests']}项Windows定向测试，0失败、0错误、0跳过**。"
-               "源码和同一发行EXE均执行备份清单→保存ZIP→校验→独立目录恢复→打开原成品→补回原图。"
-               "原草稿、分类和恢复表单不被改写；恢复后的规范候选通过原生产渲染器再次导出。"
-               "便携程序还以--personal-state实际打开并关闭恢复窗口。8页及既有5页PPTX/2页教案PDF回归保留。"
-               "以上为隔离合成数据验证，不代表全题库备份或真实课堂验收。")
+               "源码和同一发行EXE均检查最近作品、真实Word题篮、继续未保存编辑及800×700常驻作品操作区。"
+               "原作品整理、备课备份与独立恢复流程、8页导航、既有5页PPTX和2页教案PDF输出继续回归。"
+               "仅合成软件验收，无真实API调用或用户资料导入；未完成多屏、Windows缩放及真实课堂验收。")
     text = text.replace("{{VERIFICATION_SUMMARY}}", summary)
     text = text.replace("关闭后再次打开默认EXE仍回到默认个人资料；再次进入此恢复副本可执行：",
         "关闭后再次打开默认EXE仍回到默认个人资料。可在‘检查与恢复’中点击**‘打开已有的恢复目录…’**，选择先前创建的恢复目录再次打开，无须重复恢复。也可执行：")
@@ -89,14 +92,11 @@ def main():
     for image in re.findall(r"!\[[^\]]*\]\(([^)]+)\)", text):
         assert (ROOT / image).is_file(), image
     roadmap = ROOT / "docs/roadmaps/audit-followup.md"
-    content = roadmap.read_text(encoding="utf-8").replace("0.1.89备课备份代码完成，等待Windows验证",
-        "0.1.89备课草稿/图片/成品独立恢复已验证；原Word题库与资料重新关联待下一批")
-    roadmap.write_text(content, encoding="utf-8")
     command("git", "config", "user.name", "github-actions[bot]")
     command("git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com")
     command("git", "add", "-f", "README.md", "docs/roadmaps/audit-followup.md", str(target.relative_to(ROOT)),
             f"docs/qa/{VERSION}-readiness.json", f"docs/qa/{VERSION}-package.json")
-    command("git", "commit", "-m", "docs: record 0.1.89 verified lesson backups and native screenshots [skip ci]")
+    command("git", "commit", "-m", "docs: record 0.1.90 teacher desk and native screenshots [skip ci]")
     delivery_sha = command("git", "rev-parse", "HEAD")
     command("git", "push", "origin", "HEAD:refs/heads/" + BRANCH)
     output = ROOT / "release-delivery"
@@ -143,7 +143,7 @@ def main():
     command("git", "tag", "-a", TAG, "-m", VERSION + " verified Windows trial; code " + sha)
     command("git", "push", "origin", "refs/tags/" + TAG)
     command("gh", "release", "create", TAG, "--repo", repo, "--verify-tag", "--draft", "--prerelease",
-        "--title", VERSION + " · 备课备份与独立恢复试用版", "--notes-file", f"docs/releases/{VERSION}.md",
+        "--title", VERSION + " · 教师日常首页与界面改进", "--notes-file", f"docs/releases/{VERSION}.md",
         *[str(p) for p in sorted(output.iterdir()) if p.is_file()])
     command("gh", "release", "edit", TAG, "--repo", repo, "--draft=false", "--latest=false")
     print("Published", TAG, "code", sha, "delivery", delivery_sha)
