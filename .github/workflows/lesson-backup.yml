@@ -1,0 +1,102 @@
+name: Lesson backup 0.1.89
+on:
+  push:
+    branches: ["feature/lesson-backup-0.1.89"]
+  pull_request:
+    branches: ["feature/work-organization-0.1.88"]
+permissions:
+  contents: read
+concurrency:
+  group: backup189-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m compileall -q integrations runtime/deeptutor_shchem
+      - name: Backup and restore, original work, filters, settings and output regression
+        run: >-
+          python -m pytest -q
+          staging/coordination/deeptutor_gateway/tests/test_desktop_environment.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_package_resources.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_onboarding_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_provider_probe.py
+          staging/coordination/deeptutor_gateway/tests/test_model_provider_settings.py
+          staging/coordination/deeptutor_gateway/tests/test_phase_a_core.py
+          staging/coordination/deeptutor_gateway/tests/test_phase_a_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_question_explorer.py
+          staging/coordination/deeptutor_gateway/tests/test_question_explorer_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_preparation_renderer.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_preparation_drafts.py
+          staging/coordination/deeptutor_gateway/tests/test_preparation_draft_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_preparation.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_studio_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_studio_visual.py
+          staging/coordination/deeptutor_gateway/tests/test_work_organization.py
+          staging/coordination/deeptutor_gateway/tests/test_work_organization_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_lesson_backup.py
+          staging/coordination/deeptutor_gateway/tests/test_lesson_backup_ui.py
+          --junitxml=readiness-qa/pytest.xml
+      - run: python runtime/deeptutor_shchem/package_resources.py --inventory readiness-qa/resources.json
+      - name: Exercise local backup, independent restore and image reconnection
+        run: python runtime/deeptutor_shchem/onboarding_ci_smoke.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-backup189-${{ github.sha }}
+          path: readiness-qa/
+          retention-days: 14
+          if-no-files-found: warn
+      - run: ./runtime/deeptutor_shchem/desktop_build.ps1 -BuildTag "work${{ github.run_id }}"
+      - run: choco install libreoffice-fresh -y --no-progress
+      - name: Verify backup and restored profile in shipping EXE, detached from source
+        run: python runtime/deeptutor_shchem/verify_packaged_trial.py "runtime/deeptutor_shchem/desktop_dist_work${{ github.run_id }}/沪上化学智研台"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-verification-${{ github.sha }}
+          path: |
+            readiness-qa/
+            package-qa/
+            release-assets/
+          retention-days: 14
+          if-no-files-found: error
+  publish:
+    needs: verify
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-verification-${{ github.sha }}
+          path: .release-input
+      - run: python -m pip install 'Markdown>=3.7,<4'
+      - name: Record tested evidence, create version tag and publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python runtime/deeptutor_shchem/prepare_verified_release.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: delivery-0.1.89-${{ github.sha }}
+          path: release-delivery/
+          retention-days: 30
+          if-no-files-found: warn
