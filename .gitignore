@@ -219,3 +219,15 @@
 !/docs/qa/0.1.91-package.json
 !/docs/releases/0.1.91.md
 !/docs/screenshots/v0.1.91/
+
+# 0.1.92 Chinese typography and explicit local validation source.
+!/README-0.1.91-archive.md
+!/runtime/deeptutor_shchem/typography_ci.py
+!/docs/ux/0.1.92-chinese-typography.md
+!/docs/releases/0.1.92.md
+!/docs/qa/0.1.92-readiness.json
+!/docs/qa/0.1.92-package.json
+!/docs/qa/0.1.92-font-baseline.json
+!/docs/screenshots/v0.1.92/
+!/docs/screenshots/v0.1.92/**
+!/.github/workflows/chinese-typography.yml

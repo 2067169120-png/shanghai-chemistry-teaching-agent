@@ -1,10 +1,10 @@
 # 沪上化学智研台
 
-**0.1.92 · Windows / PySide6 原生教师工作台 · 预发布试用版**
+**0.1.91 · Windows / PySide6 原生教师工作台 · 预发布试用版**
 
-用于上海高中化学教师的本地选题、组卷、备课、教案/PPT和学生作答分析。本版统一中文界面字体和字号，检查实际中文字形，改善小字可读性，并核对Windows原生后端的分数缩放。首页继续以最近备课和实际题篮为主。
+用于上海高中化学教师的本地选题、组卷、备课、教案/PPT和学生作答分析。本版修正新组试卷的文字题号与题答编号，统一常用中文操作文案，并固定备课页的保存、生成和结果入口。首页继续以最近备课和实际题篮为主。
 
-[下载本版 Release](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/releases/tag/v0.1.92) · [逐页界面检查与后续改进](docs/ux/0.1.90-teacher-interface-review.md) · [更新记录](CHANGELOG.md) · [59项任务进度](docs/roadmaps/audit-followup.md) · [0.1.90历史指南](README-0.1.90-archive.md) · [0.1.91题号与文案检查](docs/ux/0.1.91-numbering-and-copy.md)
+[下载本版 Release](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/releases/tag/v0.1.91) · [逐页界面检查与后续改进](docs/ux/0.1.90-teacher-interface-review.md) · [更新记录](CHANGELOG.md) · [59项任务进度](docs/roadmaps/audit-followup.md) · [0.1.90历史指南](README-0.1.90-archive.md) · [本版题号与文案检查](docs/ux/0.1.91-numbering-and-copy.md)
 
 > 原教材、题库、学生资料和模型密钥不随软件分发。新安装显示空题库是正常情况。备份目前覆盖明确选入的备课作品，不是整个题库的一键迁移。
 
@@ -12,7 +12,7 @@
 
 ### 教师：运行便携程序
 
-从Release下载 `ShanghaiChem-0.1.92-Windows-x64.zip`，**完整解压**，双击目录内的 **`沪上化学智研台.exe`**。不要在ZIP里直接运行，不要单独复制EXE，也不要删除旁边的 `_internal`。不需要另装Python；窗口右下角应显示 **v0.1.92 / 打包版**。
+从Release下载 `ShanghaiChem-0.1.91-Windows-x64.zip`，**完整解压**，双击目录内的 **`沪上化学智研台.exe`**。不要在ZIP里直接运行，不要单独复制EXE，也不要删除旁边的 `_internal`。不需要另装Python；窗口右下角应显示 **v0.1.91 / 打包版**。
 
 关闭旧版后再启动新版。个人草稿、题篮、恢复副本及设置仍放在 `%LOCALAPPDATA%\ShanghaiChem\DesktopWorkbench`，不会因替换程序目录自动删除。便携程序不会自动复制另一源码目录旁的私有原题库；沿用原工作区时，可继续使用源码环境，或明确设置 `SHCHEM_WORKSPACE_ROOT` 指向该工作区，不把资料复制进 `_internal`。
 
@@ -27,7 +27,7 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r runtime\deeptutor_shchem\desktop_requirements.txt
 ```
 
-然后双击 **`启动源码桌面版.cmd`**。已有Git目录先保存未提交修改，再执行 `git fetch origin` 和 `git switch feature/chinese-typography-0.1.92`，不强制重置。旧VBS可能仍启动旧EXE；源码版启动失败时可运行 **`检查运行环境.cmd`**。
+然后双击 **`启动源码桌面版.cmd`**。已有Git目录先保存未提交修改，再执行 `git fetch origin` 和 `git switch feature/paper-numbering-0.1.91`，不强制重置。旧VBS可能仍启动旧EXE；源码版启动失败时可运行 **`检查运行环境.cmd`**。
 
 ### 哪些操作需要额外配置
 
@@ -37,38 +37,10 @@ py -3.12 -m venv .venv
 
 [首页](#home) · [选题](#library) · [组卷](#paper) · [学生分析](#student) · [备课](#preparation) · [教学模板](#templates) · [课堂工具](#classroom) · [我的备课](#mywork) · [导入与设置](#settings) · [备份与恢复](#backup) · [验证范围](#verification)
 
-## 本版中文显示修复
-
-中文界面不再只请求一个名字：启动时选择本机实际存在、能显示中文样例的字体。
-Windows优先采用微软雅黑界面版/微软雅黑；没有时按已安装的中文字体回退。样式表不再另行指定一组字体覆盖应用选择。
-按钮、输入框、菜单、课堂绘图文字和只读教案阅读器使用同一套界面字体策略。
-
-正文采用11磅，侧栏副标题、徽标等小字不低于9.5磅；标题使用适度加粗。字号与控件继续跟随Qt/Windows的设备独立缩放，不用放大位图冒充清晰显示。没有强制设置用户系统DPI，也没有修改题库原文件。
-
-![中文、英文和化学符号样例（0.1.92实际便携程序）](docs/screenshots/v0.1.92/typography-sample.png)
-
-### 查看自己电脑实际使用的字体
-
-打开右下角 **本机检查**，或从设置页进入。本版新增 **中文界面字体** 一项和字体样例，显示本机选用的字体、中文样例实际字形来源以及当前窗口缩放；可复制报告或导出JSON。
-`Microsoft YaHei`是“微软雅黑”的英文名称，不是“只支持英语”的字体。实际字形和字号应一起看，不能仅凭名称判断。
-
-![本机检查中的中文显示示例与实际字体（0.1.92）](docs/screenshots/v0.1.92/typography-check.png)
-
-若本机没有可用的中文字体，检查结果会提示处理，而不是谎称已采用微软雅黑。
-只读取已安装字体；软件不下载、不复制、不分发字体文件。修复的是界面文字：扫描原图、原Word、已生成PPTX/PDF仍保留原字体与像素；图片模糊不能靠更换界面字体恢复。
-
-### 缩放核对
-
-![125% Qt倍率下的文字样例（Windows原生后端、发行EXE）](docs/screenshots/v0.1.92/scale-1_25-typography-sample.png)
-
-本版记录100%、125%、150%三档 **Qt倍率模拟** 的源码与独立EXE运行，不把它等同于所有Windows系统显示设置、真实多屏拖动或远程桌面验收。
-完整结果在[本版检查说明](docs/ux/0.1.92-chinese-typography.md)、[源码报告](docs/qa/0.1.92-readiness.json)和[程序报告](docs/qa/0.1.92-package.json)。
-扫描题图内的旧号替换仍在#14，全库迁移仍在#9；本版先处理教师提出的显示问题，未把这两项标为完成。
-
 <a id="home"></a>
 ## 01 首页：最近备课与选题篮
 
-![首页与中文字体（0.1.92实际便携窗口，合成资料）](docs/screenshots/v0.1.92/typography-home.png)
+![最近备课和真实题篮（0.1.91实际便携窗口，合成资料）](docs/screenshots/v0.1.91/home-current.png)
 
 首页显示最近5份**当前作品**，按现有保存/更新时间排序；不是最近打开时间。选中后点“打开选中”，或双击记录。归档与回收站继续在“全部备课”中查找，不混进当前列表。
 
@@ -134,7 +106,7 @@ Windows优先采用微软雅黑界面版/微软雅黑；没有时按已安装的
 
 底部始终保留**“保存草稿”**与**“生成初稿”**。保存草稿保留一个本机版本；生成的内容由“输出类型”决定，发送前仍须核对材料与模型。任务存在时，原来的停止、继续、修改与修复按钮也留在固定区域，继续使用同一任务状态，不复制第二套按钮。已有结果可定位查看；失败不代表自动重试，重试仍需明确确认。
 
-![800×700：中文显示与固定操作（0.1.92）](docs/screenshots/v0.1.92/typography-compact.png)
+![800×700：滚动到资料底部后主要操作仍可见（0.1.91）](docs/screenshots/v0.1.91/preparation-fixed-actions.png)
 
 “新建备课”放在顶部，有内容时仍须确认，取消不清空。恢复副本继续约每2秒自动保存；“恢复选项→立即更新自动恢复副本”是次要操作，不和正式保存并列争抢注意力。自动恢复保留不完整表单和图片引用，不是图片原件备份；写入或恢复异常继续明确提示。
 
@@ -218,10 +190,10 @@ Windows优先采用微软雅黑界面版/微软雅黑；没有时按已安装的
 <a id="verification"></a>
 ## 本版改动与验证范围
 
-{{VERIFICATION_SUMMARY}}
+同一提交完成 **923项Windows定向测试，0失败、0错误、0跳过**。源码和同一发行EXE验证真实Word导入后乱序选题、学生/教师两版新题号与答案对应、原文件不变、备课固定操作及中文标准按钮。独立EXE通过本机Office生成实际学生/教师PDF页图；原作品整理、备份恢复、8页导航和既有课件输出继续回归。图片像素内旧号没有自动改写；仅合成资料验收，无真实API请求、全库导入、多屏缩放或课堂效果验证。
 
 实际测试与打包提交、随后只增加截图和报告的发行提交分别记录在 `RELEASE-MANIFEST.json`，不混称为同一次代码修改；版本标签建立后不移动。README新截图来自真实运行窗口；较早的合成题库/分页图片明确注明原版本。空库与合成记录都不是用户真实资料完成的证明。
 
-[源码运行报告](docs/qa/0.1.92-readiness.json) · [独立程序报告](docs/qa/0.1.92-package.json) · [逐页检查、剩余不足与验收场景](docs/ux/0.1.90-teacher-interface-review.md)
+[源码运行报告](docs/qa/0.1.91-readiness.json) · [独立程序报告](docs/qa/0.1.91-package.json) · [逐页检查、剩余不足与验收场景](docs/ux/0.1.90-teacher-interface-review.md)
 
-本版实际修复中文界面字体、字号与本机字形检查，保留0.1.91的组卷题号与备课操作改进。扫描图像内的旧号仍需后续处理；原Word/公众号全库迁移继续在A08中保持开放。源码与便携程序测试不替代真实资料、全部导出排版、课堂效果、多屏及Windows缩放验收；没有真实模型请求或全量教材蒸馏。
+本版实际修正组卷文字题号、常用界面文案和备课操作区。扫描图像内的旧号仍需后续处理；原Word/公众号全库迁移继续在A08中保持开放。源码与便携程序测试不替代真实资料、全部导出排版、课堂效果、多屏及Windows缩放验收；没有真实模型请求或全量教材蒸馏。

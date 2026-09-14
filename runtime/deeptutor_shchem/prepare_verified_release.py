@@ -16,8 +16,8 @@ import xml.etree.ElementTree as ET
 from zipfile import ZipFile, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = "0.1.91"
-BRANCH = "feature/paper-numbering-0.1.91"
+VERSION = "0.1.92"
+BRANCH = "feature/chinese-typography-0.1.92"
 TAG = "v" + VERSION
 
 
@@ -43,6 +43,10 @@ def main():
     for report in (ready, packaged):
         assert report["version"] == VERSION and report["source_commit"] == sha
         assert not report["uncaught_errors"] and len(report["routes_opened"]) == 8
+        fonts = report["typography"]
+        assert fonts["chinese_sample_supported"] and fonts["han"]["missing_glyphs"] == 0
+        assert fonts["chemistry"]["missing_glyphs"] == 0 and fonts["editor_unchanged"]
+        assert fonts["actions_visible_800x700"] and fonts["model_calls"] == 0
         numbering = report['paper_numbering']
         assert numbering['model_calls'] == 0 and numbering['raster_numbers_auto_rewritten'] is False
         assert all(numbering[k] for k in ('real_word_import', 'reordered_student_and_teacher',
@@ -59,6 +63,12 @@ def main():
         assert backup["model_calls"] == 0
         assert all(backup[k] for k in ("backup_created", "restore_checked", "source_records_unchanged",
             "original_artifacts_equal", "shelves_preserved", "recovery_restored", "image_reconnected", "restored_production_export"))
+    source_scales = json.loads((source / "readiness-qa/font-scaling/scaling-summary.json").read_text(encoding="utf-8"))
+    for runs in (source_scales, packaged["font_scaling"]):
+        assert [r["requested_scale"] for r in runs] == ["1", "1.25", "1.5"]
+        assert all(r["qt_platform"] == "windows" and not r["han"]["missing_glyphs"] and
+                   not r["chemistry"]["missing_glyphs"] and r["actions_visible_800x700"] for r in runs)
+    ready["font_scaling"] = source_scales
     assert all(packaged['paper_numbering']['actual_pdf_pages'][role] > 0 for role in ('student', 'teacher'))
     assert packaged["lesson_backup"]["native_restored_cli_start_and_close"]
     assert packaged["frozen"] and packaged["detached_directory"] and packaged["normal_native_start_and_close"]
@@ -66,7 +76,7 @@ def main():
     assert packaged["editable_pptx_slides"] == 5 and packaged["pdf_pages"] == 2
     suites = list(ET.parse(source / "readiness-qa/pytest.xml").getroot().iter("testsuite"))
     tests = {key: sum(int(s.get(key, 0)) for s in suites) for key in ("tests", "failures", "errors", "skipped")}
-    assert tests["tests"] >= 800 and not any(tests[k] for k in ("failures", "errors", "skipped"))
+    assert tests["tests"] >= 937 and not any(tests[k] for k in ("failures", "errors", "skipped"))
     target = ROOT / "docs/screenshots" / TAG
     target.mkdir(parents=True, exist_ok=True)
     names = set()
@@ -78,6 +88,16 @@ def main():
             data = (folder / name).read_bytes()
             assert hashlib.sha256(data).hexdigest() == item["sha256"]
             (target / name).write_bytes(data)
+    for scale in ("1", "1.25", "1.5"):
+        folder = source / "package-qa/font-scaling" / ("scale-" + scale.replace(".", "_"))
+        item = next(r for r in packaged["font_scaling"] if r["requested_scale"] == scale)
+        for name in ("typography-sample.png", "typography-compact.png"):
+            record = next(r for r in item["screenshots"] if r["file"] == name)
+            data = (folder / name).read_bytes()
+            assert hashlib.sha256(data).hexdigest() == record["sha256"]
+            (target / ("scale-" + scale.replace(".", "_") + "-" + name)).write_bytes(data)
+    baseline = source / "readiness-qa/font-baseline/baseline.json"
+    write_json(ROOT / f"docs/qa/{VERSION}-font-baseline.json", json.loads(baseline.read_text(encoding="utf-8")))
     ready.update(tests=tests, workflow_run=os.environ["GITHUB_RUN_ID"])
     write_json(ROOT / f"docs/qa/{VERSION}-readiness.json", ready)
     write_json(ROOT / f"docs/qa/{VERSION}-package.json", packaged)
@@ -85,9 +105,9 @@ def main():
     text = readme.read_text(encoding="utf-8")
     assert "{{VERIFICATION_SUMMARY}}" in text
     summary = (f"同一提交完成 **{tests['tests']}项Windows定向测试，0失败、0错误、0跳过**。"
-               "源码和同一发行EXE验证真实Word导入后乱序选题、学生/教师两版新题号与答案对应、原文件不变、备课固定操作及中文标准按钮。"
-               "独立EXE通过本机Office生成实际学生/教师PDF页图；原作品整理、备份恢复、8页导航和既有课件输出继续回归。"
-               "图片像素内旧号没有自动改写；仅合成资料验收，无真实API请求、全库导入、多屏缩放或课堂效果验证。")
+               "源码与发行EXE检查中文实际字形、化学符号、界面字体统一和800×700固定操作。"
+               "另在Windows原生Qt后端以1.0/1.25/1.5倍率分别运行源码与独立EXE，记录字体、DPR和实际截图。"
+               "这是Qt倍率模拟，不等于系统显示设置、多屏拖动或用户设备已验收。原有题号、备份和输出流程继续回归；未调用模型。")
     text = text.replace("{{VERIFICATION_SUMMARY}}", summary)
     text = text.replace("关闭后再次打开默认EXE仍回到默认个人资料；再次进入此恢复副本可执行：",
         "关闭后再次打开默认EXE仍回到默认个人资料。可在‘检查与恢复’中点击**‘打开已有的恢复目录…’**，选择先前创建的恢复目录再次打开，无须重复恢复。也可执行：")
@@ -100,8 +120,8 @@ def main():
     command("git", "config", "user.name", "github-actions[bot]")
     command("git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com")
     command("git", "add", "-f", "README.md", "docs/roadmaps/audit-followup.md", str(target.relative_to(ROOT)),
-            f"docs/qa/{VERSION}-readiness.json", f"docs/qa/{VERSION}-package.json")
-    command("git", "commit", "-m", "docs: record 0.1.91 numbering, teacher controls and Windows verification [skip ci]")
+            f"docs/qa/{VERSION}-readiness.json", f"docs/qa/{VERSION}-package.json", f"docs/qa/{VERSION}-font-baseline.json")
+    command("git", "commit", "-m", "docs: record 0.1.92 Chinese glyph and native scaling verification [skip ci]")
     delivery_sha = command("git", "rev-parse", "HEAD")
     command("git", "push", "origin", "HEAD:refs/heads/" + BRANCH)
     output = ROOT / "release-delivery"
@@ -148,7 +168,7 @@ def main():
     command("git", "tag", "-a", TAG, "-m", VERSION + " verified Windows trial; code " + sha)
     command("git", "push", "origin", "refs/tags/" + TAG)
     command("gh", "release", "create", TAG, "--repo", repo, "--verify-tag", "--draft", "--prerelease",
-        "--title", VERSION + " · 本卷题号、中文文案与备课操作", "--notes-file", f"docs/releases/{VERSION}.md",
+        "--title", VERSION + " · 中文字体与显示修复", "--notes-file", f"docs/releases/{VERSION}.md",
         *[str(p) for p in sorted(output.iterdir()) if p.is_file()])
     command("gh", "release", "edit", TAG, "--repo", repo, "--draft=false", "--latest=false")
     print("Published", TAG, "code", sha, "delivery", delivery_sha)

@@ -1,4 +1,4 @@
-"""Shared native design system: calm green, airy surfaces and clear hierarchy."""
+"""Shared native style. Font family comes from the verified Qt application font."""
 from .studio_control_style import control_style
 
 TOKENS = {
@@ -12,26 +12,26 @@ TOKENS = {
 
 def _build_style(t):
     return f'''
-QWidget {{ font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", "Noto Sans CJK SC"; font-size: 14px; color: {t['ink']}; background: transparent; }}
+QWidget {{ font-size: 11pt; color: {t['ink']}; background: transparent; }}
 QMainWindow, QDialog, QWidget#WindowRoot, QStackedWidget, QScrollArea#PageScroll,
 QWidget#PageViewport, QWidget#PageContent {{ background: {t['surface_app']}; }}
 QLabel {{ background: transparent; }}
 QFrame#SideRail {{ background: {t['surface_rail']}; border-right: 1px solid {t['line']}; }}
-QLabel#Brand {{ font-size: 18px; font-weight: 700; color: {t['brand_dark']}; }}
-QLabel#BrandSub, QLabel#RailSection {{ font-size: 11px; color: {t['ink_muted']}; }}
+QLabel#Brand {{ font-size: 14pt; font-weight: 600; color: {t['brand_dark']}; }}
+QLabel#BrandSub, QLabel#RailSection {{ font-size: 9.5pt; color: {t['ink_muted']}; }}
 QLabel#RailSection {{ margin-top: 12px; margin-bottom: 4px; }}
 QPushButton#NavButton, QPushButton#SettingsButton {{ text-align: left; padding: 10px 12px; min-height: 26px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: {t['ink_muted']}; }}
 QPushButton#NavButton:hover, QPushButton#SettingsButton:hover {{ background: {t['surface_subtle']}; color: {t['brand_dark']}; }}
-QPushButton#NavButton:checked {{ background: {t['brand_soft']}; color: {t['brand_dark']}; font-weight: 700; }}
+QPushButton#NavButton:checked {{ background: {t['brand_soft']}; color: {t['brand_dark']}; font-weight: 600; }}
 QFrame#TopBar {{ background: {t['surface_panel']}; border-bottom: 1px solid {t['line']}; }}
-QLabel#TopTitle {{ font-size: 15px; font-weight: 600; }}
-QLabel#PageTitle {{ font-size: 26px; font-weight: 700; }}
+QLabel#TopTitle {{ font-size: 11pt; font-weight: 600; }}
+QLabel#PageTitle {{ font-size: 19pt; font-weight: 600; }}
 QLabel#PageSubtitle, QLabel#MutedLabel, QLabel#StatusInfo {{ color: {t['ink_muted']}; }}
-QLabel#CardTitle {{ font-size: 17px; font-weight: 700; }}
-QLabel#HeroTitle {{ font-size: 28px; font-weight: 700; color: {t['brand_dark']}; }}
-QLabel#Badge {{ color: {t['brand_dark']}; background: {t['brand_soft']}; border-radius: 5px; padding: 4px 9px; font-size: 11px; }}
-QLabel#MetricTitle {{ color: {t['ink_muted']}; font-size: 12px; }}
-QLabel#MetricValue {{ font-size: 24px; font-weight: 700; color: {t['brand_dark']}; }}
+QLabel#CardTitle {{ font-size: 12pt; font-weight: 600; }}
+QLabel#HeroTitle {{ font-size: 21pt; font-weight: 600; color: {t['brand_dark']}; }}
+QLabel#Badge {{ color: {t['brand_dark']}; background: {t['brand_soft']}; border-radius: 5px; padding: 4px 9px; font-size: 9.5pt; }}
+QLabel#MetricTitle {{ color: {t['ink_muted']}; font-size: 10pt; }}
+QLabel#MetricValue {{ font-size: 18pt; font-weight: 600; color: {t['brand_dark']}; }}
 QFrame#Card, QFrame#ThemeCard {{ background: white; border: 1px solid {t['line']}; border-radius: 14px; }}
 QFrame#HeroCard {{ background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #E5F3EA, stop:1 #F6F9ED); border: 1px solid #D2E7D8; border-radius: 18px; }}
 QFrame#TemplateCard:hover {{ border-color: #85B899; }}
@@ -69,22 +69,22 @@ QScrollBar:vertical {{ width: 8px; background: transparent; margin: 2px; }}
 QScrollBar::handle:vertical, QScrollBar::handle:horizontal {{ background: #BDCEC3; border-radius: 4px; min-height: 28px; min-width: 28px; }}
 QScrollBar::add-line, QScrollBar::sub-line {{ width: 0px; height: 0px; }}
 QSplitter::handle {{ background: {t['line']}; }}
-QStatusBar {{ background: white; border-top: 1px solid {t['line']}; color: {t['ink_muted']}; font-size: 11px; }}
+QStatusBar {{ background: white; border-top: 1px solid {t['line']}; color: {t['ink_muted']}; font-size: 9.5pt; }}
 QProgressBar {{ border: 0; border-radius: 5px; background: {t['surface_subtle']}; text-align: center; min-height: 16px; }}
 QProgressBar::chunk {{ background: #70B78B; border-radius: 5px; }}
 QLabel#StatusSuccess {{ color: {t['success']}; }}
 QLabel#StatusAttention {{ color: {t['attention']}; }}
 QLabel#StatusError {{ color: {t['danger']}; }}
-QLabel#TimerDisplay {{ font-size: 84px; font-weight: 600; color: {t['brand_dark']}; }}
-QLabel#DrawDisplay {{ font-size: 40px; font-weight: 700; color: {t['brand_dark']}; }}
+QLabel#TimerDisplay {{ font-size: 63pt; font-weight: 600; color: {t['brand_dark']}; }}
+QLabel#DrawDisplay {{ font-size: 30pt; font-weight: 600; color: {t['brand_dark']}; }}
 QSlider::groove:horizontal {{ background: {t['line']}; height: 6px; border-radius: 3px; }}
 QSlider::handle:horizontal {{ background: {t['brand']}; width: 16px; margin: -5px 0; border-radius: 8px; }}
 QFrame#ExplorerSidebar {{ background: white; border: 1px solid {t['line']}; border-radius: 10px; }}
 QFrame#ExplorerQuestionCard {{ background: white; border: 1px solid {t['line']}; border-radius: 9px; }}
 QFrame#ExplorerQuestionCard:hover {{ border-color: #9FC9AF; }}
 QFrame#ExplorerBasketFooter {{ background: {t['brand_soft']}; border: 1px solid #B8DCC7; border-radius: 10px; }}
-QLabel#ExplorerEyebrow {{ font-size: 12px; color: {t['brand']}; font-weight: 600; }}
-QLabel#ExplorerExcerpt {{ font-size: 15px; color: {t['ink']}; padding: 10px 0; }}
+QLabel#ExplorerEyebrow {{ font-size: 10pt; color: {t['brand']}; font-weight: 600; }}
+QLabel#ExplorerExcerpt {{ font-size: 11pt; color: {t['ink']}; padding: 10px 0; }}
 QTreeWidget#ExplorerFacetTree {{ border: 0; padding: 0; border-radius: 0; }}
 QTreeWidget#ExplorerFacetTree::item {{ padding: 6px 2px; }}
 QTreeWidget#ExplorerFacetTree::item:hover {{ background: {t['surface_subtle']}; }}
