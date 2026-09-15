@@ -15,6 +15,7 @@ def run_probe(output):
     from PIL import Image, ImageDraw
     from docx import Document
     from docx.shared import Inches
+    from PySide6.QtCore import QRect
     from PySide6.QtWidgets import QApplication
     from .desktop_facade import build_default_facade
     from .desktop_paths import DesktopPaths
@@ -74,6 +75,19 @@ def run_probe(output):
             assert len(page._reader.required)==8 and calls=={'catalog':1,'resolve':1},calls
             assert page._reader.loaded_tabs=={0}
             first=deepcopy(page.load_metrics);first['word_images']=deepcopy(page._reader.load_metrics)
+            # Data-ready is not enough: the teacher must actually see the title,
+            # source, reader and full action buttons inside the card.
+            settle(lambda:page.cards[0].height() >= page._reader.height()+100)
+            geometry=[]
+            for card in page.cards:
+                title=card.root.itemAt(1).widget()
+                assert title.text() and title.height() >= title.fontMetrics().height()
+                for widget in (title,card.open,card.add):
+                    assert card.rect().contains(QRect(widget.mapTo(card,widget.rect().topLeft()),widget.size()))
+                geometry.append({'height':card.height(),'minimum_height':card.minimumHeight(),
+                                 'title_height':title.height(),'title_font_height':title.fontMetrics().height()})
+            assert page.list_body.height()>page.scroll.viewport().height()
+            (output/'card-geometry.json').write_text(json.dumps(geometry,indent=2),encoding='utf-8')
             capture(win,'explorer-loaded.png')
             current_index=page._sessions['word_native'].index
             page.next.click();settle(lambda:not page._loading and page._page==1 and page.cards[0].ready)
@@ -116,7 +130,7 @@ def run_probe(output):
                 'checks':{'hidden_page_no_catalog':True,'one_resolution_for_eight_images':True,
                   'answer_tab_lazy':True,'paging_reuses_index':True,'source_preference_retained':True,
                   'import_invalidates_index':True,'generic_files_before_old_pack':True,
-                  'region_archive_roundtrip':True,'source_and_basket_unchanged':True,'diagnostic_no_content':True},
+                  'region_archive_roundtrip':True,'source_and_basket_unchanged':True,'diagnostic_no_content':True,'card_contents_visible':True},
                 'screenshots':screenshots,'uncaught_errors':errors,'model_calls':0,
                 'scope':'Synthetic Word data in isolated state. Event-loop readiness timings, not user hardware or actual classroom acceptance.'}
             (output/'explorer-probe.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')

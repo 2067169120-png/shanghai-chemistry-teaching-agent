@@ -139,3 +139,30 @@ def test_late_results_start_with_compact_card_actions(window):
     settle(app,lambda:not page._loading and bool(page.cards) and page.cards[0].ready)
     assert all(c.actions.direction()==QBoxLayout.Direction.TopToBottom for c in page.cards)
     assert page.list_body.width() <= page.scroll.viewport().width()
+
+
+def test_async_cards_reserve_readable_content_height(window):
+    from PySide6.QtCore import QRect
+    win,app=window;page=win.library_page
+    win.resize(1280,900)
+    page.search()
+    settle(app,lambda:not page._loading and bool(page.cards) and page.cards[0].ready)
+    settle(app,lambda:page.cards[0].height() >= page._reader.height()+100)
+    for card in page.cards:
+        title=card.root.itemAt(1).widget()
+        assert title.text() and title.height() >= title.fontMetrics().height()
+        assert card.rect().contains(QRect(title.mapTo(card,title.rect().topLeft()),title.size()))
+        assert card.rect().contains(QRect(card.add.mapTo(card,card.add.rect().topLeft()),card.add.size()))
+    assert page.list_body.height() > page.scroll.viewport().height()
+
+
+def test_collapse_releases_height_and_expand_restores_it(window):
+    win,app=window;page=win.library_page
+    settle(app)
+    card=page.cards[0]
+    settle(app,lambda:card.height() >= page._reader.height()+100)
+    expanded=card.minimumHeight()
+    card.open.click()
+    settle(app,lambda:page._reader is None and card.minimumHeight()<expanded)
+    card.open.click()
+    settle(app,lambda:page._reader is not None and card.ready and card.minimumHeight()>=expanded)

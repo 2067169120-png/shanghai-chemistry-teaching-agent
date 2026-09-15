@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from time import perf_counter
 
-from PySide6.QtCore import Qt, QTimer, Signal, QSignalBlocker
+from PySide6.QtCore import Qt, QTimer, Signal, QSignalBlocker, QEvent
 from PySide6.QtWidgets import (QApplication, QBoxLayout, QComboBox, QFrame, QHBoxLayout, QLineEdit,
     QPushButton, QScrollArea, QSizePolicy, QSplitter, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
 
@@ -21,6 +21,10 @@ class QuestionCard(CardFrame):
     def __init__(self, entry, number, parent=None):
         super().__init__(parent)
         self.entry, self.ready = entry, False
+        self._height_timer = QTimer(self)
+        self._height_timer.setSingleShot(True)
+        self._height_timer.timeout.connect(self._sync_content_height)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         self.setObjectName("ExplorerQuestionCard")
         self.setMinimumWidth(0)
         self.root = QVBoxLayout(self)
@@ -48,11 +52,28 @@ class QuestionCard(CardFrame):
         self.actions.addWidget(self.add)
         self.root.addLayout(self.actions)
 
+    def event(self, event):
+        result = super().event(event)
+        if event.type() == QEvent.Type.LayoutRequest and hasattr(self, "_height_timer"):
+            self._height_timer.start(0)
+        return result
+
+    def _sync_content_height(self):
+        # Wrapped text and an asynchronously attached reader change the height
+        # after the scroll area has laid out its children. Reserve that height
+        # explicitly; never squeeze eight cards into one viewport or constrain
+        # their horizontal minimum with the unwrapped source text.
+        height = self.root.totalHeightForWidth(max(1, self.width()))
+        height = max(height, self.root.minimumSize().height())
+        if self.minimumHeight() != height:
+            self.setMinimumHeight(height)
+
     def resizeEvent(self, event):
-        self.actions.setDirection(
-            QBoxLayout.Direction.TopToBottom if event.size().width() < 400
-            else QBoxLayout.Direction.LeftToRight
-        )
+        direction = (QBoxLayout.Direction.TopToBottom if event.size().width() < 400
+                     else QBoxLayout.Direction.LeftToRight)
+        if self.actions.direction() != direction:
+            self.actions.setDirection(direction)
+        self._height_timer.start(0)
         super().resizeEvent(event)
 
 
