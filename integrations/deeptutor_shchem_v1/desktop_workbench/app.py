@@ -63,11 +63,12 @@ def create_application(argv: list[str] | None = None) -> QApplication:
     application.setOrganizationName("ShanghaiChem")
     application.setApplicationVersion(DESKTOP_VERSION)
     application.setQuitOnLastWindowClosed(True)
-    # Qt's Fusion indicators remain legible under the shared stylesheet,
-    # including combobox arrows and spin controls on Windows CI and desktops.
-    application.setStyle("Fusion")
+    if not getattr(application, "_workbench_fusion_installed", False):
+        application.setStyle("Fusion")
+        application._workbench_fusion_installed = True
     install_ui_font(application)
-    application.setStyleSheet(WORKBENCH_STYLE)
+    if application.styleSheet() != WORKBENCH_STYLE:
+        application.setStyleSheet(WORKBENCH_STYLE)
     return application
 
 
@@ -93,7 +94,6 @@ def run_desktop_workbench(
             index = arguments.index("--personal-state")
             state_root = restored_profile(arguments[index + 1])
             paths = DesktopPaths.from_workspace(paths.workspace_root, state_root=state_root)
-            # A restored window must not silently use the source checkout's old library.
             paths = replace(paths, shchem_root=state_root / "library" / "sh-chem-db")
         except (ValueError, IndexError, OSError):
             QMessageBox.critical(None, "无法打开恢复副本", "请选择通过本工作台校验恢复的独立目录。")
@@ -109,10 +109,8 @@ def run_desktop_workbench(
     try:
         try:
             facade = build_default_facade(paths)
-        except Exception:  # noqa: BLE001 - native startup safety boundary
-            QMessageBox.critical(
-                None, "无法启动", "本地工作台初始化失败，请检查资料目录与个人数据目录。",
-            )
+        except Exception:
+            QMessageBox.critical(None, "无法启动", "本地工作台初始化失败，请检查资料目录与个人数据目录。")
             return 3
         window = TeacherWorkbenchWindow(facade)
         window.show()

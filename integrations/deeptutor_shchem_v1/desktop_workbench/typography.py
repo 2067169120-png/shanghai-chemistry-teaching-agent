@@ -1,7 +1,6 @@
-"""One verified Chinese UI font; source documents keep their own typography.
+"""Application typography using installed fonts; source documents stay unchanged.
 
-Uses only fonts installed on this computer. Never downloads, copies or packages
-font files. Call GUI functions on the Qt GUI thread, after QApplication exists.
+Run on the GUI thread after QApplication exists. No font downloads or copies.
 """
 from __future__ import annotations
 
@@ -17,7 +16,6 @@ BODY_POINTS = 11.0
 SMALL_POINTS = 9.5
 HAN_SAMPLE = "上海高中化学教师工作台氢氯钠铁铜锂氧碳硫题库"
 CHEMISTRY_SAMPLE = "H₂SO₄  Fe³⁺  ⇌  pH 12.5  mol·L⁻¹"
-# Prefer a sans-serif Simplified Chinese face before any Western-only fallback.
 PREFERRED_FAMILIES = (
     "Microsoft YaHei UI", "Microsoft YaHei", "微软雅黑",
     "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", "思源黑体 CN",
@@ -26,7 +24,6 @@ PREFERRED_FAMILIES = (
 
 
 def choose_family(available: Iterable[str], supports: Callable[[str], bool]) -> str | None:
-    """Choose an actually available, glyph-checked family (also testable without Qt)."""
     names = {name.casefold(): name for name in available}
     for requested in PREFERRED_FAMILIES:
         actual = names.get(requested.casefold())
@@ -40,54 +37,8 @@ def _supports_han(family: str) -> bool:
     return raw.isValid() and all(raw.supportsCharacter(ord(ch)) for ch in HAN_SAMPLE)
 
 
-def install_ui_font(application: QApplication | None = None) -> str:
-    """Idempotent application font selection, including non-native Qt backends."""
-    app = application or QApplication.instance()
-    if app is None:
-        raise RuntimeError("Create QApplication before selecting the UI font")
-    existing = getattr(app, "_shchem_typography", None)
-    if existing is not None:
-        return existing["family"]
-    chosen = choose_family(QFontDatabase.families(), _supports_han)
-    # Qt's offscreen Windows backend may not enumerate system CJK files.
-    # Register regular AND bold locally; never export their bytes.
-    if sys.platform == "win32" and (chosen is None or chosen in ("SimSun", "宋体", "SimHei", "黑体")):
-        directory = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts"
-        for filename in ("msyh.ttc", "msyhbd.ttc", "Deng.ttf", "Dengb.ttf", "simhei.ttf", "simsun.ttc"):
-            path = directory / filename
-            if path.is_file():
-                QFontDatabase.addApplicationFont(str(path))
-        chosen = choose_family(QFontDatabase.families(), _supports_han)
-    if chosen is None:
-        # Do not silently promote a Western family; try installed SC-capable fonts.
-        for family in QFontDatabase.families(QFontDatabase.WritingSystem.SimplifiedChinese):
-            if _supports_han(family):
-                chosen = family
-                break
-    verified = chosen is not None
-    if chosen is None:
-        chosen = QFontInfo(app.font()).family()
-    font = QFont(chosen)
-    font.setPointSizeF(BODY_POINTS)
-    font.setWeight(QFont.Weight.Normal)
-    font.setStyleStrategy(QFont.StyleStrategy.PreferAntialias | QFont.StyleStrategy.ContextFontMerging)
-    app.setFont(font)
-    app._shchem_typography = {"family": chosen, "chinese_sample_supported": verified,
-                              "body_points": BODY_POINTS, "small_points": SMALL_POINTS}
-    return chosen
-
-
-def ui_font(points: float | None = None) -> QFont:
-    """For custom painters and read-only QTextDocuments, without a second font policy."""
-    install_ui_font()
-    font = QFont(QApplication.font())
-    if points is not None:
-        font.setPointSizeF(points)
-    return font
-
-
 def glyph_report(font: QFont, text: str) -> dict:
-    """Inspect actual glyph-run fonts, not merely QFont's requested family name."""
+    """Return actual glyph fonts, not only the requested family name."""
     layout = QTextLayout(text, font)
     layout.beginLayout()
     line = layout.createLine()
@@ -106,8 +57,52 @@ def glyph_report(font: QFont, text: str) -> dict:
             "missing_glyphs": sum(run["missing_glyphs"] for run in runs)}
 
 
+def install_ui_font(application: QApplication | None = None) -> str:
+    app = application or QApplication.instance()
+    if app is None:
+        raise RuntimeError("Create QApplication before selecting the UI font")
+    existing = getattr(app, "_shchem_typography", None)
+    if existing is not None:
+        return existing["family"]
+    chosen = choose_family(QFontDatabase.families(), _supports_han)
+    directory = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts"
+    if sys.platform == "win32" and (chosen is None or chosen in ("SimSun", "宋体", "SimHei", "黑体")):
+        for filename in ("msyh.ttc", "msyhbd.ttc", "Deng.ttf", "Dengb.ttf", "simhei.ttf", "simsun.ttc"):
+            path = directory / filename
+            if path.is_file():
+                QFontDatabase.addApplicationFont(str(path))
+        chosen = choose_family(QFontDatabase.families(), _supports_han)
+    if chosen is None:
+        for family in QFontDatabase.families(QFontDatabase.WritingSystem.SimplifiedChinese):
+            if _supports_han(family):
+                chosen = family
+                break
+    verified = chosen is not None
+    chosen = chosen or QFontInfo(app.font()).family()
+    font = QFont(chosen)
+    font.setPointSizeF(BODY_POINTS)
+    font.setWeight(QFont.Weight.Normal)
+    # Do not use NoFontMerging: arrows and superscripts need per-character fallback.
+    font.setStyleStrategy(QFont.StyleStrategy.PreferAntialias)
+    if sys.platform == "win32" and glyph_report(font, CHEMISTRY_SAMPLE)["missing_glyphs"]:
+        symbol_path = directory / "seguisym.ttf"
+        if symbol_path.is_file():
+            QFontDatabase.addApplicationFont(str(symbol_path))
+    app.setFont(font)
+    app._shchem_typography = {"family": chosen, "chinese_sample_supported": verified,
+                              "body_points": BODY_POINTS, "small_points": SMALL_POINTS}
+    return chosen
+
+
+def ui_font(points: float | None = None) -> QFont:
+    install_ui_font()
+    font = QFont(QApplication.font())
+    if points is not None:
+        font.setPointSizeF(points)
+    return font
+
+
 def typography_report(widget=None) -> dict:
-    """Explicit local diagnostic, containing no file paths or user text."""
     app = QApplication.instance()
     install_ui_font(app)
     font = widget.font() if widget is not None else ui_font()
