@@ -155,17 +155,18 @@ def run_probe(output):
             second_edits=deepcopy(reopened.edits)
             reopened.accept();reopened.deleteLater();settle()
             second=RasterPaperService(facade).prepare_corrected(next_preview.preview_id,next_preview.preview_hash,second_edits)
+            # View every newly generated page before using the existing approval.
+            for role in ('student','teacher'):
+                for page in second.preview_model['pagination']['documents'][role]['pages']:
+                    data=service.image(second.preview_id,page['image_id'])['data']
+                    path=output/f'scan-reordered-{role}-page-{page["page_number"]}.png';path.write_bytes(data)
+                    screenshots.append({'file':path.name,'sha256':sha256(data).hexdigest()})
             service.approve(second.preview_id,second.preview_hash)
             second_export=service.export(second.preview_id,second.preview_hash)
             second_answer=next(Path(a['path']) for a in second_export['artifacts'] if a['artifact_id']=='teacher_pdf')
             reordered_layout=verify_answer_openings(second_answer)
             for artifact in second_export['artifacts']:
                 shutil.copyfile(artifact['path'],output/('换序-'+Path(artifact['path']).name))
-            for role in ('student','teacher'):
-                for page in second.preview_model['pagination']['documents'][role]['pages']:
-                    data=service.image(second.preview_id,page['image_id'])['data']
-                    path=output/f'scan-reordered-{role}-page-{page["page_number"]}.png';path.write_bytes(data)
-                    screenshots.append({'file':path.name,'sha256':sha256(data).hexdigest()})
             assert facade.state_store.snapshot()['scan_number_regions']==remembered
             assert source.read_bytes()==source_bytes and facade.basket()==original_state
             for edit in edits:
