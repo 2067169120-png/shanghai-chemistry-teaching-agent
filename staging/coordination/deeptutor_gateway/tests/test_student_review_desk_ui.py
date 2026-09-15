@@ -134,3 +134,15 @@ def test_missing_page_clears_previous_picture_instead_of_reusing_it(desk,monkeyp
     d.viewer.load_page();settle(app,lambda:d.viewer._task is None)
     assert d.viewer.loaded_identity is None and d.viewer._pixmap_item is None
     assert '上一题' in d.viewer.notice.text()
+
+
+def test_fit_width_makes_full_page_readable_without_changing_scene(desk):
+    d,app,_=desk;viewer=d.viewer
+    source_rect=viewer.scene.sceneRect()
+    viewer.fit_page();settle(app);full=viewer._zoom
+    viewer.fit_width();settle(app)
+    assert viewer._zoom>full and viewer.scene.sceneRect()==source_rect
+    assert viewer.view.verticalScrollBar().maximum()>0
+    assert viewer.view.verticalScrollBar().value()==0
+    viewer.zoom(1.25);assert not viewer._fit
+    viewer.fit_page();assert viewer._fit_mode=='page'

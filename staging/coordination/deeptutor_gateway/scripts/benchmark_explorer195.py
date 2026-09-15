@@ -19,6 +19,7 @@ from integrations.deeptutor_shchem_v1.desktop_explorer_index import PersonalSear
 from integrations.deeptutor_shchem_v1.desktop_question_explorer import personal_results
 from integrations.deeptutor_shchem_v1.desktop_word_image_batch import load_word_image_batch
 from integrations.deeptutor_shchem_v1.desktop_paths import DesktopPaths
+from integrations.deeptutor_shchem_v1.desktop_version import DESKTOP_VERSION
 
 
 def timed(fn):
@@ -32,7 +33,7 @@ def stats(samples):
 
 def main():
     output=Path(sys.argv[1]);output.parent.mkdir(parents=True,exist_ok=True)
-    result={'version':'0.1.95','source_commit':os.environ.get('GITHUB_SHA','local'),
+    result={'version':DESKTOP_VERSION,'source_commit':os.environ.get('GITHUB_SHA','local'),
             'platform':platform.platform(),'python':platform.python_version(),'search':[],
             'scope':'Synthetic search adapter and source image reads, not whole-window timing; no API/real library.'}
     for size in (1000,5000,10000):

@@ -253,3 +253,13 @@
 !/docs/screenshots/v0.1.95/
 !/docs/screenshots/v0.1.95/**
 !/.github/workflows/explorer-performance.yml
+
+# 0.1.96 explicit guide, reports and native screenshots.
+!/README-0.1.95-archive.md
+!/docs/ux/0.1.96-student-review.md
+!/docs/roadmaps/0.1.96.md
+!/docs/releases/0.1.96.md
+!/docs/qa/0.1.96-*.json
+!/docs/screenshots/v0.1.96/
+!/docs/screenshots/v0.1.96/**
+!/.github/workflows/student-review*.yml

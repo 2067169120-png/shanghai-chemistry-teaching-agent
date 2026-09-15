@@ -17,6 +17,7 @@ class ReviewPageViewer(QWidget):
         self._item = None
         self._pixmap_item = self._box_item = None
         self._fit, self._zoom = True, 1.0
+        self._fit_mode = "width"
         self.loaded_identity = None
         self._active_region = None
         root = QVBoxLayout(self);root.setContentsMargins(0,0,0,0);root.setSpacing(8)
@@ -37,8 +38,8 @@ class ReviewPageViewer(QWidget):
         self.view.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
         root.addWidget(self.view,1)
         toolbar=QHBoxLayout()
-        for text, action in (('−',lambda:self.zoom(.8)), ('适应页面',self.fit_page),
-                             ('+',lambda:self.zoom(1.25)), ('重新读图',self.load_page)):
+        for text, action in (('−',lambda:self.zoom(.8)), ('适合宽度',self.fit_width), ('整页',self.fit_page),
+                             ('+',lambda:self.zoom(1.25)), ('重读',self.load_page)):
             button=QPushButton(text);button.setObjectName('QuietButton')
             button.clicked.connect(action);toolbar.addWidget(button)
         root.addLayout(toolbar)
@@ -86,7 +87,7 @@ class ReviewPageViewer(QWidget):
     def _locate(self,*_):
         region=self.location.currentData();self._active_region=region
         if region is None:
-            self._draw_region();self.fit_page();return
+            self._draw_region();self.fit_width();return
         role=value(region,'role');digest=value(region,'page_sha256')
         self.role.blockSignals(True);self.role.setCurrentIndex(self.role.findData(role));self.role.blockSignals(False)
         self.pages.blockSignals(True);self.pages.clear();selected=-1
@@ -124,7 +125,7 @@ class ReviewPageViewer(QWidget):
             self._pixmap_item=self.scene.addPixmap(QPixmap.fromImage(image))
             self.scene.setSceneRect(QRectF(0,0,image.width(),image.height()))
             self.notice.setText('原始整页，可放大并拖动。框线为AI定位，不是教师批注，也不改原图。')
-            self._draw_region();self.fit_page()
+            self._draw_region();self.fit_width()
         def failed(message):
             if self._closed or epoch!=self._epoch:return
             self._task=None
@@ -142,10 +143,23 @@ class ReviewPageViewer(QWidget):
         self._box_item=self.scene.addRect(x*rect.width(),y*rect.height(),w*rect.width(),h*rect.height(),pen)
 
     def fit_page(self,*_):
-        self._fit=True
+        self._fit=True;self._fit_mode="page"
         if self._pixmap_item is not None:
             self.view.fitInView(self.scene.sceneRect(),Qt.AspectRatioMode.KeepAspectRatio)
             self._zoom=self.view.transform().m11()
+
+    def fit_width(self,*_):
+        self._fit=True;self._fit_mode="width"
+        if self._pixmap_item is not None:
+            rect=self.scene.sceneRect()
+            scale=max(.05,min(6,(self.view.viewport().width()-8)/max(1,rect.width())))
+            self.view.resetTransform();self.view.scale(scale,scale);self._zoom=scale
+            self.view.horizontalScrollBar().setValue(0)
+            self.view.verticalScrollBar().setValue(0)
+
+    def _fit_after_resize(self):
+        if self._fit_mode=="width":self.fit_width()
+        else:self.fit_page()
 
     def zoom(self,multiplier):
         if self._pixmap_item is None:return
@@ -155,7 +169,7 @@ class ReviewPageViewer(QWidget):
 
     def resizeEvent(self,event):
         super().resizeEvent(event)
-        if self._fit:QTimer.singleShot(0,self.fit_page)
+        if self._fit:QTimer.singleShot(0,self._fit_after_resize)
 
     def stop(self):
         self._closed=True;self._epoch+=1
