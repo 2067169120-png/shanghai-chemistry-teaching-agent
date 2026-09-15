@@ -1,0 +1,374 @@
+diff --git a/integrations/deeptutor_shchem_v1/desktop_workbench/question_explorer_page.py b/integrations/deeptutor_shchem_v1/desktop_workbench/question_explorer_page.py
+index aebae62..74f6654 100644
+--- a/integrations/deeptutor_shchem_v1/desktop_workbench/question_explorer_page.py
++++ b/integrations/deeptutor_shchem_v1/desktop_workbench/question_explorer_page.py
+@@ -1,11 +1,15 @@
+ """Native faceted question search: left taxonomy, right cards and a persistent cart."""
+ from __future__ import annotations
+ 
++import json
++from time import perf_counter
++
+ from PySide6.QtCore import Qt, QTimer, Signal, QSignalBlocker
+-from PySide6.QtWidgets import (QBoxLayout, QComboBox, QFrame, QHBoxLayout, QLineEdit,
++from PySide6.QtWidgets import (QApplication, QBoxLayout, QComboBox, QFrame, QHBoxLayout, QLineEdit,
+     QPushButton, QScrollArea, QSizePolicy, QSplitter, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
+ 
+-from ..desktop_question_explorer import PERSONAL_LANES, core_results, entry_is_selected, personal_results
++from ..desktop_question_explorer import PERSONAL_LANES, core_results, entry_is_selected
++from ..desktop_explorer_index import PersonalCatalogSession, check_cancelled
+ from .components import CardFrame
+ from .explorer_reader import PersonalQuestionReader, text_label
+ from .explorer_basket import ExplorerBasketDialog
+@@ -65,6 +69,10 @@ class QuestionExplorerPage(QWidget):
+         self._reader = None
+         self._active_card = None
+         self._catalogs = {}
++        self._sessions = {}
++        self._started = False
++        self._needs_reload = False
++        self.load_metrics = {}
+         self._base_facets = {}
+         self.filters = {}
+         self.curriculum = {}
+@@ -106,6 +114,13 @@ class QuestionExplorerPage(QWidget):
+                             ("公众号补充题", "supplemental"), ("本地 Word 题库", "word_native"),
+                             ("个人图片题库", "visual_native")):
+             self.scope.addItem(label, lane)
++        try:
++            saved_lane = facade.state_store.snapshot().get("question_explorer", {}).get("lane")
++            saved_index = self.scope.findData(saved_lane)
++            if saved_index >= 0:
++                self.scope.setCurrentIndex(saved_index)
++        except (AttributeError, TypeError, ValueError, RuntimeError):
++            pass  # No preference must not stop the reader opening.
+         self.scope.setAccessibleName("选题来源")
+         side.addWidget(self.scope)
+         self.filter_hint = text_label("同类标签多选取并集，不同类同时满足。", "MutedLabel")
+@@ -127,6 +142,11 @@ class QuestionExplorerPage(QWidget):
+         self.reload_button.setObjectName("QuietButton")
+         self.reload_button.clicked.connect(self.reload)
+         side.addWidget(self.reload_button)
++        self.diagnostics_button = QPushButton("复制加载记录")
++        self.diagnostics_button.setObjectName("QuietButton")
++        self.diagnostics_button.setToolTip("仅复制最近一次目录、筛选和题图耗时，不含题面、关键词或路径。")
++        self.diagnostics_button.clicked.connect(self.copy_load_metrics)
++        side.addWidget(self.diagnostics_button)
+         self.splitter.addWidget(self.sidebar)
+         right = QWidget()
+         right.setMinimumWidth(0)
+@@ -204,22 +224,66 @@ class QuestionExplorerPage(QWidget):
+         self.tree.itemChanged.connect(self.facet_changed)
+         self.tree.itemClicked.connect(self.curriculum_clicked)
+         self.refresh_basket()
+-        QTimer.singleShot(0, self.load_curriculum)
+-        QTimer.singleShot(0, self.search)
++        self.advanced_button.setText("题图与标签管理" if self.scope.currentData() == "visual_native" else "Word原文与标签管理")
+ 
+     def showEvent(self, event):
+         self.refresh_basket()
+         super().showEvent(event)
++        if not self._started:
++            self._started = True
++            self.load_curriculum()
++            self.search()
++        elif self._needs_reload:
++            self._needs_reload = False
++            self.reload()
++
++    def invalidate_catalogs(self):
++        """Imports invalidate snapshots, including a cancelled cold reader."""
++        self._catalogs.clear()
++        self._sessions.clear()
++        self._base_facets = {}
++        if self.isVisible() and self._started:
++            self.reload()
++        else:
++            self._needs_reload = True
++
++    def copy_load_metrics(self):
++        metrics = dict(self.load_metrics)
++        metrics["word_images"] = list(getattr(self._reader, "load_metrics", []))
++        QApplication.clipboard().setText(json.dumps(metrics, ensure_ascii=False, indent=2))
++        self.diagnostics_button.setToolTip("已复制最近一次加载记录；不含题目、关键词、文件路径或密钥。")
++
++    def _personal_source_links(self):
++        row = QWidget()
++        layout = QBoxLayout(QBoxLayout.Direction.TopToBottom, row)
++        layout.setContentsMargins(0, 0, 0, 0)
++        for title, lane in (("切换到已导入 Word", "word_native"), ("切换到已导入图片题", "visual_native")):
++            if lane == self.scope.currentData():
++                continue
++            button = QPushButton(title)
++            button.setObjectName("QuietButton")
++            button.clicked.connect(lambda _checked=False, target=lane: self.scope.setCurrentIndex(self.scope.findData(target)))
++            layout.addWidget(button)
++        return row
+ 
+     def scope_changed(self, *_):
++        lane = self.scope.currentData()
++        try:
++            def save(state):
++                state["question_explorer"] = {"lane": lane}
++            self.facade.state_store._update(save)
++        except (AttributeError, TypeError, ValueError, RuntimeError):
++            self.scope.setToolTip("来源选择未能保存；当前找题仍可继续。")
+         self.filters, self.curriculum, self._base_facets = {}, {}, {}
+         self._page, self._cursors = 0, [None]
+         self.advanced_button.setText('题图与标签管理' if self.scope.currentData() == "visual_native" else "Word原文与标签管理")
+         self._render_tree()
+-        self.search()
++        if self._started:
++            self.search()
+ 
+     def reload(self):
+         self._catalogs.pop(self.scope.currentData(), None)
++        self._sessions.pop(self.scope.currentData(), None)
+         self._base_facets = {}
+         self.load_curriculum()
+         self.search()
+@@ -256,28 +320,41 @@ class QuestionExplorerPage(QWidget):
+         selection = {key: sorted(values) for key, values in self.filters.items() if values}
+         selector = dict(self.curriculum)
+         cursor = self._cursors[page] if lane not in PERSONAL_LANES else None
+-        cached = self._catalogs.get(lane)
+-        def run():
++        session = self._sessions.setdefault(lane, PersonalCatalogSession(lane)) if lane in PERSONAL_LANES else None
++        started = perf_counter()
++        def run(report, cancelled):
++            check_cancelled(cancelled)
++            read_started = perf_counter()
+             if lane in PERSONAL_LANES:
+-                catalog = cached
+-                if catalog is None:
+-                    catalog = self.facade.word_question_catalog() if lane == "word_native" else self.facade.personal_visual_questions()
+-                return personal_results(catalog, lane, selection, query, page, self.PAGE_SIZE), catalog
++                loader = self.facade.word_question_catalog if lane == "word_native" else self.facade.personal_visual_questions
++                index, metrics = session.get(loader, cancelled=cancelled)
++                value = index.search(selection, query, page, self.PAGE_SIZE, cancelled=cancelled)
++                value["performance"].update(metrics)
++                return value, index.catalog
+             kwargs = dict(scope=lane, query=query, limit=self.PAGE_SIZE)
+             if selection:
+                 kwargs["filters"] = selection
+             if cursor:
+                 kwargs["cursor"] = cursor
+             kwargs.update(selector)
+-            return core_results(self.facade.search_themes(**kwargs)), None
++            value = core_results(self.facade.search_themes(**kwargs))
++            check_cancelled(cancelled)
++            value["performance"] = {"catalog_and_query_ms": round((perf_counter() - read_started) * 1000, 2)}
++            return value, None
+         def done(result):
+             if self._closed or epoch != self._epoch:
+                 return
+             value, catalog = result
+             if catalog is not None:
+                 self._catalogs[lane] = catalog
++            display_started = perf_counter()
+             self._apply(value)
+-        self._search_task = self.tasks.submit("筛选题目", run, on_success=done,
++            self.load_metrics = {"schema": "question-page-timing-v1", "lane": lane,
++                **value.get("performance", {}), "visible_cards": len(self.cards),
++                "card_setup_ms": round((perf_counter() - display_started) * 1000, 2),
++                "request_to_cards_ms": round((perf_counter() - started) * 1000, 2),
++                "scope": "当前目录快照及卡片建立；题图读取另计，不等于全屏绘制或网络计时。"}
++        self._search_task = self.tasks.submit_progress("筛选题目", run, on_success=done,
+             on_failure=lambda message: self.failed(epoch, message))
+ 
+     def failed(self, epoch, message):
+@@ -286,6 +363,7 @@ class QuestionExplorerPage(QWidget):
+         self._loading = False
+         self.result_summary.setText("本次目录未能读取")
+         self.list_layout.addWidget(text_label(str(message) + "\n可切换左侧资料来源，或导入后点击重新读取。原题篮保持不变。", "StatusAttention"))
++        self.list_layout.addWidget(self._personal_source_links())
+         self.list_layout.addStretch(1)
+ 
+     def _apply(self, result):
+@@ -309,7 +387,8 @@ class QuestionExplorerPage(QWidget):
+             self.cards.append(card)
+             self.list_layout.addWidget(card)
+         if not self.cards:
+-            self.list_layout.addWidget(text_label("没有符合这些条件的题目\n可删除上方单个标签，或清空条件重新选择。", "CardTitle"))
++            self.list_layout.addWidget(text_label("当前来源没有符合条件的题目\n可清空条件；刚导入资料后请重新读取，或切换到对应的个人题库。", "CardTitle"))
++            self.list_layout.addWidget(self._personal_source_links())
+         if result["warnings"]:
+             self.list_layout.addWidget(text_label("\n".join(result["warnings"]), "MutedLabel"))
+         self.list_layout.addStretch(1)
+@@ -327,6 +406,14 @@ class QuestionExplorerPage(QWidget):
+                 item.widget().deleteLater()
+ 
+     def _render_tree(self, current=None):
++        # A page change with the same facets does not need hundreds of new Qt
++        # items. Counts and selections remain part of the key, never just lane.
++        tree_key = (self.scope.currentData(), id(self._curriculum_catalog),
++                    repr(self._base_facets), repr(current),
++                    tuple(sorted((k, tuple(sorted(v))) for k, v in self.filters.items())))
++        if tree_key == getattr(self, "_last_tree_key", None):
++            return
++        self._last_tree_key = tree_key
+         # Rebuilding result counts must not close the teacher's chapter path or
+         # reopen a deliberately collapsed group. Branch labels are stable; leaf
+         # count labels are not used as keys. Scope changes start a fresh menu.
+@@ -385,7 +472,7 @@ class QuestionExplorerPage(QWidget):
+             self.tree.doItemsLayout()
+             self.tree.verticalScrollBar().setValue(scroll_position)
+         self._tree_lane = lane
+-        self.filter_hint.setText("同类多选为或，不同类为且。" + ("括号为当前匹配小问数。" if self.scope.currentData() not in PERSONAL_LANES else "使用已保存的来源标签。"))
++        self.filter_hint.setText("同类标签满足任意一个，不同类须同时满足。" + ("括号为当前匹配小问数。" if self.scope.currentData() not in PERSONAL_LANES else "使用已保存的来源标签。"))
+ 
+     def facet_changed(self, item, _column):
+         data = item.data(0, Qt.ItemDataRole.UserRole)
+diff --git a/runtime/deeptutor_shchem/desktop_teacher_workbench.pyw b/runtime/deeptutor_shchem/desktop_teacher_workbench.pyw
+index 0068dd8..3eed89e 100644
+--- a/runtime/deeptutor_shchem/desktop_teacher_workbench.pyw
++++ b/runtime/deeptutor_shchem/desktop_teacher_workbench.pyw
+@@ -31,6 +31,15 @@ def main() -> int:
+     workspace_root = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2]))
+     if str(workspace_root) not in sys.path:
+         sys.path.insert(0, str(workspace_root))
++    if len(sys.argv) == 3 and sys.argv[1] == "--verify-explorer":
++        try:
++            from integrations.deeptutor_shchem_v1.desktop_explorer_probe import run_probe
++            return run_probe(Path(sys.argv[2]))
++        except Exception:
++            _write_startup_error()
++            if sys.stderr is not None:
++                traceback.print_exc()
++            return 8
+     if len(sys.argv) == 3 and sys.argv[1] == "--verify-scan-numbers":
+         try:
+             from integrations.deeptutor_shchem_v1.desktop_scan_probe import run_probe
+diff --git a/runtime/deeptutor_shchem/prepare_verified_release.py b/runtime/deeptutor_shchem/prepare_verified_release.py
+index 9c3d094..d2ebd86 100644
+--- a/runtime/deeptutor_shchem/prepare_verified_release.py
++++ b/runtime/deeptutor_shchem/prepare_verified_release.py
+@@ -12,8 +12,8 @@ import xml.etree.ElementTree as ET
+ from zipfile import ZipFile, ZIP_DEFLATED
+ 
+ ROOT = Path(__file__).resolve().parents[2]
+-VERSION = '0.1.94'
+-BRANCH = 'feature/number-region-reuse-0.1.94'
++VERSION = '0.1.95'
++BRANCH = 'feature/explorer-performance-0.1.95'
+ TAG = 'v' + VERSION
+ 
+ 
+@@ -40,9 +40,14 @@ def main():
+     packaged = read('package-qa/package-verification.json')
+     ready['scan_numbering'] = read('readiness-qa/scan/scan-probe.json')
+     ready['font_scaling'] = read('readiness-qa/font-scaling/scaling-summary.json')
++    ready['explorer_performance'] = read('readiness-qa/explorer/explorer-probe.json')
++    ready['performance_benchmark'] = read('readiness-qa/explorer-performance.json')
+     for report in (ready,packaged):
+         assert report['version'] == VERSION and report['source_commit'] == sha
+         assert not report['uncaught_errors'] and len(report['routes_opened']) == 8
++        explorer = report['explorer_performance']
++        assert explorer['source_commit'] == sha and explorer['version'] == VERSION
++        assert all(explorer['checks'].values()) and not explorer['uncaught_errors'] and explorer['model_calls'] == 0
+         fonts = report['typography']
+         assert fonts['chinese_sample_supported'] and fonts['editor_unchanged']
+         assert not fonts['han']['missing_glyphs'] and not fonts['chemistry']['missing_glyphs']
+@@ -65,7 +70,7 @@ def main():
+     assert packaged['editable_pptx_slides'] == 5 and packaged['pdf_pages'] == 2
+     suites = list(ET.parse(source/'readiness-qa/pytest.xml').getroot().iter('testsuite'))
+     tests = {key:sum(int(s.get(key,0)) for s in suites) for key in ('tests','failures','errors','skipped')}
+-    assert tests['tests'] >= 994 and not any(tests[k] for k in ('failures','errors','skipped'))
++    assert tests['tests'] >= 1028 and not any(tests[k] for k in ('failures','errors','skipped'))
+     target = ROOT/'docs/screenshots'/TAG
+     target.mkdir(parents=True,exist_ok=True)
+     names=set()
+@@ -77,7 +82,8 @@ def main():
+         assert hashlib.sha256(data).hexdigest() == record['sha256']
+         (target/name).write_bytes(data);names.add(name)
+     for report,folder in ((ready,source/'readiness-qa'),(packaged,source/'package-qa/probe'),
+-                          (packaged['scan_numbering'],source/'package-qa/scan')):
++                          (packaged['scan_numbering'],source/'package-qa/scan'),
++                          (packaged['explorer_performance'],source/'package-qa/explorer')):
+         for record in report['screenshots']:
+             copy_image(folder,record)
+     for scale in ('1','1.25','1.5'):
+@@ -94,9 +100,16 @@ def main():
+     text=text.replace('源码候选（等待本版验收）', '原生试用版')
+     text=text.replace('{{VERIFICATION_SUMMARY}}',
+         f"同一提交完成 **{tests['tests']}项Windows定向测试，0失败、0错误、0跳过**。"
+-        '源码与同一发行EXE均走过合成扫描题导入、位置保存/重开、换序带入新号、实际两版PDF和导出；原文件与题篮不变，两个答案首段与对应图片在同页。'
+-        '中文和化学符号缺字样例为0，Windows原生Qt后端1/1.25/1.5倍率检查通过；这是倍率模拟，不是实际系统缩放或多屏验收。'
+-        '既有八页、作品整理、备份/独立恢复、文字编号与合成PPTX/DOCX输出继续回归；没有调用真实模型。')
++        '源码与同一发行EXE均实际导入16道合成Word题，首题8图一次来源读取，翻页复用索引，来源选择保留，导入后失效刷新，题号位置ZIP独立恢复；原文件与题篮不变。'
++        '既有八页、中文/化学符号与Qt倍率、作品整理、备份恢复、编号及文档导出继续回归。这不是全量真实资料或所有Windows系统缩放验收，未调用真实模型。')
++    bench = ready['performance_benchmark']
++    assert bench['source_commit'] == sha and bench['word_images']['pixel_bytes_equal']
++    rows = ['| 合成规模 | 原实现中位 | 新条件查询中位 | 索引建立（一次） |', '| --- | ---: | ---: | ---: |']
++    for row in bench['search']:
++        rows.append(f"| {row['items']}题 | {row['old_search']['median_ms']} ms | {row['indexed_new_query']['median_ms']} ms | {row['index_build_ms']} ms |")
++    im=bench['word_images']
++    rows.append(f"\n80题合成Word中的8幅图：原逐图读取中位{im['old_per_image']['median_ms']} ms，新合并读取{im['new_one_source_parse']['median_ms']} ms；字节一致。")
++    text=text.replace('{{PERFORMANCE_RESULTS}}', '\n'.join(rows))
+     for image in re.findall(r'!\[[^\]]*\]\(([^)]+)\)',text):
+         assert (ROOT/image).is_file(),image
+     readme.write_text(text,encoding='utf-8')
+@@ -104,7 +117,7 @@ def main():
+     command('git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
+     command('git','add','-f','README.md',str(target.relative_to(ROOT)),
+             f'docs/qa/{VERSION}-readiness.json',f'docs/qa/{VERSION}-package.json')
+-    command('git','commit','-m','docs: record 0.1.94 verified reusable regions, answer pagination and native screenshots [skip ci]')
++    command('git','commit','-m','docs: record 0.1.95 verified question loading, source entry points and backup regions [skip ci]')
+     delivery_sha=command('git','rev-parse','HEAD')
+     command('git','push','origin','HEAD:refs/heads/'+BRANCH)
+     output=ROOT/'release-delivery';output.mkdir(exist_ok=True)
+@@ -135,6 +148,9 @@ def main():
+     ids=set(re.findall(r'id="([^"]+)"',html))
+     assert all(href[1:] in ids for href in re.findall(r'href="([^"]+)"',html) if href.startswith('#'))
+     (output/f'ShanghaiChem-{VERSION}-Guide.html').write_text('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>沪上化学智研台'+VERSION+'</title><style>body{max-width:1050px;margin:40px auto;padding:0 24px;font:17px/1.8 system-ui}img{max-width:100%}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:8px}pre{overflow:auto;background:#f5f5f5;padding:16px}</style>'+html+'</html>',encoding='utf-8')
++    research = (ROOT/'docs/research/0.1.95-workflows-and-references.md').read_text(encoding='utf-8')
++    research_html = markdown.markdown(research,extensions=['tables','fenced_code'])
++    (output/f'ShanghaiChem-{VERSION}-Workflow-Research.html').write_text('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>工作流与开源借鉴</title><style>body{max-width:1080px;margin:40px auto;font:17px/1.8 system-ui;padding:0 24px}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:10px}</style>'+research_html+'</html>',encoding='utf-8')
+     assets=[{'file':p.name,'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
+             for p in sorted(output.iterdir()) if p.is_file()]
+     write_json(output/'RELEASE-MANIFEST.json',{'version':VERSION,'tag':TAG,'tested_source_commit':sha,
+@@ -144,7 +160,7 @@ def main():
+     command('git','tag','-a',TAG,'-m',VERSION+' verified Windows trial; code '+sha)
+     command('git','push','origin','refs/tags/'+TAG)
+     command('gh','release','create',TAG,'--repo',repo,'--verify-tag','--draft','--prerelease',
+-        '--title',VERSION+' · 题号位置复用与答案分页','--notes-file',f'docs/releases/{VERSION}.md',
++        '--title',VERSION+' · 题目加载与导入衔接','--notes-file',f'docs/releases/{VERSION}.md',
+         *[str(p) for p in sorted(output.iterdir()) if p.is_file()])
+     command('gh','release','edit',TAG,'--repo',repo,'--draft=false','--latest=false')
+     print('Published',TAG,'tested',sha,'delivery',delivery_sha)
+diff --git a/runtime/deeptutor_shchem/verify_packaged_trial.py b/runtime/deeptutor_shchem/verify_packaged_trial.py
+index 5abf631..e9a1287 100644
+--- a/runtime/deeptutor_shchem/verify_packaged_trial.py
++++ b/runtime/deeptutor_shchem/verify_packaged_trial.py
+@@ -42,7 +42,7 @@ def main():
+     (package/'COMPONENTS.json').write_text(json.dumps(versions,indent=2),encoding='utf-8')
+     fonts=[str(p.relative_to(package)) for p in package.rglob('*') if p.suffix.lower() in ('.ttf','.ttc','.otf','.woff','.woff2')]
+     assert not fonts, 'Do not redistribute system/font files: '+str(fonts)
+-    (package/'使用前请读.txt').write_text('沪上化学智研台 0.1.94 Windows x64 试用版\n请先完整解压，再双击“沪上化学智研台.exe”。不要单独移动EXE或_internal。\n无需另装Python。真实DOCX分页需要本机LibreOffice或Microsoft Word。\n不含教材、题库、模型密钥。首次打开空库正常；设置中的本机检查按功能说明缺项。\n未进行数字签名，请核对GitHub Release来源与SHA256，勿关闭系统防护。\n旧VBS可能打开旧版。已有源码旁题库不会自动复制进此程序；可继续使用源码环境或明确配置原工作区。\n',encoding='utf-8')
++    (package/'使用前请读.txt').write_text('沪上化学智研台 0.1.95 Windows x64 试用版\n请先完整解压，再双击“沪上化学智研台.exe”。不要单独移动EXE或_internal。\n无需另装Python。真实DOCX分页需要本机LibreOffice或Microsoft Word。\n不含教材、题库、模型密钥。首次打开空库正常；设置中的本机检查按功能说明缺项。\n未进行数字签名，请核对GitHub Release来源与SHA256，勿关闭系统防护。\n旧VBS可能打开旧版。已有源码旁题库不会自动复制进此程序；可继续使用源码环境或明确配置原工作区。\n',encoding='utf-8')
+     with tempfile.TemporaryDirectory(prefix='shchem-detached-') as temporary:
+         temp=Path(temporary)
+         detached=temp/'app'
+@@ -133,14 +133,20 @@ def main():
+             shutil.copyfile(file,qa/'scan-startup-error.log')
+         assert scan_run.returncode == 0, 'Packaged scan-number workflow failed'
+         report['scan_numbering'] = json.loads((scan_target/'scan-probe.json').read_text(encoding='utf-8'))
++        explorer_target = qa / 'explorer'
++        explorer_run = subprocess.run([str(exe), '--verify-explorer', str(explorer_target)], cwd=temp, env=env, timeout=180)
++        for file in (temp/'profile').rglob('startup-error.log'):
++            shutil.copyfile(file,qa/'explorer-startup-error.log')
++        assert explorer_run.returncode == 0, 'Packaged question-page workflow failed'
++        report['explorer_performance'] = json.loads((explorer_target/'explorer-probe.json').read_text(encoding='utf-8'))
+         report.update(source_commit=os.environ.get('SHCHEM_SOURCE_SHA', os.environ['GITHUB_SHA']),workflow_run=os.environ['GITHUB_RUN_ID'],
+             executable_sha256=hashlib.sha256(exe.read_bytes()).hexdigest(),normal_native_start_and_close=True,detached_directory=True,
+             cleared_python_and_workspace_environment=True,system_fonts_bundled=False)
+         (qa/'package-verification.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+-    (package/'BUILD.json').write_text(json.dumps({'version':'0.1.94','source_commit':os.environ.get('SHCHEM_SOURCE_SHA', os.environ['GITHUB_SHA']),
++    (package/'BUILD.json').write_text(json.dumps({'version':'0.1.95','source_commit':os.environ.get('SHCHEM_SOURCE_SHA', os.environ['GITHUB_SHA']),
+         'workflow_run':os.environ['GITHUB_RUN_ID'],'trial':True},indent=2),encoding='utf-8')
+     release=ROOT/'release-assets';release.mkdir(exist_ok=True)
+-    shutil.make_archive(str(release/'ShanghaiChem-0.1.94-Windows-x64'),'zip',package.parent,package.name)
++    shutil.make_archive(str(release/'ShanghaiChem-0.1.95-Windows-x64'),'zip',package.parent,package.name)
+ 
+ 
+ if __name__=='__main__': main()

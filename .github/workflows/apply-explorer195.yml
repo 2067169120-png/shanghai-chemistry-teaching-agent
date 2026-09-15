@@ -1,0 +1,42 @@
+name: Apply reviewed 0.1.95 source
+on:
+  push:
+    branches: ["feature/explorer-performance-0.1.95"]
+    paths: [".github/workflows/apply-explorer195.yml", ".github/explorer195-part*.patch"]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Apply readable reviewed source and remove transfer files
+        shell: python
+        run: |
+          import hashlib, os, pathlib, subprocess
+          def run(*args):
+              return subprocess.check_output(args, text=True).strip()
+          branch='feature/explorer-performance-0.1.95'
+          assert run('git','rev-parse','HEAD') == os.environ['GITHUB_SHA']
+          assert run('git','ls-remote','origin','refs/heads/'+branch).split()[0] == os.environ['GITHUB_SHA']
+          subprocess.run(['git','merge-base','--is-ancestor','1850568d2a77808c5b165d702c3e75b04b7ffc87','HEAD'],check=True)
+          paths=['.github/explorer195-part'+str(i)+'.patch' for i in range(1,6)]
+          parts=[pathlib.Path(p).read_bytes() for p in paths]
+          # Correct two transcription-only differences, then require the exact
+          # pretested plaintext patch digest before applying any source change.
+          parts[2]=parts[2].replace(b'         self.provider_card = CardFrame()\n         provider_layout = QVBoxLayout(self.provider_card)\n@@',b'         self.provider_card = CardFrame()\n@@',1)
+          parts[4]=parts[4].replace(b'from integrations.deeptutor_shchem_v1/desktop_state import',b'from integrations.deeptutor_shchem_v1.desktop_state import',1)
+          patch=b''.join(parts)
+          assert hashlib.sha256(patch).hexdigest() == '33e129a6686214546eaa50e06f375e4ec93607520aa0ebadfea867e128adda3a'
+          assert b'diff --git a/.github/workflows/' not in patch
+          subprocess.run(['git','apply','--check','--index','-'],input=patch,check=True)
+          subprocess.run(['git','apply','--index','-'],input=patch,check=True)
+          run('git','rm','-f',*paths,'.github/workflows/apply-explorer195.yml')
+          run('git','config','user.name','github-actions[bot]')
+          run('git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
+          run('git','commit','-m','feat(0.1.95): speed up question search and Word images, clarify import sources and back up number regions')
+          run('git','push','origin','HEAD:refs/heads/'+branch)
+          print('Applied tested plaintext source:',run('git','rev-parse','HEAD'))

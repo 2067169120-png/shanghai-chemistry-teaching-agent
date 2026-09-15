@@ -1,0 +1,516 @@
+diff --git a/staging/coordination/deeptutor_gateway/scripts/benchmark_explorer195.py b/staging/coordination/deeptutor_gateway/scripts/benchmark_explorer195.py
+new file mode 100644
+index 0000000..6f7a7c3
+--- /dev/null
++++ b/staging/coordination/deeptutor_gateway/scripts/benchmark_explorer195.py
+@@ -0,0 +1,76 @@
++"""Reproducible synthetic timings: search only vs batch source/image read.
++
++No speed thresholds on shared runners, no model requests and no private data.
++The index build/cold read is reported separately from subsequent searches.
++"""
++from __future__ import annotations
++from pathlib import Path
++import json
++import os
++import platform
++import statistics
++import sys
++import tempfile
++from time import perf_counter
++ROOT=Path(__file__).resolve().parents[4]
++sys.path[:0]=[str(ROOT),str(ROOT/'staging/coordination/deeptutor_gateway/tests')]
++from test_explorer_speed import source_catalog, make_images_fixture
++from integrations.deeptutor_shchem_v1.desktop_explorer_index import PersonalSearchIndex
++from integrations.deeptutor_shchem_v1.desktop_question_explorer import personal_results
++from integrations.deeptutor_shchem_v1.desktop_word_image_batch import load_word_image_batch
++from integrations.deeptutor_shchem_v1.desktop_paths import DesktopPaths
++
++
++def timed(fn):
++    start=perf_counter();result=fn();return (perf_counter()-start)*1000,result
++
++
++def stats(samples):
++    return {'samples_ms':[round(v,3) for v in samples], 'median_ms':round(statistics.median(samples),3),
++            'max_ms':round(max(samples),3)}
++
++
++def main():
++    output=Path(sys.argv[1]);output.parent.mkdir(parents=True,exist_ok=True)
++    result={'version':'0.1.95','source_commit':os.environ.get('GITHUB_SHA','local'),
++            'platform':platform.platform(),'python':platform.python_version(),'search':[],
++            'scope':'Synthetic search adapter and source image reads, not whole-window timing; no API/real library.'}
++    for size in (1000,5000,10000):
++        catalog=source_catalog(size)
++        # Includes 383 uniquely identified chapter/section nodes, not purported textbooks.
++        catalog['attribute_catalog']['nodes'] += [
++            {'node_key':f'extra{i}','volume_id':'V1','chapter_id':f'C{i}',
++             'volume_title':'合成册','chapter_title':f'合成章{i}','section_title':'合成节'} for i in range(380)]
++        build_ms,index=timed(lambda:PersonalSearchIndex(catalog,'word_native'))
++        old,new,paging=[],[],[]
++        for i in range(5):
++            query=('ALPHA','CONTEXT','原题','知识','')[i]
++            elapsed,a=timed(lambda:personal_results(catalog,'word_native',{},query,0,8));old.append(elapsed)
++            elapsed,b=timed(lambda:index.search({},query,0,8));new.append(elapsed)
++            assert {k:v for k,v in b.items() if k!='performance'}==a
++            elapsed,c=timed(lambda:index.search({},query,1,8));paging.append(elapsed)
++            assert c['performance']['query_cache_hit']
++        result['search'].append({'items':size,'directory_nodes':383,'index_build_ms':round(build_ms,3),
++                                 'old_search':stats(old),'indexed_new_query':stats(new),'indexed_next_page':stats(paging)})
++    with tempfile.TemporaryDirectory(prefix='shchem-perf195-') as temp:
++        root=Path(temp);ws=root/'workspace';(ws/'integrations/deeptutor_shchem_v1').mkdir(parents=True)
++        paths=DesktopPaths.from_workspace(ws,state_root=root/'personal')
++        paths.ensure_mutable_roots()
++        facade,row,ids=make_images_fixture(paths,root,count=8,questions=80)
++        try:
++            cold,cat=timed(facade.word_question_catalog)
++            old,new=[],[]
++            for _ in range(5):
++                elapsed,expected=timed(lambda:[facade.word_question_image(row['key'],row['revision'],a) for a in ids]);old.append(elapsed)
++                outputs=[]
++                elapsed,report=timed(lambda:load_word_image_batch(facade,row['key'],row['revision'],ids,progress=outputs.append));new.append(elapsed)
++                assert [v['result'] for v in outputs]==expected
++            result['word_images']={'questions_in_source':80,'visible_images':8,'warm_catalog_read_ms':round(cold,3),
++                'old_per_image':stats(old),'new_one_source_parse':stats(new),'pixel_bytes_equal':True,
++                'source_resolutions_before':8,'source_resolutions_after':1}
++        finally:facade.shutdown()
++    output.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
++    print(json.dumps(result,ensure_ascii=False,indent=2))
++
++
++if __name__=='__main__':main()
+diff --git a/staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py b/staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py
+index d777ae8..1f52ed7 100644
+--- a/staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py
++++ b/staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py
+@@ -33,7 +33,7 @@ def test_ui_source_has_native_responsive_surfaces() -> None:
+     assert "QBoxLayout.Direction.TopToBottom" in home
+     assert "QBoxLayout.Direction.TopToBottom" in library
+     assert "我的讲义（Word）" in library
+-    assert "98 包 / 196 份" in dialogs
++    assert "打开旧版一轮复习资料包" in dialogs
+     assert "选择文件夹" in components
+     # Keep this UI package a native local shell.  Build the strings in pieces
+     # so this test itself does not become a forbidden-surface fixture.
+@@ -1151,8 +1151,8 @@ def test_import_and_settings_dialogs_keep_clear_chinese_actions_and_close_guard(
+     import_dialog = ImportDialog(_Facade(), bridge)
+     import_dialog.show()
+     _settle(qt_app)
+-    assert "98 份" in import_dialog.corpus_button.text()
+-    assert "预览" in import_dialog.corpus_button.text()
++    assert "旧版" in import_dialog.corpus_button.text()
++    assert "资料包" in import_dialog.corpus_button.text()
+     assert import_dialog.save_button.text() == "预览并选择导入"
+     assert any(
+         button.text() == "选择文件夹"
+@@ -1163,7 +1163,7 @@ def test_import_and_settings_dialogs_keep_clear_chinese_actions_and_close_guard(
+     import_dialog.reject()
+     assert import_dialog.isVisible()
+     import_dialog._corpus_failed("批量读取未完成")
+-    assert import_dialog.corpus_button.text() == "重试一轮复习讲义"
++    assert import_dialog.corpus_button.text() == "重试旧版一轮复习资料包"
+     import_dialog._task_finished("busy")
+     import_dialog.close()
+ 
+diff --git a/staging/coordination/deeptutor_gateway/tests/test_explorer_speed.py b/staging/coordination/deeptutor_gateway/tests/test_explorer_speed.py
+new file mode 100644
+index 0000000..85848c4
+--- /dev/null
++++ b/staging/coordination/deeptutor_gateway/tests/test_explorer_speed.py
+@@ -0,0 +1,188 @@
++"""Result equivalence and work-count tests, never timing thresholds on shared CI."""
++from copy import deepcopy
++from concurrent.futures import ThreadPoolExecutor
++import random
++from types import SimpleNamespace
++import pytest
++from test_word_question_filters import _row, _catalog
++from test_desktop_visual_import_facade import desktop_paths, _facade, FakeProviderStore
++from integrations.deeptutor_shchem_v1.desktop_question_explorer import personal_results
++from integrations.deeptutor_shchem_v1.desktop_explorer_index import PersonalSearchIndex, SearchCancelled
++from integrations.deeptutor_shchem_v1.desktop_word_image_batch import load_word_image_batch
++from integrations.deeptutor_shchem_v1.desktop_word_questions import WordQuestionError
++
++
++def source_catalog(size=200):
++    rows = [_row(key=f'q{i}', source=f's{i%5}', knowledge=(f'K{1+i%19:02d}',),
++                 mappings=(('S1','S3') if i%3==0 else ('S2',)),
++                 exam=('first_mock','second_mock','school_exam')[i%3]) for i in range(size)]
++    for i in range(0, size, 11):
++        rows[i]['revision'] = 'changed-source-range'
++    return {'items':rows, 'attribute_catalog':_catalog(), 'warnings':[]}
++
++
++def comparable(result):
++    return {k:v for k,v in result.items() if k != 'performance'}
++
++
++def test_two_hundred_fixed_random_requests_match_the_original():
++    catalog = source_catalog(); before = deepcopy(catalog)
++    index = PersonalSearchIndex(catalog,'word_native')
++    rng = random.Random(195)
++    for _ in range(200):
++        selection = {g:rng.sample(v,rng.randrange(len(v)+1)) for g,v in {
++            'source':['s1','s3','unknown'], 'knowledge':['K01','K09','unknown'],
++            'book':['V1','V2','unknown'], 'exam':['first_mock','second_mock','unknown']}.items()}
++        selection['knowledge_mode'] = rng.choice(['any','all'])
++        query = rng.choice(['','CONTEXT','OMEGA','第一册','原题','ABSENT'])
++        page = rng.randrange(3)
++        assert comparable(index.search(selection,query,page,8)) == personal_results(catalog,'word_native',selection,query,page,8)
++    assert catalog == before
++
++
++def test_paging_reuses_matching_ids_but_has_all_facets():
++    catalog=source_catalog();index=PersonalSearchIndex(catalog,'word_native')
++    first=index.search({},'',0,8);second=index.search({},'',1,8)
++    assert not first['performance']['query_cache_hit']
++    assert second['performance']['query_cache_hit']
++    assert second['entries'][0]['key']=='q8'
++    assert second['facets']==first['facets']
++    assert second['entries'][0]['payload'] is catalog['items'][8]
++
++
++def test_cancellation_does_not_publish_partial_query_cache():
++    index=PersonalSearchIndex(source_catalog(),'word_native');calls=[]
++    def cancelled():
++        calls.append(1);return len(calls)>=3
++    with pytest.raises(SearchCancelled):index.search({},'CONTEXT',cancelled=cancelled)
++    assert not index._matches
++    assert index.search({},'CONTEXT')['total']==200
++
++
++def test_cancelled_index_build_never_returns_a_partial_index():
++    with pytest.raises(SearchCancelled):PersonalSearchIndex(source_catalog(),'word_native',cancelled=lambda:True)
++
++
++def test_result_cache_is_bounded_and_separate_per_catalogue():
++    index=PersonalSearchIndex(source_catalog(),'word_native')
++    for i in range(10):index.search({},str(i))
++    assert len(index._matches)==4
++    changed=source_catalog(1);changed['items'][0]['question_blocks'][0]['text']='new exact text'
++    second=PersonalSearchIndex(changed,'word_native')
++    assert second.search({},'new exact text')['total']==1
++    assert index.search({},'new exact text')['total']==0
++
++
++def test_stale_labels_and_cross_branch_curriculum_match_old_rules():
++    c=source_catalog(3);index=PersonalSearchIndex(c,'word_native')
++    for selection in ({'knowledge':['K01']},{'book':['V2'],'section':['section:["V1","C1","S1"]']},
++                      {'knowledge':7},{'knowledge_mode':'invalid'}):
++        assert comparable(index.search(selection,''))==personal_results(c,'word_native',selection,'')
++
++
++def test_answer_text_not_in_projection_or_results():
++    index=PersonalSearchIndex(source_catalog(),'word_native')
++    assert all('OMEGA' not in r[3] and 'OMEGA' not in r[4] for r in index._rows)
++    assert index.search({},'OMEGA')['total']==0
++
++
++def test_parallel_filters_keep_their_own_query():
++    c=source_catalog();index=PersonalSearchIndex(c,'word_native')
++    queries=['ALPHA','CONTEXT','OMEGA','ABSENT']*3
++    with ThreadPoolExecutor(4) as pool:
++        results=list(pool.map(lambda q: index.search({},q),queries))
++    assert [r['total'] for r in results]==[personal_results(c,'word_native',{},q)['total'] for q in queries]
++
++
++def test_visual_catalogue_retains_old_matching_and_answer_exclusion():
++    c={'items':[{'key':'v1','source_name':'合成图','title':'题目', 'question_text':'stem',
++                  'shared_text':'context','answer_text':'OMEGA'}], 'filter_options':{},'warnings':[]}
++    index=PersonalSearchIndex(c,'visual_native')
++    for query in ('','stem','context','OMEGA'):
++        assert comparable(index.search({},query))==personal_results(c,'visual_native',{},query)
++
++
++def make_images_fixture(paths, tmp_path, count=6, questions=12):
++    from io import BytesIO
++    from docx import Document
++    from PIL import Image
++    doc=Document()
++    for n in range(questions):
++        doc.add_paragraph(f'【例{n+1}】合成多图题，观察图示并作答。')
++        for i in range(count if n==0 else 1):
++            data=BytesIO();Image.new('RGB',(240,160),(n%255,i*30%255,80)).save(data,format='PNG')
++            doc.add_picture(BytesIO(data.getvalue()))
++        doc.add_paragraph('【答案】合成答案，不进入题面关键词。')
++    path=tmp_path/'合成多图讲义.docx';doc.save(path)
++    facade=_facade(paths,FakeProviderStore(configured=False))
++    facade.save_visual_import_batch(handout_files=(path,),source_type='教师讲义')
++    row=facade.word_question_catalog()['items'][0]
++    ids=[a['asset_id'] for b in row['question_blocks'] for a in b.get('assets',[])]
++    assert len(ids)==count
++    return facade,row,ids
++
++
++def test_batch_images_match_old_bytes_with_one_resolve(desktop_paths,tmp_path,monkeypatch):
++    facade,row,ids=make_images_fixture(desktop_paths,tmp_path)
++    expected={i:facade.word_question_image(row['key'],row['revision'],i) for i in ids}
++    service=facade._word_questions();original=service._resolve;calls=[]
++    def resolve(*args,**kwargs):calls.append(1);return original(*args,**kwargs)
++    monkeypatch.setattr(service,'_resolve',resolve)
++    outputs=[];stats=load_word_image_batch(facade,row['key'],row['revision'],ids,progress=outputs.append)
++    assert len(calls)==1 and stats['completed']==len(ids) and stats['failed']==0
++    assert {v['asset_id']:v['result'] for v in outputs}==expected
++    facade.shutdown()
++
++
++def test_batch_rechecks_revision_before_reading_images(desktop_paths,tmp_path):
++    facade,row,ids=make_images_fixture(desktop_paths,tmp_path)
++    outputs=[]
++    with pytest.raises(WordQuestionError):load_word_image_batch(facade,row['key'],'stale',ids,progress=outputs.append)
++    assert outputs==[]
++    facade.shutdown()
++
++
++def test_batch_rejects_nonmember_before_emitting_any_image(desktop_paths,tmp_path):
++    facade,row,ids=make_images_fixture(desktop_paths,tmp_path)
++    outputs=[]
++    with pytest.raises(WordQuestionError):load_word_image_batch(facade,row['key'],row['revision'],ids+['bad-id'],progress=outputs.append)
++    assert outputs==[]
++    facade.shutdown()
++
++
++def test_cancelled_batch_does_not_read_sources():
++    facade=SimpleNamespace(_word_questions=lambda: pytest.fail('must not read'))
++    with pytest.raises(SearchCancelled):load_word_image_batch(facade,'q','v',['a'],cancelled=lambda:True)
++
++
++def test_fallback_batch_deduplicates_and_reports_per_image_errors():
++    calls=[]
++    def read(k,r,a):
++        calls.append(a)
++        if a=='bad':raise OSError('private path and key must not leak')
++        return {'bytes':b'ok'}
++    outputs=[]
++    stats=load_word_image_batch(SimpleNamespace(word_question_image=read),'q','v',['a','a','bad'],progress=outputs.append)
++    assert calls==['a','bad'] and stats['failed']==1
++    assert outputs[-1]=={'asset_id':'bad','failed':True}
++    assert 'private' not in str(stats)
++
++
++def test_cancelled_cold_read_is_reused_not_repeated():
++    from integrations.deeptutor_shchem_v1.desktop_explorer_index import PersonalCatalogSession
++    session=PersonalCatalogSession('word_native');calls=[];stopped=[False]
++    def load():calls.append(1);stopped[0]=True;return source_catalog(5)
++    with pytest.raises(SearchCancelled):session.get(load,cancelled=lambda:stopped[0])
++    assert session.catalog is not None and session.index is None
++    index,metrics=session.get(load)
++    assert calls==[1] and index.search({},'')['total']==5 and metrics['catalogue_reused']
++
++
++def test_parallel_first_queries_share_a_single_catalogue_read():
++    from integrations.deeptutor_shchem_v1.desktop_explorer_index import PersonalCatalogSession
++    import time
++    session=PersonalCatalogSession('word_native');calls=[]
++    def load():calls.append(1);time.sleep(.03);return source_catalog(5)
++    with ThreadPoolExecutor(4) as pool:
++        results=list(pool.map(lambda _:session.get(load)[0],range(4)))
++    assert calls==[1] and all(value is results[0] for value in results)
+diff --git a/staging/coordination/deeptutor_gateway/tests/test_explorer_speed_ui.py b/staging/coordination/deeptutor_gateway/tests/test_explorer_speed_ui.py
+new file mode 100644
+index 0000000..cf0112a
+--- /dev/null
++++ b/staging/coordination/deeptutor_gateway/tests/test_explorer_speed_ui.py
+@@ -0,0 +1,126 @@
++"""Teacher-visible lifecycle/cache contracts using real Qt, no model requests."""
++import json
++import threading
++from pathlib import Path
++import pytest
++pytest.importorskip('PySide6')
++from PySide6.QtWidgets import QApplication, QDialog, QPushButton
++from test_question_explorer_ui import window
++from test_desktop_studio_ui import settle
++from test_desktop_visual_import_facade import desktop_paths
++from integrations.deeptutor_shchem_v1.desktop_workbench.question_explorer_page import QuestionExplorerPage
++from integrations.deeptutor_shchem_v1.desktop_workbench.explorer_reader import PersonalQuestionReader
++from integrations.deeptutor_shchem_v1.desktop_workbench.tasks import DesktopTaskBridge
++from integrations.deeptutor_shchem_v1.desktop_question_explorer import personal_results
++
++
++def test_hidden_page_does_not_read_questions(window, monkeypatch):
++    win,app=window; calls=[]
++    monkeypatch.setattr(win.facade,'word_question_catalog',lambda:calls.append('read'))
++    tasks=DesktopTaskBridge();page=QuestionExplorerPage(win.facade,tasks)
++    try:
++        settle(app)
++        assert not calls and not page._started
++        assert page.scope.currentData()=='word_native'  # earlier page's chosen lane
++    finally:
++        page.close();page.deleteLater();tasks.shutdown()
++
++
++def test_lane_preference_survives_page_recreation(window):
++    win,app=window;page=win.library_page
++    win.navigate('home');page.scope.setCurrentIndex(page.scope.findData('visual_native'))
++    copy=QuestionExplorerPage(win.facade,win.tasks)
++    assert copy.scope.currentData()=='visual_native'
++    copy.close();copy.deleteLater()
++
++
++def test_page_changes_reuse_index_and_tree_items(window,monkeypatch):
++    win,app=window;p=win.library_page
++    monkeypatch.setattr(p,'PAGE_SIZE',2);p.search()
++    settle(app,lambda:not p._loading and len(p.cards)==2 and p.cards[0].ready)
++    original_item=p.tree.topLevelItem(0)
++    old_index=p._sessions['word_native'].index
++    p.next.click()
++    settle(app,lambda:not p._loading and p._page==1 and p.cards[0].ready)
++    assert p._sessions['word_native'].index is old_index
++    assert p.load_metrics['query_cache_hit']
++    assert p.tree.topLevelItem(0) is original_item
++
++
++def test_import_invalidation_drops_old_snapshots_and_sees_new_rows(window,monkeypatch):
++    from copy import deepcopy
++    win,app=window;p=win.library_page
++    catalog=deepcopy(p._catalogs['word_native']);catalog['items']=catalog['items'][:1]
++    monkeypatch.setattr(win.facade,'word_question_catalog',lambda:catalog)
++    p.invalidate_catalogs()
++    settle(app,lambda:not p._loading and len(p.cards)==1 and p.cards[0].ready)
++    assert p._sessions['word_native'].index.catalog is catalog
++
++
++def test_main_import_exit_invalidates_even_after_cancel(window,monkeypatch):
++    from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
++    win,app=window;calls=[]
++    monkeypatch.setattr(ImportDialog,'exec',lambda _:QDialog.DialogCode.Rejected)
++    monkeypatch.setattr(win.library_page,'invalidate_catalogs',lambda:calls.append(True))
++    win.open_import();settle(app)
++    assert calls==[True]
++
++
++def test_copy_timings_contains_no_query_or_source_text(window):
++    win,app=window;p=win.library_page
++    p.query.setText('a-secret-search-string');p.search()
++    settle(app,lambda:not p._loading)
++    p.copy_load_metrics();text=QApplication.clipboard().text();value=json.loads(text)
++    assert value['schema']=='question-page-timing-v1'
++    assert 'a-secret-search-string' not in text and 'source_name' not in text
++    assert 'request_to_cards_ms' in value
++
++
++def test_empty_results_offer_personal_bank_without_claiming_it_is_loaded(window):
++    win,app=window;p=win.library_page
++    p.query.setText('does-not-exist-195');p.search();settle(app,lambda:not p._loading)
++    links=[b for b in p.findChildren(QPushButton) if b.text()=='切换到已导入图片题']
++    assert links
++    links[0].click();settle(app,lambda:not p._loading)
++    assert p.scope.currentData()=='visual_native'
++
++
++def test_cold_cancelled_search_is_shared_and_latest_result_wins(window,monkeypatch):
++    win,app=window;p=win.library_page
++    catalog=p._catalogs['word_native'];calls=[];entered=threading.Event();release=threading.Event()
++    def slow():
++        calls.append(True);entered.set();assert release.wait(5);return catalog
++    monkeypatch.setattr(win.facade,'word_question_catalog',slow)
++    try:
++        p.query.clear();p.reload();settle(app,entered.is_set)
++        p.query.setText('NO_MATCH_AT_ALL_195');p.search();release.set()
++        settle(app,lambda:not p._loading)
++        assert not p.cards and calls==[True]
++    finally:release.set()
++
++
++def test_multigraph_word_reads_once_per_tab_and_answer_stays_lazy(window,tmp_path,desktop_paths,monkeypatch):
++    from test_explorer_speed import make_images_fixture
++    win,app=window
++    facade,row,ids=make_images_fixture(desktop_paths,tmp_path,count=6,questions=12)
++    service=facade._word_questions();original=service._resolve;calls=[]
++    def counted(*a,**kw):calls.append(True);return original(*a,**kw)
++    monkeypatch.setattr(service,'_resolve',counted)
++    entry=next(e for e in personal_results(facade.word_question_catalog(),'word_native',{},'',0,100)['entries'] if e['key']==row['key'])
++    reader=PersonalQuestionReader(entry,facade,win.tasks)
++    try:
++        reader.show();settle(app,lambda:reader.ready_to_select and bool(reader.load_metrics))
++        assert len(calls)==1 and len(reader.required)==6
++        assert reader.loaded_tabs=={0}
++        assert reader.load_metrics[0]['completed']==6
++    finally:reader.close();reader.deleteLater();facade.shutdown()
++
++
++def test_generic_import_files_precede_historical_pack(window):
++    from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
++    win,app=window;dialog=ImportDialog(win.facade,win.tasks,win)
++    try:
++        dialog.show();settle(app)
++        assert dialog.question_files.mapTo(dialog,dialog.question_files.rect().topLeft()).y() < dialog.source_help_card.mapTo(dialog,dialog.source_help_card.rect().topLeft()).y()
++        assert '旧版' in dialog.corpus_button.text()
++    finally:dialog.close();dialog.deleteLater()
+diff --git a/staging/coordination/deeptutor_gateway/tests/test_number_region_backup.py b/staging/coordination/deeptutor_gateway/tests/test_number_region_backup.py
+new file mode 100644
+index 0000000..5eb421d
+--- /dev/null
++++ b/staging/coordination/deeptutor_gateway/tests/test_number_region_backup.py
+@@ -0,0 +1,69 @@
++"""Optional, backwards-readable region metadata; never original question images."""
++from copy import deepcopy
++import json
++from zipfile import ZipFile, ZIP_DEFLATED
++import hashlib
++import pytest
++from test_lesson_backup import seed, roundtrip, files
++from integrations.deeptutor_shchem_v1.desktop_number_regions import NumberRegionStore, validated_region_library
++from integrations.deeptutor_shchem_v1/desktop_state import DesktopStateStore
++from integrations.deeptutor_shchem_v1.desktop_backup import plan_backup, create_backup, inspect_backup, BackupError
++
++
++def saved(state):
++    image={'image_sha256': 'a'*64, 'width':200, 'height':100}
++    NumberRegionStore(state).remember(image,[dict(image_sha256='a'*64,box=[4,4,50,30],number=7,punctuation='.')])
++    return image
++
++
++def test_regions_survive_real_archive_and_independent_restore(tmp_path):
++    state, _, _ = seed(tmp_path/'source');image=saved(state)
++    before=files(state.root)
++    plan, archive, report, restored=roundtrip(state.root,tmp_path)
++    assert report['summary']['number_regions']==1 and report['summary']['number_region_images']==1
++    output=DesktopStateStore(restored)
++    assert NumberRegionStore(output).load(image)==[{'box':[4,4,50,30],'punctuation':'.'}]
++    assert 'number' not in str(output.snapshot()['scan_number_regions']['images'])
++    assert files(state.root)==before
++    with ZipFile(archive) as z:
++        assert not any(n.endswith(('.png','.jpg')) for n in z.namelist())
++        state_doc=json.loads(z.read('files/desktop-state.v1.json'))
++        assert 'question_explorer' not in state_doc  # not a source data migration
++
++
++def test_older_backups_without_regions_still_restore(tmp_path):
++    state,_,_=seed(tmp_path/'source')
++    _,_,report,restored=roundtrip(state.root,tmp_path)
++    assert report['summary'].get('number_regions', 0)==0
++    assert 'scan_number_regions' not in DesktopStateStore(restored).snapshot()
++
++
++@pytest.mark.parametrize('corrupt', [
++    lambda row: row['regions'][0].update(number=2),
++    lambda row: row['regions'][0].update(box=[0,0,400,300]),
++    lambda row: row.update(width=True),
++    lambda row: row.update(path='private-source.docx'),
++])
++def test_bad_or_excess_region_data_is_not_silently_preserved(corrupt,tmp_path):
++    state,_,_=seed(tmp_path/'source');saved(state)
++    library=deepcopy(state.snapshot()['scan_number_regions'])
++    corrupt(library['images']['a'*64])
++    with pytest.raises(ValueError): validated_region_library(library)
++
++
++def test_check_recomputes_region_counts_not_untrusted_summary(tmp_path):
++    state,_,_=seed(tmp_path/'source');saved(state)
++    plan=plan_backup(state.root); archive=tmp_path/'a.zip';create_backup(plan,archive)
++    with ZipFile(archive) as z:data={n:z.read(n) for n in z.namelist()}
++    manifest=json.loads(data['manifest.json']);manifest['summary']['number_regions']=999
++    data['manifest.json']=json.dumps(manifest).encode()
++    with ZipFile(archive,'w',ZIP_DEFLATED) as z:
++        for n,b in data.items():z.writestr(n,b)
++    assert inspect_backup(archive)['summary']['number_regions']==1
++
++
++def test_modified_original_hash_does_not_reapply_saved_coordinates(tmp_path):
++    state,_,_=seed(tmp_path/'source');image=saved(state)
++    _,_,_,restored=roundtrip(state.root,tmp_path)
++    image['image_sha256']='b'*64
++    assert NumberRegionStore(DesktopStateStore(restored)).load(image)==[]

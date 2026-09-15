@@ -1,0 +1,404 @@
+diff --git a/docs/ux/0.1.95-explorer-performance.md b/docs/ux/0.1.95-explorer-performance.md
+new file mode 100644
+index 0000000..de61c53
+--- /dev/null
++++ b/docs/ux/0.1.95-explorer-performance.md
+@@ -0,0 +1,13 @@
++# 0.1.95验证范围与尝试记录
++
++新增可丢弃PersonalSearchIndex、PersonalCatalogSession；复用全部有效标签判定，200组固定随机组合与原实现比较完整结果。索引4组LRU只缓存匹配位置；原题选用与导出不依赖其真实性。显式重新读取及导入/标签管理失效，外部文件修改仍须重新读取。取消旧请求不再发布结果，已开始的来源读取可能先完成后由最新请求复用。
++
++Word图片合并读取沿用原修订/资产归属、容器和格式检查，同标签页一次解析；原图字节不降质、不跨会话当成权威缓存，失败保留提示。仍在主线程建立QPixmap，超大图进一步解码优化未完成。
++
++记录首次建立索引与后续查询，计时不包含全屏绘制。源码和发行EXE探针使用16道合成题、首题8图；检查首次一次来源解析、翻页复用、最后条件生效、复制诊断无题干/关键词、保存来源、导入失效与备份独立恢复。原业务回归沿用之前模块。
++
++本地首次84项集合78通过/6失败：检查旧备份时不应添加不存在的新统计字段，否则清单身份发生变化。已改为仅在字段存在时规范化新统计，旧ZIP不增字段；原测试未删除。随后同集合84通过。旧导入按钮的文字断言改为新“旧版资料包”措辞，保留旧包操作和关闭保护；没有删业务断言。当前本地没有PySide6，不能把本地结果说成Windows界面通过。
++
++新题号区域备份是坐标/哈希扩展，不存图文和号码；字段异常不悄悄漏掉。新备份不保证旧0.1.94可读取，但新版本能读无扩展的旧ZIP。原题库、学生业务和模型密钥仍不打包。
++
++最终计数、源码身份、Windows与独立EXE探针见机器报告。模型调用为0，合成截图非真实教师资料。作者案例仅按公开原文阅读，详见research，不宣称看完全部视频或已经合并第三方工程。
+diff --git a/integrations/deeptutor_shchem_v1/desktop_backup.py b/integrations/deeptutor_shchem_v1/desktop_backup.py
+index 03d89b1..03b2c60 100644
+--- a/integrations/deeptutor_shchem_v1/desktop_backup.py
++++ b/integrations/deeptutor_shchem_v1/desktop_backup.py
+@@ -194,6 +194,9 @@ def plan_backup(state_root, *, include_images=False, include_tasks=False, cancel
+     selected = {"schema_version": STATE_SCHEMA, "window": {}, "drafts": records,
+                 "basket": deepcopy(snapshot["basket"]), "updated_at": snapshot.get("updated_at"),
+                 "work_organization": {}}
++    if "scan_number_regions" in snapshot:
++        from .desktop_number_regions import validated_region_library
++        selected["scan_number_regions"] = validated_region_library(snapshot["scan_number_regions"])
+     for identity, record in records.items():
+         view = metadata(snapshot, "draft", identity)
+         if view:
+@@ -292,6 +295,10 @@ def plan_backup(state_root, *, include_images=False, include_tasks=False, cancel
+                "files": len(files), "bytes": sum(f.size for f in files.values()),
+                "include_images": bool(include_images), "include_tasks": bool(include_tasks),
+                "missing_files": sum(r["kind"] == "missing_file" or r.get("reason") == "missing" for r in refs)}
++    if "scan_number_regions" in selected:
++        from .desktop_number_regions import region_totals
++        summary.update(region_totals(selected["scan_number_regions"]))
++        warnings.append("包含题号区域坐标，不包括对应的原题图；恢复后须使用相同原图才能载入位置。旧版程序可能不支持此扩展。")
+     return BackupPlan(tuple(files.values()), summary, tuple(refs), tuple(warnings))
+ 
+ 
+@@ -396,16 +403,23 @@ def _manifest(archive):
+         raise BackupError("备份缺少个人作品状态。")
+     state = _json(archive.read("files/desktop-state.v1.json"))
+     if (not isinstance(state, dict) or state.get("schema_version") != STATE_SCHEMA
+-            or set(state) - {"schema_version", "window", "drafts", "basket", "updated_at", "work_organization"}
++            or set(state) - {"schema_version", "window", "drafts", "basket", "updated_at", "work_organization", "scan_number_regions"}
+             or not isinstance(state.get("drafts"), dict) or not isinstance(state.get("basket"), list)
+             or len(state["basket"]) > 100):
+         raise BackupError("备份的作品状态格式不正确。")
++    if "scan_number_regions" in state:
++        from .desktop_number_regions import validated_region_library
++        validated_region_library(state["scan_number_regions"])
+     _reject_sensitive_fields(state)
+     for identity, record in state["drafts"].items():
+         PreparationDraftService._payload(record)
+         metadata(state, "draft", identity)
+     if not isinstance(manifest.get("references"), list) or not isinstance(manifest.get("warnings"), list):
+         raise BackupError("备份缺少外部引用和范围说明。")
++    if "scan_number_regions" in state:
++        from .desktop_number_regions import region_totals
++        manifest = deepcopy(manifest)
++        manifest['summary'] = {**manifest.get('summary', {}), **region_totals(state['scan_number_regions'])}
+     return manifest
+ 
+ 
+@@ -432,6 +446,9 @@ def inspect_backup(filename, *, cancel=None):
+                 "basket_references": len(state["basket"]), "files": len(manifest["files"]),
+                 "tasks": sum(bool(_TASK_FILE.fullmatch(r["path"])) for r in manifest["files"]),
+                 "bytes": sum(r["bytes"] for r in manifest["files"])}
++            from .desktop_number_regions import region_totals
++            if "scan_number_regions" in state:
++                manifest["summary"].update(region_totals(state["scan_number_regions"]))
+             return manifest
+     except BackupError:
+         raise
+@@ -581,7 +598,8 @@ def summary_text(report):
+     return (f"备课草稿 {s['drafts']} 份 · 已结束任务 {s['tasks']} 份 · 题篮引用 {s['basket_references']} 项\n"
+             f"文件 {s['files']} 个 · 未压缩 {s['bytes'] / (1024 * 1024):.2f} MB\n"
+             f"图片打包 {s.get('images_included', 0)} / 引用 {s.get('images_referenced', 0)} 张 · "
+-            f"恢复副本 {'包含' if s.get('recovery') else '无'}\n\n" +
++            f"恢复副本 {'包含' if s.get('recovery') else '无'}\n"
++            f"已存题号位置 {s.get('number_region_images', 0)} 张图 / {s.get('number_regions', 0)} 个区域（不含原题图）\n\n" +
+             "\n".join(report["warnings"]) + "\n\n外部引用/缺失项：\n" +
+             ("\n".join((r.get("asset", {}).get("caption") or r.get("path") or r.get("key") or r["kind"]) +
+                        " — " + r.get("reason", "文件缺失") for r in report["references"]) or "无"))
+diff --git a/integrations/deeptutor_shchem_v1/desktop_explorer_index.py b/integrations/deeptutor_shchem_v1/desktop_explorer_index.py
+new file mode 100644
+index 0000000..1869d94
+--- /dev/null
++++ b/integrations/deeptutor_shchem_v1/desktop_explorer_index.py
+@@ -0,0 +1,178 @@
++"""Disposable search projection for one already-read personal catalogue.
++
++No source authority is cached here: selection/export still use the existing
++source-bound services. Replace this index after import, tag/range edits or an
++explicit reload. Answers and image bytes are never copied into the projection.
++"""
++from __future__ import annotations
++
++from collections import OrderedDict
++from collections.abc import Mapping
++from copy import deepcopy
++from threading import RLock
++from time import perf_counter
++
++from .desktop_question_explorer import PERSONAL_LANES, personal_options
++from .desktop_personal_visual_questions import matches_personal_visual_filters
++from .desktop_word_question_filters import (
++    FILTER_GROUPS, UNKNOWN_ID, _bound_attributes, _chosen, _directory,
++    _exam, _grades, _knowledge, _mappings, _search_text, _text,
++    chapter_filter_id, section_filter_id,
++)
++
++
++class SearchCancelled(RuntimeError):
++    """An obsolete query stopped before it published a result."""
++
++
++def check_cancelled(cancelled):
++    if cancelled():
++        raise SearchCancelled("已停止旧筛选。")
++
++
++class PersonalSearchIndex:
++    """Reuse normalized tags/search text; cache at most four result ID lists."""
++    MAX_QUERY_RESULTS = 4
++
++    def __init__(self, catalog, lane, *, cancelled=lambda: False):
++        if lane not in PERSONAL_LANES or not isinstance(catalog.get("items"), list):
++            raise ValueError("Personal catalogue is unavailable")
++        start = perf_counter()
++        self.catalog, self.lane = catalog, lane
++        self._lock, self._matches = RLock(), OrderedDict()
++        self._rows = []
++        nodes = _directory(catalog.get("attribute_catalog"))
++        seen = set()
++        for i, row in enumerate(catalog["items"]):
++            if i % 64 == 0:
++                check_cancelled(cancelled)
++            key = row.get("key")
++            if key in seen:
++                continue
++            seen.add(key)
++            if lane == "word_native":
++                attributes = _bound_attributes(row)
++                mappings = _mappings(attributes, nodes)
++                values = {
++                    "source": {_text(row.get("source_id")) or UNKNOWN_ID},
++                    "knowledge": set(_knowledge(attributes)) or {UNKNOWN_ID},
++                    "grade": _grades(attributes) or {UNKNOWN_ID},
++                    "exam": {_exam(attributes)},
++                }
++                paths = [{"book": n["volume_id"],
++                          "chapter": chapter_filter_id(n["volume_id"], n["chapter_id"]),
++                          "section": section_filter_id(n["volume_id"], n["chapter_id"], n["node_key"])}
++                         for n in mappings] or [{g: UNKNOWN_ID for g in ("book", "chapter", "section")}]
++                text = _search_text(row, attributes, mappings)
++                excerpt = "\n".join(str(b.get("text", "")) for b in
++                                    row.get("context_blocks", []) + row.get("question_blocks", []))[:480]
++            else:
++                values, paths = {}, []
++                text = "\n".join(str(row.get(n, "")) for n in
++                                 ("title", "source_name", "question_text", "shared_text")).casefold()
++                excerpt = "\n".join(filter(None, [row.get("shared_text"), row.get("question_text")]))[:480]
++            # Keep a reference to the existing row for the eight visible cards;
++            # do not clone full answer/source blocks for every search or page.
++            self._rows.append((row, values, paths, text, excerpt))
++        check_cancelled(cancelled)
++        self._facets = personal_options(catalog, lane)
++        check_cancelled(cancelled)
++        self.build_ms = (perf_counter() - start) * 1000
++
++    def search(self, selection, query, page=0, page_size=8, *, cancelled=lambda: False):
++        if not isinstance(selection, Mapping) or not isinstance(query, str):
++            raise ValueError("Invalid personal search")
++        if type(page) is not int or page < 0 or type(page_size) is not int or not 1 <= page_size <= 100:
++            raise ValueError("Invalid page")
++        start = perf_counter()
++        check_cancelled(cancelled)
++        normalized = {k: _chosen(v) for k, v in selection.items() if k != "query"}
++        # knowledge_mode is a mode string, not a selected facet.
++        mode = selection.get("knowledge_mode", "any")
++        normalized.pop("knowledge_mode", None)
++        valid = all(v is not None for v in normalized.values()) and mode in ("any", "all")
++        token = (tuple(sorted((k, tuple(sorted(v or ()))) for k, v in normalized.items())),
++                 query.strip().casefold(), mode, valid)
++        with self._lock:
++            found = self._matches.get(token)
++            cache_hit = found is not None
++            if cache_hit:
++                self._matches.move_to_end(token)
++        if found is None:
++            result = []
++            chosen = {g: normalized.get(g, set()) for g in FILTER_GROUPS}
++            if valid:
++                for i, (row, values, paths, text, _) in enumerate(self._rows):
++                    if i % 64 == 0:
++                        check_cancelled(cancelled)
++                    if self.lane == "word_native":
++                        if any(chosen[g] and not chosen[g].intersection(v) for g, v in values.items()):
++                            continue
++                        if mode == "all" and not chosen["knowledge"].issubset(values["knowledge"]):
++                            continue
++                        if not any(all(not chosen[g] or p[g] in chosen[g] for g in ("book", "chapter", "section")) for p in paths):
++                            continue
++                    elif not matches_personal_visual_filters(row, selection):
++                        continue
++                    if token[1] and token[1] not in text:
++                        continue
++                    result.append(i)
++            check_cancelled(cancelled)
++            found = tuple(result)
++            with self._lock:
++                self._matches[token] = found
++                self._matches.move_to_end(token)
++                while len(self._matches) > self.MAX_QUERY_RESULTS:
++                    self._matches.popitem(last=False)
++        check_cancelled(cancelled)
++        start_row = page * page_size
++        entries = []
++        for i in found[start_row:start_row + page_size]:
++            row, _, _, _, excerpt = self._rows[i]
++            entries.append({"key": row["key"], "lane": self.lane,
++                "title": row.get("title", "未命名题目"), "subtitle": row.get("source_name", "来源待核对"),
++                "excerpt": excerpt, "payload": row,
++                "unit": "Word原题" if self.lane == "word_native" else "图片印刷题 · 入篮保留整主题"})
++        return {"entries": entries, "total": len(found),
++            "has_more": start_row + len(entries) < len(found), "next_cursor": None,
++            "facets": deepcopy(self._facets), "warnings": list(self.catalog.get("warnings", [])),
++            "count_unit": "条原题",
++            "performance": {"projection_build_ms": round(self.build_ms, 2),
++                            "filter_ms": round((perf_counter() - start) * 1000, 2),
++                            "query_cache_hit": cache_hit, "indexed_items": len(self._rows)}}
++
++
++class PersonalCatalogSession:
++    """Coalesce a cold catalogue read when the teacher changes filters quickly.
++
++    A cancelled request may finish its file read; the next request reuses that
++    same read. Explicit reload replaces this entire session, so an older worker
++    cannot repopulate the newly selected catalogue with its stale result.
++    """
++    def __init__(self, lane):
++        self.lane = lane
++        self._lock = RLock()
++        self.catalog = None
++        self.index = None
++
++    def get(self, loader, *, cancelled=lambda: False):
++        started = perf_counter()
++        while not self._lock.acquire(timeout=.05):
++            check_cancelled(cancelled)
++        try:
++            check_cancelled(cancelled)
++            reused = self.catalog is not None
++            read_started = perf_counter()
++            if self.catalog is None:
++                self.catalog = loader()
++            read_ms = (perf_counter() - read_started) * 1000
++            check_cancelled(cancelled)
++            build_started = perf_counter()
++            if self.index is None:
++                self.index = PersonalSearchIndex(self.catalog, self.lane, cancelled=cancelled)
++            return self.index, {"catalog_ms": round(read_ms, 2),
++                "index_ms": round((perf_counter() - build_started) * 1000, 2),
++                "catalogue_reused": reused,
++                "catalog_wait_and_prepare_ms": round((perf_counter() - started) * 1000, 2)}
++        finally:
++            self._lock.release()
+diff --git a/integrations/deeptutor_shchem_v1/desktop_explorer_probe.py b/integrations/deeptutor_shchem_v1/desktop_explorer_probe.py
+new file mode 100644
+index 0000000..51792a7
+--- /dev/null
++++ b/integrations/deeptutor_shchem_v1/desktop_explorer_probe.py
+@@ -0,0 +1,125 @@
++"""Isolated source/EXE navigation and batch-image acceptance; no teacher data."""
++from __future__ import annotations
++from copy import deepcopy
++from hashlib import sha256
++from io import BytesIO
++import json
++import os
++from pathlib import Path
++import sys
++import tempfile
++from time import perf_counter, monotonic, sleep
++
++
++def run_probe(output):
++    from PIL import Image, ImageDraw
++    from docx import Document
++    from docx.shared import Inches
++    from PySide6.QtWidgets import QApplication
++    from .desktop_facade import build_default_facade
++    from .desktop_paths import DesktopPaths
++    from .desktop_version import DESKTOP_VERSION
++    from .desktop_workbench.app import create_application
++    from .desktop_workbench.main_window import TeacherWorkbenchWindow
++    from .desktop_workbench.question_explorer_page import QuestionExplorerPage
++    from .desktop_workbench.dialogs import ImportDialog
++    from .desktop_number_regions import NumberRegionStore
++    from .desktop_state import DesktopStateStore
++    from .desktop_backup import plan_backup, create_backup, inspect_backup, restore_backup, manifest_revision, summary_text
++    app=create_application(['explorer195-probe'])
++    output=Path(output);output.mkdir(parents=True,exist_ok=True)
++    screenshots=[];errors=[]
++    oldhook=sys.excepthook
++    sys.excepthook=lambda typ,value,tb:errors.append(typ.__name__)
++    def settle(predicate=lambda:True):
++        end=monotonic()+45
++        for _ in range(5):app.processEvents();sleep(.025)
++        while not predicate() and monotonic()<end:app.processEvents();sleep(.02)
++        assert predicate(), 'Question page did not complete requested operation'
++    def capture(widget,name):
++        path=output/name;assert widget.grab().save(str(path))
++        screenshots.append({'file':name,'sha256':sha256(path.read_bytes()).hexdigest()})
++    with tempfile.TemporaryDirectory(prefix='explorer195-') as temp:
++        temp=Path(temp)
++        root=Path(getattr(sys,'_MEIPASS',Path(__file__).resolve().parents[2]))
++        facade=build_default_facade(DesktopPaths.from_workspace(root,state_root=temp/'state'))
++        document=Document();source_images=[]
++        for n in range(16):
++            document.add_paragraph(f'【例{n+1}】合成软件验收题：观察图示，说明条件变化。')
++            for i in range(8 if n==0 else 1):
++                im=Image.new('RGB',(360,120),'white');draw=ImageDraw.Draw(im)
++                draw.rectangle((20,25,330,95),outline='black',width=2)
++                draw.text((35,40),f'SYNTHETIC  {n+1} / {i+1}   12.5 mol/L',fill='black')
++                data=BytesIO();im.save(data,format='PNG');source_images.append(data.getvalue())
++                document.add_picture(BytesIO(data.getvalue()),width=Inches(3.6))
++            document.add_paragraph('【答案】合成参考说明，不是正式化学题或课堂评价。')
++        path=temp/'多图验收讲义.docx';document.save(path);original=path.read_bytes()
++        facade.save_visual_import_batch(handout_files=(path,),source_type='教师讲义')
++        calls={'catalog':0,'resolve':0}
++        original_catalog=facade.word_question_catalog
++        def catalog():calls['catalog']+=1;return original_catalog()
++        facade.word_question_catalog=catalog
++        service=facade._word_questions();original_resolve=service._resolve
++        def resolve(*a,**kw):calls['resolve']+=1;return original_resolve(*a,**kw)
++        service._resolve=resolve
++        win=TeacherWorkbenchWindow(facade);win.resize(1280,900);win.show()
++        try:
++            settle(lambda:not win.home_page._loading)
++            page=win.library_page
++            assert not page._started and calls['catalog']==0
++            page.scope.setCurrentIndex(page.scope.findData('word_native'))
++            start=perf_counter();win.navigate('library')
++            settle(lambda:not page._loading and len(page.cards)==8 and page.cards[0].ready and bool(page._reader.load_metrics))
++            first_complete=(perf_counter()-start)*1000
++            assert len(page._reader.required)==8 and calls=={'catalog':1,'resolve':1},calls
++            assert page._reader.loaded_tabs=={0}
++            first=deepcopy(page.load_metrics);first['word_images']=deepcopy(page._reader.load_metrics)
++            capture(win,'explorer-loaded.png')
++            current_index=page._sessions['word_native'].index
++            page.next.click();settle(lambda:not page._loading and page._page==1 and page.cards[0].ready)
++            assert page._sessions['word_native'].index is current_index
++            assert page.load_metrics['query_cache_hit'] and calls['catalog']==1
++            paging=deepcopy(page.load_metrics)
++            page.previous.click();settle(lambda:not page._loading and page._page==0 and page.cards[0].ready)
++            page.cards[0].add.click();settle(lambda:len(facade.basket())==1 and not page._adding)
++            basket=deepcopy(facade.basket())
++            page.query.setText('不存在的合成检索');page.search();settle(lambda:not page._loading)
++            assert not page.cards and calls['catalog']==1 and facade.basket()==basket
++            capture(win,'explorer-empty-guidance.png')
++            page.copy_load_metrics();copied=json.loads(QApplication.clipboard().text())
++            assert '不存在的合成检索' not in str(copied) and str(temp) not in str(copied)
++            another=QuestionExplorerPage(facade,win.tasks)
++            assert another.scope.currentData()=='word_native' and not another._started
++            another.close();another.deleteLater()
++            # A new explicit snapshot is required after import/edit or manual reload.
++            page.query.clear();page.invalidate_catalogs()
++            settle(lambda:not page._loading and len(page.cards)==8 and page.cards[0].ready)
++            assert calls['catalog']==2 and page._sessions['word_native'].index is not current_index
++            dialog=ImportDialog(facade,win.tasks,win);dialog.show();settle()
++            assert dialog.question_files.mapTo(dialog,dialog.question_files.rect().topLeft()).y()<dialog.source_help_card.mapTo(dialog,dialog.source_help_card.rect().topLeft()).y()
++            capture(dialog,'import-files-first.png');dialog.close();dialog.deleteLater()
++            # Only geometry and original identity enter the backup; imported bank stays outside.
++            image={'image_sha256':sha256(source_images[0]).hexdigest(),'width':360,'height':120}
++            NumberRegionStore(facade.state_store).remember(image,[dict(image_sha256=image['image_sha256'],box=[4,4,50,30],number=8,punctuation='.')])
++            plan=plan_backup(facade.paths.state_root);archive=temp/'saved-work.zip';create_backup(plan,archive)
++            checked=inspect_backup(archive);target=temp/'restored';restore_backup(archive,target,expected_manifest=manifest_revision(checked))
++            positions=NumberRegionStore(DesktopStateStore(target)).load(image)
++            assert positions==[{'box':[4,4,50,30],'punctuation':'.'}]
++            assert checked['summary']['number_regions']==1
++            assert path.read_bytes()==original and facade.basket()==basket
++            assert not errors,errors
++            (output/'backup-summary.txt').write_text(summary_text(checked),encoding='utf-8')
++            report={'version':DESKTOP_VERSION,'source_commit':os.environ.get('GITHUB_SHA','local'),
++                'frozen':getattr(sys,'frozen',False),'qt_platform':app.platformName(),
++                'synthetic_questions':16,'first_visible_images':8,'first_page_ready_ms':round(first_complete,2),
++                'first_load':first,'next_page':paging,'diagnostic_sample':copied,
++                'checks':{'hidden_page_no_catalog':True,'one_resolution_for_eight_images':True,
++                  'answer_tab_lazy':True,'paging_reuses_index':True,'source_preference_retained':True,
++                  'import_invalidates_index':True,'generic_files_before_old_pack':True,
++                  'region_archive_roundtrip':True,'source_and_basket_unchanged':True,'diagnostic_no_content':True},
++                'screenshots':screenshots,'uncaught_errors':errors,'model_calls':0,
++                'scope':'Synthetic Word data in isolated state. Event-loop readiness timings, not user hardware or actual classroom acceptance.'}
++            (output/'explorer-probe.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
++        finally:
++            win.close();app.processEvents();sys.excepthook=oldhook
++    return 0
