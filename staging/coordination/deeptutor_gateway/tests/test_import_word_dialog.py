@@ -471,7 +471,7 @@ def test_main_window_navigates_only_after_accepted_successful_append(
 ):
     import integrations.deeptutor_shchem_v1.desktop_workbench.main_window as main_module
 
-    references, routes = [], []
+    references, routes, invalidations = [], [], []
     reference = {"materials": "Word 资料", "warnings": []}
 
     class ImportStub:
@@ -498,11 +498,13 @@ def test_main_window_navigates_only_after_accepted_successful_append(
         tasks=object(),
         preparation_page=SimpleNamespace(import_word_reference=append),
         paper_page=SimpleNamespace(update_basket_count=lambda _count: None),
+        library_page=SimpleNamespace(invalidate_catalogs=lambda: invalidations.append(True)),
         navigate=routes.append,
     )
     main_module.TeacherWorkbenchWindow.open_import(shell)
     assert references == ([reference] if accepted else [])
     assert routes == (["preparation"] if accepted and appended else [])
+    assert invalidations == [True]
 
 
 def test_completed_word_batch_is_available_after_reopening_import(qt_app):

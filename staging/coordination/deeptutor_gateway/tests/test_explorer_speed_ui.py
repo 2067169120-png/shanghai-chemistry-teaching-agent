@@ -7,7 +7,6 @@ pytest.importorskip('PySide6')
 from PySide6.QtWidgets import QApplication, QDialog, QPushButton
 from test_question_explorer_ui import window
 from test_desktop_studio_ui import settle
-from test_desktop_visual_import_facade import desktop_paths
 from integrations.deeptutor_shchem_v1.desktop_workbench.question_explorer_page import QuestionExplorerPage
 from integrations.deeptutor_shchem_v1.desktop_workbench.explorer_reader import PersonalQuestionReader
 from integrations.deeptutor_shchem_v1.desktop_workbench.tasks import DesktopTaskBridge
@@ -79,7 +78,7 @@ def test_copy_timings_contains_no_query_or_source_text(window):
 def test_empty_results_offer_personal_bank_without_claiming_it_is_loaded(window):
     win,app=window;p=win.library_page
     p.query.setText('does-not-exist-195');p.search();settle(app,lambda:not p._loading)
-    links=[b for b in p.findChildren(QPushButton) if b.text()=='切换到已导入图片题']
+    links=[b for b in p.findChildren(QPushButton) if b.accessibleName()=='切换到已导入图片题']
     assert links
     links[0].click();settle(app,lambda:not p._loading)
     assert p.scope.currentData()=='visual_native'
@@ -99,10 +98,15 @@ def test_cold_cancelled_search_is_shared_and_latest_result_wins(window,monkeypat
     finally:release.set()
 
 
-def test_multigraph_word_reads_once_per_tab_and_answer_stays_lazy(window,tmp_path,desktop_paths,monkeypatch):
+def test_multigraph_word_reads_once_per_tab_and_answer_stays_lazy(window,tmp_path,monkeypatch):
     from test_explorer_speed import make_images_fixture
     win,app=window
-    facade,row,ids=make_images_fixture(desktop_paths,tmp_path,count=6,questions=12)
+    from integrations.deeptutor_shchem_v1.desktop_paths import DesktopPaths
+    isolated = tmp_path/'batch-image-case'
+    (isolated/'workspace/integrations/deeptutor_shchem_v1').mkdir(parents=True)
+    (isolated/'workspace/sh-chem-db').mkdir()
+    paths = DesktopPaths.from_workspace(isolated/'workspace',state_root=isolated/'state')
+    facade,row,ids=make_images_fixture(paths,isolated,count=6,questions=12)
     service=facade._word_questions();original=service._resolve;calls=[]
     def counted(*a,**kw):calls.append(True);return original(*a,**kw)
     monkeypatch.setattr(service,'_resolve',counted)
@@ -124,3 +128,14 @@ def test_generic_import_files_precede_historical_pack(window):
         assert dialog.question_files.mapTo(dialog,dialog.question_files.rect().topLeft()).y() < dialog.source_help_card.mapTo(dialog,dialog.source_help_card.rect().topLeft()).y()
         assert '旧版' in dialog.corpus_button.text()
     finally:dialog.close();dialog.deleteLater()
+
+
+def test_late_results_start_with_compact_card_actions(window):
+    from PySide6.QtWidgets import QBoxLayout
+    win,app=window;page=win.library_page
+    win.resize(800,700);settle(app)
+    page.scroll.setFixedWidth(300)
+    page.search()
+    settle(app,lambda:not page._loading and bool(page.cards) and page.cards[0].ready)
+    assert all(c.actions.direction()==QBoxLayout.Direction.TopToBottom for c in page.cards)
+    assert page.list_body.width() <= page.scroll.viewport().width()

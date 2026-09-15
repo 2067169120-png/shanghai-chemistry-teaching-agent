@@ -48,6 +48,13 @@ class QuestionCard(CardFrame):
         self.actions.addWidget(self.add)
         self.root.addLayout(self.actions)
 
+    def resizeEvent(self, event):
+        self.actions.setDirection(
+            QBoxLayout.Direction.TopToBottom if event.size().width() < 400
+            else QBoxLayout.Direction.LeftToRight
+        )
+        super().resizeEvent(event)
+
 
 class QuestionExplorerPage(QWidget):
     basket_changed = Signal(int)
@@ -257,10 +264,12 @@ class QuestionExplorerPage(QWidget):
         row = QWidget()
         layout = QBoxLayout(QBoxLayout.Direction.TopToBottom, row)
         layout.setContentsMargins(0, 0, 0, 0)
-        for title, lane in (("切换到已导入 Word", "word_native"), ("切换到已导入图片题", "visual_native")):
+        for title, lane in (("已导入 Word", "word_native"), ("已导入图片题", "visual_native")):
             if lane == self.scope.currentData():
                 continue
             button = QPushButton(title)
+            button.setAccessibleName("切换到" + title)
+            button.setToolTip("切换搜索来源，不移动原题或清空题篮。")
             button.setObjectName("QuietButton")
             button.clicked.connect(lambda _checked=False, target=lane: self.scope.setCurrentIndex(self.scope.findData(target)))
             layout.addWidget(button)
@@ -382,6 +391,12 @@ class QuestionExplorerPage(QWidget):
         self.next.setEnabled(bool(result["has_more"]))
         for index, entry in enumerate(self._entries, self._page * self.PAGE_SIZE + 1):
             card = QuestionCard(entry, index)
+            # Results arrive after show/resize now. Set the compact action layout
+            # before insertion, rather than waiting for another parent resize.
+            card.actions.setDirection(
+                QBoxLayout.Direction.TopToBottom if self.scroll.viewport().width() < 440
+                else QBoxLayout.Direction.LeftToRight
+            )
             card.open.clicked.connect(lambda _=False, c=card: self.expand(c))
             card.add.clicked.connect(lambda _=False, c=card: self.add(c))
             self.cards.append(card)
