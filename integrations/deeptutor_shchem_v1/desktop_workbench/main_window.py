@@ -18,7 +18,8 @@ from .dialogs import ImportDialog, SettingsDialog
 from .home_page import HomePage
 from .question_explorer_page import QuestionExplorerPage as LibraryPage
 from .tasks import DesktopTaskBridge
-from .workflow_pages import PaperPage, StudentPage
+from .workflow_pages import StudentPage
+from .scan_paper_page import ScanPaperPage as PaperPage
 from .studio_preparation import StudioPreparationPage as PreparationPage
 from .studio_style import TOKENS, WORKBENCH_STYLE, _build_style
 from .studio_templates import TemplatePage, TemplatePreviewDialog

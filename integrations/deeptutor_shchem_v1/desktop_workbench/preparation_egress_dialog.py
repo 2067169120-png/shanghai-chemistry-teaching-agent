@@ -5,30 +5,15 @@ from collections.abc import Callable
 from PySide6.QtCore import QSize, Qt, QTimer
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
-    QDialog,
-    QDialogButtonBox,
-    QHBoxLayout,
-    QLabel,
-    QListWidget,
-    QListWidgetItem,
-    QPlainTextEdit,
-    QPushButton,
-    QSizePolicy,
-    QSplitter,
-    QTabWidget,
-    QVBoxLayout,
-    QWidget,
+    QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
+    QPlainTextEdit, QPushButton, QSizePolicy, QSplitter, QTabWidget, QVBoxLayout, QWidget,
 )
 
-from ..desktop_preparation_images import (
-    normalize_image_assets,
-    verify_image_bytes,
-)
+from ..desktop_preparation_images import normalize_image_assets, verify_image_bytes
 from .preparation_images_widget import _LocalImagePreview
 
 
 def needs_scrollable_confirmation(text: str, image_count: object = 0) -> bool:
-    # Even a single sending picture needs actual pixels, not a text-only prompt.
     return len(text) > 1800 or (type(image_count) is int and image_count > 0)
 
 
@@ -40,17 +25,10 @@ class PreparationEgressDialog(QDialog):
     No provider, credential, network or mutable form state is consulted here.
     """
 
-    def __init__(
-        self,
-        title: str,
-        text: str,
-        *,
-        image_count: int = 0,
-        image_assets: object = None,
-        image_loader: Callable[[dict], bytes] | None = None,
-        local_only: bool = False,
-        parent: QWidget | None = None,
-    ) -> None:
+    def __init__(self, title: str, text: str, *, image_count: int = 0,
+                 image_assets: object = None,
+                 image_loader: Callable[[dict], bytes] | None = None,
+                 local_only: bool = False, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setObjectName("PreparationEgressDialog")
@@ -67,9 +45,8 @@ class PreparationEgressDialog(QDialog):
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._check_next_image)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 14, 20, 14)
-        layout.setSpacing(8)
-
+        layout.setContentsMargins(20, 12, 20, 12)
+        layout.setSpacing(6)
         heading = QLabel("发送前核对" if not local_only else "本地导出确认")
         heading.setObjectName("PageTitle")
         heading.setTextFormat(Qt.TextFormat.PlainText)
@@ -78,20 +55,17 @@ class PreparationEgressDialog(QDialog):
         self.summary = QLabel(
             f"{image_count} 张图片 · 点击缩略图查看，放大检查公式与裁剪边界"
             if image_count else "完整发送范围与费用说明"
-            if not local_only
-            else "不调用模型 · 不发送文字或图片"
+            if not local_only else "不调用模型 · 不发送文字或图片"
         )
         self.summary.setObjectName("MutedLabel")
         self.summary.setTextFormat(Qt.TextFormat.PlainText)
         self.summary.setWordWrap(True)
         layout.addWidget(self.summary)
-
         self.disclosure = QPlainTextEdit()
         self.disclosure.setAccessibleName("完整发送范围、模型和费用说明")
         self.disclosure.setReadOnly(True)
         self.disclosure.setTabChangesFocus(True)
         self.disclosure.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
-        # Never render a source caption as HTML or silently abbreviate its text.
         self.disclosure.setPlainText(text)
         self.disclosure.setMinimumHeight(100)
         self.tabs = QTabWidget()
@@ -106,9 +80,7 @@ class PreparationEgressDialog(QDialog):
         self.image_preview = _LocalImagePreview()
         self.image_preview.image.setMinimumHeight(120)
         self.image_preview.image.setMaximumHeight(16777215)
-        self.image_preview.image.setSizePolicy(
-            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding
-        )
+        self.image_preview.image.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
         self.image_preview.layout().setStretch(0, 1)
         self.image_details = QPlainTextEdit()
         self.image_details.setAccessibleName("当前图片完整图注、来源、用途及尺寸")
@@ -150,8 +122,6 @@ class PreparationEgressDialog(QDialog):
         navigation_layout.addWidget(self.image_position)
         navigation_layout.addWidget(self.next_image_button)
         navigation_layout.addStretch(1)
-        # Reuse the existing zoom row across the gallery's full width, leaving
-        # the main raster and bottom consent actions their original space.
         self.image_preview.layout().removeWidget(self.image_preview.zoom_button)
         self.image_preview.zoom_button.setAutoDefault(False)
         navigation_layout.addWidget(self.image_preview.zoom_button)
@@ -173,11 +143,9 @@ class PreparationEgressDialog(QDialog):
         self.validation_status.setTextFormat(Qt.TextFormat.PlainText)
         self.validation_status.setAccessibleName("图片内容核对状态")
         layout.addWidget(self.validation_status)
-
         reminder = QLabel(
             "调用可能产生费用，重试可能再次计费。确认前不会调用模型；取消不会发送新请求。"
-            if not local_only
-            else '只使用已保存的初稿继续导出，不重新调用模型。'
+            if not local_only else '只使用已保存的初稿继续导出，不重新调用模型。'
         )
         reminder.setObjectName("MutedLabel")
         reminder.setWordWrap(True)
@@ -187,8 +155,7 @@ class PreparationEgressDialog(QDialog):
         self.cancel_button.setText("取消")
         self.cancel_button.setObjectName("QuietButton")
         self.confirm_button = buttons.addButton(
-            "确认调用模型" if not local_only else "继续本地导出",
-            QDialogButtonBox.ButtonRole.AcceptRole,
+            "确认调用模型" if not local_only else "继续本地导出", QDialogButtonBox.ButtonRole.AcceptRole,
         )
         self.confirm_button.setAutoDefault(False)
         self.cancel_button.setDefault(True)
@@ -196,7 +163,6 @@ class PreparationEgressDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
         self.cancel_button.setFocus()
-
         available = self.screen().availableGeometry()
         self.resize(min(980, available.width() - 32), min(720, available.height() - 48))
         try:
@@ -231,7 +197,6 @@ class PreparationEgressDialog(QDialog):
 
     def _read_image(self, index: int) -> bytes:
         asset = self._assets[index]
-        # The reader receives a copy, never the consent snapshot itself.
         data = self._image_loader(dict(asset))
         return verify_image_bytes(asset, data)
 
@@ -249,18 +214,12 @@ class PreparationEgressDialog(QDialog):
     def _show_status(self) -> None:
         if self._failed:
             numbers = "、".join(str(i + 1) for i in sorted(self._failed))
-            self.validation_status.setText(
-                f"第 {numbers} 张图片无法读取或内容已变化，不能确认发送。请取消并重新选择。"
-            )
+            self.validation_status.setText(f"第 {numbers} 张图片无法读取或内容已变化，不能确认发送。请取消并重新选择。")
         elif self._ready:
-            self.validation_status.setText(
-                f"已载入 {len(self._assets)} 张原图。请逐张检查内容；确认前会再次核对文件是否变化。"
-            )
+            self.validation_status.setText(f"已载入 {len(self._assets)} 张原图。请逐张检查内容；确认前会再次核对文件是否变化。")
         else:
             action = "确认文件未变化" if self._rechecking else "读取原图"
-            self.validation_status.setText(
-                f"正在{action}：{self._cursor} / {len(self._assets)}；尚未发送。"
-            )
+            self.validation_status.setText(f"正在{action}：{self._cursor} / {len(self._assets)}；尚未发送。")
 
     def _check_next_image(self) -> None:
         if self._closed or self._manifest_error:
@@ -279,12 +238,10 @@ class PreparationEgressDialog(QDialog):
                 pixmap = QPixmap()
                 if not pixmap.loadFromData(data):
                     raise ValueError("Qt cannot display this image")
-                thumbnail = pixmap.scaled(
-                    self.image_list.iconSize(), Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
+                thumbnail = pixmap.scaled(self.image_list.iconSize(), Qt.AspectRatioMode.KeepAspectRatio,
+                                          Qt.TransformationMode.SmoothTransformation)
                 self.image_list.item(index).setIcon(QIcon(thumbnail))
-        except Exception:  # noqa: BLE001 - untrusted local image readers fail closed
+        except Exception:
             self._fail_image(index)
         self._cursor += 1
         if not self._rechecking and index == 0:
@@ -304,7 +261,7 @@ class PreparationEgressDialog(QDialog):
         )
         try:
             self.image_preview.set_bytes(self._read_image(index), asset["caption"])
-        except Exception:  # noqa: BLE001 - never substitute a stale/blank preview
+        except Exception:
             self.image_preview.clear("本次图片无法读取或已经变化，请取消后重新选择。")
             self._fail_image(index)
 
