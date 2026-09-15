@@ -46,7 +46,8 @@ class ScanNumberPanel(MixedPaperPanel):
             if not catalog['images']:
                 self._number_failed(generation, '本次没有可调整的 PNG/JPEG/BMP 题图；可直接使用普通排版预览。')
                 return
-            dialog = ScanNumberDialog(catalog, self)
+            from ..desktop_number_regions import NumberRegionStore
+            dialog = ScanNumberDialog(catalog, self, region_store=NumberRegionStore(self.facade.state_store))
             self._number_dialog = dialog
 
             def finished(code):

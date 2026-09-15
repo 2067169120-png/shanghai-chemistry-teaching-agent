@@ -427,6 +427,7 @@ class _Writer:
 
     def append(self, source: _Source, indices: tuple[int, ...], *, keep_question: bool = False, numbering=None, answer: bool = False, references=None) -> None:
         reader = WordNativeTextReader(source.document.styles.element)
+        appended = []
         for offset, index in enumerate(indices):
             original = source.blocks[index - 1]
             if original.tag not in {qn("w:p"), qn("w:tbl")}:
@@ -470,6 +471,10 @@ class _Writer:
             if keep_question:
                 self._keep_question_block(clone, last=offset == len(indices) - 1)
             self.document.element.body.insert(-1, clone)
+            appended.append(clone)
+        if answer:
+            from .desktop_answer_layout import keep_answer_opening
+            keep_answer_opening(appended)
 
     @staticmethod
     def _keep_question_block(block, *, last: bool) -> None:

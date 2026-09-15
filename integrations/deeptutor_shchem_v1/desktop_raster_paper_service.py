@@ -10,8 +10,21 @@ class RasterPaperService(MixedPaperService):
             raise MixedPaperError('预览已改变，请按当前题序重新准备题图。')
         if snapshot['preview_model']['blockers']:
             raise MixedPaperError('题目材料尚不完整，请先核对来源。')
-        documents = super()._build_docx(preview_id, snapshot, folder)
-        return image_catalog(documents)
+        from functools import partial
+        from .desktop_mixed_paper_export import build_mixed_paper_docx
+        from .desktop_number_regions import suggest_number
+        hints = {}
+        original_builder = self._docx_builder
+        if original_builder is None:
+            self._docx_builder = partial(build_mixed_paper_docx, image_number_hints=hints)
+        try:
+            documents = super()._build_docx(preview_id, snapshot, folder)
+        finally:
+            self._docx_builder = original_builder
+        catalog = image_catalog(documents)
+        for image in catalog['images']:
+            image['suggested_number'] = suggest_number(image, hints)
+        return catalog
 
     def prepare_corrected(self, preview_id, preview_hash, edits):
         self._reviewed_number_edits = edits
