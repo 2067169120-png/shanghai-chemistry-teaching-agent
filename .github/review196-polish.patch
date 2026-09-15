@@ -1,0 +1,72 @@
+diff --git a/integrations/deeptutor_shchem_v1/desktop_workbench/student_review_desk.py b/integrations/deeptutor_shchem_v1/desktop_workbench/student_review_desk.py
+--- a/integrations/deeptutor_shchem_v1/desktop_workbench/student_review_desk.py
++++ b/integrations/deeptutor_shchem_v1/desktop_workbench/student_review_desk.py
+@@ -134,7 +134,8 @@
+         editor.record_score_button.hide();editor.record_diagnosis_button.hide()
+         for widget in (editor,candidate):
+             for label in widget.findChildren(QLabel):label.setTextFormat(Qt.TextFormat.PlainText)
+-        tabs=QTabWidget();tabs.addTab(page_scroll(editor),'教师评分');tabs.addTab(page_scroll(candidate),'AI建议与评分点')
++        tabs=QTabWidget();tabs.addTab(page_scroll(editor),'教师评分');tabs.addTab(page_scroll(candidate),'AI建议')
++        tabs.setTabToolTip(1,'模型评分建议、评分点与作答证据；不替代教师评分。')
+         self.editor_stack.addWidget(tabs)
+         self._editors[key]=editor;self._tabs[key]=tabs
+         editor.score_requested.connect(lambda payload,k=key:self._record(k,'score',payload))
+diff --git a/staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py b/staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py
+--- a/staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py
++++ b/staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py
+@@ -1950,7 +1950,7 @@
+     assert _wait_until(qt_app, lambda: len(page.review_editors) == 1)
+     editor = page.review_editors[0]
+     assert editor.score_edit.text() == ""
+-    assert "建议分已隐藏" in editor.suggestion_label.text()
++    assert "模型建议分未显示" in editor.suggestion_label.text()
+     assert "不能据此判错" in editor.suggestion_label.text()
+     assert not editor.record_diagnosis_button.isEnabled()
+ 
+diff --git a/staging/coordination/deeptutor_gateway/tests/test_student_review_desk_ui.py b/staging/coordination/deeptutor_gateway/tests/test_student_review_desk_ui.py
+--- a/staging/coordination/deeptutor_gateway/tests/test_student_review_desk_ui.py
++++ b/staging/coordination/deeptutor_gateway/tests/test_student_review_desk_ui.py
+@@ -146,3 +146,16 @@
+     assert viewer.view.verticalScrollBar().value()==0
+     viewer.zoom(1.25);assert not viewer._fit
+     viewer.fit_page();assert viewer._fit_mode=='page'
++
++
++def test_review_tabs_have_readable_short_labels_and_full_context(desk):
++    d,app,_=desk
++    d.resize(800,700);settle(app)
++    tabs=d._tabs[d._current]
++    assert tabs.tabText(1)=='AI建议'
++    assert '评分点与作答证据' in tabs.tabToolTip(1)
++    for index in (0,1):
++        tabs.setCurrentIndex(index);settle(app)
++        bar=tabs.tabBar()
++        assert bar.tabRect(index).width() >= bar.fontMetrics().horizontalAdvance(bar.tabText(index)) + 12
++    assert d.viewer.view.isVisible() and d.score_button.isVisible()
+diff --git a/README.md b/README.md
+--- a/README.md
++++ b/README.md
+@@ -43,7 +43,7 @@
+ 
+ ### 评分与诊断分别记录
+ 
+-右侧分为“教师评分”和“AI建议与评分点”。新评分栏留空，教师输入分数及理由后点击固定的 **“记录本题评分”**。不得分仍由教师明确填0；缺页、未核对或未评分不是0分。AI原建议和教师新评分分别保留，当前记录及上次理由可重新读取。
++右侧分为“教师评分”和“AI建议”。“AI建议”页内保留模型评分、评分点与作答证据。新评分栏留空，教师输入分数及理由后点击固定的 **“记录本题评分”**。不得分仍由教师明确填0；缺页、未核对或未评分不是0分。AI原建议和教师新评分分别保留，当前记录及上次理由可重新读取。
+ 
+ 诊断在评分之后核对，教师选择采纳、修改、不采纳或暂不判断，并填写原有服务要求的错因与教材范围。新诊断不默认认定正确。修改评分后，旧诊断按原规则标为需重新确认，不能继续当作匹配当前分数的终判。
+ 
+diff --git a/docs/ux/0.1.96-student-review.md b/docs/ux/0.1.96-student-review.md
+--- a/docs/ux/0.1.96-student-review.md
++++ b/docs/ux/0.1.96-student-review.md
+@@ -25,3 +25,11 @@
+ ## 第一眼检查后的阅读改进
+ 
+ 首轮Windows实际入口及57项局部回归通过。但800×700截图的整页缩放导致作答太小，因此增加“适合宽度”，默认按宽度显示、纵向滚动；“整页”仍可查看全局公共材料，原图不裁剪。补充倍率和画布不变测试，随后对同一修订重跑完整验证。
++
++## 接续完整回归与标签可读性
++
++2026-09-15，首轮完整Windows运行34941505769执行1121项：1120通过，1失败，0错误/跳过。失败为旧用例仍期待“建议分已隐藏”，当前界面已改成“模型建议分未显示”；更新文字断言，保留“不能据此判错”、教师分数留空、诊断不可提交和内部身份不显示的全部业务断言。没有放宽评分条件，也没有删除用例。
++
++同时查看同提交第一眼截图，发现右侧长标签“AI建议与评分点”选中时出现文字截断。标签缩短为“AI建议”，完整用途通过提示及页内内容保留；增加800×700两页切换的文字宽度检查。初稿文件、评分服务和来源图片不变。最终Windows与独立EXE数量以修订后同一运行记录为准，首轮不计成完整验收通过。
++
++当前容器只能跑非Qt子集：45通过，1项Qt用例排除；第一次尝试缺少PySide6的失败日志保留。本地45项与Windows集合重叠，不累加。未使用真实学生、API密钥或网络模型调用。
