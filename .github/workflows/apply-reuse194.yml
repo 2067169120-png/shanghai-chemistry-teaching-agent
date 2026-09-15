@@ -1,0 +1,37 @@
+name: Apply reviewed 0.1.94 source
+on:
+  push:
+    branches: ["feature/number-region-reuse-0.1.94"]
+    paths: [".github/workflows/apply-reuse194.yml", ".github/reuse194.part*"]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Apply exact reviewed patch, then discard transfer-only parts
+        shell: python
+        run: |
+          import hashlib, lzma, os, pathlib, subprocess
+          def run(*args):
+              return subprocess.check_output(args, text=True).strip()
+          branch = 'feature/number-region-reuse-0.1.94'
+          assert run('git', 'rev-parse', 'HEAD') == os.environ['GITHUB_SHA']
+          assert run('git', 'ls-remote', 'origin', 'refs/heads/' + branch).split()[0] == os.environ['GITHUB_SHA']
+          subprocess.run(['git','merge-base','--is-ancestor','f6f968dfb9fb8fafe6f328cf2211bc91ee3e19e8','HEAD'], check=True)
+          paths = ['.github/reuse194.part' + str(i) for i in (1,2,3)]
+          patch = lzma.decompress(b''.join(pathlib.Path(p).read_bytes() for p in paths))
+          assert hashlib.sha256(patch).hexdigest() == 'ed8c5ff22d4ea61c918b3036ea06e54e9bca665df63e5ec7f6cbc0383e41d61f'
+          assert b'diff --git a/.github/workflows/' not in patch
+          subprocess.run(['git','apply','--check','--index','-'],input=patch,check=True)
+          subprocess.run(['git','apply','--index','-'],input=patch,check=True)
+          run('git','rm','-f',*paths)
+          run('git','config','user.name','github-actions[bot]')
+          run('git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
+          run('git','commit','-m','feat(0.1.94): reuse source number regions with current paper hints and keep answer openings together')
+          run('git','push','origin','HEAD:refs/heads/' + branch)
+          print('Applied source:',run('git','rev-parse','HEAD'))
