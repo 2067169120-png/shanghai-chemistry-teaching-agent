@@ -1950,7 +1950,7 @@ def test_student_candidate_keeps_teacher_score_blank_and_hides_opaque_values(
     assert _wait_until(qt_app, lambda: len(page.review_editors) == 1)
     editor = page.review_editors[0]
     assert editor.score_edit.text() == ""
-    assert "建议分已隐藏" in editor.suggestion_label.text()
+    assert "模型建议分未显示" in editor.suggestion_label.text()
     assert "不能据此判错" in editor.suggestion_label.text()
     assert not editor.record_diagnosis_button.isEnabled()
 

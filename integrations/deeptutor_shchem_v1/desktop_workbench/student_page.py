@@ -180,7 +180,7 @@ class NewStudentDialog(QDialog):
             )
         )
         retention_help = QLabel(
-            "该天数只记录教师的保留计划；0.1.6 不会到期自动删除，请由教师按学校要求管理本机文件。"
+            "该天数只记录教师的保留计划；本版本不会到期自动删除，请由教师按学校要求管理本机文件。"
         )
         retention_help.setWordWrap(True)
         retention_help.setObjectName("MutedLabel")
@@ -469,7 +469,7 @@ class ReviewItemCard(CardFrame):
         root.setContentsMargins(16, 14, 16, 14)
         root.setSpacing(10)
 
-        title_text = str(_field(item, "label_zh", "候选小题"))
+        title_text = str(_field(item, "label_zh", "待复核小题"))
         title = QLabel(title_text)
         title.setObjectName("CardTitle")
         title.setWordWrap(True)
@@ -498,7 +498,7 @@ class ReviewItemCard(CardFrame):
             ("化学观察", _field(item, "chemistry_observations_zh", ())),
             ("建议评分点", _field(item, "scoring_points_zh", ())),
             ("错误假设（不是结论）", _field(item, "error_hypotheses_zh", ())),
-            ("页面或证据阻断", _field(item, "blockers_zh", ())),
+            ("页面或证据缺口", _field(item, "blockers_zh", ())),
         ):
             lines = tuple(str(value) for value in (values or ()) if str(value).strip())
             if lines:
@@ -507,7 +507,7 @@ class ReviewItemCard(CardFrame):
                 )
                 label.setWordWrap(True)
                 label.setMinimumWidth(0)
-                if heading == "页面或证据阻断":
+                if heading == "页面或证据缺口":
                     set_status(label, "attention")
                 else:
                     label.setObjectName("MutedLabel")
@@ -516,7 +516,7 @@ class ReviewItemCard(CardFrame):
         suggested = _field(item, "suggested_score")
         withheld = bool(_field(item, "suggested_score_withheld", False))
         if withheld:
-            suggestion_text = "模型建议分已隐藏：页面或证据存在阻断，不能据此判错。"
+            suggestion_text = "模型建议分未显示：页面或证据不足，不能据此判错。"
         elif suggested is None:
             suggestion_text = "模型未提供建议分；请教师根据可见证据独立判断。"
         else:
@@ -1070,6 +1070,12 @@ class StudentPage(QWidget):
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
+        self.review_desk_button = QPushButton("打开作答与评分（同屏批改）")
+        self.review_desk_button.setAccessibleName("打开原作答与教师评分同屏工作区")
+        self.review_desk_button.setToolTip("先打开一份已有分析结果；同屏查看原页、评分点和教师修正，不调用模型。")
+        self.review_desk_button.setEnabled(False)
+        self.review_desk_button.clicked.connect(self._open_review_desk)
+        outer.addWidget(self.review_desk_button)
         self.scroll = page_scroll(content)
         outer.addWidget(self.scroll)
 
@@ -1465,6 +1471,7 @@ class StudentPage(QWidget):
             setattr(self, task_attribute, None)
         self._current_summary = None
         self._current_review = None
+        self.review_desk_button.setEnabled(False)
         self._set_intake_enabled(True)
         self.files_heading.show()
         self.prepare_button.show()
@@ -2106,6 +2113,7 @@ class StudentPage(QWidget):
         self._review_task_id = None
         self.reload_review_button.setEnabled(True)
         self._current_review = review
+        self.review_desk_button.setEnabled(bool(_field(review, "items", ())))
         self._invalidate_practice()
         self._practice_review_dirty = False
         self.practice_panel.show()
@@ -2150,6 +2158,41 @@ class StudentPage(QWidget):
             self.review_items.addWidget(editor)
             self.review_editors.append(editor)
         self._update_practice_enabled()
+
+    def _open_review_desk(self) -> None:
+        from .student_review_desk import StudentReviewDesk, editor_values, restore_values
+        if (self._current_summary is None or self._current_review is None
+                or self._review_task_id or self._review_action_task_id):
+            set_status(self.status, "attention", "请先打开已有分析结果，或等待当前记录保存结束。")
+            return
+        initial = {}
+        for editor in self.review_editors:
+            values = editor_values(editor)
+            if (any(values[k] for k in ("score_edit", "score_reason", "teacher_note"))
+                    or any(values[k] is not None for k in ("primary_error", "secondary_error", "section"))
+                    or values["decision"] != "accept" or values["result"] != "correct"):
+                if (values["decision"] == "accept" and values["result"] == "correct"
+                        and not values["teacher_note"] and not any(values[k] for k in ("primary_error", "secondary_error", "section"))):
+                    values["decision"], values["result"] = "pending", "not_scored"
+                initial[_field(editor.item, "match_id")] = values
+        dialog = StudentReviewDesk(self.facade, self.tasks, self._current_summary,
+            self._current_review, self._sections,
+            student_label=str(_field(self._selected_student(), "label_zh", "匿名学生")),
+            initial_edits=initial, parent=self.window())
+        dialog.exec()
+        dialog.viewer.stop()
+        if (_field(self._current_summary, "submission_id") == dialog.submission_id
+                and _field(self._selected_student(), "student_id") == dialog.student_id):
+            self._review_loaded(dialog.review)
+            if not dialog._discarded:
+                edits = dialog.edit_values()
+                dirty = set(dialog.dirty_keys())
+                for editor in self.review_editors:
+                    key = _field(editor.item, "match_id")
+                    if key in dirty:
+                        restore_values(editor, edits[key])
+                        self._practice_review_edited()
+        dialog.deleteLater()
 
     def _review_failed(self, message: str) -> None:
         self._review_task_id = None
