@@ -40,6 +40,7 @@ from .desktop_provider_probe import (
 )
 from .desktop_registry_cache import DesktopRegistryCache
 from .desktop_state import DesktopStateStore, utc_now
+from .desktop_review_evidence import ReviewRegion, evidence_regions
 from .desktop_student_practice import (
     DesktopStudentPractice,
     StudentPracticeError,
@@ -729,6 +730,9 @@ class StudentReviewItem:
     latest_teacher_score: float | None = None
     latest_diagnostic_decision: str | None = None
     diagnostic_requires_reconfirmation: bool = False
+    latest_score_reason_zh: str = ""
+    latest_diagnostic_note_zh: str = ""
+    evidence_regions: tuple[ReviewRegion, ...] = field(default=(), repr=False)
 
 
 @dataclass(frozen=True)
@@ -4299,6 +4303,9 @@ class DesktopWorkbenchFacade:
                         else None
                     ),
                     diagnostic_requires_reconfirmation=diagnostic_stale,
+                    latest_score_reason_zh=str(scoring.get("reason") or "") if scoring else "",
+                    latest_diagnostic_note_zh=str(diagnostic_item.get("teacher_note") or "") if diagnostic_item else "",
+                    evidence_regions=evidence_regions(raw, source),
                 )
             )
         diagnostic_complete = bool(result) and all(
