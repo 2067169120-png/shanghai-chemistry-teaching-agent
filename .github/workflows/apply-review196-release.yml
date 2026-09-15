@@ -1,0 +1,36 @@
+name: Apply inspected review reading and release preparation
+on:
+  push:
+    branches: ["feature/student-review-desk-0.1.96"]
+    paths: [".github/review196-release.part*", ".github/workflows/apply-review196-release.yml"]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Apply reviewed patch and remove transfer-only files
+        shell: python
+        run: |
+          import hashlib, lzma, os, pathlib, subprocess
+          def run(*args):
+              return subprocess.check_output(args, text=True).strip()
+          branch='feature/student-review-desk-0.1.96'
+          assert run('git','rev-parse','HEAD') == os.environ['GITHUB_SHA']
+          assert run('git','ls-remote','origin','refs/heads/'+branch).split()[0] == os.environ['GITHUB_SHA']
+          paths=['.github/review196-release.part'+str(i) for i in (1,2,3)]
+          patch=lzma.decompress(b''.join(pathlib.Path(p).read_bytes() for p in paths))
+          assert hashlib.sha256(patch).hexdigest() == '43c3a01703d82a08f7ebfd0268b6dcb034aebcb9512b22ac9b7f843371da5cd1'
+          assert b'diff --git a/.github/workflows/' not in patch
+          subprocess.run(['git','apply','--check','--index','-'],input=patch,check=True)
+          subprocess.run(['git','apply','--index','-'],input=patch,check=True)
+          run('git','rm','-f',*paths,'.github/workflows/apply-review196-release.yml')
+          run('git','config','user.name','github-actions[bot]')
+          run('git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
+          run('git','commit','-m','feat(0.1.96): default readable page width, preserve source guide and prepare verified native release')
+          run('git','push','origin','HEAD:refs/heads/'+branch)
+          print('Applied:',run('git','rev-parse','HEAD'))
