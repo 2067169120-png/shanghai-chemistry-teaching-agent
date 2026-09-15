@@ -31,8 +31,8 @@ jobs:
           python -m pytest -q -o faulthandler_timeout=60
           staging/coordination/deeptutor_gateway/tests/test_student_review_desk_core.py
           staging/coordination/deeptutor_gateway/tests/test_student_review_desk_ui.py
-          staging/coordination/deeptutor_gateway/tests/test_desktop_student_facade.py
-          staging/coordination/deeptutor_gateway/tests/test_student_workflow_e2e.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_student_analysis_facade.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_student_analysis_e2e.py
           staging/coordination/deeptutor_gateway/tests/test_desktop_student_practice.py
           --junitxml=first-look/pytest.xml
       - uses: actions/upload-artifact@v4
