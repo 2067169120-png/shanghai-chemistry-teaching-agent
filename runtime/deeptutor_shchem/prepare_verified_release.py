@@ -12,8 +12,8 @@ import xml.etree.ElementTree as ET
 from zipfile import ZipFile, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = '0.1.93'
-BRANCH = 'feature/scan-numbering-0.1.93'
+VERSION = '0.1.94'
+BRANCH = 'feature/number-region-reuse-0.1.94'
 TAG = 'v' + VERSION
 
 
@@ -52,6 +52,7 @@ def main():
         assert scan['edits'] == 4 and all(scan[k] for k in ('raw_word_import','native_entry_opened',
             'undo_exercised','two_audiences_exported','outside_regions_unchanged','source_unchanged'))
         assert all(scan['pages'][role] > 0 for role in ('student','teacher'))
+        assert all(scan['region_reuse'].values()), 'Region reuse or answer pagination not verified'
         scales = report['font_scaling']
         assert [r['requested_scale'] for r in scales] == ['1','1.25','1.5']
         assert all(r['qt_platform'] == 'windows' and not r['han']['missing_glyphs'] and
@@ -64,7 +65,7 @@ def main():
     assert packaged['editable_pptx_slides'] == 5 and packaged['pdf_pages'] == 2
     suites = list(ET.parse(source/'readiness-qa/pytest.xml').getroot().iter('testsuite'))
     tests = {key:sum(int(s.get(key,0)) for s in suites) for key in ('tests','failures','errors','skipped')}
-    assert tests['tests'] >= 937 and not any(tests[k] for k in ('failures','errors','skipped'))
+    assert tests['tests'] >= 994 and not any(tests[k] for k in ('failures','errors','skipped'))
     target = ROOT/'docs/screenshots'/TAG
     target.mkdir(parents=True,exist_ok=True)
     names=set()
@@ -90,9 +91,10 @@ def main():
     write_json(ROOT/f'docs/qa/{VERSION}-package.json',packaged)
     readme=ROOT/'README.md';text=readme.read_text(encoding='utf-8')
     assert '{{VERIFICATION_SUMMARY}}' in text
+    text=text.replace('源码候选（等待本版验收）', '原生试用版')
     text=text.replace('{{VERIFICATION_SUMMARY}}',
         f"同一提交完成 **{tests['tests']}项Windows定向测试，0失败、0错误、0跳过**。"
-        '源码与同一发行EXE均走过合成扫描题导入、原生调整入口、撤销、实际两版PDF和导出，原文件不变。'
+        '源码与同一发行EXE均走过合成扫描题导入、位置保存/重开、换序带入新号、实际两版PDF和导出；原文件与题篮不变，两个答案首段与对应图片在同页。'
         '中文和化学符号缺字样例为0，Windows原生Qt后端1/1.25/1.5倍率检查通过；这是倍率模拟，不是实际系统缩放或多屏验收。'
         '既有八页、作品整理、备份/独立恢复、文字编号与合成PPTX/DOCX输出继续回归；没有调用真实模型。')
     for image in re.findall(r'!\[[^\]]*\]\(([^)]+)\)',text):
@@ -102,7 +104,7 @@ def main():
     command('git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
     command('git','add','-f','README.md',str(target.relative_to(ROOT)),
             f'docs/qa/{VERSION}-readiness.json',f'docs/qa/{VERSION}-package.json')
-    command('git','commit','-m','docs: record 0.1.93 verified scan numbers, fonts and native screenshots [skip ci]')
+    command('git','commit','-m','docs: record 0.1.94 verified reusable regions, answer pagination and native screenshots [skip ci]')
     delivery_sha=command('git','rev-parse','HEAD')
     command('git','push','origin','HEAD:refs/heads/'+BRANCH)
     output=ROOT/'release-delivery';output.mkdir(exist_ok=True)
@@ -142,7 +144,7 @@ def main():
     command('git','tag','-a',TAG,'-m',VERSION+' verified Windows trial; code '+sha)
     command('git','push','origin','refs/tags/'+TAG)
     command('gh','release','create',TAG,'--repo',repo,'--verify-tag','--draft','--prerelease',
-        '--title',VERSION+' · 中文显示与扫描题号调整','--notes-file',f'docs/releases/{VERSION}.md',
+        '--title',VERSION+' · 题号位置复用与答案分页','--notes-file',f'docs/releases/{VERSION}.md',
         *[str(p) for p in sorted(output.iterdir()) if p.is_file()])
     command('gh','release','edit',TAG,'--repo',repo,'--draft=false','--latest=false')
     print('Published',TAG,'tested',sha,'delivery',delivery_sha)

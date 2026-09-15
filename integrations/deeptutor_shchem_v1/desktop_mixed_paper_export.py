@@ -36,6 +36,7 @@ def build_mixed_paper_docx(
     duration_minutes: int = 40,
     show_student_scores: bool = False,
     subtitle: str = "",
+    image_number_hints: dict | None = None,
 ) -> dict:
     """Keep source question/answer boundaries and interleaved selection order.
 
@@ -133,6 +134,7 @@ def build_mixed_paper_docx(
         any(part.get("question_blocks") and any(b.get("asset_ref") for b in part["question_blocks"])
             for q in item["student_plan"]["visible"]["theme_sections"][0]["printed_questions"] for part in q["atomic_parts"]))
         for kind, item, _root in prepared)
+    from .desktop_number_regions import record_image_numbers
     outputs, warnings = {}, ([RASTER_NOTICE] if raster else [])
     for audience in ("student", "teacher"):
         teacher = audience == "teacher"
@@ -162,6 +164,7 @@ def build_mixed_paper_docx(
             document.add_paragraph(RASTER_NOTICE, "ShChemQuiet")
         writer = _Writer(document)
         for ordinal, (kind, item, asset_root) in enumerate(prepared, 1):
+            body_start = len(document.element.body) - 1
             if kind == "personal_visual_theme":
                 from .desktop_personal_visual_theme_writer import (
                     append_personal_visual_theme,
@@ -170,6 +173,7 @@ def build_mixed_paper_docx(
                 append_personal_visual_theme(document, item, asset_root, audience,
                                              ordinal=ordinal, show_scores=show_student_scores,
                                              start_number=numbering[ordinal - 1])
+                record_image_numbers(document, list(document.element.body)[body_start:-1], None, image_number_hints)
                 continue
             if kind == "word_question":
                 score = f"（{item.points:g} 分）" if scores else ""
@@ -179,20 +183,24 @@ def build_mixed_paper_docx(
                 if item.context:
                     document.add_paragraph("公共材料", "ShChemQuestion")
                     writer.append(item.source, item.context)
+                    record_image_numbers(document, list(document.element.body)[body_start:-1], None, image_number_hints)
                 plan = numbering[ordinal - 1]
                 writer.append(item.source, item.question, keep_question=True, numbering=plan, references=refs[item.source.digest])
                 if teacher:
                     old = "、".join(f"原第{k}题 → 本卷第{v}题" for k, v in plan.mapping.items())
                     document.add_paragraph(f"来源：{item.source_name}" + (" · " + old if old else ""), "ShChemQuiet")
-                    document.add_paragraph(
+                    answer_heading = document.add_paragraph(
                         f"参考答案 · 本题 {item.points:g} 分", "ShChemQuestion"
                     )
+                    answer_heading.paragraph_format.keep_with_next = True
                     if item.answer:
                         writer.append(item.source, item.answer, numbering=plan, answer=True, references=refs[item.source.digest])
                     else:
                         document.add_paragraph(
                             "当前选定范围未识别到本题答案，请核对原教案与题答边界；这不表示原文没有答案。"
                         )
+                record_image_numbers(document, list(document.element.body)[body_start:-1],
+                                     plan.first if plan.count == 1 else None, image_number_hints)
                 continue
 
             plan = item[audience + "_plan"]
@@ -219,6 +227,7 @@ def build_mixed_paper_docx(
                 show_question_scores=scores,
                 new_paper_numbers=True,
             )
+            record_image_numbers(document, list(document.element.body)[body_start:-1], None, image_number_hints)
         document.core_properties.subject = (
             "本地混合选编练习；题目来源见教师版；不可发布"
         )

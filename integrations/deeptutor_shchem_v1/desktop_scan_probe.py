@@ -12,6 +12,29 @@ import tempfile
 import time
 
 
+def verify_answer_openings(path):
+    """For this two-question fixture, each answer label must share its picture's page."""
+    import re
+    import pypdfium2 as pdfium
+    from pypdfium2 import raw
+    answers, images = {}, []
+    with pdfium.PdfDocument(str(path)) as pdf:
+        for index in range(len(pdf)):
+            page = pdf[index]
+            textpage = page.get_textpage()
+            text = textpage.get_text_range()
+            for match in re.finditer(r'【答案】\s*([12])[.．]', text):
+                answers[int(match[1])] = index
+                assert '参考答案' in text, 'Generated answer heading became orphaned'
+            bounds = sorted((obj.get_bounds() for obj in page.get_objects(filter=[raw.FPDF_PAGEOBJ_IMAGE])),
+                            key=lambda b: -b[3])
+            images.extend(index for _ in bounds)
+            textpage.close();page.close()
+    assert len(images)==4 and set(answers)=={1,2}, 'Unexpected synthetic PDF content'
+    assert answers[1]==images[1] and answers[2]==images[3], 'Answer label split from its picture'
+    return True
+
+
 def run_probe(output):
     from PIL import Image, ImageDraw, ImageFont, ImageChops
     from docx import Document
@@ -23,7 +46,7 @@ def run_probe(output):
     from .desktop_raster_paper_service import RasterPaperService
     from .desktop_workbench.app import create_application
     from .desktop_workbench.main_window import TeacherWorkbenchWindow
-    app=create_application(['scan193-probe'])
+    app=create_application(['scan194-probe'])
     output=Path(output);output.mkdir(parents=True,exist_ok=True)
     screenshots=[]
     def capture(widget,name):
@@ -34,7 +57,7 @@ def run_probe(output):
         for _ in range(8):app.processEvents();time.sleep(.03)
         while not predicate() and time.monotonic()<end:app.processEvents();time.sleep(.03)
         assert predicate(), 'UI did not finish requested operation'
-    with tempfile.TemporaryDirectory(prefix='scan193-') as temp:
+    with tempfile.TemporaryDirectory(prefix='scan194-') as temp:
         temp=Path(temp)
         root=Path(getattr(sys,'_MEIPASS',Path(__file__).resolve().parents[2]))
         facade=build_default_facade(DesktopPaths.from_workspace(root,state_root=temp/'state'))
@@ -70,8 +93,11 @@ def run_probe(output):
             for index,image in enumerate(dialog.images):
                 dialog.picker.setCurrentIndex(index)
                 dialog.canvas.selection=[int(v*image['width']/800) for v in [8,8,97,62]]
-                dialog.number.setValue(new_numbers[image['image_sha256']])
+                assert image['suggested_number'] == new_numbers[image['image_sha256']]
+                assert dialog.number.value() == image['suggested_number']
                 dialog._add_region()
+                dialog.remember.click()
+                assert dialog.load_saved.isEnabled()
             assert len(dialog.edits)==4
             edits=deepcopy(dialog.edits)
             dialog.undo.click();assert len(dialog.edits)==3
@@ -79,6 +105,8 @@ def run_probe(output):
             dialog.canvas.selection=list(last['box']);dialog.number.setValue(last['number']);dialog._add_region()
             assert dialog.edits==edits
             capture(dialog,'scan-number-editor.png')
+            remembered = deepcopy(facade.state_store.snapshot()['scan_number_regions'])
+            assert all('number' not in r for im in remembered['images'].values() for r in im['regions'])
             dialog.original.setChecked(True);capture(dialog,'scan-number-original.png');dialog.original.setChecked(False)
             dialog.apply.click()
             settle(lambda:panel._preview_dialog is not None or not panel._busy)
@@ -95,6 +123,51 @@ def run_probe(output):
             exported=service.export(preview.preview_id,preview.preview_hash)
             for artifact in exported['artifacts']:
                 shutil.copyfile(artifact['path'],output/Path(artifact['path']).name)
+            answer_pdf = next(Path(a['path']) for a in exported['artifacts'] if a['artifact_id']=='teacher_pdf')
+            answer_layout = verify_answer_openings(answer_pdf)
+            # Re-create the state reader, and form a NEW paper order. The saved
+            # boxes survive while the old paper's numbers are deliberately absent.
+            from .desktop_number_regions import NumberRegionStore
+            from .desktop_state import DesktopStateStore
+            from .desktop_workbench.scan_number_dialog import ScanNumberDialog
+            panel._preview_dialog.reject();settle()
+            reordered = deepcopy(panel.request())
+            reordered['section_order'] = list(reversed(reordered['section_order']))
+            next_preview = facade.create_paper_preview(reordered)
+            next_catalog = RasterPaperService(facade).inspect_images(next_preview.preview_id, next_preview.preview_hash)
+            reusable = NumberRegionStore(DesktopStateStore(facade.paths.state_root))
+            reopened = ScanNumberDialog(next_catalog, win, region_store=reusable)
+            reopened.show();settle()
+            for index, image in enumerate(reopened.images):
+                reopened.picker.setCurrentIndex(index)
+                assert image['suggested_number'] == 3-new_numbers[image['image_sha256']]
+                assert reopened.number.value()==image['suggested_number']
+                assert reopened.load_saved.isEnabled() and reopened.saved_selector.count()==1
+                before_count=len(reopened.edits)
+                reopened.load_saved.click()
+                assert len(reopened.edits)==before_count
+                reopened.add.click()
+                assert reopened.edits[-1]['number']==image['suggested_number']
+            reopened.resize(800,700);settle()
+            for button in (reopened.remember,reopened.load_saved,reopened.apply,reopened.cancel):
+                assert reopened.rect().contains(button.mapTo(reopened,button.rect().bottomRight()))
+            capture(reopened,'scan-reused-regions.png')
+            second_edits=deepcopy(reopened.edits)
+            reopened.accept();reopened.deleteLater();settle()
+            second=RasterPaperService(facade).prepare_corrected(next_preview.preview_id,next_preview.preview_hash,second_edits)
+            # View every newly generated page before using the existing approval.
+            for role in ('student','teacher'):
+                for page in second.preview_model['pagination']['documents'][role]['pages']:
+                    data=service.image(second.preview_id,page['image_id'])['data']
+                    path=output/f'scan-reordered-{role}-page-{page["page_number"]}.png';path.write_bytes(data)
+                    screenshots.append({'file':path.name,'sha256':sha256(data).hexdigest()})
+            service.approve(second.preview_id,second.preview_hash)
+            second_export=service.export(second.preview_id,second.preview_hash)
+            second_answer=next(Path(a['path']) for a in second_export['artifacts'] if a['artifact_id']=='teacher_pdf')
+            reordered_layout=verify_answer_openings(second_answer)
+            for artifact in second_export['artifacts']:
+                shutil.copyfile(artifact['path'],output/('换序-'+Path(artifact['path']).name))
+            assert facade.state_store.snapshot()['scan_number_regions']==remembered
             assert source.read_bytes()==source_bytes and facade.basket()==original_state
             for edit in edits:
                 raw=raw_images[edit['image_sha256']]
@@ -107,6 +180,9 @@ def run_probe(output):
                     'image_resolutions':[[800,240],[1600,480]],'edits':len(edits),'raw_word_import':True,
                     'native_entry_opened':True,'undo_exercised':True,'two_audiences_exported':True,
                     'outside_regions_unchanged':True,'source_unchanged':True,
+                    'region_reuse':{'saved_positions_only':True,'reopened_state':True,'new_order_new_numbers':True,
+                                   'load_requires_add':True,'actions_visible_800x700':True,
+                                   'answer_openings_with_images':answer_layout,'reordered_answer_openings':reordered_layout},
                     'pages':{r:preview.preview_model['pagination']['documents'][r]['page_count'] for r in ('student','teacher')},
                     'screenshots':screenshots,'model_calls':0,'scope':'Synthetic Word-hosted raster images; manual pixel selection, no OCR or real-library acceptance.'}
             (output/'scan-probe.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')

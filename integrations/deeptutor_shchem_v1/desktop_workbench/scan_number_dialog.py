@@ -83,12 +83,14 @@ class NumberCanvas(QWidget):
 
 class ScanNumberDialog(QDialog):
     """Edits apply to this preview only; same-image copies use the same region."""
-    def __init__(self, catalog, parent=None):
+    def __init__(self, catalog, parent=None, *, region_store=None):
         super().__init__(parent)
         self.setWindowTitle('调整图片题号 · 仅修改本次试卷')
         self.resize(1050, 760)
         self.setWindowModality(Qt.WindowModality.WindowModal)
         self.images = catalog['images']
+        self.region_store = region_store
+        self._saved_regions = []
         self.edits = []
         self._history = []
         root = QVBoxLayout(self)
@@ -101,6 +103,26 @@ class ScanNumberDialog(QDialog):
             self.picker.addItem(f"图{i+1} · {image['width']}×{image['height']} · {roles}")
         root.addWidget(self.picker)
         self.location = QLabel(); self.location.setWordWrap(True); root.addWidget(self.location)
+        self.number_hint = QLabel()
+        self.number_hint.setWordWrap(True)
+        root.addWidget(self.number_hint)
+        saved_row = QHBoxLayout()
+        self.saved_selector = QComboBox()
+        self.saved_selector.setAccessibleName('此图已保存的题号位置，不包含旧卷号码')
+        self.load_saved = QPushButton('载入位置')
+        self.remember = QPushButton('记住此图位置')
+        self.forget = QPushButton('忘记已存位置')
+        saved_row.addWidget(self.saved_selector, 1)
+        for button in (self.load_saved, self.remember, self.forget):
+            button.setObjectName('QuietButton')
+            button.setAutoDefault(False)
+            saved_row.addWidget(button)
+        root.addLayout(saved_row)
+        self.remember.setToolTip('保存此图所有已添加区域的位置，不保存本卷号码；取消排版也保留这次明确保存。')
+        self.forget.setToolTip('只移除此图的已存位置，不清除本次替换或修改原图。')
+        self.load_saved.clicked.connect(self._load_saved)
+        self.remember.clicked.connect(self._remember)
+        self.forget.clicked.connect(self._forget)
         self.canvas = NumberCanvas()
         root.addWidget(self.canvas, 1)
         controls = QHBoxLayout()
@@ -158,7 +180,70 @@ class ScanNumberDialog(QDialog):
             image = self.images[self.picker.currentIndex()]
             locations = image.get('contexts', [])
             self.location.setText('位置：' + ('；'.join(locations[:2]) or '请对照当前卷题序填写新号。'))
+            number = image.get('suggested_number')
+            if type(number) is int and 1 <= number <= 999:
+                self.number.setValue(number)
+                self.number_hint.setText(f'按本卷编排，此图所在题目为第{number}题，已填入建议值；图内引用其他题时请另填目标号。')
+            else:
+                self.number.setValue(1)
+                self.number_hint.setText('此图未能唯一对应本卷题号，请按当前卷面填写；不会沿用上一张卷的号码。')
+        self._refresh_saved()
         self._refresh_image()
+
+    def _refresh_saved(self):
+        self.saved_selector.clear()
+        self._saved_regions = []
+        if self.images and self.region_store is not None:
+            try:
+                self._saved_regions = self.region_store.load(self.images[self.picker.currentIndex()])
+            except Exception:
+                self.status.setText('已存位置未能读取，可继续手工框选；原记录未改写。')
+        for i, row in enumerate(self._saved_regions, 1):
+            self.saved_selector.addItem(f"位置{i} · {row['box']}")
+        if not self._saved_regions:
+            self.saved_selector.addItem('此图还没有保存的位置')
+        self.load_saved.setEnabled(bool(self._saved_regions))
+        self.forget.setEnabled(bool(self._saved_regions) and self.region_store is not None)
+        self._update_remember()
+
+    def _update_remember(self):
+        current = self.images[self.picker.currentIndex()]['image_sha256'] if self.images else None
+        self.remember.setEnabled(self.region_store is not None and any(e['image_sha256'] == current for e in self.edits))
+
+    def _load_saved(self):
+        index = self.saved_selector.currentIndex()
+        if not 0 <= index < len(self._saved_regions):
+            return
+        row = self._saved_regions[index]
+        self.canvas.selection = list(row['box'])
+        self.canvas.update()
+        self.dot.setChecked(row['punctuation'] == '.')
+        self.add.setEnabled(True)
+        self.status.setText('已载入框选位置。请核对当前新号后点击“添加替换”；这一步还没有改动图片。')
+
+    def _remember(self):
+        if self.region_store is None or not self.images:
+            return
+        image = self.images[self.picker.currentIndex()]
+        edits = [e for e in self.edits if e['image_sha256'] == image['image_sha256']]
+        try:
+            self.region_store.remember(image, edits)
+        except Exception:
+            self.status.setText('位置未能保存，可继续本次排版；原有记录保留，请检查本机保存目录。')
+            return
+        self._refresh_saved()
+        self.status.setText('已记住此图的框选位置，不保存本卷号码。下次同一原图可载入；取消本次排版也会保留已存位置。')
+
+    def _forget(self):
+        if self.region_store is None or not self.images:
+            return
+        try:
+            self.region_store.forget(self.images[self.picker.currentIndex()])
+        except Exception:
+            self.status.setText('已存位置未能移除，本次图片替换不受影响。')
+            return
+        self._refresh_saved()
+        self.status.setText('已忘记此图的保存位置；本次已添加的替换区域和原图均未改变。')
 
     def _refresh_image(self, *_):
         if not self.images: return
@@ -187,6 +272,7 @@ class ScanNumberDialog(QDialog):
             self.regions.addItem(f"图{ids[edit['image_sha256']]} → {edit['number']}{edit['punctuation']} · 区域 {edit['box']}")
         self.undo.setEnabled(bool(self._history))
         self.status.setText(f'已添加{len(self.edits)}个区域。只用于当前题序；重新排序或重新生成时需要重新核对。')
+        self._update_remember()
         self._refresh_image()
 
     def _show_region(self, index):
@@ -194,6 +280,7 @@ class ScanNumberDialog(QDialog):
         edit = self.edits[index]
         self.picker.setCurrentIndex(next(i for i,r in enumerate(self.images) if r['image_sha256']==edit['image_sha256']))
         self.canvas.selection = list(edit['box']); self.canvas.update()
+        self.number.setValue(edit['number']); self.dot.setChecked(edit['punctuation'] == '.')
         self.add.setEnabled(False)
 
     def _remove_region(self):

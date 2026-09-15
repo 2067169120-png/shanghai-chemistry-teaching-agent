@@ -231,3 +231,14 @@
 !/docs/screenshots/v0.1.92/
 !/docs/screenshots/v0.1.92/**
 !/.github/workflows/chinese-typography.yml
+
+# 0.1.94 source, docs and isolated evidence.
+!/README-0.1.93-archive.md
+!/docs/ux/0.1.94-number-region-reuse.md
+!/docs/roadmaps/0.1.94.md
+!/docs/releases/0.1.94.md
+!/docs/qa/0.1.94-readiness.json
+!/docs/qa/0.1.94-package.json
+!/docs/screenshots/v0.1.94/
+!/docs/screenshots/v0.1.94/**
+!/.github/workflows/number-region-reuse.yml
