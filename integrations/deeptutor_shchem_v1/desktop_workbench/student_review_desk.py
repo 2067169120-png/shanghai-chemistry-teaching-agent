@@ -134,7 +134,8 @@ class StudentReviewDesk(QDialog):
         editor.record_score_button.hide();editor.record_diagnosis_button.hide()
         for widget in (editor,candidate):
             for label in widget.findChildren(QLabel):label.setTextFormat(Qt.TextFormat.PlainText)
-        tabs=QTabWidget();tabs.addTab(page_scroll(editor),'教师评分');tabs.addTab(page_scroll(candidate),'AI建议与评分点')
+        tabs=QTabWidget();tabs.addTab(page_scroll(editor),'教师评分');tabs.addTab(page_scroll(candidate),'AI建议')
+        tabs.setTabToolTip(1,'模型评分建议、评分点与作答证据；不替代教师评分。')
         self.editor_stack.addWidget(tabs)
         self._editors[key]=editor;self._tabs[key]=tabs
         editor.score_requested.connect(lambda payload,k=key:self._record(k,'score',payload))

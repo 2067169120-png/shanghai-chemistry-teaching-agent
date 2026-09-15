@@ -146,3 +146,16 @@ def test_fit_width_makes_full_page_readable_without_changing_scene(desk):
     assert viewer.view.verticalScrollBar().value()==0
     viewer.zoom(1.25);assert not viewer._fit
     viewer.fit_page();assert viewer._fit_mode=='page'
+
+
+def test_review_tabs_have_readable_short_labels_and_full_context(desk):
+    d,app,_=desk
+    d.resize(800,700);settle(app)
+    tabs=d._tabs[d._current]
+    assert tabs.tabText(1)=='AI建议'
+    assert '评分点与作答证据' in tabs.tabToolTip(1)
+    for index in (0,1):
+        tabs.setCurrentIndex(index);settle(app)
+        bar=tabs.tabBar()
+        assert bar.tabRect(index).width() >= bar.fontMetrics().horizontalAdvance(bar.tabText(index)) + 12
+    assert d.viewer.view.isVisible() and d.score_button.isVisible()
