@@ -12,6 +12,7 @@ def exercise(window, settle, capture):
     page = window.preparation_page
     original = page._payload()
     panel = QWidget(window)
+    panel.setObjectName('WindowRoot')
     panel.setWindowTitle("中文界面显示检查")
     panel.setWindowFlag(Qt.WindowType.Dialog)
     layout = QVBoxLayout(panel)

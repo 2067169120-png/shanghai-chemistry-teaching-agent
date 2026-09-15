@@ -131,6 +131,10 @@ class ScanNumberDialog(QDialog):
         actions = QHBoxLayout()
         self.cancel = QPushButton('取消'); self.cancel.clicked.connect(self.reject)
         self.apply = QPushButton('生成两版排版预览'); self.apply.clicked.connect(self.accept)
+        for button in (self.cancel,self.remove,self.undo,self.clear,self.add):
+            button.setObjectName('QuietButton')
+            button.setAutoDefault(False)
+        self.apply.setAutoDefault(False)
         actions.addWidget(self.cancel); actions.addWidget(self.apply); root.addLayout(actions)
         self.picker.currentIndexChanged.connect(self._select_image)
         self.canvas.region_selected.connect(lambda _: self.add.setEnabled(True))
