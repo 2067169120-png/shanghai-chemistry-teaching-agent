@@ -11,6 +11,7 @@ import re
 import posixpath
 from functools import lru_cache
 import xml.etree.ElementTree as ET
+from lxml import etree as LET
 from zipfile import ZipFile, ZIP_DEFLATED, BadZipFile
 
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
@@ -189,17 +190,17 @@ def apply_to_documents(documents: dict, edits: list[dict]) -> dict:
                             and sha256(package.read(name)).hexdigest() in converted}
             if not replacements:
                 continue
-            types = ET.fromstring(package.read('[Content_Types].xml'))
+            types = LET.fromstring(package.read('[Content_Types].xml'))
             for name in replacements:
                 part = '/' + name
                 node = next((n for n in types if n.tag == '{'+_CT+'}Override' and n.get('PartName') == part), None)
                 if node is None:
-                    node = ET.SubElement(types, '{'+_CT+'}Override', {'PartName': part})
+                    node = LET.SubElement(types, '{'+_CT+'}Override', {'PartName': part})
                 node.set('ContentType', 'image/png')
             output = BytesIO()
             with ZipFile(output, 'w', ZIP_DEFLATED) as archive:
                 for info in package.infolist():
-                    data = (ET.tostring(types, encoding='utf-8', xml_declaration=True) if info.filename == '[Content_Types].xml'
+                    data = (LET.tostring(types, encoding='UTF-8', xml_declaration=True, standalone=True) if info.filename == '[Content_Types].xml'
                             else replacements.get(info.filename))
                     data = package.read(info.filename) if data is None else data
                     if info.filename == 'word/document.xml':
