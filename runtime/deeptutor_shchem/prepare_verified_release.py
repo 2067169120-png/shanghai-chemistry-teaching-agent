@@ -12,8 +12,8 @@ import xml.etree.ElementTree as ET
 from zipfile import ZipFile, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = '0.1.94'
-BRANCH = 'feature/number-region-reuse-0.1.94'
+VERSION = '0.1.95'
+BRANCH = 'feature/explorer-performance-0.1.95'
 TAG = 'v' + VERSION
 
 
@@ -40,9 +40,14 @@ def main():
     packaged = read('package-qa/package-verification.json')
     ready['scan_numbering'] = read('readiness-qa/scan/scan-probe.json')
     ready['font_scaling'] = read('readiness-qa/font-scaling/scaling-summary.json')
+    ready['explorer_performance'] = read('readiness-qa/explorer/explorer-probe.json')
+    ready['performance_benchmark'] = read('readiness-qa/explorer-performance.json')
     for report in (ready,packaged):
         assert report['version'] == VERSION and report['source_commit'] == sha
         assert not report['uncaught_errors'] and len(report['routes_opened']) == 8
+        explorer = report['explorer_performance']
+        assert explorer['source_commit'] == sha and explorer['version'] == VERSION
+        assert all(explorer['checks'].values()) and not explorer['uncaught_errors'] and explorer['model_calls'] == 0
         fonts = report['typography']
         assert fonts['chinese_sample_supported'] and fonts['editor_unchanged']
         assert not fonts['han']['missing_glyphs'] and not fonts['chemistry']['missing_glyphs']
@@ -65,7 +70,7 @@ def main():
     assert packaged['editable_pptx_slides'] == 5 and packaged['pdf_pages'] == 2
     suites = list(ET.parse(source/'readiness-qa/pytest.xml').getroot().iter('testsuite'))
     tests = {key:sum(int(s.get(key,0)) for s in suites) for key in ('tests','failures','errors','skipped')}
-    assert tests['tests'] >= 994 and not any(tests[k] for k in ('failures','errors','skipped'))
+    assert tests['tests'] >= 1028 and not any(tests[k] for k in ('failures','errors','skipped'))
     target = ROOT/'docs/screenshots'/TAG
     target.mkdir(parents=True,exist_ok=True)
     names=set()
@@ -77,7 +82,8 @@ def main():
         assert hashlib.sha256(data).hexdigest() == record['sha256']
         (target/name).write_bytes(data);names.add(name)
     for report,folder in ((ready,source/'readiness-qa'),(packaged,source/'package-qa/probe'),
-                          (packaged['scan_numbering'],source/'package-qa/scan')):
+                          (packaged['scan_numbering'],source/'package-qa/scan'),
+                          (packaged['explorer_performance'],source/'package-qa/explorer')):
         for record in report['screenshots']:
             copy_image(folder,record)
     for scale in ('1','1.25','1.5'):
@@ -94,9 +100,16 @@ def main():
     text=text.replace('源码候选（等待本版验收）', '原生试用版')
     text=text.replace('{{VERIFICATION_SUMMARY}}',
         f"同一提交完成 **{tests['tests']}项Windows定向测试，0失败、0错误、0跳过**。"
-        '源码与同一发行EXE均走过合成扫描题导入、位置保存/重开、换序带入新号、实际两版PDF和导出；原文件与题篮不变，两个答案首段与对应图片在同页。'
-        '中文和化学符号缺字样例为0，Windows原生Qt后端1/1.25/1.5倍率检查通过；这是倍率模拟，不是实际系统缩放或多屏验收。'
-        '既有八页、作品整理、备份/独立恢复、文字编号与合成PPTX/DOCX输出继续回归；没有调用真实模型。')
+        '源码与同一发行EXE均实际导入16道合成Word题，首题8图一次来源读取，翻页复用索引，来源选择保留，导入后失效刷新，题号位置ZIP独立恢复；原文件与题篮不变。'
+        '既有八页、中文/化学符号与Qt倍率、作品整理、备份恢复、编号及文档导出继续回归。这不是全量真实资料或所有Windows系统缩放验收，未调用真实模型。')
+    bench = ready['performance_benchmark']
+    assert bench['source_commit'] == sha and bench['word_images']['pixel_bytes_equal']
+    rows = ['| 合成规模 | 原实现中位 | 新条件查询中位 | 索引建立（一次） |', '| --- | ---: | ---: | ---: |']
+    for row in bench['search']:
+        rows.append(f"| {row['items']}题 | {row['old_search']['median_ms']} ms | {row['indexed_new_query']['median_ms']} ms | {row['index_build_ms']} ms |")
+    im=bench['word_images']
+    rows.append(f"\n80题合成Word中的8幅图：原逐图读取中位{im['old_per_image']['median_ms']} ms，新合并读取{im['new_one_source_parse']['median_ms']} ms；字节一致。")
+    text=text.replace('{{PERFORMANCE_RESULTS}}', '\n'.join(rows))
     for image in re.findall(r'!\[[^\]]*\]\(([^)]+)\)',text):
         assert (ROOT/image).is_file(),image
     readme.write_text(text,encoding='utf-8')
@@ -104,7 +117,7 @@ def main():
     command('git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
     command('git','add','-f','README.md',str(target.relative_to(ROOT)),
             f'docs/qa/{VERSION}-readiness.json',f'docs/qa/{VERSION}-package.json')
-    command('git','commit','-m','docs: record 0.1.94 verified reusable regions, answer pagination and native screenshots [skip ci]')
+    command('git','commit','-m','docs: record 0.1.95 verified question loading, source entry points and backup regions [skip ci]')
     delivery_sha=command('git','rev-parse','HEAD')
     command('git','push','origin','HEAD:refs/heads/'+BRANCH)
     output=ROOT/'release-delivery';output.mkdir(exist_ok=True)
@@ -135,6 +148,9 @@ def main():
     ids=set(re.findall(r'id="([^"]+)"',html))
     assert all(href[1:] in ids for href in re.findall(r'href="([^"]+)"',html) if href.startswith('#'))
     (output/f'ShanghaiChem-{VERSION}-Guide.html').write_text('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>沪上化学智研台'+VERSION+'</title><style>body{max-width:1050px;margin:40px auto;padding:0 24px;font:17px/1.8 system-ui}img{max-width:100%}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:8px}pre{overflow:auto;background:#f5f5f5;padding:16px}</style>'+html+'</html>',encoding='utf-8')
+    research = (ROOT/'docs/research/0.1.95-workflows-and-references.md').read_text(encoding='utf-8')
+    research_html = markdown.markdown(research,extensions=['tables','fenced_code'])
+    (output/f'ShanghaiChem-{VERSION}-Workflow-Research.html').write_text('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>工作流与开源借鉴</title><style>body{max-width:1080px;margin:40px auto;font:17px/1.8 system-ui;padding:0 24px}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:10px}</style>'+research_html+'</html>',encoding='utf-8')
     assets=[{'file':p.name,'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
             for p in sorted(output.iterdir()) if p.is_file()]
     write_json(output/'RELEASE-MANIFEST.json',{'version':VERSION,'tag':TAG,'tested_source_commit':sha,
@@ -144,7 +160,7 @@ def main():
     command('git','tag','-a',TAG,'-m',VERSION+' verified Windows trial; code '+sha)
     command('git','push','origin','refs/tags/'+TAG)
     command('gh','release','create',TAG,'--repo',repo,'--verify-tag','--draft','--prerelease',
-        '--title',VERSION+' · 题号位置复用与答案分页','--notes-file',f'docs/releases/{VERSION}.md',
+        '--title',VERSION+' · 题目加载与导入衔接','--notes-file',f'docs/releases/{VERSION}.md',
         *[str(p) for p in sorted(output.iterdir()) if p.is_file()])
     command('gh','release','edit',TAG,'--repo',repo,'--draft=false','--latest=false')
     print('Published',TAG,'tested',sha,'delivery',delivery_sha)

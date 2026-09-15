@@ -31,6 +31,15 @@ def main() -> int:
     workspace_root = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2]))
     if str(workspace_root) not in sys.path:
         sys.path.insert(0, str(workspace_root))
+    if len(sys.argv) == 3 and sys.argv[1] == "--verify-explorer":
+        try:
+            from integrations.deeptutor_shchem_v1.desktop_explorer_probe import run_probe
+            return run_probe(Path(sys.argv[2]))
+        except Exception:
+            _write_startup_error()
+            if sys.stderr is not None:
+                traceback.print_exc()
+            return 8
     if len(sys.argv) == 3 and sys.argv[1] == "--verify-scan-numbers":
         try:
             from integrations.deeptutor_shchem_v1.desktop_scan_probe import run_probe

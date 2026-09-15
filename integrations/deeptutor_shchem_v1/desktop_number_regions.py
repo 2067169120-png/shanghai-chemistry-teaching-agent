@@ -63,6 +63,32 @@ class NumberRegionStore:
         self.state._update(update)
 
 
+
+def validated_region_library(value):
+    """Validate the complete optional backup field without trusting extra keys."""
+    import re
+    if (not isinstance(value, dict) or set(value) != {'schema_version', 'images'}
+            or value.get('schema_version') != _SCHEMA or not isinstance(value.get('images'), dict)):
+        raise RasterNumberError('备份中的题号位置格式不正确。')
+    for digest, row in value['images'].items():
+        if (not isinstance(digest, str) or not re.fullmatch(r'[0-9a-f]{64}', digest)
+                or not isinstance(row, dict) or set(row) != {'width', 'height', 'regions'}
+                or type(row['width']) is not int or type(row['height']) is not int
+                or not 1 <= row['width'] <= 50000 or not 1 <= row['height'] <= 50000
+                or not isinstance(row['regions'], list)
+                or any(not isinstance(r, dict) or set(r) != {'box', 'punctuation'} for r in row['regions'])):
+            raise RasterNumberError('题号位置记录含无效尺寸、身份或多余字段。')
+        validate_edits([dict(r, image_sha256=digest, number=1) for r in row['regions']],
+                       [{'image_sha256': digest, 'width': row['width'], 'height': row['height']}])
+    return deepcopy(value)
+
+
+def region_totals(value):
+    library = validated_region_library(value)
+    return {'number_region_images': len(library['images']),
+            'number_regions': sum(len(r['regions']) for r in library['images'].values())}
+
+
 def record_image_numbers(document, blocks, number, hints):
     """Record the known owning printed question of generated body images.
 

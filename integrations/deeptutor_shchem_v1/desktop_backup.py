@@ -194,6 +194,9 @@ def plan_backup(state_root, *, include_images=False, include_tasks=False, cancel
     selected = {"schema_version": STATE_SCHEMA, "window": {}, "drafts": records,
                 "basket": deepcopy(snapshot["basket"]), "updated_at": snapshot.get("updated_at"),
                 "work_organization": {}}
+    if "scan_number_regions" in snapshot:
+        from .desktop_number_regions import validated_region_library
+        selected["scan_number_regions"] = validated_region_library(snapshot["scan_number_regions"])
     for identity, record in records.items():
         view = metadata(snapshot, "draft", identity)
         if view:
@@ -292,6 +295,10 @@ def plan_backup(state_root, *, include_images=False, include_tasks=False, cancel
                "files": len(files), "bytes": sum(f.size for f in files.values()),
                "include_images": bool(include_images), "include_tasks": bool(include_tasks),
                "missing_files": sum(r["kind"] == "missing_file" or r.get("reason") == "missing" for r in refs)}
+    if "scan_number_regions" in selected:
+        from .desktop_number_regions import region_totals
+        summary.update(region_totals(selected["scan_number_regions"]))
+        warnings.append("包含题号区域坐标，不包括对应的原题图；恢复后须使用相同原图才能载入位置。旧版程序可能不支持此扩展。")
     return BackupPlan(tuple(files.values()), summary, tuple(refs), tuple(warnings))
 
 
@@ -396,16 +403,23 @@ def _manifest(archive):
         raise BackupError("备份缺少个人作品状态。")
     state = _json(archive.read("files/desktop-state.v1.json"))
     if (not isinstance(state, dict) or state.get("schema_version") != STATE_SCHEMA
-            or set(state) - {"schema_version", "window", "drafts", "basket", "updated_at", "work_organization"}
+            or set(state) - {"schema_version", "window", "drafts", "basket", "updated_at", "work_organization", "scan_number_regions"}
             or not isinstance(state.get("drafts"), dict) or not isinstance(state.get("basket"), list)
             or len(state["basket"]) > 100):
         raise BackupError("备份的作品状态格式不正确。")
+    if "scan_number_regions" in state:
+        from .desktop_number_regions import validated_region_library
+        validated_region_library(state["scan_number_regions"])
     _reject_sensitive_fields(state)
     for identity, record in state["drafts"].items():
         PreparationDraftService._payload(record)
         metadata(state, "draft", identity)
     if not isinstance(manifest.get("references"), list) or not isinstance(manifest.get("warnings"), list):
         raise BackupError("备份缺少外部引用和范围说明。")
+    if "scan_number_regions" in state:
+        from .desktop_number_regions import region_totals
+        manifest = deepcopy(manifest)
+        manifest['summary'] = {**manifest.get('summary', {}), **region_totals(state['scan_number_regions'])}
     return manifest
 
 
@@ -432,6 +446,9 @@ def inspect_backup(filename, *, cancel=None):
                 "basket_references": len(state["basket"]), "files": len(manifest["files"]),
                 "tasks": sum(bool(_TASK_FILE.fullmatch(r["path"])) for r in manifest["files"]),
                 "bytes": sum(r["bytes"] for r in manifest["files"])}
+            from .desktop_number_regions import region_totals
+            if "scan_number_regions" in state:
+                manifest["summary"].update(region_totals(state["scan_number_regions"]))
             return manifest
     except BackupError:
         raise
@@ -581,7 +598,8 @@ def summary_text(report):
     return (f"备课草稿 {s['drafts']} 份 · 已结束任务 {s['tasks']} 份 · 题篮引用 {s['basket_references']} 项\n"
             f"文件 {s['files']} 个 · 未压缩 {s['bytes'] / (1024 * 1024):.2f} MB\n"
             f"图片打包 {s.get('images_included', 0)} / 引用 {s.get('images_referenced', 0)} 张 · "
-            f"恢复副本 {'包含' if s.get('recovery') else '无'}\n\n" +
+            f"恢复副本 {'包含' if s.get('recovery') else '无'}\n"
+            f"已存题号位置 {s.get('number_region_images', 0)} 张图 / {s.get('number_regions', 0)} 个区域（不含原题图）\n\n" +
             "\n".join(report["warnings"]) + "\n\n外部引用/缺失项：\n" +
             ("\n".join((r.get("asset", {}).get("caption") or r.get("path") or r.get("key") or r["kind"]) +
                        " — " + r.get("reason", "文件缺失") for r in report["references"]) or "无"))

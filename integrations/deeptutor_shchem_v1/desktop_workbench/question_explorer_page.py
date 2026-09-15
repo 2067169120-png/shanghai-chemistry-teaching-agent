@@ -1,11 +1,15 @@
 """Native faceted question search: left taxonomy, right cards and a persistent cart."""
 from __future__ import annotations
 
+import json
+from time import perf_counter
+
 from PySide6.QtCore import Qt, QTimer, Signal, QSignalBlocker
-from PySide6.QtWidgets import (QBoxLayout, QComboBox, QFrame, QHBoxLayout, QLineEdit,
+from PySide6.QtWidgets import (QApplication, QBoxLayout, QComboBox, QFrame, QHBoxLayout, QLineEdit,
     QPushButton, QScrollArea, QSizePolicy, QSplitter, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
 
-from ..desktop_question_explorer import PERSONAL_LANES, core_results, entry_is_selected, personal_results
+from ..desktop_question_explorer import PERSONAL_LANES, core_results, entry_is_selected
+from ..desktop_explorer_index import PersonalCatalogSession, check_cancelled
 from .components import CardFrame
 from .explorer_reader import PersonalQuestionReader, text_label
 from .explorer_basket import ExplorerBasketDialog
@@ -65,6 +69,10 @@ class QuestionExplorerPage(QWidget):
         self._reader = None
         self._active_card = None
         self._catalogs = {}
+        self._sessions = {}
+        self._started = False
+        self._needs_reload = False
+        self.load_metrics = {}
         self._base_facets = {}
         self.filters = {}
         self.curriculum = {}
@@ -106,6 +114,13 @@ class QuestionExplorerPage(QWidget):
                             ("公众号补充题", "supplemental"), ("本地 Word 题库", "word_native"),
                             ("个人图片题库", "visual_native")):
             self.scope.addItem(label, lane)
+        try:
+            saved_lane = facade.state_store.snapshot().get("question_explorer", {}).get("lane")
+            saved_index = self.scope.findData(saved_lane)
+            if saved_index >= 0:
+                self.scope.setCurrentIndex(saved_index)
+        except (AttributeError, TypeError, ValueError, RuntimeError):
+            pass  # No preference must not stop the reader opening.
         self.scope.setAccessibleName("选题来源")
         side.addWidget(self.scope)
         self.filter_hint = text_label("同类标签多选取并集，不同类同时满足。", "MutedLabel")
@@ -127,6 +142,11 @@ class QuestionExplorerPage(QWidget):
         self.reload_button.setObjectName("QuietButton")
         self.reload_button.clicked.connect(self.reload)
         side.addWidget(self.reload_button)
+        self.diagnostics_button = QPushButton("复制加载记录")
+        self.diagnostics_button.setObjectName("QuietButton")
+        self.diagnostics_button.setToolTip("仅复制最近一次目录、筛选和题图耗时，不含题面、关键词或路径。")
+        self.diagnostics_button.clicked.connect(self.copy_load_metrics)
+        side.addWidget(self.diagnostics_button)
         self.splitter.addWidget(self.sidebar)
         right = QWidget()
         right.setMinimumWidth(0)
@@ -204,22 +224,66 @@ class QuestionExplorerPage(QWidget):
         self.tree.itemChanged.connect(self.facet_changed)
         self.tree.itemClicked.connect(self.curriculum_clicked)
         self.refresh_basket()
-        QTimer.singleShot(0, self.load_curriculum)
-        QTimer.singleShot(0, self.search)
+        self.advanced_button.setText("题图与标签管理" if self.scope.currentData() == "visual_native" else "Word原文与标签管理")
 
     def showEvent(self, event):
         self.refresh_basket()
         super().showEvent(event)
+        if not self._started:
+            self._started = True
+            self.load_curriculum()
+            self.search()
+        elif self._needs_reload:
+            self._needs_reload = False
+            self.reload()
+
+    def invalidate_catalogs(self):
+        """Imports invalidate snapshots, including a cancelled cold reader."""
+        self._catalogs.clear()
+        self._sessions.clear()
+        self._base_facets = {}
+        if self.isVisible() and self._started:
+            self.reload()
+        else:
+            self._needs_reload = True
+
+    def copy_load_metrics(self):
+        metrics = dict(self.load_metrics)
+        metrics["word_images"] = list(getattr(self._reader, "load_metrics", []))
+        QApplication.clipboard().setText(json.dumps(metrics, ensure_ascii=False, indent=2))
+        self.diagnostics_button.setToolTip("已复制最近一次加载记录；不含题目、关键词、文件路径或密钥。")
+
+    def _personal_source_links(self):
+        row = QWidget()
+        layout = QBoxLayout(QBoxLayout.Direction.TopToBottom, row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        for title, lane in (("切换到已导入 Word", "word_native"), ("切换到已导入图片题", "visual_native")):
+            if lane == self.scope.currentData():
+                continue
+            button = QPushButton(title)
+            button.setObjectName("QuietButton")
+            button.clicked.connect(lambda _checked=False, target=lane: self.scope.setCurrentIndex(self.scope.findData(target)))
+            layout.addWidget(button)
+        return row
 
     def scope_changed(self, *_):
+        lane = self.scope.currentData()
+        try:
+            def save(state):
+                state["question_explorer"] = {"lane": lane}
+            self.facade.state_store._update(save)
+        except (AttributeError, TypeError, ValueError, RuntimeError):
+            self.scope.setToolTip("来源选择未能保存；当前找题仍可继续。")
         self.filters, self.curriculum, self._base_facets = {}, {}, {}
         self._page, self._cursors = 0, [None]
         self.advanced_button.setText('题图与标签管理' if self.scope.currentData() == "visual_native" else "Word原文与标签管理")
         self._render_tree()
-        self.search()
+        if self._started:
+            self.search()
 
     def reload(self):
         self._catalogs.pop(self.scope.currentData(), None)
+        self._sessions.pop(self.scope.currentData(), None)
         self._base_facets = {}
         self.load_curriculum()
         self.search()
@@ -256,28 +320,41 @@ class QuestionExplorerPage(QWidget):
         selection = {key: sorted(values) for key, values in self.filters.items() if values}
         selector = dict(self.curriculum)
         cursor = self._cursors[page] if lane not in PERSONAL_LANES else None
-        cached = self._catalogs.get(lane)
-        def run():
+        session = self._sessions.setdefault(lane, PersonalCatalogSession(lane)) if lane in PERSONAL_LANES else None
+        started = perf_counter()
+        def run(report, cancelled):
+            check_cancelled(cancelled)
+            read_started = perf_counter()
             if lane in PERSONAL_LANES:
-                catalog = cached
-                if catalog is None:
-                    catalog = self.facade.word_question_catalog() if lane == "word_native" else self.facade.personal_visual_questions()
-                return personal_results(catalog, lane, selection, query, page, self.PAGE_SIZE), catalog
+                loader = self.facade.word_question_catalog if lane == "word_native" else self.facade.personal_visual_questions
+                index, metrics = session.get(loader, cancelled=cancelled)
+                value = index.search(selection, query, page, self.PAGE_SIZE, cancelled=cancelled)
+                value["performance"].update(metrics)
+                return value, index.catalog
             kwargs = dict(scope=lane, query=query, limit=self.PAGE_SIZE)
             if selection:
                 kwargs["filters"] = selection
             if cursor:
                 kwargs["cursor"] = cursor
             kwargs.update(selector)
-            return core_results(self.facade.search_themes(**kwargs)), None
+            value = core_results(self.facade.search_themes(**kwargs))
+            check_cancelled(cancelled)
+            value["performance"] = {"catalog_and_query_ms": round((perf_counter() - read_started) * 1000, 2)}
+            return value, None
         def done(result):
             if self._closed or epoch != self._epoch:
                 return
             value, catalog = result
             if catalog is not None:
                 self._catalogs[lane] = catalog
+            display_started = perf_counter()
             self._apply(value)
-        self._search_task = self.tasks.submit("筛选题目", run, on_success=done,
+            self.load_metrics = {"schema": "question-page-timing-v1", "lane": lane,
+                **value.get("performance", {}), "visible_cards": len(self.cards),
+                "card_setup_ms": round((perf_counter() - display_started) * 1000, 2),
+                "request_to_cards_ms": round((perf_counter() - started) * 1000, 2),
+                "scope": "当前目录快照及卡片建立；题图读取另计，不等于全屏绘制或网络计时。"}
+        self._search_task = self.tasks.submit_progress("筛选题目", run, on_success=done,
             on_failure=lambda message: self.failed(epoch, message))
 
     def failed(self, epoch, message):
@@ -286,6 +363,7 @@ class QuestionExplorerPage(QWidget):
         self._loading = False
         self.result_summary.setText("本次目录未能读取")
         self.list_layout.addWidget(text_label(str(message) + "\n可切换左侧资料来源，或导入后点击重新读取。原题篮保持不变。", "StatusAttention"))
+        self.list_layout.addWidget(self._personal_source_links())
         self.list_layout.addStretch(1)
 
     def _apply(self, result):
@@ -309,7 +387,8 @@ class QuestionExplorerPage(QWidget):
             self.cards.append(card)
             self.list_layout.addWidget(card)
         if not self.cards:
-            self.list_layout.addWidget(text_label("没有符合这些条件的题目\n可删除上方单个标签，或清空条件重新选择。", "CardTitle"))
+            self.list_layout.addWidget(text_label("当前来源没有符合条件的题目\n可清空条件；刚导入资料后请重新读取，或切换到对应的个人题库。", "CardTitle"))
+            self.list_layout.addWidget(self._personal_source_links())
         if result["warnings"]:
             self.list_layout.addWidget(text_label("\n".join(result["warnings"]), "MutedLabel"))
         self.list_layout.addStretch(1)
@@ -327,6 +406,14 @@ class QuestionExplorerPage(QWidget):
                 item.widget().deleteLater()
 
     def _render_tree(self, current=None):
+        # A page change with the same facets does not need hundreds of new Qt
+        # items. Counts and selections remain part of the key, never just lane.
+        tree_key = (self.scope.currentData(), id(self._curriculum_catalog),
+                    repr(self._base_facets), repr(current),
+                    tuple(sorted((k, tuple(sorted(v))) for k, v in self.filters.items())))
+        if tree_key == getattr(self, "_last_tree_key", None):
+            return
+        self._last_tree_key = tree_key
         # Rebuilding result counts must not close the teacher's chapter path or
         # reopen a deliberately collapsed group. Branch labels are stable; leaf
         # count labels are not used as keys. Scope changes start a fresh menu.
@@ -385,7 +472,7 @@ class QuestionExplorerPage(QWidget):
             self.tree.doItemsLayout()
             self.tree.verticalScrollBar().setValue(scroll_position)
         self._tree_lane = lane
-        self.filter_hint.setText("同类多选为或，不同类为且。" + ("括号为当前匹配小问数。" if self.scope.currentData() not in PERSONAL_LANES else "使用已保存的来源标签。"))
+        self.filter_hint.setText("同类标签满足任意一个，不同类须同时满足。" + ("括号为当前匹配小问数。" if self.scope.currentData() not in PERSONAL_LANES else "使用已保存的来源标签。"))
 
     def facet_changed(self, item, _column):
         data = item.data(0, Qt.ItemDataRole.UserRole)

@@ -358,6 +358,9 @@ class TeacherWorkbenchWindow(QMainWindow):
             and dialog.preparation_reference is not None
             and self.preparation_page.import_word_reference(dialog.preparation_reference)):
             self.navigate("preparation")
+        # Imports may be saved while the dialog remains open or is cancelled.
+        # Refresh projections, not the private source data, on the next visit.
+        self.library_page.invalidate_catalogs()
         dialog.deleteLater()
 
     def open_settings(self) -> None:
