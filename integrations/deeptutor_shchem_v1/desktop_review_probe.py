@@ -48,6 +48,11 @@ def run_probe(output):
                 desk.viewer.location.setCurrentIndex(4)
                 settle(lambda:desk.viewer._box_item is not None)
                 desk._tabs[desk._current].setCurrentIndex(1)
+                # Selection changes the tab style; let Qt finish that layout
+                # before checking/capturing the actual visible tab bounds.
+                settle()
+                bar=desk._tabs[desk._current].tabBar()
+                assert bar.rect().contains(bar.tabRect(1)), 'Selected AI tab is clipped'
                 capture(desk,'student-review-evidence.png')
                 desk._tabs[desk._current].setCurrentIndex(0)
                 first=desk._current
