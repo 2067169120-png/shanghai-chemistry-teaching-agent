@@ -19,8 +19,14 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -r requirements-dev.txt
-      - name: Check glyphs before wider integration
-        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_chinese_typography.py --junitxml=readiness-qa/font-tests.xml
+      - name: Glyphs, pixel integrity and native number selection
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_chinese_typography.py staging/coordination/deeptutor_gateway/tests/test_raster_numbers.py staging/coordination/deeptutor_gateway/tests/test_scan_number_ui.py --junitxml=readiness-qa/pytest.xml
+      - name: Install local pagination engine
+        run: choco install libreoffice-fresh -y --no-progress
+      - name: Native selection to actual student and teacher documents
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/desktop_teacher_workbench.pyw --verify-scan-numbers readiness-qa/scan
       - name: Native Windows scale probes
         run: python runtime/deeptutor_shchem/typography_ci.py readiness-qa/font-scaling
       - name: Snapshot exact integration source
@@ -29,7 +35,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: scan193-initial-${{ github.sha }}
+          name: scan193-review-${{ github.sha }}
           path: |
             readiness-qa/
             integration-source.zip
