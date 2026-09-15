@@ -33,7 +33,7 @@ def test_ui_source_has_native_responsive_surfaces() -> None:
     assert "QBoxLayout.Direction.TopToBottom" in home
     assert "QBoxLayout.Direction.TopToBottom" in library
     assert "我的讲义（Word）" in library
-    assert "98 包 / 196 份" in dialogs
+    assert "打开旧版一轮复习资料包" in dialogs
     assert "选择文件夹" in components
     # Keep this UI package a native local shell.  Build the strings in pieces
     # so this test itself does not become a forbidden-surface fixture.
@@ -1151,8 +1151,8 @@ def test_import_and_settings_dialogs_keep_clear_chinese_actions_and_close_guard(
     import_dialog = ImportDialog(_Facade(), bridge)
     import_dialog.show()
     _settle(qt_app)
-    assert "98 份" in import_dialog.corpus_button.text()
-    assert "预览" in import_dialog.corpus_button.text()
+    assert "旧版" in import_dialog.corpus_button.text()
+    assert "资料包" in import_dialog.corpus_button.text()
     assert import_dialog.save_button.text() == "预览并选择导入"
     assert any(
         button.text() == "选择文件夹"
@@ -1163,7 +1163,7 @@ def test_import_and_settings_dialogs_keep_clear_chinese_actions_and_close_guard(
     import_dialog.reject()
     assert import_dialog.isVisible()
     import_dialog._corpus_failed("批量读取未完成")
-    assert import_dialog.corpus_button.text() == "重试一轮复习讲义"
+    assert import_dialog.corpus_button.text() == "重试旧版一轮复习资料包"
     import_dialog._task_finished("busy")
     import_dialog.close()
 

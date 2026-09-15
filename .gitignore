@@ -242,3 +242,14 @@
 !/docs/screenshots/v0.1.94/
 !/docs/screenshots/v0.1.94/**
 !/.github/workflows/number-region-reuse.yml
+
+# 0.1.95 explicit sources and isolated evidence.
+!/README-0.1.94-archive.md
+!/docs/ux/0.1.95-explorer-performance.md
+!/docs/research/0.1.95-workflows-and-references.md
+!/docs/releases/0.1.95.md
+!/docs/qa/0.1.95-readiness.json
+!/docs/qa/0.1.95-package.json
+!/docs/screenshots/v0.1.95/
+!/docs/screenshots/v0.1.95/**
+!/.github/workflows/explorer-performance.yml

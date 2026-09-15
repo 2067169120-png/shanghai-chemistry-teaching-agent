@@ -104,11 +104,12 @@ class ImportDialog(QDialog):
             label.setWordWrap(True)
             label.setObjectName("MutedLabel")
             state_layout.addWidget(label)
-        self.corpus_button = QPushButton("预览指定一轮复习解析版（98 份）")
+        self.corpus_button = QPushButton("打开旧版一轮复习资料包…")
+        self.corpus_button.setToolTip("仅适用于本机已有的指定98份解析版资料；普通Word请从上方添加。")
         self.corpus_button.setAccessibleName("预览指定上好课资料包的 98 份解析版 Word，再选择导入")
         self.corpus_button.clicked.connect(self._run_one_round_corpus)
         state_layout.addWidget(self.corpus_button)
-        content_layout.addWidget(state_card)
+        self.source_help_card = state_card
 
         self.resume_card = CardFrame()
         resume_layout = QVBoxLayout(self.resume_card)
@@ -166,7 +167,7 @@ class ImportDialog(QDialog):
             accessible_name="参考答案页",
         )
         self.handout_files = FileSelectionPanel(
-            "添加教师讲义；可读取的 Word 文字先形成原生文字候选，图片与公式进入视觉队列。",
+            "添加教师讲义；Word正文直接提取，嵌入图片保留原图；不能读取的图像另行识别。",
             title="教师讲义",
             supported_suffixes=VISUAL_IMPORT_SOURCE_SUFFIXES,
             allow_reordering=True,
@@ -178,6 +179,8 @@ class ImportDialog(QDialog):
         for panel in self._role_panels():
             content_layout.addWidget(panel)
             panel.files_changed.connect(self._preview_inputs_changed)
+        # General files first; a historical corpus is not the main import path.
+        content_layout.addWidget(state_card)
         self.source_type.currentTextChanged.connect(self._preview_inputs_changed)
 
         self.provider_card = CardFrame()
@@ -977,7 +980,7 @@ class ImportDialog(QDialog):
         self.progress.setValue(self.progress.maximum())
         self.progress.setFormat("讲义候选已保存")
         set_status(self.status, "success")
-        self.corpus_button.setText("再次导入一轮复习讲义（98 包 / 196 份）")
+        self.corpus_button.setText("重新预览旧版一轮复习资料包…")
         self.status.setText(
             f"已处理 {completed} 份 Word：{quick} 项原生文字候选，{visual} 项待视觉处理，"
             f"{paired} 项已匹配参考解析，失败 {failed} 个文件；全部仍待教师复核。"
@@ -986,7 +989,7 @@ class ImportDialog(QDialog):
     def _corpus_failed(self, message: str) -> None:
         self.progress.setFormat("批量导入未完成")
         set_status(self.status, "error")
-        self.corpus_button.setText("重试一轮复习讲义")
+        self.corpus_button.setText("重试旧版一轮复习资料包")
         self.status.setText(message)
 
     def _cancel_active(self) -> None:

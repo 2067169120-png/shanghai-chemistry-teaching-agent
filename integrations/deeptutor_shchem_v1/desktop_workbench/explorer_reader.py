@@ -24,14 +24,15 @@ def text_label(text, name="ExplorerBody"):
 class SourceImage(QLabel):
     finished = Signal()
 
-    def __init__(self, tasks, loader, parent=None):
+    def __init__(self, tasks, loader=None, parent=None):
         super().__init__("正在读取原图…", parent)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setMinimumWidth(0)
         self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         self._source = QPixmap()
         self.loaded, self.closed = False, False
-        self.task = tasks.submit("读取选题原图", loader, on_success=self.ready, on_failure=self.failed)
+        self.task = (tasks.submit("读取选题原图", loader, on_success=self.ready, on_failure=self.failed)
+                     if loader is not None else None)
         self.tasks = tasks
 
     def ready(self, result):
@@ -68,7 +69,8 @@ class SourceImage(QLabel):
 
     def cancel(self):
         self.closed = True
-        self.tasks.cancel(self.task)
+        if self.task:
+            self.tasks.cancel(self.task)
 
 
 class PersonalQuestionReader(QWidget):
@@ -78,6 +80,9 @@ class PersonalQuestionReader(QWidget):
         super().__init__(parent)
         self.entry, self.facade, self.tasks = entry, facade, tasks
         self.images, self.required = [], []
+        self._batch_tasks = []
+        self._closed = False
+        self.load_metrics = []
         self.supported = bool(entry["payload"].get("selection_ready"))
         self.tabs = QTabWidget()
         root = QVBoxLayout(self)
@@ -108,6 +113,7 @@ class PersonalQuestionReader(QWidget):
         layout = QVBoxLayout(body)
         layout.setContentsMargins(8, 12, 8, 16)
         layout.setSpacing(12)
+        pending_word = []
         if self.entry["lane"] == "word_native":
             blocks = row.get("answer_blocks", []) if index else row.get("context_blocks", []) + row.get("question_blocks", [])
             for block in blocks:
@@ -122,8 +128,8 @@ class PersonalQuestionReader(QWidget):
                         if not index:
                             self.supported = False
                         continue
-                    loader = lambda a=asset: self.facade.word_question_image(row["key"], row["revision"], a["asset_id"])
-                    self.add_image(layout, loader, required=not index)
+                    image = self.add_image(layout, None, required=not index)
+                    pending_word.append((asset["asset_id"], image))
                 for warning in block.get("warnings", []):
                     layout.addWidget(text_label(warning, "MutedLabel"))
                     if not index and not assets and any(word in warning for word in ("图片", "对象", "图形", "嵌入")):
@@ -148,7 +154,36 @@ class PersonalQuestionReader(QWidget):
         child = QVBoxLayout(container)
         child.setContentsMargins(0, 0, 0, 0)
         child.addWidget(page_scroll(body))
+        if pending_word:
+            self._read_word_images(row, pending_word)
         self.readiness_changed.emit(self.ready_to_select)
+
+    def _read_word_images(self, row, pending):
+        from ..desktop_word_image_batch import load_word_image_batch
+
+        def update(value):
+            if self._closed:
+                return
+            for asset_id, image in pending:
+                if asset_id == value["asset_id"]:
+                    image.failed("") if value.get("failed") else image.ready(value["result"])
+
+        def complete(metrics):
+            if not self._closed:
+                self.load_metrics.append(metrics)
+                self.readiness_changed.emit(self.ready_to_select)
+
+        def failure(message):
+            if not self._closed:
+                for _, image in pending:
+                    if not image.loaded:
+                        image.failed(message)
+
+        task = self.tasks.submit_progress("读取本题图片",
+            lambda report, cancelled: load_word_image_batch(self.facade, row["key"], row["revision"],
+                [asset_id for asset_id, _ in pending], progress=report, cancelled=cancelled),
+            on_progress=update, on_success=complete, on_failure=failure)
+        self._batch_tasks.append(task)
 
     def add_image(self, layout, loader, *, required):
         image = SourceImage(self.tasks, loader)
@@ -157,8 +192,12 @@ class PersonalQuestionReader(QWidget):
             self.required.append(image)
         image.finished.connect(lambda: self.readiness_changed.emit(self.ready_to_select))
         layout.addWidget(image)
+        return image
 
     def closeEvent(self, event):
+        self._closed = True
+        for task in self._batch_tasks:
+            self.tasks.cancel(task)
         for image in self.images:
             image.cancel()
         super().closeEvent(event)
