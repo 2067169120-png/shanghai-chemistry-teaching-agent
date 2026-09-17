@@ -1,0 +1,34 @@
+name: Apply inspected exam reading layout
+on:
+  push:
+    branches: ["feature/exam-dashboard-0.1.98"]
+    paths: [".github/exam198-polish.patch", ".github/workflows/apply-exam198-polish.yml"]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Apply exact inspected layout and visual-request test
+        shell: python
+        run: |
+          import pathlib, hashlib, os, subprocess
+          def git(*args):
+              return subprocess.check_output(['git', *args],text=True).strip()
+          branch='feature/exam-dashboard-0.1.98'
+          assert git('rev-parse','HEAD') == os.environ['GITHUB_SHA']
+          assert git('ls-remote','origin','refs/heads/'+branch).split()[0] == os.environ['GITHUB_SHA']
+          patch=pathlib.Path('.github/exam198-polish.patch').read_bytes()
+          assert hashlib.sha256(patch).hexdigest() == '248f3236880fd290c82cf05f2cf95fc3b8d5941c266c39802c3cd61f8502f06c'
+          subprocess.run(['git','apply','--check','--index','-'],input=patch,check=True)
+          subprocess.run(['git','apply','--index','-'],input=patch,check=True)
+          git('rm','-f','.github/exam198-polish.patch','.github/workflows/apply-exam198-polish.yml')
+          git('config','user.name','github-actions[bot]')
+          git('config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
+          git('commit','-m','fix(exam): prioritize charts and keep API reading area usable in compact windows')
+          git('push','origin','HEAD:refs/heads/'+branch)
+          print('Applied',git('rev-parse','HEAD'))
