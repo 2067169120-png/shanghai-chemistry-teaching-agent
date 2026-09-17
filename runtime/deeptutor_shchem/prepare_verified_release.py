@@ -12,8 +12,8 @@ import xml.etree.ElementTree as ET
 from zipfile import ZipFile, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = '0.1.96'
-BRANCH = 'feature/student-review-desk-0.1.96'
+VERSION = '0.1.97'
+BRANCH = 'feature/work-batches-0.1.97'
 TAG = 'v' + VERSION
 
 
@@ -43,9 +43,15 @@ def main():
     ready['explorer_performance'] = read('readiness-qa/explorer/explorer-probe.json')
     ready['performance_benchmark'] = read('readiness-qa/explorer-performance.json')
     ready['student_review'] = read('readiness-qa/student-review/student-review-probe.json')
+    ready['work_batch'] = read('readiness-qa/work-batch/work-batch-probe.json')
     for report in (ready,packaged):
         assert report['version'] == VERSION and report['source_commit'] == sha
         assert not report['uncaught_errors'] and len(report['routes_opened']) == 8
+        batch = report['work_batch']
+        assert batch['version'] == VERSION and batch['source_commit'] == sha
+        assert all(batch['checks'].values()) and not batch['uncaught_errors']
+        assert batch['network_requests'] == 0 and batch['review_transport_requests'] == 0
+        assert len(batch['geometry']) == 2 and all(g['actions_visible'] for g in batch['geometry'])
         review = report['student_review']
         assert review['version'] == VERSION and review['source_commit'] == sha
         assert all(review['checks'].values()) and not review['uncaught_errors']
@@ -77,7 +83,7 @@ def main():
     assert packaged['editable_pptx_slides'] == 5 and packaged['pdf_pages'] == 2
     suites = list(ET.parse(source/'readiness-qa/pytest.xml').getroot().iter('testsuite'))
     tests = {key:sum(int(s.get(key,0)) for s in suites) for key in ('tests','failures','errors','skipped')}
-    assert tests['tests'] >= 1089 and not any(tests[k] for k in ('failures','errors','skipped'))
+    assert tests['tests'] >= 1152 and not any(tests[k] for k in ('failures','errors','skipped'))
     target = ROOT/'docs/screenshots'/TAG
     target.mkdir(parents=True,exist_ok=True)
     names=set()
@@ -91,7 +97,8 @@ def main():
     for report,folder in ((ready,source/'readiness-qa'),(packaged,source/'package-qa/probe'),
                           (packaged['scan_numbering'],source/'package-qa/scan'),
                           (packaged['explorer_performance'],source/'package-qa/explorer'),
-                          (packaged['student_review'],source/'package-qa/student-review')):
+                          (packaged['student_review'],source/'package-qa/student-review'),
+                          (packaged['work_batch'],source/'package-qa/work-batch')):
         for record in report['screenshots']:
             copy_image(folder,record)
     for scale in ('1','1.25','1.5'):
@@ -108,7 +115,7 @@ def main():
     text=text.replace('源码候选（等待本版验收）', '原生试用版')
     text=text.replace('{{VERIFICATION_SUMMARY}}',
         f"同一提交完成 **{tests['tests']}项Windows定向测试，0失败、0错误、0跳过**。"
-        '源码与同一发行EXE均从学生分析实际入口打开同屏工作区，核对原页、证据框、独立教师改分、切题未记录输入、诊断、重开和800×700操作布局；另一名合成学生和AI原稿不变。'
+        '源码与同一发行EXE均从学生分析实际入口新建批次、勾选已有作答、切换两名合成学生，验证暂存重开、正式改分与状态分离，以及1366×768和800×700操作布局；原图和模型稿不变。'
         '原有选题、中文/化学符号及Qt倍率、组卷、作品整理、备课备份和文档输出继续回归。本轮没有真实学生数据与网络模型请求，固定传输夹具只用来准备样例。')
     for image in re.findall(r'!\[[^\]]*\]\(([^)]+)\)',text):
         assert (ROOT/image).is_file(),image
@@ -117,7 +124,7 @@ def main():
     command('git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
     command('git','add','-f','README.md',str(target.relative_to(ROOT)),
             f'docs/qa/{VERSION}-readiness.json',f'docs/qa/{VERSION}-package.json')
-    command('git','commit','-m','docs: record 0.1.96 verified student original-page and teacher-scoring workspace [skip ci]')
+    command('git','commit','-m','docs: record 0.1.97 verified work batches and complete functional guide [skip ci]')
     delivery_sha=command('git','rev-parse','HEAD')
     command('git','push','origin','HEAD:refs/heads/'+BRANCH)
     output=ROOT/'release-delivery';output.mkdir(exist_ok=True)
@@ -157,7 +164,7 @@ def main():
     command('git','tag','-a',TAG,'-m',VERSION+' verified Windows trial; code '+sha)
     command('git','push','origin','refs/tags/'+TAG)
     command('gh','release','create',TAG,'--repo',repo,'--verify-tag','--draft','--prerelease',
-        '--title',VERSION+' · 原作答与评分同屏','--notes-file',f'docs/releases/{VERSION}.md',
+        '--title',VERSION+' · 作业批次与逐人复核','--notes-file',f'docs/releases/{VERSION}.md',
         *[str(p) for p in sorted(output.iterdir()) if p.is_file()])
     command('gh','release','edit',TAG,'--repo',repo,'--draft=false','--latest=false')
     print('Published',TAG,'tested',sha,'delivery',delivery_sha)

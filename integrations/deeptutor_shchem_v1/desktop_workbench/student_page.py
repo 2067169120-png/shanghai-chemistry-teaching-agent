@@ -1075,7 +1075,13 @@ class StudentPage(QWidget):
         self.review_desk_button.setToolTip("先打开一份已有分析结果；同屏查看原页、评分点和教师修正，不调用模型。")
         self.review_desk_button.setEnabled(False)
         self.review_desk_button.clicked.connect(self._open_review_desk)
-        outer.addWidget(self.review_desk_button)
+        review_actions = QHBoxLayout()
+        review_actions.addWidget(self.review_desk_button, 1)
+        self.work_batch_button = QPushButton("作业批次")
+        self.work_batch_button.setAccessibleName("管理作业批次并逐人复核")
+        self.work_batch_button.clicked.connect(self._open_work_batch)
+        review_actions.addWidget(self.work_batch_button)
+        outer.addLayout(review_actions)
         self.scroll = page_scroll(content)
         outer.addWidget(self.scroll)
 
@@ -2158,6 +2164,17 @@ class StudentPage(QWidget):
             self.review_items.addWidget(editor)
             self.review_editors.append(editor)
         self._update_practice_enabled()
+
+    def _open_work_batch(self) -> None:
+        from .work_batch_desk import WorkBatchDialog
+        if self._review_action_task_id:
+            set_status(self.status, "attention", "当前评分正在保存，完成后再打开作业批次。")
+            return
+        dialog = WorkBatchDialog(self.facade, self.tasks, self.window())
+        dialog.exec()
+        dialog.deleteLater()
+        # Do not replace the parent page's in-progress teacher inputs on return.
+        set_status(self.status, "info", "批次窗口已返回。本页已有输入保持；同一作答的保存结果可重新读取后核对。")
 
     def _open_review_desk(self) -> None:
         from .student_review_desk import StudentReviewDesk, editor_values, restore_values
