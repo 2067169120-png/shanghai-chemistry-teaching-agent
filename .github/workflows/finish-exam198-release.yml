@@ -1,0 +1,151 @@
+name: Finish verified exam dashboard delivery
+on:
+  push:
+    branches: ["release/exam-dashboard-0.1.98"]
+    paths: [".github/workflows/finish-exam198-release.yml"]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: finish-exam198-release
+  cancel-in-progress: false
+jobs:
+  complete-delivery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: delivery-0.1.98-8d86f33a615b2e58fefe5a6682c4c1a1c2e6dfd1
+          run-id: 35248033607
+          github-token: ${{ github.token }}
+          path: recovered-delivery
+      - name: Verify, resume missing attachments, and publish the existing draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: python
+        run: |
+          import hashlib, json, os, pathlib, shutil, subprocess, time
+          repo = '2067169120-png/shanghai-chemistry-teaching-agent'
+          tag, release_id = 'v0.1.98', 390899579
+          tested = '8d86f33a615b2e58fefe5a6682c4c1a1c2e6dfd1'
+          released = '989e59fcd41881de5801d17533b4d74f5311e7bb'
+          root = pathlib.Path('recovered-delivery')
+          evidence = pathlib.Path('delivery-recovery'); evidence.mkdir(exist_ok=True)
+          def gh(*args, binary=False):
+              return subprocess.check_output(['gh', *args], text=not binary, timeout=300)
+          def api(path, *args):
+              raw = gh('api', f'repos/{repo}/{path}', *args)
+              return json.loads(raw) if raw.strip() else None
+          def file_record(path):
+              return {'bytes': path.stat().st_size, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+          manifest = json.loads((root/'RELEASE-MANIFEST.json').read_text())
+          assert manifest['tested_source_commit'] == tested
+          assert manifest['release_commit'] == released
+          assert str(manifest['workflow_run']) == '35248033607'
+          assert manifest['tests'] == {'tests':1195,'failures':0,'errors':0,'skipped':0}
+          assert subprocess.check_output(['git','rev-parse',tag+'^{}'],text=True).strip() == released
+          jobs = api('actions/runs/35248033607/jobs?per_page=100')['jobs']
+          assert any(j['name']=='verify' and j['conclusion']=='success' for j in jobs)
+          for line in (root/'SHA256SUMS.txt').read_text().splitlines():
+              checksum, name = line.split('  ', 1)
+              assert pathlib.Path(name).name == name
+              assert file_record(root/name)['sha256'] == checksum
+          for row in manifest['assets']:
+              assert file_record(root/row['file']) == {'bytes':row['bytes'],'sha256':row['sha256']}
+          release = api(f'releases/{release_id}')
+          assert release['tag_name'] == tag and release['prerelease']
+          original_template = 'ShanghaiChem-0.1.98-成绩导入示例.xlsx'
+          download_template = 'ShanghaiChem-0.1.98-Score-Import-Example.xlsx'
+          aliases = {original_template: download_template}
+          expected = {aliases.get(p.name,p.name): file_record(p) for p in root.iterdir() if p.is_file()}
+          shutil.copyfile(root/original_template, root/download_template)
+          def assets():
+              rows = api(f'releases/{release_id}/assets?per_page=100')
+              assert len(rows) < 100
+              return {a['name']:a for a in rows}
+          def matches(asset, info):
+              return (asset['state']=='uploaded' and asset['size']==info['bytes']
+                      and asset.get('digest')=='sha256:'+info['sha256'])
+          # GitHub normalized the Chinese template filename during the failed
+          # upload. Rename only that exact, byte-matching draft asset to ASCII.
+          found = assets()
+          legacy_name = 'ShanghaiChem-0.1.98-.xlsx'
+          if legacy_name in found and download_template not in found:
+              assert release['draft'] and matches(found[legacy_name],expected[download_template])
+              api(f"releases/assets/{found[legacy_name]['id']}",'-X','PATCH',
+                  '-f','name='+download_template,'-f','label=成绩导入示例（合成数据）')
+          def ensure_upload(name, info):
+              for attempt in range(3):
+                  existing = assets().get(name)
+                  if existing and matches(existing,info):
+                      return
+                  if existing:
+                      # Do not clobber an uploaded or nonempty artifact. Only a
+                      # zero-byte starter left by failed GitHub uploads is disposable.
+                      assert release['draft'] and existing['state']=='starter' and existing['size']==0, name
+                      api(f"releases/assets/{existing['id']}",'-X','DELETE')
+                  assert release['draft'], 'Published releases are not overwritten'
+                  try:
+                      gh('release','upload',tag,str(root/name),'--repo',repo)
+                  except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                      if attempt==2: raise
+                      time.sleep(10*(attempt+1))
+                      continue
+                  existing=assets().get(name)
+                  if existing and matches(existing,info): return
+                  if attempt==2: raise RuntimeError('Uploaded artifact was not verified: '+name)
+                  time.sleep(5)
+              raise RuntimeError('Upload incomplete: '+name)
+          for name, info in expected.items():
+              ensure_upload(name,info)
+          # Preserve original signed-off manifest/checksum bytes. Add an explicit
+          # download-name mapping and a checksum list for actual Release names.
+          mapping = {'version':'0.1.98','tested_source_commit':tested,'release_commit':released,
+                     'verification_run':35248033607,'original_to_release_name':aliases,
+                     'note':'Original delivery metadata is unchanged. Only the template download name differs.'}
+          mapping_name='RELEASE-DOWNLOAD-NAMES.json'
+          (root/mapping_name).write_text(json.dumps(mapping,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          expected[mapping_name]=file_record(root/mapping_name)
+          checks_name='SHA256SUMS-Release.txt'
+          (root/checks_name).write_text(''.join(info['sha256']+'  '+name+'\n' for name,info in sorted(expected.items())),encoding='utf-8')
+          expected[checks_name]=file_record(root/checks_name)
+          ensure_upload(mapping_name,expected[mapping_name]);ensure_upload(checks_name,expected[checks_name])
+          verified=[]
+          for name,info in expected.items():
+              asset=assets().get(name)
+              assert asset and matches(asset,info),name
+              raw=gh('api',f"repos/{repo}/releases/assets/{asset['id']}",'-H','Accept: application/octet-stream',binary=True)
+              assert len(raw)==info['bytes'] and hashlib.sha256(raw).hexdigest()==info['sha256'],name
+              verified.append({'file':name,**info})
+          current_tag=api('git/ref/tags/'+tag)['object']
+          if current_tag['type']=='tag': current_tag=api('git/tags/'+current_tag['sha'])['object']
+          assert current_tag['sha']==released
+          if release['draft']:
+              note=release['body']+'\n\n发布补充：原Windows验证已通过；首次上传源码附件遇到HTTP 500，现从原验收产物补齐，没有重打包或移动标签。成绩示例下载名为 `ShanghaiChem-0.1.98-Score-Import-Example.xlsx`，实际下载名的校验使用 `SHA256SUMS-Release.txt`；原交付清单与校验文件保持不变。'
+              api(f'releases/{release_id}','-X','PATCH','-F','draft=false','-F','prerelease=true',
+                  '-f','make_latest=false','-f','target_commitish='+released,'-f','body='+note)
+          final=api(f'releases/{release_id}')
+          assert not final['draft'] and final['published_at'] and final['tag_name']==tag
+          report={'version':'0.1.98','verified_workflow':35248033607,
+                  'recovery_workflow':os.environ['GITHUB_RUN_ID'],'tested_source_commit':tested,
+                  'release_commit':released,'no_rebuild':True,'tag_unchanged':True,
+                  'release_url':final['html_url'],'published_at':final['published_at'],'assets':verified}
+          (evidence/'release-recovery.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          shutil.copyfile(root/mapping_name,evidence/mapping_name)
+          shutil.copyfile(root/checks_name,evidence/checks_name)
+          print('Published verified existing delivery:',final['html_url'])
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: exam198-release-recovery-${{ github.sha }}
+          path: delivery-recovery/
+          retention-days: 30
+          if-no-files-found: warn
