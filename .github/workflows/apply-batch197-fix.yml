@@ -1,0 +1,32 @@
+name: Apply batch UI import correction
+on:
+  push:
+    branches: ["feature/work-batches-0.1.97"]
+    paths: [".github/batch197-importfix.patch", ".github/workflows/apply-batch197-fix.yml"]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Apply exact source correction
+        shell: python
+        run: |
+          import hashlib, os, pathlib, subprocess
+          def git(*a):return subprocess.check_output(['git',*a],text=True).strip()
+          branch='feature/work-batches-0.1.97'
+          assert git('rev-parse','HEAD')==os.environ['GITHUB_SHA']
+          assert git('ls-remote','origin','refs/heads/'+branch).split()[0]==os.environ['GITHUB_SHA']
+          data=pathlib.Path('.github/batch197-importfix.patch').read_bytes()
+          assert hashlib.sha256(data).hexdigest()=='d1038bb352f40047e467394b5642bf178f3331ba2a807df074c97269657481de'
+          subprocess.run(['git','apply','--check','--index','-'],input=data,check=True)
+          subprocess.run(['git','apply','--index','-'],input=data,check=True)
+          git('rm','-f','.github/batch197-importfix.patch','.github/workflows/apply-batch197-fix.yml')
+          git('config','user.name','github-actions[bot]');git('config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
+          git('commit','-m','fix(batch): import the actual student-action layout before window construction')
+          git('push','origin','HEAD:refs/heads/'+branch)
+          print(git('rev-parse','HEAD'))
