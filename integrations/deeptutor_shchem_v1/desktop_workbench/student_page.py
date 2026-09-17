@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QDoubleSpinBox,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QProgressBar,
