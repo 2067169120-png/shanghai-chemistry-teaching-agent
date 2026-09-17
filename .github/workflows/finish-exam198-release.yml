@@ -39,6 +39,7 @@ jobs:
           released = '989e59fcd41881de5801d17533b4d74f5311e7bb'
           root = pathlib.Path('recovered-delivery')
           evidence = pathlib.Path('delivery-recovery'); evidence.mkdir(exist_ok=True)
+          removed_starters = []
           def gh(*args, binary=False):
               return subprocess.check_output(['gh', *args], text=not binary, timeout=300)
           def api(path, *args):
@@ -74,8 +75,6 @@ jobs:
           def matches(asset, info):
               return (asset['state']=='uploaded' and asset['size']==info['bytes']
                       and asset.get('digest')=='sha256:'+info['sha256'])
-          # GitHub normalized the Chinese template filename during the failed
-          # upload. Rename only that exact, byte-matching draft asset to ASCII.
           found = assets()
           legacy_name = 'ShanghaiChem-0.1.98-.xlsx'
           if legacy_name in found and download_template not in found:
@@ -88,9 +87,15 @@ jobs:
                   if existing and matches(existing,info):
                       return
                   if existing:
-                      # Do not clobber an uploaded or nonempty artifact. Only a
-                      # zero-byte starter left by failed GitHub uploads is disposable.
-                      assert release['draft'] and existing['state']=='starter' and existing['size']==0, name
+                      # Failed uploads can retain the declared Content-Length.
+                      # A starter with no digest is not a completed asset; record
+                      # it, then resume from the unchanged verified artifact.
+                      # Uploaded mismatches and published releases are never replaced.
+                      assert (release['draft'] and existing['state']=='starter'
+                              and existing.get('digest') is None
+                              and existing['size'] in (0, info['bytes'])), name
+                      removed_starters.append({k:existing.get(k) for k in ('id','name','state','size','digest')})
+                      (evidence/'incomplete-upload-records.json').write_text(json.dumps(removed_starters,indent=2)+'\n',encoding='utf-8')
                       api(f"releases/assets/{existing['id']}",'-X','DELETE')
                   assert release['draft'], 'Published releases are not overwritten'
                   try:
@@ -106,8 +111,6 @@ jobs:
               raise RuntimeError('Upload incomplete: '+name)
           for name, info in expected.items():
               ensure_upload(name,info)
-          # Preserve original signed-off manifest/checksum bytes. Add an explicit
-          # download-name mapping and a checksum list for actual Release names.
           mapping = {'version':'0.1.98','tested_source_commit':tested,'release_commit':released,
                      'verification_run':35248033607,'original_to_release_name':aliases,
                      'note':'Original delivery metadata is unchanged. Only the template download name differs.'}
@@ -137,7 +140,8 @@ jobs:
           report={'version':'0.1.98','verified_workflow':35248033607,
                   'recovery_workflow':os.environ['GITHUB_RUN_ID'],'tested_source_commit':tested,
                   'release_commit':released,'no_rebuild':True,'tag_unchanged':True,
-                  'release_url':final['html_url'],'published_at':final['published_at'],'assets':verified}
+                  'release_url':final['html_url'],'published_at':final['published_at'],
+                  'removed_incomplete_uploads':removed_starters,'assets':verified}
           (evidence/'release-recovery.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
           shutil.copyfile(root/mapping_name,evidence/mapping_name)
           shutil.copyfile(root/checks_name,evidence/checks_name)
