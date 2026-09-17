@@ -42,7 +42,7 @@ def main():
     (package/'COMPONENTS.json').write_text(json.dumps(versions,indent=2),encoding='utf-8')
     fonts=[str(p.relative_to(package)) for p in package.rglob('*') if p.suffix.lower() in ('.ttf','.ttc','.otf','.woff','.woff2')]
     assert not fonts, 'Do not redistribute system/font files: '+str(fonts)
-    (package/'使用前请读.txt').write_text('沪上化学智研台 0.1.97 Windows x64 试用版\n请先完整解压，再双击“沪上化学智研台.exe”。不要单独移动EXE或_internal。\n无需另装Python。真实DOCX分页需要本机LibreOffice或Microsoft Word。\n不含教材、题库、模型密钥。首次打开空库正常；设置中的本机检查按功能说明缺项。\n未进行数字签名，请核对GitHub Release来源与SHA256，勿关闭系统防护。\n旧VBS可能打开旧版。已有源码旁题库不会自动复制进此程序；可继续使用源码环境或明确配置原工作区。\n',encoding='utf-8')
+    (package/'使用前请读.txt').write_text('沪上化学智研台 0.1.98 Windows x64 试用版\n请先完整解压，再双击“沪上化学智研台.exe”。不要单独移动EXE或_internal。\n无需另装Python。真实DOCX分页需要本机LibreOffice或Microsoft Word。\n不含教材、题库、模型密钥。首次打开空库正常；设置中的本机检查按功能说明缺项。\n未进行数字签名，请核对GitHub Release来源与SHA256，勿关闭系统防护。\n旧VBS可能打开旧版。已有源码旁题库不会自动复制进此程序；可继续使用源码环境或明确配置原工作区。\n',encoding='utf-8')
     with tempfile.TemporaryDirectory(prefix='shchem-detached-') as temporary:
         temp=Path(temporary)
         detached=temp/'app'
@@ -151,14 +151,20 @@ def main():
             shutil.copyfile(file,qa/'batch-startup-error.log')
         assert batch_run.returncode == 0, 'Packaged work-batch workflow failed'
         report['work_batch'] = json.loads((batch_target/'work-batch-probe.json').read_text(encoding='utf-8'))
+        exam_target = qa / 'exam'
+        exam_run = subprocess.run([str(exe), '--verify-exam', str(exam_target)], cwd=temp, env=env, timeout=180)
+        for file in (temp/'profile').rglob('startup-error.log'):
+            shutil.copyfile(file,qa/'exam-startup-error.log')
+        assert exam_run.returncode == 0, 'Packaged exam dashboard failed'
+        report['exam_analysis'] = json.loads((exam_target/'exam-probe.json').read_text(encoding='utf-8'))
         report.update(source_commit=os.environ.get('SHCHEM_SOURCE_SHA', os.environ['GITHUB_SHA']),workflow_run=os.environ['GITHUB_RUN_ID'],
             executable_sha256=hashlib.sha256(exe.read_bytes()).hexdigest(),normal_native_start_and_close=True,detached_directory=True,
             cleared_python_and_workspace_environment=True,system_fonts_bundled=False)
         (qa/'package-verification.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
-    (package/'BUILD.json').write_text(json.dumps({'version':'0.1.97','source_commit':os.environ.get('SHCHEM_SOURCE_SHA', os.environ['GITHUB_SHA']),
+    (package/'BUILD.json').write_text(json.dumps({'version':'0.1.98','source_commit':os.environ.get('SHCHEM_SOURCE_SHA', os.environ['GITHUB_SHA']),
         'workflow_run':os.environ['GITHUB_RUN_ID'],'trial':True},indent=2),encoding='utf-8')
     release=ROOT/'release-assets';release.mkdir(exist_ok=True)
-    shutil.make_archive(str(release/'ShanghaiChem-0.1.97-Windows-x64'),'zip',package.parent,package.name)
+    shutil.make_archive(str(release/'ShanghaiChem-0.1.98-Windows-x64'),'zip',package.parent,package.name)
 
 
 if __name__=='__main__': main()

@@ -12,8 +12,8 @@ import xml.etree.ElementTree as ET
 from zipfile import ZipFile, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = '0.1.97'
-BRANCH = 'feature/work-batches-0.1.97'
+VERSION = '0.1.98'
+BRANCH = 'feature/exam-dashboard-0.1.98'
 TAG = 'v' + VERSION
 
 
@@ -44,7 +44,12 @@ def main():
     ready['performance_benchmark'] = read('readiness-qa/explorer-performance.json')
     ready['student_review'] = read('readiness-qa/student-review/student-review-probe.json')
     ready['work_batch'] = read('readiness-qa/work-batch/work-batch-probe.json')
+    ready['exam_analysis'] = read('readiness-qa/exam/exam-probe.json')
     for report in (ready,packaged):
+        exam = report['exam_analysis']
+        assert exam['version'] == VERSION and exam['source_commit'] == sha
+        assert all(exam['checks'].values()) and not exam['uncaught_errors']
+        assert exam['network_requests'] == 0 and exam['mean'] == 69 and exam['valid_totals'] == 10
         assert report['version'] == VERSION and report['source_commit'] == sha
         assert not report['uncaught_errors'] and len(report['routes_opened']) == 8
         batch = report['work_batch']
@@ -98,7 +103,8 @@ def main():
                           (packaged['scan_numbering'],source/'package-qa/scan'),
                           (packaged['explorer_performance'],source/'package-qa/explorer'),
                           (packaged['student_review'],source/'package-qa/student-review'),
-                          (packaged['work_batch'],source/'package-qa/work-batch')):
+                          (packaged['work_batch'],source/'package-qa/work-batch'),
+                          (packaged['exam_analysis'],source/'package-qa/exam')):
         for record in report['screenshots']:
             copy_image(folder,record)
     for scale in ('1','1.25','1.5'):
@@ -115,7 +121,7 @@ def main():
     text=text.replace('源码候选（等待本版验收）', '原生试用版')
     text=text.replace('{{VERIFICATION_SUMMARY}}',
         f"同一提交完成 **{tests['tests']}项Windows定向测试，0失败、0错误、0跳过**。"
-        '源码与同一发行EXE均从学生分析实际入口新建批次、勾选已有作答、切换两名合成学生，验证暂存重开、正式改分与状态分离，以及1366×768和800×700操作布局；原图和模型稿不变。'
+        '源码与同一发行EXE均从考试分析入口导入12条合成成绩、明确映射4题，核对10个有效总分、均分69、中位数72，完成班级筛选、试卷正文/API固定返回稿、快照与离线图表导出。API请求为本地替身，网络请求0；真实化学建议质量未验收。'
         '原有选题、中文/化学符号及Qt倍率、组卷、作品整理、备课备份和文档输出继续回归。本轮没有真实学生数据与网络模型请求，固定传输夹具只用来准备样例。')
     for image in re.findall(r'!\[[^\]]*\]\(([^)]+)\)',text):
         assert (ROOT/image).is_file(),image
@@ -124,7 +130,7 @@ def main():
     command('git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
     command('git','add','-f','README.md',str(target.relative_to(ROOT)),
             f'docs/qa/{VERSION}-readiness.json',f'docs/qa/{VERSION}-package.json')
-    command('git','commit','-m','docs: record 0.1.97 verified work batches and complete functional guide [skip ci]')
+    command('git','commit','-m','docs: record verified 0.1.98 exam dashboard and complete guide [skip ci]')
     delivery_sha=command('git','rev-parse','HEAD')
     command('git','push','origin','HEAD:refs/heads/'+BRANCH)
     output=ROOT/'release-delivery';output.mkdir(exist_ok=True)
@@ -155,6 +161,11 @@ def main():
     ids=set(re.findall(r'id="([^"]+)"',html))
     assert all(href[1:] in ids for href in re.findall(r'href="([^"]+)"',html) if href.startswith('#'))
     (output/f'ShanghaiChem-{VERSION}-Guide.html').write_text('<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>沪上化学智研台'+VERSION+'</title><style>body{max-width:1050px;margin:40px auto;padding:0 24px;font:17px/1.8 system-ui}img{max-width:100%}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:8px}pre{overflow:auto;background:#f5f5f5;padding:16px}</style>'+html+'</html>',encoding='utf-8')
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from integrations.deeptutor_shchem_v1.desktop_exam_template import template_bytes
+    (output/f'ShanghaiChem-{VERSION}-成绩导入示例.xlsx').write_bytes(template_bytes())
+    shutil.copyfile(source/'package-qa/exam/synthetic-exam-report.html',output/f'ShanghaiChem-{VERSION}-Synthetic-Exam-Report.html')
     assets=[{'file':p.name,'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
             for p in sorted(output.iterdir()) if p.is_file()]
     write_json(output/'RELEASE-MANIFEST.json',{'version':VERSION,'tag':TAG,'tested_source_commit':sha,
@@ -164,7 +175,7 @@ def main():
     command('git','tag','-a',TAG,'-m',VERSION+' verified Windows trial; code '+sha)
     command('git','push','origin','refs/tags/'+TAG)
     command('gh','release','create',TAG,'--repo',repo,'--verify-tag','--draft','--prerelease',
-        '--title',VERSION+' · 作业批次与逐人复核','--notes-file',f'docs/releases/{VERSION}.md',
+        '--title',VERSION+' · 考试数据分析与讲评','--notes-file',f'docs/releases/{VERSION}.md',
         *[str(p) for p in sorted(output.iterdir()) if p.is_file()])
     command('gh','release','edit',TAG,'--repo',repo,'--draft=false','--latest=false')
     print('Published',TAG,'tested',sha,'delivery',delivery_sha)

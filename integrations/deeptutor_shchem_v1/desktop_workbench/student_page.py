@@ -1082,6 +1082,10 @@ class StudentPage(QWidget):
         self.work_batch_button.setAccessibleName("管理作业批次并逐人复核")
         self.work_batch_button.clicked.connect(self._open_work_batch)
         review_actions.addWidget(self.work_batch_button)
+        self.exam_analysis_button = QPushButton("考试分析（Excel）")
+        self.exam_analysis_button.setToolTip("导入成绩与试卷，查看真实统计及API讲评建议")
+        self.exam_analysis_button.clicked.connect(self._open_exam_analysis)
+        review_actions.addWidget(self.exam_analysis_button)
         outer.addLayout(review_actions)
         self.scroll = page_scroll(content)
         outer.addWidget(self.scroll)
@@ -2165,6 +2169,18 @@ class StudentPage(QWidget):
             self.review_items.addWidget(editor)
             self.review_editors.append(editor)
         self._update_practice_enabled()
+
+    def _open_exam_analysis(self) -> None:
+        from .exam_dashboard import ExamDashboard
+        dialog = ExamDashboard(self.facade, self.tasks, self.window())
+        def append(text):
+            window = self.window()
+            page = getattr(window, 'preparation_page', None)
+            if page is not None and page.import_word_reference({'materials':text,'warnings':[]}):
+                dialog.status.setText('讲评资料已追加到备课；返回后请核对并保存草稿，未自动调用模型。')
+        dialog.preparation_requested.connect(append)
+        dialog.exec()
+        dialog.deleteLater()
 
     def _open_work_batch(self) -> None:
         from .work_batch_desk import WorkBatchDialog

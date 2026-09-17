@@ -7,6 +7,7 @@ from ..desktop_studio import TEMPLATES
 from .components import section_title
 
 COMMANDS = (
+    ("exam-analysis", "考试分析", "Excel成绩 / 试卷 / 可视化 / 班级讲评"),
     ("home", "首页", "最近备课 / 继续编辑 / 选题篮"), ("library", "题库", "教材 / 知识点 / 原题"),
     ("paper", "组卷", "题篮 / 学生版 / 教师版"), ("student", "学生分析", "作答 / 诊断 / 练习"),
     ("preparation", "备课", "PPT / 教案 / 学习单"), ("templates", "教学模板", "场景 / 收藏 / 学习路径"),
