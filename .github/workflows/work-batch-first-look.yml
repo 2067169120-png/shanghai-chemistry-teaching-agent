@@ -1,0 +1,49 @@
+name: Work batch first visual and input check
+on:
+  push:
+    branches: ["feature/work-batches-0.1.97"]
+permissions:
+  contents: read
+concurrency:
+  group: batch197-first-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  first-view:
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Undefined names in new and modified batch runtime
+        run: >-
+          python -m ruff check --select F821
+          integrations/deeptutor_shchem_v1/desktop_workbench/student_page.py
+          integrations/deeptutor_shchem_v1/desktop_workbench/work_batch_desk.py
+          integrations/deeptutor_shchem_v1/desktop_work_batches.py
+          integrations/deeptutor_shchem_v1/desktop_batch_probe.py
+      - name: Batch core, native interactions and complete README
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: >-
+          python -m pytest -q -o faulthandler_timeout=60
+          staging/coordination/deeptutor_gateway/tests/test_work_batches.py
+          staging/coordination/deeptutor_gateway/tests/test_work_batch_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_complete_readme.py
+          --junitxml=first-look/pytest.xml
+      - name: Capture the actual window and exercise teacher actions
+        if: always()
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/desktop_teacher_workbench.pyw --verify-work-batch first-look
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: work-batch-first-look-${{ github.sha }}
+          path: first-look/
+          retention-days: 14
+          if-no-files-found: warn
