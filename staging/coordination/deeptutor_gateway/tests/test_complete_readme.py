@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[4]
 def test_full_guide_keeps_all_daily_pages_and_operating_instructions():
     text=(ROOT/'README.md').read_text(encoding='utf-8')
     for anchor in ('install','features','flows','home','library','paper','student','preparation',
-                   'templates','classroom','works','import','settings','faq','verification'):
+                   'exam','templates','classroom','works','import','settings','faq','verification'):
         assert f'<a id="{anchor}"></a>' in text
         assert f'(#{anchor})' in text
     assert len(text)>8000
@@ -18,6 +18,7 @@ def test_static_screenshots_exist_and_new_screenshots_have_a_verifier():
              'work-batch-restored.png','work-batch-condition.png','work-batch-compact.png'}
     images=re.findall(r'!\[[^\]]*\]\(([^)]+)\)',text)
     assert len(set(images))>=16
+    planned_exam={'exam-import.png','exam-overview.png','exam-items.png','exam-students.png','exam-api.png','exam-compact.png'}
     for image in images:
-        assert (ROOT/image).is_file() or (image.startswith('docs/screenshots/v0.1.97/') and Path(image).name in planned)
+        assert (ROOT/image).is_file() or (image.startswith('docs/screenshots/v0.1.97/') and Path(image).name in planned) or (image.startswith('docs/screenshots/v0.1.98/') and Path(image).name in planned_exam)
     assert (ROOT/'README-0.1.96-archive.md').is_file()

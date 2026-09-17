@@ -295,6 +295,8 @@ class TeacherWorkbenchWindow(QMainWindow):
             command = dialog.command
             if command.startswith("template:"):
                 self.open_template(command.split(":", 1)[1])
+            elif command == "exam-analysis":
+                self.student_page._open_exam_analysis()
             elif command in self.pages:
                 self.navigate(command)
             else:
