@@ -1,0 +1,16 @@
+diff --git a/integrations/deeptutor_shchem_v1/desktop_exam_probe.py b/integrations/deeptutor_shchem_v1/desktop_exam_probe.py
+--- a/integrations/deeptutor_shchem_v1/desktop_exam_probe.py
++++ b/integrations/deeptutor_shchem_v1/desktop_exam_probe.py
+@@ -76,3 +76,3 @@
+                 assert d.ai_result.height()>=170 and d.ai_scroll.verticalScrollBar().maximum()>0
+-                d.ai_scroll.ensureWidgetVisible(d.ai_result);settle()
++                d.ai_scroll.verticalScrollBar().setValue(d.ai_scroll.verticalScrollBar().maximum());settle()
+                 assert d.ai_result.visibleRegion().boundingRect().height()>=100
+diff --git a/staging/coordination/deeptutor_gateway/tests/test_exam_dashboard_ui.py b/staging/coordination/deeptutor_gateway/tests/test_exam_dashboard_ui.py
+--- a/staging/coordination/deeptutor_gateway/tests/test_exam_dashboard_ui.py
++++ b/staging/coordination/deeptutor_gateway/tests/test_exam_dashboard_ui.py
+@@ -95,3 +95,3 @@
+     assert d.ai_scroll.verticalScrollBar().maximum()>0
+-    d.ai_scroll.ensureWidgetVisible(d.ai_result);settle(app)
++    d.ai_scroll.verticalScrollBar().setValue(d.ai_scroll.verticalScrollBar().maximum());settle(app)
+     assert d.ai_result.visibleRegion().boundingRect().height()>=100
