@@ -1,0 +1,37 @@
+name: Apply reviewed exam dashboard 0.1.98
+on:
+  push:
+    branches: ["feature/exam-dashboard-0.1.98"]
+    paths: [".github/exam198.part*", ".github/workflows/apply-exam198.yml"]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Apply the exact reviewed source and discard transport fragments
+        shell: python
+        run: |
+          import pathlib, hashlib, lzma, os, subprocess
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).strip()
+          branch='feature/exam-dashboard-0.1.98'
+          assert git('rev-parse','HEAD') == os.environ['GITHUB_SHA']
+          assert git('ls-remote','origin','refs/heads/'+branch).split()[0] == os.environ['GITHUB_SHA']
+          subprocess.run(['git','merge-base','--is-ancestor','7d11b8dcbeddf4f254605bb945402a30342bf180','HEAD'],check=True)
+          paths=['.github/exam198.part'+str(i) for i in range(1,8)]
+          patch=lzma.decompress(b''.join(pathlib.Path(p).read_bytes() for p in paths))
+          assert hashlib.sha256(patch).hexdigest() == 'f3920a0e9b0c9537f0308404b15ffe4117d759110fa7f5d5f7e7408b42747be2'
+          assert b'diff --git a/.github/workflows/' not in patch
+          subprocess.run(['git','apply','--check','--index','-'],input=patch,check=True)
+          subprocess.run(['git','apply','--index','-'],input=patch,check=True)
+          git('rm','-f',*paths,'.github/workflows/apply-exam198.yml')
+          git('config','user.name','github-actions[bot]')
+          git('config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
+          git('commit','-m','feat(0.1.98): analyze Excel exam scores with native charts, paper and optional API advice')
+          git('push','origin','HEAD:refs/heads/'+branch)
+          print('Applied reviewed code',git('rev-parse','HEAD'))
