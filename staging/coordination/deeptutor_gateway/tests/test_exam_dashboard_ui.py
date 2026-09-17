@@ -93,5 +93,5 @@ def test_dashboard_toolbar_and_api_scroll_keep_content_readable(desk):
     assert d.width()==800 and d.height()==700
     assert d._toolbar_columns==3 and d.ai_result.height()>=170
     assert d.ai_scroll.verticalScrollBar().maximum()>0
-    d.ai_scroll.ensureWidgetVisible(d.ai_result);settle(app)
+    d.ai_scroll.verticalScrollBar().setValue(d.ai_scroll.verticalScrollBar().maximum());settle(app)
     assert d.ai_result.visibleRegion().boundingRect().height()>=100

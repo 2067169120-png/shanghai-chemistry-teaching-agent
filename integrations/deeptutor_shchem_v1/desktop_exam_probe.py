@@ -74,7 +74,7 @@ def run_probe(output):
                 d.tabs.setCurrentIndex(3);settle()
                 assert d.width()==800 and d.height()==700
                 assert d.ai_result.height()>=170 and d.ai_scroll.verticalScrollBar().maximum()>0
-                d.ai_scroll.ensureWidgetVisible(d.ai_result);settle()
+                d.ai_scroll.verticalScrollBar().setValue(d.ai_scroll.verticalScrollBar().maximum());settle()
                 assert d.ai_result.visibleRegion().boundingRect().height()>=100
                 assert (folder/'scores.xlsx').read_bytes()==original and source.read_bytes()==paper_original
                 checks.update(native_entry=True,explicit_excel_mapping=True,exact_local_metrics=True,class_filter=True,
