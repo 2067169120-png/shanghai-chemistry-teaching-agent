@@ -22,7 +22,13 @@ jobs:
           branch='feature/exam-dashboard-0.1.98'
           assert git('rev-parse','HEAD') == os.environ['GITHUB_SHA']
           assert git('ls-remote','origin','refs/heads/'+branch).split()[0] == os.environ['GITHUB_SHA']
-          patch=pathlib.Path('.github/exam198-polish.patch').read_bytes()
+          patch=pathlib.Path('.github/exam198-polish.patch').read_text(encoding='utf-8')
+          # Correct three transfer-only context/header differences. Require the
+          # exact locally tested plaintext bytes before applying any code.
+          patch=patch.replace('@@ -154,3 +154,23 @@','@@ -154,3 +154,22 @@')
+          patch=patch.replace("     paper=load_paper(path)\n", "     path=tmp_path/'试卷.docx';d.save(path);before=path.read_bytes();paper=load_paper(path)\n")
+          patch=patch.replace("     assert '共同材料' in paper['text'] and '第1题' in paper['text']", "     assert '共同材料' in paper['text'] and '12.5' in paper['text']")
+          patch=patch.encode('utf-8')
           assert hashlib.sha256(patch).hexdigest() == '248f3236880fd290c82cf05f2cf95fc3b8d5941c266c39802c3cd61f8502f06c'
           subprocess.run(['git','apply','--check','--index','-'],input=patch,check=True)
           subprocess.run(['git','apply','--index','-'],input=patch,check=True)
