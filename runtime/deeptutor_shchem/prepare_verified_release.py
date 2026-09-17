@@ -88,7 +88,7 @@ def main():
     assert packaged['editable_pptx_slides'] == 5 and packaged['pdf_pages'] == 2
     suites = list(ET.parse(source/'readiness-qa/pytest.xml').getroot().iter('testsuite'))
     tests = {key:sum(int(s.get(key,0)) for s in suites) for key in ('tests','failures','errors','skipped')}
-    assert tests['tests'] >= 1152 and not any(tests[k] for k in ('failures','errors','skipped'))
+    assert tests['tests'] >= 1195 and not any(tests[k] for k in ('failures','errors','skipped'))
     target = ROOT/'docs/screenshots'/TAG
     target.mkdir(parents=True,exist_ok=True)
     names=set()

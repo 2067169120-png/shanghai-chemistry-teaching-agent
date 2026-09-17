@@ -154,3 +154,22 @@ def test_docx_paper_keeps_native_text_table_and_image(tmp_path):
     path=tmp_path/'试卷.docx';d.save(path);before=path.read_bytes();paper=load_paper(path)
     assert '共同材料' in paper['text'] and '12.5' in paper['text'] and len(paper['pages'])==1
     assert path.read_bytes()==before
+
+
+def test_declared_visual_api_sends_exact_image_with_fixed_statistics(sample,tmp_path):
+    from PIL import Image
+    from types import SimpleNamespace
+    from integrations.deeptutor_shchem_v1.desktop_exam_fixture import FixtureStore,FixtureTransport
+    from integrations.deeptutor_shchem_v1.desktop_exam_ai import load_paper,model_payload,generate_advice
+    from integrations.deeptutor_shchem_v1.desktop_exam_data import analyse
+    import json,base64
+    _,_,exam=sample
+    path=tmp_path/'paper.png';Image.new('RGB',(200,300),'white').save(path)
+    paper=load_paper(path);payload=model_payload(analyse(exam),paper,'')
+    store=FixtureStore(vision=True);transport=FixtureTransport()
+    result=generate_advice(SimpleNamespace(_providers=store),'p','fixture-revision',payload,paper['pages'],confirmed=True,transport=transport)
+    assert store.borrowed==1 and len(transport.requests)==1
+    body=json.loads(transport.requests[0].body)
+    images=[b['image_url']['url'] for m in body['messages'] if isinstance(m['content'],list) for b in m['content'] if b.get('type')=='image_url']
+    assert len(images)==1 and images[0].split(',')[1]==paper['pages'][0]['data']
+    assert result['candidate']['students']==[] and analyse(exam)['overall']['mean']==69

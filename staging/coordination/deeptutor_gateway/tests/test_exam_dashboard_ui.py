@@ -83,3 +83,15 @@ def test_confirmed_fake_api_via_actual_button_does_not_recompute_grades(desk):
 def test_no_model_keeps_dashboard_available(desk):
     d,app,_=desk;d.request_ai();assert '设置' in d.status.text()
     assert d.report['overall']['mean']==69 and d.export_button.isEnabled()
+
+
+def test_dashboard_toolbar_and_api_scroll_keep_content_readable(desk):
+    d,app,_=desk;d.resize(1320,860);settle(app)
+    assert d._toolbar_columns==5
+    assert d.export_button.objectName()=='QuietButton'
+    d.resize(800,700);d.tabs.setCurrentIndex(3);settle(app)
+    assert d.width()==800 and d.height()==700
+    assert d._toolbar_columns==3 and d.ai_result.height()>=170
+    assert d.ai_scroll.verticalScrollBar().maximum()>0
+    d.ai_scroll.ensureWidgetVisible(d.ai_result);settle(app)
+    assert d.ai_result.visibleRegion().boundingRect().height()>=100

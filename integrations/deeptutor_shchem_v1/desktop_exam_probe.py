@@ -46,7 +46,7 @@ def run_probe(output):
             if d is None:errors.append('Exam entry did not open');return
             try:
                 mapping=ExamImportDialog(book,d);mapping.show();settle();mapping.findChild(QTabWidget).setCurrentIndex(1);settle()
-                capture(mapping,'exam-import.png');mapping.commit();assert mapping.exam is not None;d.accept_exam(mapping.exam);mapping.deleteLater();settle()
+                mapping.title.setText('合成化学考试 · 功能验收');capture(mapping,'exam-import.png');mapping.commit();assert mapping.exam is not None;d.accept_exam(mapping.exam);mapping.deleteLater();settle()
                 assert d.report['overall']['mean']==69 and d.report['overall']['n']==10
                 capture(d,'exam-overview.png')
                 d.tabs.setCurrentIndex(1);settle();capture(d,'exam-items.png')
@@ -71,11 +71,16 @@ def run_probe(output):
                 assert d.width()==800 and d.tabs.height()>300
                 for w in (d.import_button,d.export_button,d.classes,d.tabs,d.close_button):assert d.rect().contains(QRect(w.mapTo(d,w.rect().topLeft()),w.size()))
                 capture(d,'exam-compact.png')
+                d.tabs.setCurrentIndex(3);settle()
+                assert d.width()==800 and d.height()==700
+                assert d.ai_result.height()>=170 and d.ai_scroll.verticalScrollBar().maximum()>0
+                d.ai_scroll.ensureWidgetVisible(d.ai_result);settle()
+                assert d.ai_result.visibleRegion().boundingRect().height()>=100
                 assert (folder/'scores.xlsx').read_bytes()==original and source.read_bytes()==paper_original
                 checks.update(native_entry=True,explicit_excel_mapping=True,exact_local_metrics=True,class_filter=True,
                               missing_not_zero=True,item_denominators=True,student_attention=True,word_common_material=True,
                               confirmed_api_one_fake_call=True,anonymous_payload=True,model_does_not_change_metrics=True,
-                              saved_snapshot_reloads=True,offline_report=True,compact_actions_visible=True,source_unchanged=True)
+                              saved_snapshot_reloads=True,offline_report=True,compact_actions_visible=True,compact_ai_readable=True,source_unchanged=True)
             except Exception as e:
                 errors.append(type(e).__name__+': '+str(e));capture(d,'exam-failure.png')
             finally:

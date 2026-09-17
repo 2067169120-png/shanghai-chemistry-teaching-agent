@@ -81,11 +81,12 @@ class ExamDashboard(QDialog):
         self.import_button=QPushButton('导入成绩Excel');self.history_button=QPushButton('打开历史分析')
         self.template_button=QPushButton('保存Excel示例');self.save_button=QPushButton('保存分析');self.export_button=QPushButton('导出可视化报告')
         for i,b in enumerate((self.import_button,self.history_button,self.template_button,self.save_button,self.export_button)):bar.addWidget(b,i//3,i%3)
-        root.addWidget(toolbar);self.toolbar=toolbar
+        root.addWidget(toolbar);self.toolbar=toolbar;self.toolbar_layout=bar
+        self._toolbar_buttons=(self.import_button,self.history_button,self.template_button,self.save_button,self.export_button);self._toolbar_columns=3
         self.import_button.clicked.connect(self.import_excel);self.history_button.clicked.connect(self.open_history)
         self.template_button.clicked.connect(self.template);self.save_button.clicked.connect(self.save_current);self.export_button.clicked.connect(self.export)
         filters=QHBoxLayout();filters.addWidget(QLabel('统计范围'));self.classes=QComboBox();self.classes.addItem('全部导入班级',None)
-        filters.addWidget(self.classes,1);self.summary_label=QLabel('尚未导入成绩');self.summary_label.setWordWrap(True);self.summary_label.setMaximumWidth(440);filters.addWidget(self.summary_label);root.addLayout(filters)
+        self.classes.setMaximumWidth(360);filters.addWidget(self.classes);self.summary_label=QLabel('尚未导入成绩');self.summary_label.setWordWrap(True);filters.addWidget(self.summary_label,1);root.addLayout(filters)
         self.classes.currentIndexChanged.connect(self.render)
         self.tabs=QTabWidget();root.addWidget(self.tabs,1)
         overview=QWidget();ov=QVBoxLayout(overview);cards=QWidget();grid=QGridLayout(cards);grid.setContentsMargins(0,0,0,0)
@@ -120,7 +121,8 @@ class ExamDashboard(QDialog):
         self.ai_button=QPushButton('确认资料并生成讲评建议');self.to_prep_button=QPushButton('带入备课材料')
         actions=QHBoxLayout();actions.addWidget(self.ai_button);actions.addWidget(self.to_prep_button);al.addLayout(actions)
         self.ai_result=QPlainTextEdit();self.ai_result.setReadOnly(True);al.addWidget(self.ai_result,1)
-        self.tabs.addTab(ai,'试卷与API建议')
+        self.ai_result.setMinimumHeight(170)
+        self.ai_scroll=scroll_widget(ai);self.tabs.addTab(self.ai_scroll,'试卷与API建议')
         problems=QWidget();pl=QVBoxLayout(problems);self.problem_note=QLabel('');self.problem_note.setWordWrap(True);pl.addWidget(self.problem_note)
         self.problem_table=QTableView();pl.addWidget(self.problem_table,1);self.tabs.addTab(problems,'数据核对')
         self.status=QLabel('从“保存Excel示例”开始，或导入已有xlsx后手动选择列。');self.status.setWordWrap(True);root.addWidget(self.status)
@@ -133,6 +135,17 @@ class ExamDashboard(QDialog):
         self.tasks.task_finished.connect(self.task_finished)
         self.refresh_models();self.render()
         for button in self.findChildren(QPushButton):button.setAutoDefault(False)
+        for button in (self.history_button,self.template_button,self.save_button,self.export_button,
+                       self.preview_button,self.clear_paper_button,self.refresh_models_button,self.to_prep_button,self.close_button):
+            button.setObjectName('QuietButton')
+
+    def resizeEvent(self,event):
+        super().resizeEvent(event)
+        columns=5 if event.size().width()>=1050 else 3
+        if hasattr(self,'_toolbar_buttons') and columns!=self._toolbar_columns:
+            self._toolbar_columns=columns
+            for button in self._toolbar_buttons:self.toolbar_layout.removeWidget(button)
+            for i,button in enumerate(self._toolbar_buttons):self.toolbar_layout.addWidget(button,i//columns,i%columns)
 
     def set_table(self,view,headers,rows,rates=None):
         previous=view.model();view.setModel(ExamTable(headers,rows,rates,view))
