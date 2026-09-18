@@ -96,6 +96,11 @@ class LessonDesignDialog(QDialog):
         self.nodes = QListWidget()
         self.nodes.setAccessibleName("本课教学环节顺序")
         l.addWidget(self.nodes, 1)
+        self.import_candidate = QPushButton("从已有初稿加入…")
+        self.import_candidate.setObjectName("QuietButton")
+        self.import_candidate.setToolTip("读取已完成的备课初稿，预览后加入，不重复调用API。")
+        self.import_candidate.clicked.connect(self.import_existing_candidate)
+        l.addWidget(self.import_candidate)
         actions = QGridLayout(); l.addLayout(actions)
         for i, (name, action) in enumerate((("新增", self.add_node), ("删除", self.delete_node),
             ("上移", lambda: self.move_node(-1)), ("下移", lambda: self.move_node(1)),
@@ -268,6 +273,21 @@ class LessonDesignDialog(QDialog):
             self.sync_page()
         except ValueError as exc:
             self.status.setText(str(exc))
+
+    def import_existing_candidate(self):
+        if self.busy:
+            return
+        from .lesson_import_dialog import LessonImportDialog
+        dialog = LessonImportDialog(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.result_value is not None:
+            plan, assets = dialog.result_value
+            selected = next((n["id"] for n in plan["nodes"]
+                             if n["id"] not in {old["id"] for old in self.history.value["nodes"]}), self.current)
+            self.page.image_assets_widget.set_assets(assets)
+            self.history.put(plan)
+            self.refresh_lists(selected); self.sync_page()
+            self.status.setText("初稿所选环节已加入。原设计和原稿保留，可撤销；请核对目标、材料可见范围，再生成并保存。")
+        dialog.deleteLater()
 
     def add_node(self):
         n = new_node()

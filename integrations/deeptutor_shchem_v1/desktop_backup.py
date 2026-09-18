@@ -38,6 +38,7 @@ _TASK = r"PREP-[0-9a-f]{32}"
 _IMAGE = re.compile(r"tasks/preparation-v1/images/[0-9a-f]{64}\.image\Z")
 _TASK_FILE = re.compile(rf"tasks/preparation-v1/tasks/{_TASK}\.json\Z")
 _AUX_FILE = re.compile(rf"tasks/preparation-v1/(seeds|returned)/{_TASK}(?:\.attempt-[0-9]{{4}})?\.candidate\.json\Z")
+_NODE_OUTPUT = re.compile(r"tasks/preparation-v1/node-exports/OUT-[0-9a-f]{32}/(?:lesson_presentation\.pptx|lesson_plan\.docx|student_worksheet\.docx)\Z")
 _SUFFIXES = {".json", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".pdf", ".docx", ".pptx", ".txt", ".md", ".html"}
 
 
@@ -95,7 +96,7 @@ def _allowed(name):
     _relative(name)
     if name in {"desktop-state.v1.json", "recovery/preparation.v1.json"}:
         return True
-    if _IMAGE.fullmatch(name) or _TASK_FILE.fullmatch(name) or _AUX_FILE.fullmatch(name):
+    if _IMAGE.fullmatch(name) or _TASK_FILE.fullmatch(name) or _AUX_FILE.fullmatch(name) or _NODE_OUTPUT.fullmatch(name):
         return True
     parts = name.split("/")
     return (name.startswith(PREP + "artifacts/") and len(parts) >= 6
@@ -173,6 +174,31 @@ def _assets(value):
     elif isinstance(value, list):
         for nested in value:
             yield from _assets(nested)
+
+
+def _design_outputs(value):
+    """Only bundles registered in included lesson records, never a directory walk."""
+    from .desktop_lesson_design import SCHEMA as DESIGN_SCHEMA, validate_design
+    if isinstance(value, Mapping):
+        if value.get("schema_version") == DESIGN_SCHEMA:
+            yield from validate_design(value)["exports"]
+        else:
+            for nested in value.values():
+                yield from _design_outputs(nested)
+    elif isinstance(value, (list, tuple)):
+        for nested in value:
+            yield from _design_outputs(nested)
+
+
+def _node_output_totals(names):
+    from .desktop_lesson_output import FILES
+    bundles = {}
+    for name in names:
+        if _NODE_OUTPUT.fullmatch(name):
+            folder, filename = name.rsplit("/", 1)
+            bundles.setdefault(folder, set()).add(filename)
+    return {"node_output_bundles": sum(files == set(FILES) for files in bundles.values()),
+            "node_output_files": sum(len(files) for files in bundles.values())}
 
 
 def plan_backup(state_root, *, include_images=False, include_tasks=False, cancel=None):
@@ -259,6 +285,25 @@ def plan_backup(state_root, *, include_images=False, include_tasks=False, cancel
                 prefix = PREP + "artifacts/" + _relative(task["attempt_relpath"]) + "/"
                 for artifact in task["artifacts"]:
                     add(prefix + _relative(artifact["relative_path"]), expected=artifact["sha256"])
+    bundles = {}
+    from .desktop_lesson_output import FILES
+    for record in _design_outputs(all_assets):
+        _check_cancel(cancel)
+        old = bundles.get(record["id"])
+        if old is not None and old != record:
+            raise BackupError("同一教学成品有不同版本记录，请先核对草稿。")
+        if {f["name"] for f in record["files"]} != set(FILES) or len(record["files"]) != len(FILES):
+            raise BackupError("教学成品记录不含完整三类文件，请先核对。")
+        bundles[record["id"]] = record
+    for identity, record in bundles.items():
+        if include_tasks:
+            for file in record["files"]:
+                add(PREP + "node-exports/" + identity + "/" + file["name"], expected=file["sha256"])
+        else:
+            refs.append({"kind": "lesson_output", "key": identity,
+                         "reason": "未勾选已结束任务与成品；仅保存版本引用，未打包三类文件。"})
+    if bundles:
+        warnings.append("教学环节三类成品按已保存草稿/恢复副本中的版本选入；预览缓存不打包。含此扩展的备份请用0.1.101或后续支持版本恢复。")
     for asset in _assets(all_assets):
         old = images.get(asset["sha256"])
         if old and any(old[k] != asset[k] for k in ("width", "height", "content_type")):
@@ -295,6 +340,8 @@ def plan_backup(state_root, *, include_images=False, include_tasks=False, cancel
                "files": len(files), "bytes": sum(f.size for f in files.values()),
                "include_images": bool(include_images), "include_tasks": bool(include_tasks),
                "missing_files": sum(r["kind"] == "missing_file" or r.get("reason") == "missing" for r in refs)}
+    if bundles:
+        summary.update(_node_output_totals(files))
     if "scan_number_regions" in selected:
         from .desktop_number_regions import region_totals
         summary.update(region_totals(selected["scan_number_regions"]))
@@ -420,6 +467,9 @@ def _manifest(archive):
         from .desktop_number_regions import region_totals
         manifest = deepcopy(manifest)
         manifest['summary'] = {**manifest.get('summary', {}), **region_totals(state['scan_number_regions'])}
+    if "node_output_files" in manifest.get("summary", {}) or any(_NODE_OUTPUT.fullmatch(r["path"]) for r in manifest["files"]):
+        manifest = deepcopy(manifest)
+        manifest["summary"] = {**manifest.get("summary", {}), **_node_output_totals(r["path"] for r in manifest["files"])}
     return manifest
 
 
@@ -446,6 +496,8 @@ def inspect_backup(filename, *, cancel=None):
                 "basket_references": len(state["basket"]), "files": len(manifest["files"]),
                 "tasks": sum(bool(_TASK_FILE.fullmatch(r["path"])) for r in manifest["files"]),
                 "bytes": sum(r["bytes"] for r in manifest["files"])}
+            if "node_output_files" in manifest["summary"] or any(_NODE_OUTPUT.fullmatch(r["path"]) for r in manifest["files"]):
+                manifest["summary"].update(_node_output_totals(r["path"] for r in manifest["files"]))
             from .desktop_number_regions import region_totals
             if "scan_number_regions" in state:
                 manifest["summary"].update(region_totals(state["scan_number_regions"]))
@@ -599,6 +651,7 @@ def summary_text(report):
             f"文件 {s['files']} 个 · 未压缩 {s['bytes'] / (1024 * 1024):.2f} MB\n"
             f"图片打包 {s.get('images_included', 0)} / 引用 {s.get('images_referenced', 0)} 张 · "
             f"恢复副本 {'包含' if s.get('recovery') else '无'}\n"
+            f"教学环节成品 {s.get('node_output_bundles', 0)} 套完整文件 / {s.get('node_output_files', 0)} 个文件\n"
             f"已存题号位置 {s.get('number_region_images', 0)} 张图 / {s.get('number_regions', 0)} 个区域（不含原题图）\n\n" +
             "\n".join(report["warnings"]) + "\n\n外部引用/缺失项：\n" +
             ("\n".join((r.get("asset", {}).get("caption") or r.get("path") or r.get("key") or r["kind"]) +

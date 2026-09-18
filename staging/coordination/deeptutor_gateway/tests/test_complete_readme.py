@@ -21,8 +21,9 @@ def test_static_screenshots_exist_and_new_screenshots_have_a_verifier():
     planned_exam={'exam-import.png','exam-overview.png','exam-items.png','exam-students.png','exam-api.png','exam-compact.png'}
     planned_closure={'closure-batch-stats.png','closure-panel.png','closure-library.png','closure-preview.png','closure-retest.png'}
     for image in images:
-        assert (ROOT/image).is_file() or (image.startswith('docs/screenshots/v0.1.97/') and Path(image).name in planned) or (image.startswith('docs/screenshots/v0.1.98/') and Path(image).name in planned_exam) or (image.startswith('docs/screenshots/v0.1.99/') and Path(image).name in planned_closure) or (image.startswith('docs/screenshots/v0.1.100/') and Path(image).name in {'lesson-design-editor.png','lesson-goal-gap.png','lesson-linked-outputs.png','lesson-actual-pptx.png'})
+        assert (ROOT/image).is_file() or (image.startswith('docs/screenshots/v0.1.97/') and Path(image).name in planned) or (image.startswith('docs/screenshots/v0.1.98/') and Path(image).name in planned_exam) or (image.startswith('docs/screenshots/v0.1.99/') and Path(image).name in planned_closure) or (image.startswith('docs/screenshots/v0.1.100/') and Path(image).name in {'lesson-design-editor.png','lesson-goal-gap.png','lesson-linked-outputs.png','lesson-actual-pptx.png'}) or (image.startswith('docs/screenshots/v0.1.101/') and Path(image).name in {'lesson-import-preview.png','lesson-import-compact.png','lesson-import-linked.png'})
     assert (ROOT/'README-0.1.96-archive.md').is_file()
+    assert (ROOT/'README-0.1.100-archive.md').is_file()
 
 
 def test_closure_audit_preserves_old_list_and_distinguishes_remaining_work():

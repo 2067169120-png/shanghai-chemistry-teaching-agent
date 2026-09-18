@@ -12,8 +12,8 @@ import xml.etree.ElementTree as ET
 from zipfile import ZipFile, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = '0.1.100'
-BRANCH = 'feature/lesson-design-0.1.100'
+VERSION = '0.1.101'
+BRANCH = 'feature/lesson-source-0.1.101'
 TAG = 'v' + VERSION
 
 
@@ -47,7 +47,13 @@ def main():
     ready['exam_analysis'] = read('readiness-qa/exam/exam-probe.json')
     ready['teaching_closure'] = read('readiness-qa/closure/closure-probe.json')
     ready['lesson_design'] = read('readiness-qa/lesson-design/lesson-design-probe.json')
+    ready['lesson_import'] = read('readiness-qa/lesson-import/lesson-import-probe.json')
     for report in (ready,packaged):
+        imported = report['lesson_import']
+        assert imported['version'] == VERSION and imported['source_commit'] == sha
+        assert all(imported['checks'].values()) and not imported['uncaught_errors']
+        assert imported['network_requests'] == 0 and imported['import_model_calls'] == 0
+        assert imported['actual_restored_pptx'] is True
         lesson = report['lesson_design']
         assert lesson['version'] == VERSION and lesson['source_commit'] == sha
         assert all(lesson['checks'].values()) and not lesson['uncaught_errors']
@@ -98,7 +104,7 @@ def main():
     assert packaged['editable_pptx_slides'] == 5 and packaged['pdf_pages'] == 2
     suites = list(ET.parse(source/'readiness-qa/pytest.xml').getroot().iter('testsuite'))
     tests = {key:sum(int(s.get(key,0)) for s in suites) for key in ('tests','failures','errors','skipped')}
-    assert tests['tests'] >= 1250 and not any(tests[k] for k in ('failures','errors','skipped'))
+    assert tests['tests'] >= 1279 and not any(tests[k] for k in ('failures','errors','skipped'))
     target = ROOT/'docs/screenshots'/TAG
     target.mkdir(parents=True,exist_ok=True)
     names=set()
@@ -116,7 +122,8 @@ def main():
                           (packaged['work_batch'],source/'package-qa/work-batch'),
                           (packaged['exam_analysis'],source/'package-qa/exam'),
                           (packaged['teaching_closure'],source/'package-qa/closure'),
-                          (packaged['lesson_design'],source/'package-qa/lesson-design')):
+                          (packaged['lesson_design'],source/'package-qa/lesson-design'),
+                          (packaged['lesson_import'],source/'package-qa/lesson-import')):
         for record in report['screenshots']:
             copy_image(folder,record)
     for scale in ('1','1.25','1.5'):
@@ -133,7 +140,7 @@ def main():
     text=text.replace('源码候选（等待本版验收）', '原生试用版')
     text=text.replace('{{VERIFICATION_SUMMARY}}',
         f"同一提交完成 **{tests['tests']}项Windows定向测试，0失败、0错误、0跳过**。"
-        '源码与同一发行EXE均验证教学环节编辑、逐目标覆盖、材料锁定、调序撤销、三类真实成品、新旧版本标识、整套独立副本导出、草稿和恢复重开，以及实际PPTX经LibreOffice转PDF。原有评分统计、题库复练、复测与考试分析继续回归。'
+        '源码与同一发行EXE均验证从已有初稿选择转换、保留教师原环节、撤销重做、锁定材料、本地三类成品生成、草稿及恢复保存、ZIP独立恢复后三文件读取与实际PPTX重新预览。原教学目标与输出版本、评分统计、题库复练、复测和考试流程继续回归。'
         '原有选题、中文/化学符号及Qt倍率、组卷、作品整理、备课备份和文档输出继续回归。本轮没有真实学生数据与网络模型请求，固定传输夹具只用来准备样例。')
     for image in re.findall(r'!\[[^\]]*\]\(([^)]+)\)',text):
         assert (ROOT/image).is_file(),image
@@ -142,7 +149,7 @@ def main():
     command('git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
     command('git','add','-f','README.md',str(target.relative_to(ROOT)),
             f'docs/qa/{VERSION}-readiness.json',f'docs/qa/{VERSION}-package.json')
-    command('git','commit','-m','docs: record verified 0.1.100 lesson design, matched outputs and full functional guide [skip ci]')
+    command('git','commit','-m','docs: record verified 0.1.101 existing-result handoff, restored outputs and full functional guide [skip ci]')
     delivery_sha=command('git','rev-parse','HEAD')
     command('git','push','origin','HEAD:refs/heads/'+BRANCH)
     output=ROOT/'release-delivery';output.mkdir(exist_ok=True)
