@@ -1,2 +1,2 @@
-"""Version of the native Windows workbench, independent of private data."""
-DESKTOP_VERSION = "0.1.99"
+"""Version of the native Windows workbench."""
+DESKTOP_VERSION = "0.1.100"

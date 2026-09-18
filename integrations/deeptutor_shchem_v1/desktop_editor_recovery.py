@@ -29,7 +29,7 @@ class PreparationRecoveryError(ValueError):
 
 def validate_editor_payload(payload) -> dict:
     """Check the editor shape without trimming or discarding unfinished content."""
-    allowed = {*_TEXT, "output_kind", "advanced", "image_assets", "image_input_mode"}
+    allowed = {*_TEXT, "output_kind", "advanced", "image_assets", "image_input_mode", "lesson_design"}
     if not isinstance(payload, Mapping) or set(payload) - allowed:
         raise PreparationRecoveryError("恢复表单包含不支持的字段，原副本保留。")
     if payload.get("output_kind") not in {"joint", "ppt", "lesson_plan"}:
@@ -58,6 +58,12 @@ def validate_editor_payload(payload) -> dict:
                 or image["asset_id"] in seen):
             raise PreparationRecoveryError("恢复副本含无法完整还原的图片引用，未丢弃原信息。")
         seen.add(image["asset_id"])
+    if "lesson_design" in payload:
+        from .desktop_lesson_design import validate_design
+        try:
+            validate_design(payload["lesson_design"])
+        except ValueError as exc:
+            raise PreparationRecoveryError(str(exc)) from exc
     # Exact public form fields only; credentials and paths are not part of this contract.
     return deepcopy(dict(payload))
 

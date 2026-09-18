@@ -124,10 +124,11 @@ _REQUEST_FIELDS = frozenset(
         "image_assets",
         "image_input_mode",
         "advanced",
+        "lesson_design",
     }
 )
 _REQUEST_REQUIRED_FIELDS = frozenset(
-    _REQUEST_FIELDS - {"advanced", "image_assets", "image_input_mode"}
+    _REQUEST_FIELDS - {"advanced", "image_assets", "image_input_mode", "lesson_design"}
 )
 _ADVANCED_FIELDS = (
     "learning_and_experiment",
@@ -470,6 +471,12 @@ def normalize_preparation_payload(payload: Mapping[str, Any]) -> dict[str, Any]:
         raise DesktopPreparationError(
             "preparation_payload_invalid", "备课请求字段不完整或包含未知字段。"
         )
+    if "lesson_design" in payload:
+        from .desktop_lesson_design import validate_design
+        try:
+            validate_design(payload["lesson_design"])
+        except ValueError as exc:
+            raise DesktopPreparationError("lesson_design_invalid", str(exc)) from exc
     try:
         input_mode = image_input_mode(payload)
     except PreparationImageInputError as exc:

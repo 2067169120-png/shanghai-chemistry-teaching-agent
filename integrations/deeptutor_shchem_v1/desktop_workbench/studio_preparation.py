@@ -14,6 +14,24 @@ class StudioPreparationPage(PreparationPage):
         self.recovery = PreparationRecoveryController(self) if state_root is not None else None
         from .preparation_workspace import PreparationWorkspace
         self.workspace = PreparationWorkspace(self)
+        from PySide6.QtWidgets import QPushButton
+        self.lesson_design_button = QPushButton("教学环节")
+        self.lesson_design_button.setObjectName("QuietButton")
+        self.lesson_design_button.setToolTip("编辑目标、活动和评价，本地生成同源教案/PPT/学习单。")
+        self.workspace.toolbar.layout().setContentsMargins(12, 10, 12, 6)
+        self.workspace.toolbar.layout().setSpacing(4)
+        self.workspace.toolbar.layout().insertWidget(0, self.lesson_design_button)
+        self.lesson_design_button.clicked.connect(self.open_lesson_design)
+
+    def open_lesson_design(self):
+        if self.studio_busy():
+            set_status(self.status, "attention", "请先完成当前保存、导入或生成。")
+            return
+        from .lesson_design_dialog import LessonDesignDialog
+        dialog = LessonDesignDialog(self)
+        dialog.exec()
+        dialog.deleteLater()
+
 
     def studio_busy(self) -> bool:
         return bool(self._save_task_id or self._generation_qt_task_id
@@ -76,6 +94,8 @@ class StudioPreparationPage(PreparationPage):
                 return
         payload = selected["payload"]
         normalized = normalize_preparation_payload(payload)
+        from copy import deepcopy
+        self._lesson_design = deepcopy(payload.get("lesson_design"))
         self.output_kind.setCurrentIndex(self.output_kind.findData(payload["output_kind"]))
         self.topic.setText(payload["topic"])
         self.audience.setText(payload["audience"])

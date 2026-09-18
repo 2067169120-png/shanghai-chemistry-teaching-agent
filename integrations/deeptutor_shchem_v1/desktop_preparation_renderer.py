@@ -1773,7 +1773,9 @@ def _write_pptx(
                     "看图任务：" + binding["observation_prompt"],
                     "图片教学用途：" + asset["purpose"],
                     "图片来源：" + asset["source"],
-                    "图片内容需教师复核；模型只收到图片说明，未查看像素。",
+                    ("图片内容需教师复核；本页由本地教学环节生成，未调用模型。"
+                     if candidate.get("source_basis", {}).get("mode") == "teacher_nodes_local"
+                     else "图片内容需教师复核；模型只收到图片说明，未查看像素。"),
                 ]
             )
         if notes:
