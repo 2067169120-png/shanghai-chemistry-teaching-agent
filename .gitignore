@@ -282,3 +282,13 @@
 !/docs/screenshots/v0.1.98/
 !/docs/screenshots/v0.1.98/**
 !/.github/workflows/exam-dashboard.yml
+
+# 0.1.99 teaching-link implementation and matched synthetic evidence.
+!/README-0.1.98-archive.md
+!/docs/ux/0.1.99-closure-audit.md
+!/docs/releases/0.1.99.md
+!/docs/qa/0.1.99-readiness.json
+!/docs/qa/0.1.99-package.json
+!/docs/screenshots/v0.1.99/
+!/docs/screenshots/v0.1.99/**
+!/.github/workflows/closure-first-look.yml

@@ -374,11 +374,28 @@ def local_student_advice(student, report):
     return '\n'.join(lines)
 
 
+from threading import RLock
+_EXAM_WRITE_LOCK = RLock()
+_UNCHECKED = object()
+
+
 class ExamStore:
     def __init__(self, state_root):
         self.root = Path(state_root) / 'exam-analyses'
 
-    def save(self, bundle):
+    def save(self, bundle, *, expected_revision=_UNCHECKED):
+        with _EXAM_WRITE_LOCK:
+            identity=bundle['exam']['id']
+            if not re.fullmatch('[0-9a-f]{32}', identity):
+                raise ExamError('分析记录身份无效。')
+            path=self.root/(identity+'.json')
+            if expected_revision is not _UNCHECKED:
+                current=digest(self.load(identity)) if path.exists() else None
+                if current != expected_revision:
+                    raise ExamError('这份考试分析已在其他窗口更新，请先另存当前输入并重新打开；未覆盖最新记录。')
+            return self._save(bundle)
+
+    def _save(self, bundle):
         identity = bundle['exam']['id']
         if not re.fullmatch('[0-9a-f]{32}', identity):
             raise ExamError('分析记录身份无效。')

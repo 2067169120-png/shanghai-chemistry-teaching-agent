@@ -182,7 +182,8 @@ class WorkBatchDialog(QDialog):
         self.batch.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.batch.setMinimumContentsLength(12)
         self.new=QPushButton('新建批次');self.edit=QPushButton('编辑批次')
-        top.addWidget(QLabel('作业批次'));top.addWidget(self.batch,1);top.addWidget(self.new);top.addWidget(self.edit);root.addLayout(top)
+        self.overview=QPushButton('正式评分统计');self.overview.clicked.connect(self.open_summary)
+        top.addWidget(QLabel('作业批次'));top.addWidget(self.batch,1);top.addWidget(self.new);top.addWidget(self.edit);top.addWidget(self.overview);root.addLayout(top)
         nav=QHBoxLayout();self.previous=QPushButton('上一名');self.next=QPushButton('下一名')
         self.student=QComboBox();self.student.setMinimumWidth(0);self.student.setAccessibleName('本批次学生作答')
         nav.addWidget(self.previous);nav.addWidget(self.student,1);nav.addWidget(self.next);root.addLayout(nav)
@@ -199,9 +200,37 @@ class WorkBatchDialog(QDialog):
         for b in self.findChildren(QPushButton):b.setAutoDefault(False)
         self.reload_batches()
 
+    def open_summary(self):
+        if not self._batch or not self._flush():return
+        from ..desktop_batch_exam import collect_batch_exams
+        from PySide6.QtWidgets import QInputDialog
+        self._busy=True;self._controls()
+        def ready(result):
+            self._busy=False;self._controls()
+            groups=result['groups']
+            if not groups:
+                self.status.setText('没有题目身份与满分完整的可汇总作答；未把未知项计零。');return
+            labels=[f"同卷组{i+1} · {g['count']}人 · {len(g['exam']['questions'])}个已匹配评分单元" for i,g in enumerate(groups)]
+            choice,ok=QInputDialog.getItem(self,'选择可比较的同卷组',
+                f"批次共{len(result['batch']['members'])}人，{len(result['unavailable'])}份无法分组。不同原题组不混算。",labels,0,False)
+            if not ok:return
+            exam=groups[labels.index(choice)]['exam']
+            # Close the batch modal before routing to the shared exam window.
+            parent=self.parentWidget()
+            while parent and not callable(getattr(parent,'open_exam_dialog',None)):parent=parent.parentWidget()
+            if parent:
+                from PySide6.QtCore import QTimer
+                self.reject();QTimer.singleShot(0,lambda:parent.open_exam_dialog(exam=exam))
+            else:
+                from .exam_dashboard import ExamDashboard
+                d=ExamDashboard(self.facade,self.tasks,self);d.accept_exam(exam);d.exec();d.deleteLater()
+        self.tasks.submit('汇总教师正式评分',lambda:collect_batch_exams(self.facade,self._batch['batch_id']),
+                          on_success=ready,on_failure=self._failed)
+
     def _controls(self):
         for w in (self.batch,self.new,self.student):w.setEnabled(not self._busy)
         self.edit.setEnabled(not self._busy and self._batch is not None)
+        self.overview.setEnabled(not self._busy and self._batch is not None)
         self.previous.setEnabled(not self._busy and self._current_index>0)
         self.next.setEnabled(not self._busy and 0<=self._current_index<len(self._members)-1)
 
