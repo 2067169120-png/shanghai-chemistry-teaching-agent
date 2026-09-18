@@ -15,6 +15,13 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Retain the exact source under review
+        run: git archive --format=zip --output=integration-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: closure199-source-${{ github.sha }}
+          path: integration-source.zip
+          retention-days: 14
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
