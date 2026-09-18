@@ -1,0 +1,34 @@
+name: Apply inspected lesson-import readability
+on:
+  push:
+    branches: ["feature/lesson-source-0.1.101"]
+    paths: [".github/lesson101-polish.patch", ".github/workflows/apply-lesson101-polish.yml"]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Apply exact readable diff then remove transport files
+        shell: python
+        run: |
+          import hashlib,os,pathlib,subprocess
+          def git(*args):
+              return subprocess.check_output(['git',*args],text=True).strip()
+          branch='feature/lesson-source-0.1.101'
+          assert git('rev-parse','HEAD')==os.environ['GITHUB_SHA']
+          assert git('ls-remote','origin','refs/heads/'+branch).split()[0]==os.environ['GITHUB_SHA']
+          patch=pathlib.Path('.github/lesson101-polish.patch').read_bytes()
+          assert hashlib.sha256(patch).hexdigest()=='7ce4a367df5a94bbd318a8b38152a58f1bec5c0dff4a2552868b1693c3713967'
+          subprocess.run(['git','apply','--check','--index','-'],input=patch,check=True)
+          subprocess.run(['git','apply','--index','-'],input=patch,check=True)
+          git('rm','-f','.github/lesson101-polish.patch','.github/workflows/apply-lesson101-polish.yml')
+          git('config','user.name','github-actions[bot]')
+          git('config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
+          git('commit','-m','fix(lesson-import): present homework as readable teacher guidance and show target lesson')
+          git('push','origin','HEAD:refs/heads/'+branch)
+          print(git('rev-parse','HEAD'))
