@@ -1,0 +1,112 @@
+name: Complete verified teaching-closure release
+on:
+  push:
+    branches: ["release/teaching-closure-0.1.99"]
+    paths: [".github/workflows/finish-closure199-release.yml"]
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: finish-closure199-release
+  cancel-in-progress: false
+jobs:
+  complete-delivery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: delivery-0.1.99-56b8682a09203b0e4f78f891b75a5b217ca6c7bf
+          run-id: 35304823308
+          github-token: ${{ github.token }}
+          path: recovered-delivery
+      - name: Upload the original verified assets using the existing draft ID
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: python
+        run: |
+          import hashlib,json,mimetypes,os,pathlib,subprocess,time,urllib.request,urllib.parse
+          repo='2067169120-png/shanghai-chemistry-teaching-agent'
+          release_id=391209648
+          tag='v0.1.99'
+          tested='56b8682a09203b0e4f78f891b75a5b217ca6c7bf'
+          released='573f993209a5200ce6fbd1c7866c3f1e0a4fce31'
+          root=pathlib.Path('recovered-delivery'); evidence=pathlib.Path('recovery-evidence');evidence.mkdir(exist_ok=True)
+          def gh(*args,binary=False):
+              return subprocess.check_output(['gh',*args],text=not binary,timeout=300)
+          def api(path,*args):
+              data=gh('api',f'repos/{repo}/{path}',*args)
+              return json.loads(data) if data.strip() else None
+          def digest(path):return hashlib.sha256(path.read_bytes()).hexdigest()
+          manifest=json.loads((root/'RELEASE-MANIFEST.json').read_text())
+          assert manifest['tested_source_commit']==tested and manifest['release_commit']==released
+          assert str(manifest['workflow_run'])=='35304823308'
+          assert not any(manifest['tests'][k] for k in ('failures','errors','skipped'))
+          assert manifest['tests']['tests']>=1195
+          assert subprocess.check_output(['git','rev-parse',tag+'^{}'],text=True).strip()==released
+          jobs=api('actions/runs/35304823308/jobs?per_page=100')['jobs']
+          assert any(j['name']=='verify' and j['conclusion']=='success' for j in jobs)
+          for line in (root/'SHA256SUMS.txt').read_text().splitlines():
+              checksum,name=line.split('  ',1);assert pathlib.Path(name).name==name
+              assert digest(root/name)==checksum,name
+          for row in manifest['assets']:
+              p=root/row['file'];assert p.stat().st_size==row['bytes'] and digest(p)==row['sha256'],p.name
+          release=api(f'releases/{release_id}')
+          assert release['tag_name']==tag and release['target_commitish']==released and release['prerelease']
+          upload=release['upload_url'].split('{')[0]
+          assert upload==f'https://uploads.github.com/repos/{repo}/releases/{release_id}/assets'
+          def assets():return {a['name']:a for a in api(f'releases/{release_id}/assets?per_page=100')}
+          def matches(a,p):return a['state']=='uploaded' and a['size']==p.stat().st_size and a.get('digest')=='sha256:'+digest(p)
+          expected=sorted(p for p in root.iterdir() if p.is_file())
+          for path in expected:
+              for attempt in range(3):
+                  found=assets().get(path.name)
+                  if found and matches(found,path):break
+                  assert release['draft'],'Do not alter a published release'
+                  if found:
+                      assert found['state']=='starter' and not found.get('digest'),path.name
+                      api(f"releases/assets/{found['id']}",'-X','DELETE')
+                  request=urllib.request.Request(upload+'?'+urllib.parse.urlencode({'name':path.name}),
+                      data=path.read_bytes(),method='POST',headers={
+                        'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                        'Content-Type':mimetypes.guess_type(path.name)[0] or 'application/octet-stream',
+                        'Accept':'application/vnd.github+json','User-Agent':'verified-closure-delivery'})
+                  try:
+                      with urllib.request.urlopen(request,timeout=240) as response:record=json.load(response)
+                      assert matches(record,path),path.name
+                      break
+                  except Exception:
+                      if attempt==2:raise
+                      time.sleep(5*(attempt+1))
+              else:raise RuntimeError('Unverified upload: '+path.name)
+          verified=[]
+          final_assets=assets()
+          for path in expected:
+              a=final_assets[path.name];assert matches(a,path)
+              raw=gh('api',f"repos/{repo}/releases/assets/{a['id']}",'-H','Accept: application/octet-stream',binary=True)
+              assert len(raw)==path.stat().st_size and hashlib.sha256(raw).hexdigest()==digest(path)
+              verified.append({'file':path.name,'bytes':len(raw),'sha256':digest(path)})
+          assert subprocess.check_output(['git','rev-parse',tag+'^{}'],text=True).strip()==released
+          if release['draft']:
+              note=release['body']+'\n\n发布补充：Windows与同一EXE验证通过；首次发布在按标签读取新草稿时返回404，改用原Release编号完成上传。原验收程序、源码附件、校验文件和标签均未替换或重建。'
+              api(f'releases/{release_id}','-X','PATCH','-F','draft=false','-F','prerelease=true','-f','make_latest=false','-f','body='+note)
+          final=api(f'releases/{release_id}');assert not final['draft'] and final['published_at']
+          report={'version':'0.1.99','verification_run':35304823308,'recovery_run':os.environ['GITHUB_RUN_ID'],
+                  'tested_source_commit':tested,'release_commit':released,'no_rebuild':True,'tag_unchanged':True,
+                  'release_url':final['html_url'],'published_at':final['published_at'],'assets':verified}
+          (evidence/'release-recovery.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('Published same verified delivery:',final['html_url'])
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: closure199-release-recovery-${{ github.sha }}
+          path: recovery-evidence/
+          retention-days: 30
+          if-no-files-found: warn
