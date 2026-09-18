@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import xml.etree.ElementTree as ET
 from zipfile import ZipFile, ZIP_DEFLATED
+from documentation_policy import archived_readmes, check_documentation
 
 ROOT = Path(__file__).resolve().parents[2]
 VERSION = '0.1.101'
@@ -27,6 +28,7 @@ def write_json(path, value):
 
 
 def main():
+    assert not archived_readmes(ROOT), "Keep history in Git; remove versioned README copies before release"
     if os.environ.get('GITHUB_EVENT_NAME') != 'push' or os.environ.get('GITHUB_REF_NAME') != BRANCH:
         raise RuntimeError('Publishing is limited to a push on the version branch')
     sha, repo = os.environ['GITHUB_SHA'], os.environ['GITHUB_REPOSITORY']
@@ -145,6 +147,8 @@ def main():
     for image in re.findall(r'!\[[^\]]*\]\(([^)]+)\)',text):
         assert (ROOT/image).is_file(),image
     readme.write_text(text,encoding='utf-8')
+    doc_errors = check_documentation(ROOT)
+    assert not doc_errors, '\n'.join(doc_errors)
     command('git','config','user.name','github-actions[bot]')
     command('git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
     command('git','add','-f','README.md',str(target.relative_to(ROOT)),
