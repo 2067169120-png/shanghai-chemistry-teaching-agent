@@ -1,0 +1,46 @@
+name: Current guide and workflow documentation
+on:
+  push:
+    paths:
+      - 'README.md'
+      - 'README-*-archive.md'
+      - 'AGENTS.md'
+      - 'CHANGELOG.md'
+      - 'docs/**'
+      - 'runtime/deeptutor_shchem/documentation_policy.py'
+      - 'runtime/deeptutor_shchem/prepare_verified_release.py'
+      - 'staging/coordination/deeptutor_gateway/tests/test_complete_readme.py'
+      - '.github/workflows/documentation.yml'
+  pull_request:
+    paths:
+      - 'README.md'
+      - 'README-*-archive.md'
+      - 'AGENTS.md'
+      - 'CHANGELOG.md'
+      - 'docs/**'
+      - 'runtime/deeptutor_shchem/documentation_policy.py'
+      - 'runtime/deeptutor_shchem/prepare_verified_release.py'
+      - 'staging/coordination/deeptutor_gateway/tests/test_complete_readme.py'
+      - '.github/workflows/documentation.yml'
+permissions:
+  contents: read
+jobs:
+  guide:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'pytest>=8,<10'
+      - run: python runtime/deeptutor_shchem/documentation_policy.py
+      - run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_complete_readme.py --junitxml=documentation-tests.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: documentation-${{ github.sha }}
+          path: documentation-tests.xml
+          retention-days: 14
