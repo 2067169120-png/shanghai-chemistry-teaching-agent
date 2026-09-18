@@ -239,7 +239,7 @@ class SyntheticTransport:
                                       body=json.dumps(reply).encode(),latency_ms=0,model_invoked=True)
 
 
-def seed_review(workspace, state, source_dir):
+def seed_review(workspace, state, source_dir, *, shared_paper=False):
     """Create two visibly synthetic tasks using the real student manager."""
     from PIL import Image, ImageDraw, ImageFont
     paths=DesktopPaths.from_workspace(Path(workspace),state_root=Path(state))
@@ -261,7 +261,7 @@ def seed_review(workspace, state, source_dir):
             files=[]
             for n in range(2):
                 image=Image.new('RGB',(880,1100),'white');draw=ImageDraw.Draw(image)
-                lines=['SYNTHETIC REVIEW FIXTURE - NOT A REAL STUDENT',f'Sample {student_no+1} / item {n+1} / {role}',
+                lines=['SYNTHETIC REVIEW FIXTURE - NOT A REAL STUDENT',f'Sample {0 if shared_paper and role != "student_work_pages" else student_no+1} / item {n+1} / {role}',
                        'NaCl   H2SO4   12.5 mol/L',
                        'Original page retained in full; use zoom to inspect.',
                        'Teacher score and reason are saved independently.']

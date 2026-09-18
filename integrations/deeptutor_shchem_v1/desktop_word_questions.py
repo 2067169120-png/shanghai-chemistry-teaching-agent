@@ -466,7 +466,7 @@ class WordQuestionService:
         rows, _ = self._resolve([{"key": key, "revision": revision}])
         row = rows[0]
         try:
-            catalog = load_attribute_catalog(self.facade.paths.workspace_root)
+            catalog = load_attribute_catalog(self.facade.paths.workspace_root, allow_builtin=True)
             stored = self.attribute_store.get(key)
             if stored and stored["source_sha256"] != row["source_sha256"]:
                 raise WordQuestionAttributeError(
@@ -487,7 +487,7 @@ class WordQuestionService:
                 "catalog": catalog,
                 "history": self.attribute_store.history(key),
                 "stored_revision": stored["revision"] if stored else None,
-                "warning": (
+                "warning": "\n".join(catalog.get("warnings",[])) + "\n" + (
                     "题目范围已变化；下面是当前题目的新建议。原教师修改仍保存在历史中，请重新核对。"
                     if stored and not bound
                     else ""

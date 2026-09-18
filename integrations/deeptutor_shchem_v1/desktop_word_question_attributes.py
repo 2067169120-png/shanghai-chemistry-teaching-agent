@@ -564,22 +564,31 @@ def _find(term, segments):
     return found[:20]
 
 
-def load_attribute_catalog(workspace_root):
-    """Read only the established taxonomy and textbook directory, once per caller."""
+def load_attribute_catalog(workspace_root, *, allow_builtin=False):
+    """Use existing software K IDs on first install, without inventing textbooks.
+
+    Missing optional local files are different from corrupt installed files:
+    malformed existing JSON still raises and must not be silently replaced.
+    """
     root = Path(workspace_root)
-    taxonomy = json.loads(
-        (root / "sh-chem-db/kb/knowledge_taxonomy.json").read_text(encoding="utf-8")
-    )
-    directory = json.loads(
-        (
-            root
-            / "sh-chem-db/kb/classification/supplemental_wechat_textbook_tagging_v1_2026-08-27/textbook_directory_nodes.json"
-        ).read_text(encoding="utf-8")
-    )
-    return {
-        "knowledge_points": taxonomy["dimensions"]["knowledge_points"],
-        "nodes": directory["nodes"],
-    }
+    tax_path=root / 'sh-chem-db/kb/knowledge_taxonomy.json'
+    dir_path=root / 'sh-chem-db/kb/classification/supplemental_wechat_textbook_tagging_v1_2026-08-27/textbook_directory_nodes.json'
+    warnings=[]
+    if not allow_builtin and (not tax_path.is_file() or not dir_path.is_file()):
+        raise WordQuestionAttributeError("教材目录尚未就绪；批量自动标注未提交，可先在单题标签中人工维护基础分类。")
+    if tax_path.exists():
+        points=json.loads(tax_path.read_text(encoding='utf-8'))['dimensions']['knowledge_points']
+    else:
+        points=[{'id':key,'name':VALUE_LABELS_ZH[key]} for key in (f'K{i:02d}' for i in range(1,20))]
+        warnings.append('未安装本地分类文件；使用软件已有K01—K19基础分类，非教材蒸馏结果。')
+    if dir_path.exists():
+        nodes=json.loads(dir_path.read_text(encoding='utf-8'))['nodes']
+    else:
+        nodes=[]
+        warnings.append('未关联教材章节目录；可维护知识点与来源标签，教材册章节保持未映射。')
+    if not isinstance(points,list) or not isinstance(nodes,list):
+        raise WordQuestionAttributeError('本地知识分类或教材目录格式不正确，请核对原文件。')
+    return {'knowledge_points':points,'nodes':nodes,'warnings':warnings}
 
 
 def _catalog_entries(value):

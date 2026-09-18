@@ -2170,17 +2170,14 @@ class StudentPage(QWidget):
             self.review_editors.append(editor)
         self._update_practice_enabled()
 
-    def _open_exam_analysis(self) -> None:
-        from .exam_dashboard import ExamDashboard
-        dialog = ExamDashboard(self.facade, self.tasks, self.window())
-        def append(text):
-            window = self.window()
-            page = getattr(window, 'preparation_page', None)
-            if page is not None and page.import_word_reference({'materials':text,'warnings':[]}):
-                dialog.status.setText('讲评资料已追加到备课；返回后请核对并保存草稿，未自动调用模型。')
-        dialog.preparation_requested.connect(append)
-        dialog.exec()
-        dialog.deleteLater()
+    def _open_exam_analysis(self):
+        window=self.window()
+        if callable(getattr(window,'open_exam_dialog',None)):
+            window.open_exam_dialog()
+        else:
+            from .exam_dashboard import ExamDashboard
+            dialog=ExamDashboard(self.facade,self.tasks,window)
+            dialog.exec();dialog.deleteLater()
 
     def _open_work_batch(self) -> None:
         from .work_batch_desk import WorkBatchDialog

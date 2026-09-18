@@ -72,6 +72,7 @@ class ExamDashboard(QDialog):
         super().__init__(parent);self.facade=facade;self.tasks=tasks
         self.store=ExamStore(facade.paths.state_root)
         self.exam=None;self.paper={'text':'','pages':[],'warnings':[]};self.result=None;self.result_scope=None
+        self.followups=[];self.pending_handoff=None;self._saved_revision=None
         self.report=None;self._task=None;self._closed=False;self.dirty=False;self._rendering=False
         self.setWindowTitle('考试分析 · 成绩、试卷与讲评');self.resize(1320,860);self.setMinimumSize(720,570)
         root=QVBoxLayout(self);root.setContentsMargins(14,12,14,12);root.setSpacing(8)
@@ -139,6 +140,23 @@ class ExamDashboard(QDialog):
                        self.preview_button,self.clear_paper_button,self.refresh_models_button,self.to_prep_button,self.close_button):
             button.setObjectName('QuietButton')
 
+        from .exam_followup_panel import ExamFollowupPanel
+        self.followup_panel=ExamFollowupPanel(self)
+        self.tabs.addTab(self.followup_panel,'复练与复测')
+
+    def open_saved(self, identity, task_id=None):
+        bundle=self.store.load(identity)
+        self.accept_exam(bundle['exam'],persist=False)
+        self.paper=bundle.get('paper',{'text':'','pages':[],'warnings':[]})
+        self._rendering=True
+        self.paper_text.setPlainText(self.paper.get('text',''));self.notes.setPlainText(bundle.get('notes',''))
+        self._rendering=False;self.result=bundle.get('advice');self.result_scope=bundle.get('advice_scope')
+        self.followups=bundle.get('followups',[]);self._saved_revision=digest(bundle);self.dirty=False
+        target=self.classes.findData(self.result_scope)
+        if target>=0:self.classes.setCurrentIndex(target)
+        self.render();self.followup_panel.refresh(task_id)
+        if task_id:self.tabs.setCurrentWidget(self.followup_panel)
+
     def resizeEvent(self,event):
         super().resizeEvent(event)
         columns=5 if event.size().width()>=1050 else 3
@@ -157,6 +175,7 @@ class ExamDashboard(QDialog):
         for w in (self.toolbar,self.classes,self.paper_button,self.clear_paper_button,self.paper_text,self.notes,self.model,
                   self.refresh_models_button,self.send_images,self.send_students,self.ai_button,self.to_prep_button):w.setEnabled(not yes)
         self.stop_button.setEnabled(yes)
+        if hasattr(self,'followup_panel'):self.followup_panel.setEnabled(not yes)
 
     def run(self,label,fn,callback):
         if self._task:return
@@ -189,6 +208,9 @@ class ExamDashboard(QDialog):
         dialog.deleteLater()
 
     def accept_exam(self,exam,*,persist=True):
+        self.followups=[];self.pending_handoff=None;self._saved_revision=None
+        if hasattr(self,'followup_panel'):
+            self.followup_panel.preview=None;self.followup_panel.approved=False
         self.exam=exam;self.result=None;self.result_scope=None;self.dirty=True
         self._rendering=True;self.paper={'text':'','pages':[],'warnings':[]};self.paper_text.clear();self.notes.clear();self.paper_label.setText('尚未添加试卷；题号与知识点来自成绩导入时的映射。');self._rendering=False
         self.classes.blockSignals(True);self.classes.clear();self.classes.addItem('全部导入班级',None)
@@ -231,6 +253,7 @@ class ExamDashboard(QDialog):
         self.problem_note.setText('\n'.join(self.report['warnings']))
         self.set_table(self.problem_table,['Excel行','字段','需核对内容'],[(i['row'],i['field'],i['detail']) for i in self.report['issues']])
         self.ai_result.setPlainText(advice_text(self.current_result()))
+        if hasattr(self,'followup_panel'):self.followup_panel.refresh()
 
     def select_student(self,index):
         if self.report and 0<=index.row()<len(self.report['students']):
@@ -302,11 +325,12 @@ class ExamDashboard(QDialog):
         self.run('API生成讲评草稿',lambda report,cancelled:generate_advice(self.facade,profile.profile_id,profile.revision,payload,pages,confirmed=True,cancelled=cancelled,transport=getattr(self.facade,"_exam_transport",None)),done)
 
     def bundle(self):
-        return {'exam':self.exam,'paper':self.paper,'notes':self.notes.toPlainText(),'advice':self.result,'advice_scope':self.result_scope}
+        return {'exam':self.exam,'paper':self.paper,'notes':self.notes.toPlainText(),'advice':self.result,'advice_scope':self.result_scope,'followups':deepcopy(self.followups)}
 
     def save_current(self):
         if not self.exam:return True
-        try:self.store.save(self.bundle());self.dirty=False;self.status.setText('已保存本机分析快照；原Excel/试卷不变，未调用API。');return True
+        try:
+            bundle=self.bundle();self.store.save(bundle,expected_revision=self._saved_revision);self._saved_revision=digest(bundle);self.dirty=False;self.status.setText('已保存本机分析快照；原Excel/试卷不变，未调用API。');return True
         except ExamError as e:self.status.setText(e.message_zh);return False
 
     def open_history(self):
@@ -320,7 +344,7 @@ class ExamDashboard(QDialog):
             b=self.store.load(entries[choices.index(value)][0]);self.accept_exam(b['exam'],persist=False)
             self.paper=b.get('paper',{'text':'','pages':[],'warnings':[]});self._rendering=True
             self.paper_text.setPlainText(self.paper.get('text',''));self.notes.setPlainText(b.get('notes',''));self._rendering=False
-            self.result=b.get('advice');self.result_scope=b.get('advice_scope');self.dirty=False
+            self.result=b.get('advice');self.result_scope=b.get('advice_scope');self.followups=b.get('followups',[]);self._saved_revision=digest(b);self.dirty=False
             target=self.classes.findData(self.result_scope)
             if target>=0:self.classes.setCurrentIndex(target)
             self.paper_label.setText(self.paper.get('name','未附试卷'));self.render()
@@ -332,7 +356,22 @@ class ExamDashboard(QDialog):
         if not path:return
         answer=QMessageBox.question(self,'学生标识','导出中保留本机学生和班级标识吗？选择“否”则使用临时代号。自由文字仍需自行核对。',QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No|QMessageBox.StandardButton.Cancel,QMessageBox.StandardButton.No)
         if answer==QMessageBox.StandardButton.Cancel:return
-        try:Path(path).write_text(html_report(self.report,self.current_result(),include_names=answer==QMessageBox.StandardButton.Yes),encoding='utf-8');self.status.setText('已导出离线HTML报告；没有远程脚本，不是Excel数据备份。')
+        try:
+            from ..desktop_exam_followup import followup_html
+            include_names=answer==QMessageBox.StandardButton.Yes
+            html=html_report(self.report,self.current_result(),include_names=include_names)
+            if self.followups:
+                # Limit task observations to the currently displayed class.
+                allowed={s['id'] for s in self.report['students']}
+                tasks=deepcopy(self.followups)
+                for task in tasks:
+                    task['targets']=[t for t in task['targets'] if t['exam_student_id'] in allowed]
+                    task['attempts']=[a for a in task['attempts'] if a['student_id'] in allowed]
+                tasks=[t for t in tasks if t['targets']]
+                section=followup_html(tasks,include_names=include_names)
+                html=html.replace('</body>',section+'</body>') if '</body>' in html else html+section
+            Path(path).write_text(html,encoding='utf-8')
+            self.status.setText('已导出离线图表及当前范围的复测记录；自由文字请核对，不是题库或学生原件备份。')
         except OSError:self.status.setText('导出未成功，请选择可写目录。')
 
     def to_preparation(self):

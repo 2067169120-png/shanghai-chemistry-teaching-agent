@@ -237,6 +237,43 @@ class TeacherWorkbenchWindow(QMainWindow):
         dialog.deleteLater()
         self.home_page.refresh()
 
+    def open_exam_dialog(self, *, exam=None, identity=None, task_id=None):
+        from .exam_dashboard import ExamDashboard
+        dialog=ExamDashboard(self.facade,self.tasks,self)
+        def append(text):
+            if self.preparation_page.import_word_reference({'materials':text,'warnings':[]}):
+                dialog.status.setText('已追加到备课材料；未调用模型，请核对并保存。')
+        dialog.preparation_requested.connect(append)
+        if exam is not None:dialog.accept_exam(exam)
+        if identity is not None:dialog.open_saved(identity,task_id)
+        dialog.exec()
+        handoff=dialog.pending_handoff
+        dialog.deleteLater()
+        if handoff:self.open_exam_practice(handoff)
+
+    def open_exam_practice(self, request):
+        from PySide6.QtCore import QSignalBlocker
+        from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
+        page=self.library_page
+        if not hasattr(page,'exam_context'):
+            page.exam_context=QWidget();box=QHBoxLayout(page.exam_context)
+            page.exam_context_label=QLabel();page.exam_context_label.setWordWrap(True)
+            page.exam_context_back=QPushButton('返回复练任务')
+            box.addWidget(page.exam_context_label,1);box.addWidget(page.exam_context_back)
+            finish=QPushButton('结束选题');finish.clicked.connect(page.exam_context.hide);box.addWidget(finish)
+            page.layout().insertWidget(1,page.exam_context)
+            page.exam_context_back.clicked.connect(lambda:self.open_exam_dialog(
+                identity=page.exam_context_request['exam_id'],task_id=page.exam_context_request['task_id']))
+        page.exam_context_request=dict(request)
+        page.exam_context_label.setText('考试复练 · '+request['label']+'；核对完整题面后入篮，再返回任务关联题目。')
+        page.exam_context.show()
+        with QSignalBlocker(page.scope):page.scope.setCurrentIndex(page.scope.findData(request['lane']))
+        page._base_facets={}
+        page.advanced_button.setText('Word原文与标签管理' if request['lane']=='word_native' else '题图与标签管理')
+        page.filters={'knowledge':{request['knowledge']}};page.curriculum={};page.query.clear()
+        self.navigate('library')
+        page.search()
+
     def preview_selected_paper(self):
         self.navigate("paper")
         self.paper_page.request_layout_preview()
