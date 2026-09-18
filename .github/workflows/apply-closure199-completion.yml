@@ -16,7 +16,7 @@ jobs:
       - name: Apply reviewed readable changes; remove transfer files
         shell: python
         run: |
-          import os,pathlib,subprocess
+          import hashlib,os,pathlib,subprocess
           def git(*args):
               return subprocess.check_output(['git',*args],text=True).strip()
           branch='feature/teaching-closure-0.1.99'
@@ -26,6 +26,8 @@ jobs:
           for path,digest in paths.items():
               assert git('hash-object',path)==digest
           patch=b''.join(pathlib.Path(path).read_bytes() for path in paths)
+          patch=patch.replace(' ### 新建批次并选择已有作答\n@@'.encode(),' ### 新建批次并选择已有作答\n \n@@'.encode(),1)
+          assert hashlib.sha256(patch).hexdigest()=='d9f5e64f0cf39f8d074f030e00eb716c4f6eb2539bd0f5c924f2bb5ea61ed42d'
           assert b'diff --git a/.github/' not in patch
           subprocess.run(['git','apply','--check','--index','-'],input=patch,check=True)
           subprocess.run(['git','apply','--index','-'],input=patch,check=True)
