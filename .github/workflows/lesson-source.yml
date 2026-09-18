@@ -1,0 +1,168 @@
+name: Lesson design complete Windows release 0.1.101
+on:
+  push:
+    branches: ["feature/lesson-source-0.1.101"]
+  pull_request:
+    branches: ["feature/lesson-design-0.1.100"]
+permissions:
+  contents: read
+concurrency:
+  group: lesson101-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Preserve the exact source being verified
+        run: git archive --format=zip --output=integration-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lesson101-source-${{ github.sha }}
+          path: integration-source.zip
+          retention-days: 14
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m compileall -q integrations runtime/deeptutor_shchem
+      - name: First actual Excel dashboard and confirmed fake API
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/desktop_teacher_workbench.pyw --verify-exam readiness-qa/exam
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: exam-first-look-${{ github.sha }}
+          path: readiness-qa/exam/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: First actual batch window, student switching and working inputs
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/desktop_teacher_workbench.pyw --verify-work-batch readiness-qa/work-batch
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lesson101-first-look-${{ github.sha }}
+          path: readiness-qa/work-batch/
+          retention-days: 14
+          if-no-files-found: warn
+      - name: All previous selected regressions plus batch and documentation cases
+        shell: python
+        run: |
+          import json, pathlib, re, subprocess, sys, yaml
+          workflow = yaml.safe_load(pathlib.Path('.github/workflows/explorer-performance.yml').read_text(encoding='utf-8'))
+          tests = []
+          for step in workflow['jobs']['verify']['steps']:
+              command = step.get('run', '')
+              if 'python -m pytest' in command:
+                  tests.extend(re.findall(r'staging/coordination/deeptutor_gateway/tests/test_[\w]+\.py', command))
+          assert len(tests) >= 55, 'Previous regression list was not found'
+          tests.extend('staging/coordination/deeptutor_gateway/tests/' + name for name in (
+              'test_student_review_desk_core.py', 'test_student_review_desk_ui.py',
+              'test_desktop_student_analysis_facade.py', 'test_desktop_student_analysis_e2e.py',
+              'test_desktop_student_practice.py', 'test_work_batches.py',
+              'test_work_batch_ui.py', 'test_complete_readme.py', 'test_exam_analysis.py', 'test_exam_dashboard_ui.py', 'test_teaching_closure.py', 'test_teaching_closure_ui.py',
+              'test_lesson_design.py', 'test_lesson_design_ui.py', 'test_lesson_delivery.py',
+              'test_lesson_import.py', 'test_lesson_import_ui.py', 'test_lesson_output_backup.py'))
+          tests = list(dict.fromkeys(tests))
+          assert all(pathlib.Path(name).is_file() for name in tests)
+          pathlib.Path('readiness-qa').mkdir(exist_ok=True)
+          pathlib.Path('readiness-qa/regression-files.json').write_text(json.dumps(tests, indent=2), encoding='utf-8')
+          subprocess.run([sys.executable, '-m', 'pytest', '-q', '-o', 'faulthandler_timeout=120', *tests,
+              '--junitxml=readiness-qa/pytest.xml'], check=True)
+      - run: python runtime/deeptutor_shchem/package_resources.py --inventory readiness-qa/resources.json
+      - name: Existing student original-page and teacher decisions
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/desktop_teacher_workbench.pyw --verify-student-review readiness-qa/student-review
+      - name: Retain question-loading measurements
+        run: python staging/coordination/deeptutor_gateway/scripts/benchmark_explorer195.py readiness-qa/explorer-performance.json
+      - name: Real question page and backup extension
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/desktop_teacher_workbench.pyw --verify-explorer readiness-qa/explorer
+      - run: python runtime/deeptutor_shchem/onboarding_ci_smoke.py
+      - run: python runtime/deeptutor_shchem/typography_ci.py readiness-qa/font-scaling
+      - run: choco install libreoffice-fresh -y --no-progress
+      - name: Teaching nodes, selected output, independent copies and actual PPTX
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/desktop_teacher_workbench.pyw --verify-lesson-design readiness-qa/lesson-design
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lesson101-visible-${{ github.sha }}
+          path: readiness-qa/lesson-design/
+          retention-days: 14
+      - name: Existing result to selected nodes and independently restored lesson files
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/desktop_teacher_workbench.pyw --verify-lesson-import readiness-qa/lesson-import
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lesson101-import-visible-${{ github.sha }}
+          path: readiness-qa/lesson-import/
+          retention-days: 14
+      - name: Formal scoring, original library, actual practice and dated retest
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/desktop_teacher_workbench.pyw --verify-closure readiness-qa/closure
+      - name: Existing numbering and actual answer pagination
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/desktop_teacher_workbench.pyw --verify-scan-numbers readiness-qa/scan
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-lesson101-${{ github.sha }}
+          path: readiness-qa/
+          retention-days: 14
+      - run: ./runtime/deeptutor_shchem/desktop_build.ps1 -BuildTag "work${{ github.run_id }}"
+      - name: Same shipping EXE, including batch operations, in a detached directory
+        run: python runtime/deeptutor_shchem/verify_packaged_trial.py "runtime/deeptutor_shchem/desktop_dist_work${{ github.run_id }}/沪上化学智研台"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-verification-${{ github.sha }}
+          path: |
+            readiness-qa/
+            package-qa/
+            release-assets/
+            integration-source.zip
+          retention-days: 14
+          if-no-files-found: error
+  publish:
+    needs: verify
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-verification-${{ github.sha }}
+          path: .release-input
+      - run: python -m pip install 'Markdown>=3.7,<4'
+      - name: Record matching evidence, complete functional README and publish version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python runtime/deeptutor_shchem/prepare_verified_release.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: delivery-0.1.101-${{ github.sha }}
+          path: release-delivery/
+          retention-days: 30
