@@ -14,6 +14,8 @@ def apply_editor_payload(page, payload):
     """Restore only editor fields, including partial text and image roles."""
     payload = validate_editor_payload(payload)
     periods, minutes = payload["lesson_timing"].replace("分钟", "").replace("课时", "").split("×")
+    from copy import deepcopy
+    page._lesson_design = deepcopy(payload.get("lesson_design"))
     page.output_kind.setCurrentIndex(page.output_kind.findData(payload["output_kind"]))
     page.topic.setText(payload["topic"])
     page.audience.setText(payload["audience"])

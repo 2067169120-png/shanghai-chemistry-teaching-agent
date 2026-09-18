@@ -107,6 +107,8 @@ class PreparationDraftService:
             **{field: deepcopy(core_fields[field]) for field in _CORE_FIELDS},
             "advanced": deepcopy(dict(advanced)),
         }
+        if "lesson_design" in record:
+            payload["lesson_design"] = deepcopy(record["lesson_design"])
         if "image_assets" in record:
             payload["image_assets"] = deepcopy(record["image_assets"])
         if "image_input_mode" in record:

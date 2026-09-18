@@ -12,8 +12,8 @@ import xml.etree.ElementTree as ET
 from zipfile import ZipFile, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = '0.1.99'
-BRANCH = 'feature/teaching-closure-0.1.99'
+VERSION = '0.1.100'
+BRANCH = 'feature/lesson-design-0.1.100'
 TAG = 'v' + VERSION
 
 
@@ -46,7 +46,12 @@ def main():
     ready['work_batch'] = read('readiness-qa/work-batch/work-batch-probe.json')
     ready['exam_analysis'] = read('readiness-qa/exam/exam-probe.json')
     ready['teaching_closure'] = read('readiness-qa/closure/closure-probe.json')
+    ready['lesson_design'] = read('readiness-qa/lesson-design/lesson-design-probe.json')
     for report in (ready,packaged):
+        lesson = report['lesson_design']
+        assert lesson['version'] == VERSION and lesson['source_commit'] == sha
+        assert all(lesson['checks'].values()) and not lesson['uncaught_errors']
+        assert lesson['model_calls'] == 0 and lesson['slides'] == 3
         closure = report['teaching_closure']
         assert closure['version'] == VERSION and closure['source_commit'] == sha
         assert all(closure['checks'].values()) and not closure['uncaught_errors']
@@ -93,7 +98,7 @@ def main():
     assert packaged['editable_pptx_slides'] == 5 and packaged['pdf_pages'] == 2
     suites = list(ET.parse(source/'readiness-qa/pytest.xml').getroot().iter('testsuite'))
     tests = {key:sum(int(s.get(key,0)) for s in suites) for key in ('tests','failures','errors','skipped')}
-    assert tests['tests'] >= 1195 and not any(tests[k] for k in ('failures','errors','skipped'))
+    assert tests['tests'] >= 1250 and not any(tests[k] for k in ('failures','errors','skipped'))
     target = ROOT/'docs/screenshots'/TAG
     target.mkdir(parents=True,exist_ok=True)
     names=set()
@@ -110,7 +115,8 @@ def main():
                           (packaged['student_review'],source/'package-qa/student-review'),
                           (packaged['work_batch'],source/'package-qa/work-batch'),
                           (packaged['exam_analysis'],source/'package-qa/exam'),
-                          (packaged['teaching_closure'],source/'package-qa/closure')):
+                          (packaged['teaching_closure'],source/'package-qa/closure'),
+                          (packaged['lesson_design'],source/'package-qa/lesson-design')):
         for record in report['screenshots']:
             copy_image(folder,record)
     for scale in ('1','1.25','1.5'):
@@ -127,7 +133,7 @@ def main():
     text=text.replace('源码候选（等待本版验收）', '原生试用版')
     text=text.replace('{{VERIFICATION_SUMMARY}}',
         f"同一提交完成 **{tests['tests']}项Windows定向测试，0失败、0错误、0跳过**。"
-        '源码与同一发行EXE均验证同卷正式评分统计、原题库筛选与入篮、仅关联任务子集的两版DOCX/PDF导出、真实日期复测记录及重开；原件、题篮与模型原稿不改变。0.1.98考试映射、图表、历史和固定API协议继续回归。'
+        '源码与同一发行EXE均验证教学环节编辑、逐目标覆盖、材料锁定、调序撤销、三类真实成品、新旧版本标识、整套独立副本导出、草稿和恢复重开，以及实际PPTX经LibreOffice转PDF。原有评分统计、题库复练、复测与考试分析继续回归。'
         '原有选题、中文/化学符号及Qt倍率、组卷、作品整理、备课备份和文档输出继续回归。本轮没有真实学生数据与网络模型请求，固定传输夹具只用来准备样例。')
     for image in re.findall(r'!\[[^\]]*\]\(([^)]+)\)',text):
         assert (ROOT/image).is_file(),image
@@ -136,7 +142,7 @@ def main():
     command('git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
     command('git','add','-f','README.md',str(target.relative_to(ROOT)),
             f'docs/qa/{VERSION}-readiness.json',f'docs/qa/{VERSION}-package.json')
-    command('git','commit','-m','docs: record verified 0.1.99 teaching links and full functional guide [skip ci]')
+    command('git','commit','-m','docs: record verified 0.1.100 lesson design, matched outputs and full functional guide [skip ci]')
     delivery_sha=command('git','rev-parse','HEAD')
     command('git','push','origin','HEAD:refs/heads/'+BRANCH)
     output=ROOT/'release-delivery';output.mkdir(exist_ok=True)
@@ -172,17 +178,19 @@ def main():
     from integrations.deeptutor_shchem_v1.desktop_exam_template import template_bytes
     (output/f'ShanghaiChem-{VERSION}-Score-Import-Example.xlsx').write_bytes(template_bytes())
     shutil.copyfile(source/'package-qa/exam/synthetic-exam-report.html',output/f'ShanghaiChem-{VERSION}-Synthetic-Exam-Report.html')
-    audit_text = (ROOT/'docs/ux/0.1.99-closure-audit.md').read_text(encoding='utf-8')
-    audit_html = markdown.markdown(audit_text, extensions=['tables','fenced_code'])
-    (output/f'ShanghaiChem-{VERSION}-Closure-Audit.html').write_text(
-        '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>全功能联动检查</title>'
+    notes_text = (ROOT/f'docs/ux/{VERSION}-lesson-design.md').read_text(encoding='utf-8')
+    notes_html = markdown.markdown(notes_text, extensions=['tables','fenced_code'])
+    (output/f'ShanghaiChem-{VERSION}-Lesson-Design-Notes.html').write_text(
+        '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>教学环节与同源输出</title>'
         '<style>body{max-width:1100px;margin:36px auto;padding:0 24px;font:17px/1.8 system-ui}'
-        'table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:10px;vertical-align:top}'
-        'code{overflow-wrap:anywhere}</style>'+audit_html+'</html>',encoding='utf-8')
-    with ZipFile(output/f'ShanghaiChem-{VERSION}-Synthetic-Practice.zip','w',ZIP_DEFLATED) as archive:
-        samples=list((source/'package-qa/closure').glob('*.pdf'))+list((source/'package-qa/closure').glob('*.docx'))
-        assert len(samples)>=4, 'Both actual practice audiences must have files'
-        for sample in samples:archive.write(sample,sample.name)
+        'table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:10px}</style>'
+        + notes_html + '</html>', encoding='utf-8')
+    with ZipFile(output/f'ShanghaiChem-{VERSION}-Synthetic-Lesson.zip','w',ZIP_DEFLATED) as archive:
+        folder=source/'package-qa/lesson-design'
+        for name in ('lesson_presentation.pptx','lesson_plan.docx','student_worksheet.docx',
+                     'actual-pptx.pdf','lesson_plan.pdf','student_worksheet.pdf','lesson-design.json'):
+            assert (folder/name).is_file(),name
+            archive.write(folder/name,name)
     assets=[{'file':p.name,'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
             for p in sorted(output.iterdir()) if p.is_file()]
     write_json(output/'RELEASE-MANIFEST.json',{'version':VERSION,'tag':TAG,'tested_source_commit':sha,
@@ -191,18 +199,24 @@ def main():
         for p in sorted(output.iterdir()) if p.is_file())+'\n',encoding='utf-8')
     command('git','tag','-a',TAG,'-m',VERSION+' verified Windows trial; code '+sha)
     command('git','push','origin','refs/tags/'+TAG)
-    command('gh','release','create',TAG,'--repo',repo,'--verify-tag','--draft','--prerelease',
-        '--target',delivery_sha,'--title',VERSION+' · 评分统计、真实题库复练与复测',
-        '--notes-file',f'docs/releases/{VERSION}.md')
-    # Upload sequentially. Do not clobber a completed asset after a partial
-    # GitHub upload failure, and verify the server digest before publication.
-    import time
+    # Use the ID returned by creation. Draft lookup by tag was unreliable in
+    # previous releases; upload_url is the documented authoritative endpoint.
+    import mimetypes, time, urllib.request, urllib.parse
+    payload={'tag_name':TAG,'target_commitish':delivery_sha,'name':VERSION+' · 教学环节与同源教案/PPT/学习单',
+             'draft':True,'prerelease':True,'make_latest':'false',
+             'body':(ROOT/f'docs/releases/{VERSION}.md').read_text(encoding='utf-8')}
+    created=subprocess.check_output(['gh','api',f'repos/{repo}/releases','-X','POST','--input','-'],
+                                   input=json.dumps(payload,ensure_ascii=False), text=True)
+    release=json.loads(created); release_id=release['id']
+    write_json(output/'RELEASE-STATUS.json', {'release_id':release_id,'tag':TAG,'draft':True})
+    upload=release['upload_url'].split('{')[0]
+    assert upload==f'https://uploads.github.com/repos/{repo}/releases/{release_id}/assets'
     for path in sorted(output.iterdir()):
-        if not path.is_file():continue
+        if not path.is_file() or path.name=='RELEASE-STATUS.json':continue
         expected=hashlib.sha256(path.read_bytes()).hexdigest()
         for attempt in range(3):
-            info=json.loads(command('gh','api',f'repos/{repo}/releases/tags/{TAG}'))
-            assert info['draft'], 'Only the new draft may be completed here'
+            info=json.loads(command('gh','api',f'repos/{repo}/releases/{release_id}'))
+            assert info['draft'] and info['tag_name']==TAG
             asset=next((a for a in info['assets'] if a['name']==path.name),None)
             if asset and asset['state']=='uploaded':
                 assert asset['size']==path.stat().st_size and asset.get('digest')=='sha256:'+expected,path.name
@@ -211,16 +225,20 @@ def main():
                 assert asset['state']=='starter' and not asset.get('digest'),path.name
                 command('gh','api',f"repos/{repo}/releases/assets/{asset['id']}",'-X','DELETE')
             try:
-                command('gh','release','upload',TAG,str(path),'--repo',repo)
-                info=json.loads(command('gh','api',f'repos/{repo}/releases/tags/{TAG}'))
-                asset=next(a for a in info['assets'] if a['name']==path.name)
-                assert asset['size']==path.stat().st_size and asset.get('digest')=='sha256:'+expected,path.name
+                request=urllib.request.Request(upload+'?name='+urllib.parse.quote(path.name), data=path.read_bytes(),
+                    headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],
+                             'Accept':'application/vnd.github+json',
+                             'Content-Type':mimetypes.guess_type(path.name)[0] or 'application/octet-stream'},method='POST')
+                with urllib.request.urlopen(request,timeout=300) as response:
+                    uploaded=json.load(response)
+                assert uploaded['size']==path.stat().st_size and uploaded.get('digest')=='sha256:'+expected,path.name
                 break
-            except subprocess.CalledProcessError:
+            except (OSError, ValueError):
                 if attempt==2:raise
                 time.sleep(5*(attempt+1))
         else:raise RuntimeError('Asset upload not verified: '+path.name)
-    command('gh','release','edit',TAG,'--repo',repo,'--draft=false','--latest=false')
+    command('gh','api',f'repos/{repo}/releases/{release_id}','-X','PATCH','-F','draft=false','-f','make_latest=false')
+    write_json(output/'RELEASE-STATUS.json', {'release_id':release_id,'tag':TAG,'draft':False})
     print('Published',TAG,'tested',sha,'delivery',delivery_sha)
 
 

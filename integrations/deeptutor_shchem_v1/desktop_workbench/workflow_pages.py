@@ -112,6 +112,7 @@ class PreparationPage(QWidget):
         self.facade = facade
         self.tasks = tasks
         self._compact = False
+        self._lesson_design = None
         self._save_task_id: str | None = None
         self._library_image_task_id: str | None = None
         self._word_import_epoch = 0
@@ -488,6 +489,8 @@ class PreparationPage(QWidget):
                 return
         payload = dialog.selected["payload"]
         normalized = normalize_preparation_payload(payload)
+        from copy import deepcopy
+        self._lesson_design = deepcopy(payload.get("lesson_design"))
         self.output_kind.setCurrentIndex(
             self.output_kind.findData(payload["output_kind"])
         )
@@ -1006,6 +1009,9 @@ class PreparationPage(QWidget):
                 "homework_and_strategy": self.strategy_detail.text(),
             },
         }
+        if self._lesson_design is not None:
+            from copy import deepcopy
+            payload["lesson_design"] = deepcopy(self._lesson_design)
         image_assets = self.image_assets_widget.assets()
         if image_assets:
             payload["image_assets"] = image_assets

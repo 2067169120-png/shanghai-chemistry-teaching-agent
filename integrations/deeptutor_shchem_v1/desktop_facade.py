@@ -6310,6 +6310,9 @@ class DesktopWorkbenchFacade:
             value["image_assets"] = normalized["image_assets"]
         if normalized.get("image_input_mode") == "vision":
             value["image_input_mode"] = "vision"
+        if "lesson_design" in payload:
+            from .desktop_lesson_design import validate_design
+            value["lesson_design"] = validate_design(payload["lesson_design"])
         self._state.save_draft(draft_id, value)
         return DraftReceipt(
             draft_id=draft_id,
