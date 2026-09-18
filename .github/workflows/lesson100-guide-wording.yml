@@ -1,0 +1,28 @@
+name: Finalize full-guide status wording
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: feature/lesson-design-0.1.100
+      - name: Preserve the full guide while removing a temporary status sentence
+        shell: python
+        run: |
+          import pathlib,subprocess
+          p=pathlib.Path('README.md')
+          text=p.read_text(encoding='utf-8')
+          old='当前0.1.100为源码候选，未完成同一修订的Windows验收前，不将历史1221项结果改称本版结果。'
+          new='本版数据以同一修订的Windows与独立EXE验收记录为准；不把历史1221项结果计入本版。'
+          assert text.count(old)==1
+          p.write_text(text.replace(old,new),encoding='utf-8')
+          subprocess.run(['git','rm','-f','.github/workflows/lesson100-guide-wording.yml'],check=True)
+          subprocess.run(['git','add','README.md'],check=True)
+          subprocess.run(['git','config','user.name','github-actions[bot]'],check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          subprocess.run(['git','commit','-m','docs: use enduring verification wording without dropping any guide content [skip ci]'],check=True)
+          subprocess.run(['git','push','origin','HEAD:refs/heads/feature/lesson-design-0.1.100'],check=True)
