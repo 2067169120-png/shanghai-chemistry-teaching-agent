@@ -69,3 +69,16 @@ def test_linking_unrelated_basket_items_is_not_automatic(desk,monkeypatch):
     monkeypatch.setattr(mod,'checked_rows',lambda *a:['b'])
     d.followup_panel.link.click();settle(app)
     assert [r['key'] for r in d.followup_panel.current()['links']]==['b']
+
+
+def test_compact_summary_keeps_actual_title_and_selected_task_question(desk):
+    d,app,_=desk
+    d.exam['title']='合成作业名称较长时仍应优先显示实际复测记录，而不是重复流程提示'
+    d.render();task=sample_task(d);d.followup_panel.store(task)
+    d.tabs.setCurrentWidget(d.followup_panel);d.resize(800,700);settle(app)
+    assert not d.workflow_hint.isVisible()
+    assert d.followup_panel.question.currentData()==task['question']
+    assert d.followup_panel.text.height()>=150
+    assert d.height()==700 and d.width()==800
+    d.resize(1280,900);settle(app)
+    assert d.workflow_hint.isVisible()

@@ -32,7 +32,7 @@ class ExamFollowupPanel(QWidget):
         super().__init__(dashboard); self.d = dashboard; self.preview = None; self.approved = False
         self.preview_task_id = None
         box = QVBoxLayout(self); box.setContentsMargins(8,8,8,8)
-        self.hint = QLabel('选择考试题目和有有效成绩的学生，明确目标后从真实题库选题；复测只记录实际发生的作答。')
+        self.hint = QLabel('先选考试题目，确认学生与目标，再选题、排卷并记录实际复测。')
         self.hint.setWordWrap(True); box.addWidget(self.hint)
         self.question = QComboBox(); self.question.setAccessibleName('复练对应的考试题目'); box.addWidget(self.question)
         self.tasks = QComboBox(); self.tasks.setAccessibleName('已保存的复练任务'); box.addWidget(self.tasks)
@@ -42,7 +42,9 @@ class ExamFollowupPanel(QWidget):
         self.export = QPushButton('导出已核对练习卷'); self.record = QPushButton('记录实际复测')
         for i,b in enumerate((self.new,self.find,self.link,self.preview_button,self.export,self.record)):
             b.setAutoDefault(False); actions.addWidget(b,i//3,i%3)
-        self.text = QPlainTextEdit(); self.text.setReadOnly(True); box.addWidget(self.text,1)
+        for b in (self.find,self.link,self.preview_button,self.export):
+            b.setObjectName('QuietButton')
+        self.text = QPlainTextEdit(); self.text.setReadOnly(True); self.text.setMinimumHeight(160); box.addWidget(self.text,1)
         self.new.clicked.connect(self.new_task); self.find.clicked.connect(self.find_questions)
         self.link.clicked.connect(self.link_questions); self.preview_button.clicked.connect(self.preview_paper)
         self.export.clicked.connect(self.export_paper); self.record.clicked.connect(self.record_result)
@@ -67,6 +69,9 @@ class ExamFollowupPanel(QWidget):
 
     def show_task(self):
         task=self.current()
+        if task:
+            index=self.question.findData(task['question'])
+            if index>=0:self.question.setCurrentIndex(index)
         for w in (self.find,self.link,self.preview_button,self.record):w.setEnabled(task is not None)
         self.export.setEnabled(bool(task and self.preview and self.approved and task['id']==self.preview_task_id))
         self.new.setEnabled(self.question.count()>0)

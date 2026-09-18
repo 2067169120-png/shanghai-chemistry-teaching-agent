@@ -78,6 +78,8 @@ class ExamDashboard(QDialog):
         root=QVBoxLayout(self);root.setContentsMargins(14,12,14,12);root.setSpacing(8)
         title=QLabel('考试数据分析');title.setObjectName('PageTitle');root.addWidget(title)
         sub=QLabel('本地统计 → 逐题核对 → API讲评草稿 → 教师安排复练。数字由本地计算，缺失不记零分。');sub.setWordWrap(True);root.addWidget(sub)
+        self.workflow_hint=sub
+        title.setToolTip(sub.text())
         toolbar=QWidget();bar=QGridLayout(toolbar);bar.setContentsMargins(0,0,0,0)
         self.import_button=QPushButton('导入成绩Excel');self.history_button=QPushButton('打开历史分析')
         self.template_button=QPushButton('保存Excel示例');self.save_button=QPushButton('保存分析');self.export_button=QPushButton('导出可视化报告')
@@ -159,6 +161,10 @@ class ExamDashboard(QDialog):
 
     def resizeEvent(self,event):
         super().resizeEvent(event)
+        # Keep the content readable on short displays; the title tooltip retains
+        # the workflow explanation without a duplicate line above every tab.
+        if hasattr(self,'workflow_hint'):
+            self.workflow_hint.setVisible(event.size().height()>=760)
         columns=5 if event.size().width()>=1050 else 3
         if hasattr(self,'_toolbar_buttons') and columns!=self._toolbar_columns:
             self._toolbar_columns=columns

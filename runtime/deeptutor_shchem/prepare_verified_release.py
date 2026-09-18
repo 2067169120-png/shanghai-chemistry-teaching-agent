@@ -12,8 +12,8 @@ import xml.etree.ElementTree as ET
 from zipfile import ZipFile, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parents[2]
-VERSION = '0.1.98'
-BRANCH = 'feature/exam-dashboard-0.1.98'
+VERSION = '0.1.99'
+BRANCH = 'feature/teaching-closure-0.1.99'
 TAG = 'v' + VERSION
 
 
@@ -45,7 +45,12 @@ def main():
     ready['student_review'] = read('readiness-qa/student-review/student-review-probe.json')
     ready['work_batch'] = read('readiness-qa/work-batch/work-batch-probe.json')
     ready['exam_analysis'] = read('readiness-qa/exam/exam-probe.json')
+    ready['teaching_closure'] = read('readiness-qa/closure/closure-probe.json')
     for report in (ready,packaged):
+        closure = report['teaching_closure']
+        assert closure['version'] == VERSION and closure['source_commit'] == sha
+        assert all(closure['checks'].values()) and not closure['uncaught_errors']
+        assert closure['network_requests'] == 0
         exam = report['exam_analysis']
         assert exam['version'] == VERSION and exam['source_commit'] == sha
         assert all(exam['checks'].values()) and not exam['uncaught_errors']
@@ -104,7 +109,8 @@ def main():
                           (packaged['explorer_performance'],source/'package-qa/explorer'),
                           (packaged['student_review'],source/'package-qa/student-review'),
                           (packaged['work_batch'],source/'package-qa/work-batch'),
-                          (packaged['exam_analysis'],source/'package-qa/exam')):
+                          (packaged['exam_analysis'],source/'package-qa/exam'),
+                          (packaged['teaching_closure'],source/'package-qa/closure')):
         for record in report['screenshots']:
             copy_image(folder,record)
     for scale in ('1','1.25','1.5'):
@@ -121,7 +127,7 @@ def main():
     text=text.replace('源码候选（等待本版验收）', '原生试用版')
     text=text.replace('{{VERIFICATION_SUMMARY}}',
         f"同一提交完成 **{tests['tests']}项Windows定向测试，0失败、0错误、0跳过**。"
-        '源码与同一发行EXE均从考试分析入口导入12条合成成绩、明确映射4题，核对10个有效总分、均分69、中位数72，完成班级筛选、试卷正文/API固定返回稿、快照与离线图表导出。API请求为本地替身，网络请求0；真实化学建议质量未验收。'
+        '源码与同一发行EXE均验证同卷正式评分统计、原题库筛选与入篮、仅关联任务子集的两版DOCX/PDF导出、真实日期复测记录及重开；原件、题篮与模型原稿不改变。0.1.98考试映射、图表、历史和固定API协议继续回归。'
         '原有选题、中文/化学符号及Qt倍率、组卷、作品整理、备课备份和文档输出继续回归。本轮没有真实学生数据与网络模型请求，固定传输夹具只用来准备样例。')
     for image in re.findall(r'!\[[^\]]*\]\(([^)]+)\)',text):
         assert (ROOT/image).is_file(),image
@@ -130,7 +136,7 @@ def main():
     command('git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
     command('git','add','-f','README.md',str(target.relative_to(ROOT)),
             f'docs/qa/{VERSION}-readiness.json',f'docs/qa/{VERSION}-package.json')
-    command('git','commit','-m','docs: record verified 0.1.98 exam dashboard and complete guide [skip ci]')
+    command('git','commit','-m','docs: record verified 0.1.99 teaching links and full functional guide [skip ci]')
     delivery_sha=command('git','rev-parse','HEAD')
     command('git','push','origin','HEAD:refs/heads/'+BRANCH)
     output=ROOT/'release-delivery';output.mkdir(exist_ok=True)
@@ -164,8 +170,19 @@ def main():
     import sys
     sys.path.insert(0, str(ROOT))
     from integrations.deeptutor_shchem_v1.desktop_exam_template import template_bytes
-    (output/f'ShanghaiChem-{VERSION}-成绩导入示例.xlsx').write_bytes(template_bytes())
+    (output/f'ShanghaiChem-{VERSION}-Score-Import-Example.xlsx').write_bytes(template_bytes())
     shutil.copyfile(source/'package-qa/exam/synthetic-exam-report.html',output/f'ShanghaiChem-{VERSION}-Synthetic-Exam-Report.html')
+    audit_text = (ROOT/'docs/ux/0.1.99-closure-audit.md').read_text(encoding='utf-8')
+    audit_html = markdown.markdown(audit_text, extensions=['tables','fenced_code'])
+    (output/f'ShanghaiChem-{VERSION}-Closure-Audit.html').write_text(
+        '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>全功能联动检查</title>'
+        '<style>body{max-width:1100px;margin:36px auto;padding:0 24px;font:17px/1.8 system-ui}'
+        'table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:10px;vertical-align:top}'
+        'code{overflow-wrap:anywhere}</style>'+audit_html+'</html>',encoding='utf-8')
+    with ZipFile(output/f'ShanghaiChem-{VERSION}-Synthetic-Practice.zip','w',ZIP_DEFLATED) as archive:
+        samples=list((source/'package-qa/closure').glob('*.pdf'))+list((source/'package-qa/closure').glob('*.docx'))
+        assert len(samples)>=4, 'Both actual practice audiences must have files'
+        for sample in samples:archive.write(sample,sample.name)
     assets=[{'file':p.name,'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
             for p in sorted(output.iterdir()) if p.is_file()]
     write_json(output/'RELEASE-MANIFEST.json',{'version':VERSION,'tag':TAG,'tested_source_commit':sha,
@@ -175,8 +192,34 @@ def main():
     command('git','tag','-a',TAG,'-m',VERSION+' verified Windows trial; code '+sha)
     command('git','push','origin','refs/tags/'+TAG)
     command('gh','release','create',TAG,'--repo',repo,'--verify-tag','--draft','--prerelease',
-        '--title',VERSION+' · 考试数据分析与讲评','--notes-file',f'docs/releases/{VERSION}.md',
-        *[str(p) for p in sorted(output.iterdir()) if p.is_file()])
+        '--target',delivery_sha,'--title',VERSION+' · 评分统计、真实题库复练与复测',
+        '--notes-file',f'docs/releases/{VERSION}.md')
+    # Upload sequentially. Do not clobber a completed asset after a partial
+    # GitHub upload failure, and verify the server digest before publication.
+    import time
+    for path in sorted(output.iterdir()):
+        if not path.is_file():continue
+        expected=hashlib.sha256(path.read_bytes()).hexdigest()
+        for attempt in range(3):
+            info=json.loads(command('gh','api',f'repos/{repo}/releases/tags/{TAG}'))
+            assert info['draft'], 'Only the new draft may be completed here'
+            asset=next((a for a in info['assets'] if a['name']==path.name),None)
+            if asset and asset['state']=='uploaded':
+                assert asset['size']==path.stat().st_size and asset.get('digest')=='sha256:'+expected,path.name
+                break
+            if asset:
+                assert asset['state']=='starter' and not asset.get('digest'),path.name
+                command('gh','api',f"repos/{repo}/releases/assets/{asset['id']}",'-X','DELETE')
+            try:
+                command('gh','release','upload',TAG,str(path),'--repo',repo)
+                info=json.loads(command('gh','api',f'repos/{repo}/releases/tags/{TAG}'))
+                asset=next(a for a in info['assets'] if a['name']==path.name)
+                assert asset['size']==path.stat().st_size and asset.get('digest')=='sha256:'+expected,path.name
+                break
+            except subprocess.CalledProcessError:
+                if attempt==2:raise
+                time.sleep(5*(attempt+1))
+        else:raise RuntimeError('Asset upload not verified: '+path.name)
     command('gh','release','edit',TAG,'--repo',repo,'--draft=false','--latest=false')
     print('Published',TAG,'tested',sha,'delivery',delivery_sha)
 

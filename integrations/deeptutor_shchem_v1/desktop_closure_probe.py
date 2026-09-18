@@ -88,7 +88,10 @@ def run_probe(output, *, lite=False):
             assert len(panel.current()['attempts'])==1
             assert list(latest_attempts(panel.current()).values())[0]['score']==1.5
             d.resize(800,700);settle()
-            assert d.width()==800 and panel.text.height()>=150
+            geometry={'width':d.width(),'height':d.height(),'record_height':panel.text.height()}
+            (output/'compact-geometry.json').write_text(json.dumps(geometry,indent=2),encoding='utf-8')
+            assert d.width()==800 and d.height()==700 and panel.text.height()>=150
+            assert panel.question.currentData()==panel.current()['question']
             for w in (panel.new,panel.find,panel.preview_button,panel.record):
                 assert d.rect().contains(QRect(w.mapTo(d,w.rect().topLeft()),w.size()))
             capture(d,'closure-retest.png')
