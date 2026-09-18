@@ -128,3 +128,12 @@ def test_no_source_or_unknown_source_rejected():
     with pytest.raises(ValueError):prepare_import(new_design(_payload()),{})
     s=source();s['candidate']['schema_version']='future'
     with pytest.raises(ValueError):prepare_import(new_design(_payload()),s)
+
+
+def test_homework_is_readable_teacher_text_not_raw_json():
+    proposal = prepare_import(new_design(_payload()), source())
+    notes = proposal["options"][0]["node"]["notes"]
+    assert "完成一道同结构迁移题并写出守恒依据。" in notes
+    assert "关联目标：能用电子守恒完成定量推理。" in notes
+    assert '"instruction"' not in notes and '"objective_ids"' not in notes
+    assert "估计用时：15分钟" in notes

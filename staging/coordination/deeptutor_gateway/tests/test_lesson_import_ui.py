@@ -76,6 +76,7 @@ def test_import_preview_compact_layout_keeps_content_and_actions(prepared):
     d,e,app,page,provider,task=prepared
     d.read.click();settle(app,lambda:not d.busy and d.proposal is not None)
     d.resize(800,700);settle(app)
+    assert page.topic.text() in d.intro.text()
     assert d.detail.height()>200
     for w in (d.detail,d.options,d.apply_button,d.cancel):
         assert d.rect().contains(QRect(w.mapTo(d,w.rect().topLeft()),w.size()))

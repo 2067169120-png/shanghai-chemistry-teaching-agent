@@ -20,7 +20,7 @@ def _joined(values):
 def _strings(values):
     if not isinstance(values, list) or any(not isinstance(v, str) for v in values):
         raise ValueError("原稿文字列表无法转换，请先在原稿中核对。")
-    return _joined(values)
+    return "\n".join(values)
 
 
 def _stable(prefix, source_key, kind, identity):
@@ -122,8 +122,16 @@ def prepare_import(plan, source):
             "用时沿用初稿估计；课堂作用初设为解释与建模，请按实际活动调整。",
             *slide_notes, uncertainty_notes])
         if candidate.get("homework"):
-            n["notes"] += "\n\n原稿课后安排（教师参考，未自动加入课堂用时）\n" + json.dumps(
-                candidate["homework"], ensure_ascii=False, indent=2)
+            homework = candidate["homework"]
+            by_original_id = {g["id"]: g["statement"] for g in candidate["objectives"]}
+            lines = ["原稿课后安排（教师参考，未自动加入课堂用时）", homework["title"],
+                     "估计用时：" + str(homework["estimated_minutes"]) + "分钟"]
+            for task in homework["tasks"]:
+                lines.append(task["id"] + "：" + task["instruction"])
+                linked = [by_original_id.get(g, "待核对目标：" + g) for g in task["objective_ids"]]
+                if linked:
+                    lines.append("关联目标：" + "；".join(linked))
+            n["notes"] += "\n\n" + "\n".join(lines)
         n.update(locked=True, student_material=False, confirmed=False,
                  source_digest=digest({"text": n["material_text"], "images": n["image_ids"]}))
         option_warnings = []
