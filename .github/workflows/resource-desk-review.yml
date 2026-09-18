@@ -16,6 +16,13 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+      - name: Preserve exact candidate source before verification
+        run: git archive --format=zip --output=review-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: resource-source-${{ github.sha }}
+          path: review-source.zip
+          retention-days: 14
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -43,17 +50,16 @@ jobs:
               'large_files':sorted(large,key=lambda x:-x['lines'])[:15]}
           (out/'static-summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
           print(json.dumps(summary,ensure_ascii=False,indent=2))
-          print('BANDIT HIGH/MEDIUM LOCATIONS')
           for x in bandit.get('results',[]):
               if x['issue_severity']!='LOW':print(x['filename'],x['line_number'],x['test_id'],x['issue_text'])
-      - name: Full repository test collection
+      - name: Full collection and execution (collection errors remain failures)
         shell: python
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
           import json, os, pathlib, subprocess, sys, xml.etree.ElementTree as ET
           out=pathlib.Path('review-qa')
-          args=[sys.executable,'-m','pytest','-q','-o','faulthandler_timeout=120','staging/coordination/deeptutor_gateway/tests','--junitxml=review-qa/all-tests.xml']
+          args=[sys.executable,'-m','pytest','-q','--continue-on-collection-errors','-o','faulthandler_timeout=120','staging/coordination/deeptutor_gateway/tests','--junitxml=review-qa/all-tests.xml']
           with (out/'all-tests.log').open('w',encoding='utf-8') as f:
               p=subprocess.run(args,stdout=f,stderr=subprocess.STDOUT,timeout=1500)
           root=ET.parse(out/'all-tests.xml').getroot()
@@ -63,6 +69,11 @@ jobs:
           (out/'tests-summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
           print(json.dumps(summary,ensure_ascii=False,indent=2))
           sys.exit(p.returncode)
+      - name: Actual question page screenshot and interaction probe
+        if: always()
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/desktop_teacher_workbench.pyw --verify-explorer review-qa/explorer
       - name: Complete guide and current workflow links
         if: always()
         run: python runtime/deeptutor_shchem/documentation_policy.py
