@@ -1,0 +1,37 @@
+name: Apply inspected 0.1.99 completion
+on:
+  push:
+    branches: ["feature/teaching-closure-0.1.99"]
+    paths: [".github/closure199-code.patch", ".github/closure199-guide.patch", ".github/workflows/apply-closure199-completion.yml"]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Apply reviewed readable changes; remove transfer files
+        shell: python
+        run: |
+          import os,pathlib,subprocess
+          def git(*args):
+              return subprocess.check_output(['git',*args],text=True).strip()
+          branch='feature/teaching-closure-0.1.99'
+          assert git('rev-parse','HEAD')==os.environ['GITHUB_SHA']
+          assert git('ls-remote','origin','refs/heads/'+branch).split()[0]==os.environ['GITHUB_SHA']
+          paths={'.github/closure199-guide.patch':'3820ef02d935c2e599012e5bcf6296209a7002a8', '.github/closure199-code.patch':'c1ac087d5b844bc3082feae0681f22dbb7fd6518'}
+          for path,digest in paths.items():
+              assert git('hash-object',path)==digest
+          patch=b''.join(pathlib.Path(path).read_bytes() for path in paths)
+          assert b'diff --git a/.github/' not in patch
+          subprocess.run(['git','apply','--check','--index','-'],input=patch,check=True)
+          subprocess.run(['git','apply','--index','-'],input=patch,check=True)
+          git('rm','-f',*paths,'.github/workflows/apply-closure199-completion.yml')
+          git('config','user.name','github-actions[bot]')
+          git('config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
+          git('commit','-m','fix(0.1.99): readable followup layout, complete guide and versioned closure verification')
+          git('push','origin','HEAD:refs/heads/'+branch)
+          print('Applied source',git('rev-parse','HEAD'))

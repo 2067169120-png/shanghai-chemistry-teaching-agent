@@ -1,0 +1,276 @@
+diff --git a/integrations/deeptutor_shchem_v1/desktop_closure_probe.py b/integrations/deeptutor_shchem_v1/desktop_closure_probe.py
+index 0928e6e..03b61bb 100644
+--- a/integrations/deeptutor_shchem_v1/desktop_closure_probe.py
++++ b/integrations/deeptutor_shchem_v1/desktop_closure_probe.py
+@@ -88,7 +88,10 @@ def run_probe(output, *, lite=False):
+             assert len(panel.current()['attempts'])==1
+             assert list(latest_attempts(panel.current()).values())[0]['score']==1.5
+             d.resize(800,700);settle()
+-            assert d.width()==800 and panel.text.height()>=150
++            geometry={'width':d.width(),'height':d.height(),'record_height':panel.text.height()}
++            (output/'compact-geometry.json').write_text(json.dumps(geometry,indent=2),encoding='utf-8')
++            assert d.width()==800 and d.height()==700 and panel.text.height()>=150
++            assert panel.question.currentData()==panel.current()['question']
+             for w in (panel.new,panel.find,panel.preview_button,panel.record):
+                 assert d.rect().contains(QRect(w.mapTo(d,w.rect().topLeft()),w.size()))
+             capture(d,'closure-retest.png')
+diff --git a/integrations/deeptutor_shchem_v1/desktop_workbench/exam_dashboard.py b/integrations/deeptutor_shchem_v1/desktop_workbench/exam_dashboard.py
+index cbf7609..cdb0f2b 100644
+--- a/integrations/deeptutor_shchem_v1/desktop_workbench/exam_dashboard.py
++++ b/integrations/deeptutor_shchem_v1/desktop_workbench/exam_dashboard.py
+@@ -78,6 +78,8 @@ class ExamDashboard(QDialog):
+         root=QVBoxLayout(self);root.setContentsMargins(14,12,14,12);root.setSpacing(8)
+         title=QLabel('考试数据分析');title.setObjectName('PageTitle');root.addWidget(title)
+         sub=QLabel('本地统计 → 逐题核对 → API讲评草稿 → 教师安排复练。数字由本地计算，缺失不记零分。');sub.setWordWrap(True);root.addWidget(sub)
++        self.workflow_hint=sub
++        title.setToolTip(sub.text())
+         toolbar=QWidget();bar=QGridLayout(toolbar);bar.setContentsMargins(0,0,0,0)
+         self.import_button=QPushButton('导入成绩Excel');self.history_button=QPushButton('打开历史分析')
+         self.template_button=QPushButton('保存Excel示例');self.save_button=QPushButton('保存分析');self.export_button=QPushButton('导出可视化报告')
+@@ -159,6 +161,10 @@ class ExamDashboard(QDialog):
+ 
+     def resizeEvent(self,event):
+         super().resizeEvent(event)
++        # Keep the content readable on short displays; the title tooltip retains
++        # the workflow explanation without a duplicate line above every tab.
++        if hasattr(self,'workflow_hint'):
++            self.workflow_hint.setVisible(event.size().height()>=760)
+         columns=5 if event.size().width()>=1050 else 3
+         if hasattr(self,'_toolbar_buttons') and columns!=self._toolbar_columns:
+             self._toolbar_columns=columns
+diff --git a/integrations/deeptutor_shchem_v1/desktop_workbench/exam_followup_panel.py b/integrations/deeptutor_shchem_v1/desktop_workbench/exam_followup_panel.py
+index 32655bb..ff559f3 100644
+--- a/integrations/deeptutor_shchem_v1/desktop_workbench/exam_followup_panel.py
++++ b/integrations/deeptutor_shchem_v1/desktop_workbench/exam_followup_panel.py
+@@ -32,7 +32,7 @@ class ExamFollowupPanel(QWidget):
+         super().__init__(dashboard); self.d = dashboard; self.preview = None; self.approved = False
+         self.preview_task_id = None
+         box = QVBoxLayout(self); box.setContentsMargins(8,8,8,8)
+-        self.hint = QLabel('选择考试题目和有有效成绩的学生，明确目标后从真实题库选题；复测只记录实际发生的作答。')
++        self.hint = QLabel('先选考试题目，确认学生与目标，再选题、排卷并记录实际复测。')
+         self.hint.setWordWrap(True); box.addWidget(self.hint)
+         self.question = QComboBox(); self.question.setAccessibleName('复练对应的考试题目'); box.addWidget(self.question)
+         self.tasks = QComboBox(); self.tasks.setAccessibleName('已保存的复练任务'); box.addWidget(self.tasks)
+@@ -42,7 +42,9 @@ class ExamFollowupPanel(QWidget):
+         self.export = QPushButton('导出已核对练习卷'); self.record = QPushButton('记录实际复测')
+         for i,b in enumerate((self.new,self.find,self.link,self.preview_button,self.export,self.record)):
+             b.setAutoDefault(False); actions.addWidget(b,i//3,i%3)
+-        self.text = QPlainTextEdit(); self.text.setReadOnly(True); box.addWidget(self.text,1)
++        for b in (self.find,self.link,self.preview_button,self.export):
++            b.setObjectName('QuietButton')
++        self.text = QPlainTextEdit(); self.text.setReadOnly(True); self.text.setMinimumHeight(160); box.addWidget(self.text,1)
+         self.new.clicked.connect(self.new_task); self.find.clicked.connect(self.find_questions)
+         self.link.clicked.connect(self.link_questions); self.preview_button.clicked.connect(self.preview_paper)
+         self.export.clicked.connect(self.export_paper); self.record.clicked.connect(self.record_result)
+@@ -67,6 +69,9 @@ class ExamFollowupPanel(QWidget):
+ 
+     def show_task(self):
+         task=self.current()
++        if task:
++            index=self.question.findData(task['question'])
++            if index>=0:self.question.setCurrentIndex(index)
+         for w in (self.find,self.link,self.preview_button,self.record):w.setEnabled(task is not None)
+         self.export.setEnabled(bool(task and self.preview and self.approved and task['id']==self.preview_task_id))
+         self.new.setEnabled(self.question.count()>0)
+diff --git a/runtime/deeptutor_shchem/prepare_verified_release.py b/runtime/deeptutor_shchem/prepare_verified_release.py
+index a4d89ef..52681ce 100644
+--- a/runtime/deeptutor_shchem/prepare_verified_release.py
++++ b/runtime/deeptutor_shchem/prepare_verified_release.py
+@@ -12,8 +12,8 @@ import xml.etree.ElementTree as ET
+ from zipfile import ZipFile, ZIP_DEFLATED
+ 
+ ROOT = Path(__file__).resolve().parents[2]
+-VERSION = '0.1.98'
+-BRANCH = 'feature/exam-dashboard-0.1.98'
++VERSION = '0.1.99'
++BRANCH = 'feature/teaching-closure-0.1.99'
+ TAG = 'v' + VERSION
+ 
+ 
+@@ -45,7 +45,12 @@ def main():
+     ready['student_review'] = read('readiness-qa/student-review/student-review-probe.json')
+     ready['work_batch'] = read('readiness-qa/work-batch/work-batch-probe.json')
+     ready['exam_analysis'] = read('readiness-qa/exam/exam-probe.json')
++    ready['teaching_closure'] = read('readiness-qa/closure/closure-probe.json')
+     for report in (ready,packaged):
++        closure = report['teaching_closure']
++        assert closure['version'] == VERSION and closure['source_commit'] == sha
++        assert all(closure['checks'].values()) and not closure['uncaught_errors']
++        assert closure['network_requests'] == 0
+         exam = report['exam_analysis']
+         assert exam['version'] == VERSION and exam['source_commit'] == sha
+         assert all(exam['checks'].values()) and not exam['uncaught_errors']
+@@ -104,7 +109,8 @@ def main():
+                           (packaged['explorer_performance'],source/'package-qa/explorer'),
+                           (packaged['student_review'],source/'package-qa/student-review'),
+                           (packaged['work_batch'],source/'package-qa/work-batch'),
+-                          (packaged['exam_analysis'],source/'package-qa/exam')):
++                          (packaged['exam_analysis'],source/'package-qa/exam'),
++                          (packaged['teaching_closure'],source/'package-qa/closure')):
+         for record in report['screenshots']:
+             copy_image(folder,record)
+     for scale in ('1','1.25','1.5'):
+@@ -121,7 +127,7 @@ def main():
+     text=text.replace('源码候选（等待本版验收）', '原生试用版')
+     text=text.replace('{{VERIFICATION_SUMMARY}}',
+         f"同一提交完成 **{tests['tests']}项Windows定向测试，0失败、0错误、0跳过**。"
+-        '源码与同一发行EXE均从考试分析入口导入12条合成成绩、明确映射4题，核对10个有效总分、均分69、中位数72，完成班级筛选、试卷正文/API固定返回稿、快照与离线图表导出。API请求为本地替身，网络请求0；真实化学建议质量未验收。'
++        '源码与同一发行EXE均验证同卷正式评分统计、原题库筛选与入篮、仅关联任务子集的两版DOCX/PDF导出、真实日期复测记录及重开；原件、题篮与模型原稿不改变。0.1.98考试映射、图表、历史和固定API协议继续回归。'
+         '原有选题、中文/化学符号及Qt倍率、组卷、作品整理、备课备份和文档输出继续回归。本轮没有真实学生数据与网络模型请求，固定传输夹具只用来准备样例。')
+     for image in re.findall(r'!\[[^\]]*\]\(([^)]+)\)',text):
+         assert (ROOT/image).is_file(),image
+@@ -130,7 +136,7 @@ def main():
+     command('git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
+     command('git','add','-f','README.md',str(target.relative_to(ROOT)),
+             f'docs/qa/{VERSION}-readiness.json',f'docs/qa/{VERSION}-package.json')
+-    command('git','commit','-m','docs: record verified 0.1.98 exam dashboard and complete guide [skip ci]')
++    command('git','commit','-m','docs: record verified 0.1.99 teaching links and full functional guide [skip ci]')
+     delivery_sha=command('git','rev-parse','HEAD')
+     command('git','push','origin','HEAD:refs/heads/'+BRANCH)
+     output=ROOT/'release-delivery';output.mkdir(exist_ok=True)
+@@ -164,8 +170,19 @@ def main():
+     import sys
+     sys.path.insert(0, str(ROOT))
+     from integrations.deeptutor_shchem_v1.desktop_exam_template import template_bytes
+-    (output/f'ShanghaiChem-{VERSION}-成绩导入示例.xlsx').write_bytes(template_bytes())
++    (output/f'ShanghaiChem-{VERSION}-Score-Import-Example.xlsx').write_bytes(template_bytes())
+     shutil.copyfile(source/'package-qa/exam/synthetic-exam-report.html',output/f'ShanghaiChem-{VERSION}-Synthetic-Exam-Report.html')
++    audit_text = (ROOT/'docs/ux/0.1.99-closure-audit.md').read_text(encoding='utf-8')
++    audit_html = markdown.markdown(audit_text, extensions=['tables','fenced_code'])
++    (output/f'ShanghaiChem-{VERSION}-Closure-Audit.html').write_text(
++        '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>全功能联动检查</title>'
++        '<style>body{max-width:1100px;margin:36px auto;padding:0 24px;font:17px/1.8 system-ui}'
++        'table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccc;padding:10px;vertical-align:top}'
++        'code{overflow-wrap:anywhere}</style>'+audit_html+'</html>',encoding='utf-8')
++    with ZipFile(output/f'ShanghaiChem-{VERSION}-Synthetic-Practice.zip','w',ZIP_DEFLATED) as archive:
++        samples=list((source/'package-qa/closure').glob('*.pdf'))+list((source/'package-qa/closure').glob('*.docx'))
++        assert len(samples)>=4, 'Both actual practice audiences must have files'
++        for sample in samples:archive.write(sample,sample.name)
+     assets=[{'file':p.name,'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
+             for p in sorted(output.iterdir()) if p.is_file()]
+     write_json(output/'RELEASE-MANIFEST.json',{'version':VERSION,'tag':TAG,'tested_source_commit':sha,
+@@ -175,8 +192,34 @@ def main():
+     command('git','tag','-a',TAG,'-m',VERSION+' verified Windows trial; code '+sha)
+     command('git','push','origin','refs/tags/'+TAG)
+     command('gh','release','create',TAG,'--repo',repo,'--verify-tag','--draft','--prerelease',
+-        '--title',VERSION+' · 考试数据分析与讲评','--notes-file',f'docs/releases/{VERSION}.md',
+-        *[str(p) for p in sorted(output.iterdir()) if p.is_file()])
++        '--target',delivery_sha,'--title',VERSION+' · 评分统计、真实题库复练与复测',
++        '--notes-file',f'docs/releases/{VERSION}.md')
++    # Upload sequentially. Do not clobber a completed asset after a partial
++    # GitHub upload failure, and verify the server digest before publication.
++    import time
++    for path in sorted(output.iterdir()):
++        if not path.is_file():continue
++        expected=hashlib.sha256(path.read_bytes()).hexdigest()
++        for attempt in range(3):
++            info=json.loads(command('gh','api',f'repos/{repo}/releases/tags/{TAG}'))
++            assert info['draft'], 'Only the new draft may be completed here'
++            asset=next((a for a in info['assets'] if a['name']==path.name),None)
++            if asset and asset['state']=='uploaded':
++                assert asset['size']==path.stat().st_size and asset.get('digest')=='sha256:'+expected,path.name
++                break
++            if asset:
++                assert asset['state']=='starter' and not asset.get('digest'),path.name
++                command('gh','api',f"repos/{repo}/releases/assets/{asset['id']}",'-X','DELETE')
++            try:
++                command('gh','release','upload',TAG,str(path),'--repo',repo)
++                info=json.loads(command('gh','api',f'repos/{repo}/releases/tags/{TAG}'))
++                asset=next(a for a in info['assets'] if a['name']==path.name)
++                assert asset['size']==path.stat().st_size and asset.get('digest')=='sha256:'+expected,path.name
++                break
++            except subprocess.CalledProcessError:
++                if attempt==2:raise
++                time.sleep(5*(attempt+1))
++        else:raise RuntimeError('Asset upload not verified: '+path.name)
+     command('gh','release','edit',TAG,'--repo',repo,'--draft=false','--latest=false')
+     print('Published',TAG,'tested',sha,'delivery',delivery_sha)
+ 
+diff --git a/runtime/deeptutor_shchem/verify_packaged_trial.py b/runtime/deeptutor_shchem/verify_packaged_trial.py
+index d0a2b83..09d1906 100644
+--- a/runtime/deeptutor_shchem/verify_packaged_trial.py
++++ b/runtime/deeptutor_shchem/verify_packaged_trial.py
+@@ -42,7 +42,7 @@ def main():
+     (package/'COMPONENTS.json').write_text(json.dumps(versions,indent=2),encoding='utf-8')
+     fonts=[str(p.relative_to(package)) for p in package.rglob('*') if p.suffix.lower() in ('.ttf','.ttc','.otf','.woff','.woff2')]
+     assert not fonts, 'Do not redistribute system/font files: '+str(fonts)
+-    (package/'使用前请读.txt').write_text('沪上化学智研台 0.1.98 Windows x64 试用版\n请先完整解压，再双击“沪上化学智研台.exe”。不要单独移动EXE或_internal。\n无需另装Python。真实DOCX分页需要本机LibreOffice或Microsoft Word。\n不含教材、题库、模型密钥。首次打开空库正常；设置中的本机检查按功能说明缺项。\n未进行数字签名，请核对GitHub Release来源与SHA256，勿关闭系统防护。\n旧VBS可能打开旧版。已有源码旁题库不会自动复制进此程序；可继续使用源码环境或明确配置原工作区。\n',encoding='utf-8')
++    (package/'使用前请读.txt').write_text('沪上化学智研台 0.1.99 Windows x64 试用版\n请先完整解压，再双击“沪上化学智研台.exe”。不要单独移动EXE或_internal。\n无需另装Python。真实DOCX分页需要本机LibreOffice或Microsoft Word。\n不含教材、题库、模型密钥。首次打开空库正常；设置中的本机检查按功能说明缺项。\n未进行数字签名，请核对GitHub Release来源与SHA256，勿关闭系统防护。\n旧VBS可能打开旧版。已有源码旁题库不会自动复制进此程序；可继续使用源码环境或明确配置原工作区。\n',encoding='utf-8')
+     with tempfile.TemporaryDirectory(prefix='shchem-detached-') as temporary:
+         temp=Path(temporary)
+         detached=temp/'app'
+@@ -157,14 +157,20 @@ def main():
+             shutil.copyfile(file,qa/'exam-startup-error.log')
+         assert exam_run.returncode == 0, 'Packaged exam dashboard failed'
+         report['exam_analysis'] = json.loads((exam_target/'exam-probe.json').read_text(encoding='utf-8'))
++        closure_target = qa / 'closure'
++        closure_run = subprocess.run([str(exe), '--verify-closure', str(closure_target)], cwd=temp, env=env, timeout=300)
++        for file in (temp/'profile').rglob('startup-error.log'):
++            shutil.copyfile(file,qa/'closure-startup-error.log')
++        assert closure_run.returncode == 0, 'Packaged teacher-score / real-library / retest workflow failed'
++        report['teaching_closure'] = json.loads((closure_target/'closure-probe.json').read_text(encoding='utf-8'))
+         report.update(source_commit=os.environ.get('SHCHEM_SOURCE_SHA', os.environ['GITHUB_SHA']),workflow_run=os.environ['GITHUB_RUN_ID'],
+             executable_sha256=hashlib.sha256(exe.read_bytes()).hexdigest(),normal_native_start_and_close=True,detached_directory=True,
+             cleared_python_and_workspace_environment=True,system_fonts_bundled=False)
+         (qa/'package-verification.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+-    (package/'BUILD.json').write_text(json.dumps({'version':'0.1.98','source_commit':os.environ.get('SHCHEM_SOURCE_SHA', os.environ['GITHUB_SHA']),
++    (package/'BUILD.json').write_text(json.dumps({'version':'0.1.99','source_commit':os.environ.get('SHCHEM_SOURCE_SHA', os.environ['GITHUB_SHA']),
+         'workflow_run':os.environ['GITHUB_RUN_ID'],'trial':True},indent=2),encoding='utf-8')
+     release=ROOT/'release-assets';release.mkdir(exist_ok=True)
+-    shutil.make_archive(str(release/'ShanghaiChem-0.1.98-Windows-x64'),'zip',package.parent,package.name)
++    shutil.make_archive(str(release/'ShanghaiChem-0.1.99-Windows-x64'),'zip',package.parent,package.name)
+ 
+ 
+ if __name__=='__main__': main()
+diff --git a/staging/coordination/deeptutor_gateway/tests/test_complete_readme.py b/staging/coordination/deeptutor_gateway/tests/test_complete_readme.py
+index 0576b7a..c906ddc 100644
+--- a/staging/coordination/deeptutor_gateway/tests/test_complete_readme.py
++++ b/staging/coordination/deeptutor_gateway/tests/test_complete_readme.py
+@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[4]
+ def test_full_guide_keeps_all_daily_pages_and_operating_instructions():
+     text=(ROOT/'README.md').read_text(encoding='utf-8')
+     for anchor in ('install','features','flows','home','library','paper','student','preparation',
+-                   'exam','templates','classroom','works','import','settings','faq','verification'):
++                   'exam','closure','templates','classroom','works','import','settings','faq','verification'):
+         assert f'<a id="{anchor}"></a>' in text
+         assert f'(#{anchor})' in text
+     assert len(text)>8000
+@@ -19,6 +19,16 @@ def test_static_screenshots_exist_and_new_screenshots_have_a_verifier():
+     images=re.findall(r'!\[[^\]]*\]\(([^)]+)\)',text)
+     assert len(set(images))>=16
+     planned_exam={'exam-import.png','exam-overview.png','exam-items.png','exam-students.png','exam-api.png','exam-compact.png'}
++    planned_closure={'closure-batch-stats.png','closure-panel.png','closure-library.png','closure-preview.png','closure-retest.png'}
+     for image in images:
+-        assert (ROOT/image).is_file() or (image.startswith('docs/screenshots/v0.1.97/') and Path(image).name in planned) or (image.startswith('docs/screenshots/v0.1.98/') and Path(image).name in planned_exam)
++        assert (ROOT/image).is_file() or (image.startswith('docs/screenshots/v0.1.97/') and Path(image).name in planned) or (image.startswith('docs/screenshots/v0.1.98/') and Path(image).name in planned_exam) or (image.startswith('docs/screenshots/v0.1.99/') and Path(image).name in planned_closure)
+     assert (ROOT/'README-0.1.96-archive.md').is_file()
++
++
++def test_closure_audit_preserves_old_list_and_distinguishes_remaining_work():
++    text=(ROOT/'docs/ux/0.1.99-closure-audit.md').read_text(encoding='utf-8')
++    assert '尚未形成全功能闭环' in text
++    assert len(set(re.findall(r'\| X[0-9]{2} \|',text)))==10
++    assert (ROOT/'README-0.1.98-archive.md').is_file()
++    progress=(ROOT/'docs/roadmaps/audit-followup.md').read_text(encoding='utf-8')
++    assert len(set(re.findall(r'^\| [A-H][0-9]{2} \|',progress,re.M)))==59
+diff --git a/staging/coordination/deeptutor_gateway/tests/test_teaching_closure_ui.py b/staging/coordination/deeptutor_gateway/tests/test_teaching_closure_ui.py
+index a29e3be..f2da482 100644
+--- a/staging/coordination/deeptutor_gateway/tests/test_teaching_closure_ui.py
++++ b/staging/coordination/deeptutor_gateway/tests/test_teaching_closure_ui.py
+@@ -69,3 +69,16 @@ def test_linking_unrelated_basket_items_is_not_automatic(desk,monkeypatch):
+     monkeypatch.setattr(mod,'checked_rows',lambda *a:['b'])
+     d.followup_panel.link.click();settle(app)
+     assert [r['key'] for r in d.followup_panel.current()['links']]==['b']
++
++
++def test_compact_summary_keeps_actual_title_and_selected_task_question(desk):
++    d,app,_=desk
++    d.exam['title']='合成作业名称较长时仍应优先显示实际复测记录，而不是重复流程提示'
++    d.render();task=sample_task(d);d.followup_panel.store(task)
++    d.tabs.setCurrentWidget(d.followup_panel);d.resize(800,700);settle(app)
++    assert not d.workflow_hint.isVisible()
++    assert d.followup_panel.question.currentData()==task['question']
++    assert d.followup_panel.text.height()>=150
++    assert d.height()==700 and d.width()==800
++    d.resize(1280,900);settle(app)
++    assert d.workflow_hint.isVisible()
