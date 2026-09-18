@@ -9,33 +9,66 @@ concurrency:
   group: resource-desk-review-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  baseline:
-    runs-on: ubuntu-latest
-    timeout-minutes: 8
+  audit:
+    runs-on: windows-latest
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - name: Capture exact tracked source
+          python-version: "3.12"
+      - run: python -m pip install -r requirements-dev.txt 'bandit==1.8.6'
+      - name: Inventory and static checks (findings are not confirmed vulnerabilities)
+        shell: python
         run: |
-          mkdir -p review-input
-          git archive --format=zip --output=review-input/source.zip HEAD
-          git rev-parse HEAD > review-input/SOURCE_COMMIT.txt
-      - name: Download public offline review tools (not application assets)
-        run: >-
-          python -m pip download --only-binary=:all: --dest review-input/wheels
-          'PySide6==6.11.2' 'bandit==1.8.6' 'ruff==0.12.12'
-      - name: Check unique complete guide
+          import ast, collections, json, os, pathlib, subprocess, sys
+          out=pathlib.Path('review-qa');out.mkdir(exist_ok=True)
+          files=[pathlib.Path(p) for p in subprocess.check_output(['git','ls-files'],text=True).splitlines() if p.endswith(('.py','.pyw'))]
+          errors=[];large=[];branches=0;lines=0
+          for p in files:
+              text=p.read_text(encoding='utf-8-sig');lines+=len(text.splitlines())
+              try:tree=ast.parse(text,filename=str(p))
+              except SyntaxError as e:errors.append({'file':str(p),'line':e.lineno,'message':e.msg});continue
+              if len(text.splitlines())>1000:large.append({'file':p.as_posix(),'lines':len(text.splitlines())})
+              branches+=sum(isinstance(n,(ast.If,ast.For,ast.While,ast.Try)) for n in ast.walk(tree))
+          paths=['integrations','runtime','staging']
+          with (out/'ruff.json').open('w',encoding='utf-8') as f:
+              subprocess.run([sys.executable,'-m','ruff','check','--select','F821,F822,F823,E9','--output-format','json',*paths],stdout=f)
+          subprocess.run([sys.executable,'-m','bandit','-q','-r','integrations','runtime','-f','json','-o',str(out/'bandit.json')])
+          ruff=json.loads((out/'ruff.json').read_text());bandit=json.loads((out/'bandit.json').read_text())
+          summary={'source_commit':os.environ['GITHUB_SHA'],'python_files':len(files),'python_lines':lines,'syntax_errors':errors,
+              'ruff_runtime_errors':ruff,'bandit_counts':dict(collections.Counter(x['issue_severity'] for x in bandit.get('results',[]))),
+              'large_files':sorted(large,key=lambda x:-x['lines'])[:15]}
+          (out/'static-summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(summary,ensure_ascii=False,indent=2))
+          print('BANDIT HIGH/MEDIUM LOCATIONS')
+          for x in bandit.get('results',[]):
+              if x['issue_severity']!='LOW':print(x['filename'],x['line_number'],x['test_id'],x['issue_text'])
+      - name: Full repository test collection
+        shell: python
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: |
-          python -m pip install 'pytest>=8,<10'
-          python runtime/deeptutor_shchem/documentation_policy.py
-          python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_complete_readme.py --junitxml=review-input/documentation-tests.xml
+          import json, os, pathlib, subprocess, sys, xml.etree.ElementTree as ET
+          out=pathlib.Path('review-qa')
+          args=[sys.executable,'-m','pytest','-q','-o','faulthandler_timeout=120','staging/coordination/deeptutor_gateway/tests','--junitxml=review-qa/all-tests.xml']
+          with (out/'all-tests.log').open('w',encoding='utf-8') as f:
+              p=subprocess.run(args,stdout=f,stderr=subprocess.STDOUT,timeout=1500)
+          root=ET.parse(out/'all-tests.xml').getroot()
+          suites=list(root.iter('testsuite'));counts={k:sum(int(s.get(k,0)) for s in suites) for k in ('tests','failures','errors','skipped')}
+          failures=[{'test':c.get('classname','')+'.'+c.get('name',''),'message':n.get('message','')[:1200]} for c in root.iter('testcase') for n in c if n.tag in ('failure','error')]
+          summary={'source_commit':os.environ['GITHUB_SHA'],'returncode':p.returncode,'counts':counts,'failures':failures}
+          (out/'tests-summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(summary,ensure_ascii=False,indent=2))
+          sys.exit(p.returncode)
+      - name: Complete guide and current workflow links
+        if: always()
+        run: python runtime/deeptutor_shchem/documentation_policy.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: resource-review-input-${{ github.sha }}
-          path: review-input/
-          retention-days: 7
+          name: resource-review-${{ github.sha }}
+          path: review-qa/
+          retention-days: 14
