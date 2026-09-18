@@ -33,9 +33,9 @@ def sample_payload():
 
 def run_probe(output):
     from io import BytesIO
-    from PIL import Image, ImageDraw
+    from PIL import Image, ImageDraw, ImageFont
     from PySide6.QtCore import QTimer, QRect, Qt
-    from PySide6.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication, QFileDialog
     from .desktop_facade import build_default_facade
     from .desktop_paths import DesktopPaths
     from .desktop_version import DESKTOP_VERSION
@@ -79,8 +79,13 @@ def run_probe(output):
         draw.line((80, 380, 80, 40), fill="black", width=3)
         draw.line([(80,80),(250,160),(450,220),(850,220)], fill="black", width=4)
         draw.line([(80,360),(250,285),(450,220),(850,220)], fill="black", width=4)
-        draw.text((470,185), "v(forward) = v(reverse) > 0", fill="black")
-        draw.text((550,410), "Synthetic model / time", fill="black")
+        try:
+            font = ImageFont.truetype("arial.ttf", 22)
+        except OSError:
+            font = ImageFont.load_default(size=22)
+        draw.text((470,185), "v(forward) = v(reverse) > 0", font=font, fill="black")
+        draw.text((540,410), "Synthetic model / time", font=font, fill="black")
+        draw.text((86,12), "Relative rate", font=font, fill="black")
         raw=BytesIO(); image.save(raw,format="PNG")
         file=temp/"rate-model.png"; file.write_bytes(raw.getvalue())
         asset=facade.import_preparation_image(str(file),"速率比较（合成示意）","软件测试人工绘制","观察相对速率")
@@ -131,11 +136,30 @@ def run_probe(output):
                 assert len(d.history.value["exports"])==1,d.status.text()
                 first=deepcopy(d.history.value["exports"][0])
                 d.tabs.setCurrentIndex(0);d.fields["student_task"].setPlainText(
-                    "写出Kc表达式，并标明式中浓度对应平衡状态。")
+                    "仍以合成反应A⇌B为背景，写出Kc表达式，并标明式中浓度对应平衡状态。")
                 assert "需更新" in d.report.toPlainText()
                 assert checked_file(facade,d.history.value,first["id"],FILES[0]).is_file()
                 d.generate.click();settle(lambda:not d.busy)
                 assert len(d.history.value["exports"])==2,d.status.text()
+                latest = d.history.value["exports"][-1]
+                assert d.outputs.currentData() == latest["id"], "Newly generated version was not selected"
+                assert "一致" in d.selected_output_status.text()
+                d.outputs.setCurrentIndex(d.outputs.findData(first["id"]))
+                assert "历史内容" in d.selected_output_status.text()
+                d.outputs.setCurrentIndex(d.outputs.findData(latest["id"]))
+                destination = temp / "teacher-export"
+                destination.mkdir()
+                original_chooser = QFileDialog.getExistingDirectory
+                QFileDialog.getExistingDirectory = lambda *args, **kw: str(destination)
+                try:
+                    d.export_copy.click();settle(lambda:not d.busy)
+                finally:
+                    QFileDialog.getExistingDirectory = original_chooser
+                copies = list(destination.iterdir())
+                assert len(copies) == 1 and copies[0].is_dir(), d.status.text()
+                for name in FILES:
+                    assert (copies[0] / name).read_bytes() == checked_file(facade, d.history.value, latest["id"], name).read_bytes()
+                evidence["copy_export"] = True
                 d.save.click();settle(lambda:not d.busy)
                 assert "已保存" in d.status.text(),d.status.text()
                 capture(d,"lesson-linked-outputs.png")
@@ -182,7 +206,7 @@ def run_probe(output):
                     "locked_answer_preserved":True,"undo_identity":True,"old_output_retained":True,
                     "three_real_outputs":True,"stale_output_marked":True,"formal_draft_reopen":True,
                     "original_recovery_retains_design":True,"actions_visible":True,"source_image_unchanged":True,
-                    "actual_pptx_pdf":True},
+                    "actual_pptx_pdf":True,"new_output_selected":True,"independent_export_copy":evidence["copy_export"]},
                 "slides":3,"screenshots":shots,"uncaught_errors":errors,
                 "scope":"Synthetic teacher-confirmed nodes; local deterministic export; LibreOffice rendering, not PowerPoint parity or AI quality"}
             (target/"lesson-design-probe.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")

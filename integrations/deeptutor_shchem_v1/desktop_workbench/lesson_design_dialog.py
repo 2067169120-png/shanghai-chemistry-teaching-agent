@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QFileDialog, QForm
     QTabWidget, QVBoxLayout, QWidget)
 from ..desktop_lesson_design import (KINDS, DesignHistory, bind_material,
     content_fingerprint, coverage, new_design, new_node, update_goal, update_node)
-from ..desktop_lesson_output import FILES, actual_ppt_preview, checked_file, export_design
+from ..desktop_lesson_output import FILES, actual_ppt_preview, checked_file, export_design, copy_output_bundle
 from .components import page_scroll
 
 
@@ -165,6 +165,13 @@ class LessonDesignDialog(QDialog):
         for name, filename in (("打开教案", FILES[1]), ("打开PPTX", FILES[0]), ("打开学习单", FILES[2])):
             b = QPushButton(name); b.setObjectName("QuietButton")
             b.clicked.connect(lambda _=False, file=filename: self.open_file(file)); ar.addWidget(b)
+        self.export_copy = QPushButton("导出所选版本的三类文件…")
+        self.export_copy.setObjectName("QuietButton")
+        self.export_copy.clicked.connect(self.copy_files)
+        o.addWidget(self.export_copy)
+        self.selected_output_status = label("")
+        o.addWidget(self.selected_output_status)
+        self.outputs.currentIndexChanged.connect(self.show_selected_output)
         self.tabs.addTab(out, "输出与检查")
         self.status = label("本地编辑，不调用模型。保存草稿沿用原备课；未保存编辑进入原恢复副本。")
         root.addWidget(self.status)
@@ -336,12 +343,35 @@ class LessonDesignDialog(QDialog):
         if chosen:
             self.outputs.setCurrentIndex(max(0, self.outputs.findData(chosen)))
         self.preview.setEnabled(not self.busy and self.outputs.count() > 0)
+        self.show_selected_output()
+
+    def show_selected_output(self, *_):
+        record = next((r for r in self.history.value["exports"] if r["id"] == self.outputs.currentData()), None)
+        self.export_copy.setEnabled(not self.busy and record is not None)
+        if record is None:
+            self.selected_output_status.setText("尚无成品。先生成，再查看或导出。")
+        elif record["fingerprint"] != content_fingerprint(self.page._payload(), self.history.value):
+            self.selected_output_status.setText("所选为历史内容：与当前设计不同。可保留或导出旧版；需要最新版请重新生成。")
+        else:
+            self.selected_output_status.setText("所选成品与当前设计一致。导出会新建独立副本，不改工作台中的原版本。")
+
+    def copy_files(self):
+        identity = self.outputs.currentData()
+        if self.busy or not identity:
+            return
+        destination = QFileDialog.getExistingDirectory(self, "选择三类文件的导出位置")
+        if not destination:
+            return
+        plan = deepcopy(self.history.value)
+        self.run("正在导出所选版本…", lambda: copy_output_bundle(self.facade, plan, identity, destination),
+                 lambda folder: self.status.setText("已导出到：" + folder + "；PPT备注含教师信息，外部修改不回写教学设计。"))
 
     def set_busy(self, value):
         self.busy = value
         for w in (self.tabs, self.save, self.generate, self.preview, self.return_button):
             w.setEnabled(not value)
         self.preview.setEnabled(not value and self.outputs.count() > 0)
+        self.show_selected_output()
 
     def run(self, text, operation, success):
         self.set_busy(True); self.status.setText(text)
@@ -374,6 +404,7 @@ class LessonDesignDialog(QDialog):
         def done(record):
             self.history.value["exports"].append(record)
             self.sync_page()
+            self.outputs.setCurrentIndex(self.outputs.findData(record["id"]))
             self.tabs.setCurrentIndex(2)
             self.status.setText("三类文件已生成；请查看版式并保存草稿。PPT备注含教师答案，不是匿名学生文件。")
         self.run("正在生成三类文件（本地，不调用模型）…", lambda: export_design(self.facade, payload), done)

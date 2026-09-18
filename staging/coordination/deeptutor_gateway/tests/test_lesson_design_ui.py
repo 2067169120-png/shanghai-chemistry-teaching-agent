@@ -67,3 +67,37 @@ def test_compact_editor_keeps_actions_and_main_work_area(desk):
         assert d.tabs.height() >=400
         for widget in (d.tabs,d.save,d.generate,d.preview,d.return_button):
             assert d.rect().contains(QRect(widget.mapTo(d,widget.rect().topLeft()),widget.size()))
+
+
+def test_regeneration_selects_new_output_and_old_has_explicit_status(desk):
+    d,app,page=desk
+    d.generate.click();settle(app,lambda:not d.busy)
+    assert len(d.history.value['exports'])==1,d.status.text()
+    old=d.outputs.currentData()
+    d.fields['student_task'].setPlainText('第二版可见任务，保留原材料。')
+    assert '历史内容' in d.selected_output_status.text()
+    d.generate.click();settle(app,lambda:not d.busy)
+    assert len(d.history.value['exports'])==2,d.status.text()
+    assert d.outputs.currentData()==d.history.value['exports'][-1]['id']!=old
+    assert '一致' in d.selected_output_status.text()
+    d.outputs.setCurrentIndex(d.outputs.findData(old));settle(app)
+    assert '历史内容' in d.selected_output_status.text()
+
+
+def test_copy_button_uses_selected_version_and_cancel_does_not_write(desk, tmp_path, monkeypatch):
+    from pathlib import Path
+    from PySide6.QtWidgets import QFileDialog
+    from integrations.deeptutor_shchem_v1.desktop_lesson_output import FILES, checked_file
+    d,app,page=desk
+    assert not d.export_copy.isEnabled()
+    d.generate.click();settle(app,lambda:not d.busy)
+    assert d.export_copy.isEnabled()
+    monkeypatch.setattr(QFileDialog,'getExistingDirectory',lambda *a,**k:'')
+    d.export_copy.click();settle(app)
+    assert not list(tmp_path.glob('教学成品-*'))
+    monkeypatch.setattr(QFileDialog,'getExistingDirectory',lambda *a,**k:str(tmp_path))
+    d.export_copy.click();settle(app,lambda:not d.busy)
+    folder=next(tmp_path.glob('教学成品-*'))
+    for name in FILES:
+        assert (folder/name).read_bytes()==checked_file(d.facade,d.history.value,d.outputs.currentData(),name).read_bytes()
+    assert '已导出到' in d.status.text()

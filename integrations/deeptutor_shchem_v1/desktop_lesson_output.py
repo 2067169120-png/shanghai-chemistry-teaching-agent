@@ -160,3 +160,33 @@ def actual_ppt_preview(facade, plan, export_id):
     return {"path": str(pdf), "engine": "LibreOffice Impress",
             "source_sha256": sha256(source.read_bytes()).hexdigest(),
             "pdf_sha256": sha256(pdf.read_bytes()).hexdigest()}
+
+
+def copy_output_bundle(facade, plan, export_id, destination):
+    """Export the selected version to a new teacher-owned folder, never in-place."""
+    plan = validate_design(plan)
+    parent = Path(destination)
+    if not parent.is_dir():
+        raise ValueError("请选择已经存在的导出文件夹。")
+    sources = {name: checked_file(facade, plan, export_id, name) for name in FILES}
+    record = next(row for row in plan["exports"] if row["id"] == export_id)
+    folder = Path(tempfile.mkdtemp(prefix="教学成品-" + export_id[-8:] + "-", dir=parent))
+    try:
+        for name, source in sources.items():
+            shutil.copyfile(source, folder / name)
+            expected = next(f["sha256"] for f in record["files"] if f["name"] == name)
+            if sha256((folder / name).read_bytes()).hexdigest() != expected:
+                raise ValueError("复制时成品发生变化，请重新核对后导出。")
+        (folder / "OUTPUT-MANIFEST.json").write_text(
+            json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+        (folder / "使用说明.txt").write_text(
+            "本文件夹是所选教学成品版本的独立副本。\n"
+            "lesson_plan.docx：教案，含教师答案及备注。\n"
+            "lesson_presentation.pptx：可编辑课件，讲者备注可能含教师答案，勿直接作为匿名学生文件。\n"
+            "student_worksheet.docx：学生学习单，发放前请核对材料中未混入答案。\n"
+            "在Office中修改这些副本不会回写教学环节，也不改变工作台中保留的原版本。\n",
+            encoding="utf-8")
+    except Exception:
+        shutil.rmtree(folder, ignore_errors=True)
+        raise
+    return str(folder)
