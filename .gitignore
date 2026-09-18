@@ -114,7 +114,6 @@
 !/.github/workflows/
 !/.github/workflows/desktop-integration.yml
 !/启动源码桌面版.cmd
-!/README-0.1.82-archive.md
 !/CHANGELOG-through-0.1.82.md
 !/docs/research/
 !/docs/research/2026-09-14-teaching-design.md
@@ -127,7 +126,6 @@
 
 # 0.1.84 source and explicitly synthetic screenshot gallery.
 !/.github/workflows/desktop-studio.yml
-!/README-0.1.83-archive.md
 !/CHANGELOG-0.1.83.md
 !/runtime/deeptutor_shchem/studio_ci_smoke.py
 !/runtime/deeptutor_shchem/publish_studio_screenshots.py
@@ -156,7 +154,6 @@
 !/docs/screenshots/v0.1.84/templates-compact.png
 
 # 0.1.85 selection UI and isolated test evidence
-!/README-0.1.84-archive.md
 !/docs/qa/0.1.85-selection.md
 !/docs/qa/0.1.85-selection.json
 !/docs/screenshots/v0.1.85/
@@ -166,7 +163,6 @@
 !/.github/workflows/question-explorer.yml
 
 # Audit implementation batch A: source and isolated verification only.
-!/README-0.1.85-archive.md
 !/.github/workflows/desktop-reliability.yml
 !/docs/roadmaps/
 !/docs/roadmaps/audit-followup.md
@@ -180,7 +176,6 @@
 !/runtime/deeptutor_shchem/publish_phase_a_evidence.py
 
 # 0.1.87 local candidate: readiness, declared resources and Windows test workflow.
-!/README-0.1.86-archive.md
 !/检查运行环境.cmd
 !/.github/workflows/desktop-readiness.yml
 !/runtime/deeptutor_shchem/check_desktop_environment.py
@@ -190,7 +185,6 @@
 !/docs/qa/0.1.87-local-tests.json
 
 # A07 work organization source and isolated release evidence.
-!/README-0.1.87-archive.md
 !/docs/releases/
 !/docs/releases/0.1.88.md
 !/docs/qa/0.1.88-readiness.json
@@ -202,7 +196,6 @@
 
 # 0.1.89 explicit backup source workflow and public evidence.
 !/.github/workflows/lesson-backup.yml
-!/README-0.1.88-archive.md
 !/docs/releases/0.1.89.md
 !/docs/screenshots/v0.1.89/
 !/docs/qa/0.1.89-readiness.json
@@ -210,7 +203,6 @@
 !/docs/qa/0.1.89-lesson-backup.md
 
 # 0.1.91 source, teacher copy and isolated verification (no private sources).
-!/README-0.1.90-archive.md
 !/.github/workflows/paper-numbering.yml
 !/docs/ux/0.1.91-numbering-and-copy.md
 !/docs/ux/0.1.91-copy-changes.json
@@ -221,7 +213,6 @@
 !/docs/screenshots/v0.1.91/
 
 # 0.1.92 Chinese typography and explicit local validation source.
-!/README-0.1.91-archive.md
 !/runtime/deeptutor_shchem/typography_ci.py
 !/docs/ux/0.1.92-chinese-typography.md
 !/docs/releases/0.1.92.md
@@ -233,7 +224,6 @@
 !/.github/workflows/chinese-typography.yml
 
 # 0.1.94 source, docs and isolated evidence.
-!/README-0.1.93-archive.md
 !/docs/ux/0.1.94-number-region-reuse.md
 !/docs/roadmaps/0.1.94.md
 !/docs/releases/0.1.94.md
@@ -244,7 +234,6 @@
 !/.github/workflows/number-region-reuse.yml
 
 # 0.1.95 explicit sources and isolated evidence.
-!/README-0.1.94-archive.md
 !/docs/ux/0.1.95-explorer-performance.md
 !/docs/research/0.1.95-workflows-and-references.md
 !/docs/releases/0.1.95.md
@@ -255,7 +244,6 @@
 !/.github/workflows/explorer-performance.yml
 
 # 0.1.96 explicit guide, reports and native screenshots.
-!/README-0.1.95-archive.md
 !/docs/ux/0.1.96-student-review.md
 !/docs/roadmaps/0.1.96.md
 !/docs/releases/0.1.96.md
@@ -265,7 +253,6 @@
 !/.github/workflows/student-review*.yml
 
 # Version 0.1.97 complete guide and isolated evidence.
-!/README-0.1.96-archive.md
 !/docs/ux/0.1.97-work-batches.md
 !/docs/releases/0.1.97.md
 !/docs/qa/0.1.97-readiness.json
@@ -275,7 +262,6 @@
 !/.github/workflows/work-batches.yml
 
 # 0.1.98 exam dashboard and complete release guide
-!/README-0.1.97-archive.md
 !/docs/ux/0.1.98-exam-dashboard.md
 !/docs/releases/0.1.98.md
 !/docs/qa/0.1.98*
@@ -284,7 +270,6 @@
 !/.github/workflows/exam-dashboard.yml
 
 # 0.1.99 teaching-link implementation and matched synthetic evidence.
-!/README-0.1.98-archive.md
 !/docs/ux/0.1.99-closure-audit.md
 !/docs/releases/0.1.99.md
 !/docs/qa/0.1.99-readiness.json
@@ -294,7 +279,6 @@
 !/.github/workflows/closure-first-look.yml
 
 # Lesson design 0.1.100 explicit source/docs evidence
-!/README-0.1.99-archive.md
 !/docs/ux/0.1.100-lesson-design.md
 !/docs/roadmaps/0.1.100.md
 !/docs/screenshots/v0.1.100/
@@ -304,7 +288,6 @@
 !/.github/workflows/lesson-design.yml
 
 # 0.1.101 source-result handoff and registered lesson bundles
-!/README-0.1.100-archive.md
 !/docs/ux/0.1.101-lesson-design.md
 !/docs/roadmaps/0.1.101.md
 !/docs/releases/0.1.101.md
@@ -313,3 +296,8 @@
 !/docs/screenshots/v0.1.101/**
 !/.github/workflows/lesson-source.yml
 !/.github/workflows/lesson-source-first.yml
+
+# One canonical guide; old versions are retained in Git tags/history.
+/README-*-archive.md
+!/docs/WORKFLOW_STATUS.md
+!/.github/workflows/documentation.yml
