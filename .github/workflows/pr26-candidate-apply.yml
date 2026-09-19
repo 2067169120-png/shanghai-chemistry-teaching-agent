@@ -35,22 +35,29 @@ jobs:
           def git(*args):
               return subprocess.check_output(['git', *args], text=True).strip()
           if payload.exists():
-              assert git('rev-parse', 'HEAD^') == '1ce620d4ac3bb2fdbc8cc9f9d9ac6fc73f202e0d'
+              assert git('rev-parse', 'HEAD^') == 'e4d260826381f6c312ea9a64f1a12e85bc6e10d1'
               encoded = payload.read_text()
-              # Correct explicit transport duplication, then demand the exact
-              # locally reviewed patch digest before any file is changed.
               for before, after in [('LRVV37', 'LRV37'), ('GqkshII4W', 'GqkshI4W'),
                                     ('ChmVV2MV', 'ChmV2MV'), ('vk9g9gpl4', 'vk9gpl4'),
                                     ('dfSKKtU2', 'dfSKtU2'), ('PHRZZ9J', 'PHRZ9J')]:
                   encoded = encoded.replace(before, after)
               data = zlib.decompress(base64.b64decode(encoded, validate=False))
               assert hashlib.sha256(data).hexdigest() == '5299e9590d6a5e1f07b7c31f66949860c364ce150b739e27968dab8417e1f3f5'
+              prefix, rest = data.decode('utf-8').split('--- a/integrations/', 1)
+              lines = prefix.splitlines(keepends=True)
+              before = ''.join(line[1:] for line in lines if line.startswith((' ', '-')) and not line.startswith('--- '))
+              after = ''.join(line[1:] for line in lines if line.startswith((' ', '+')) and not line.startswith('+++ '))
+              readme = pathlib.Path('README.md')
+              original = readme.read_text(encoding='utf-8')
+              assert before and original.count(before) == 1
               with tempfile.NamedTemporaryFile(suffix='.patch') as f:
-                  f.write(data); f.flush()
+                  f.write(('--- a/integrations/' + rest).encode('utf-8')); f.flush()
                   stat = git('apply', '--numstat', f.name)
-                  assert {line.split('\t')[-1] for line in stat.splitlines()} == expected
+                  assert {line.split('\t')[-1] for line in stat.splitlines()} == expected - {'README.md'}
                   git('apply', '--check', '--index', f.name)
                   git('apply', '--index', f.name)
+              readme.write_text(original.replace(before, after, 1), encoding='utf-8')
+              git('add', 'README.md')
               git('rm', str(payload))
               assert set(git('diff', '--cached', '--name-only').splitlines()) == expected | {str(payload)}
               git('config', 'user.name', 'github-actions[bot]')
