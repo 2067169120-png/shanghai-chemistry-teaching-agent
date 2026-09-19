@@ -1,0 +1,41 @@
+name: Refresh evidence summary hook once
+on:
+  push:
+    branches: ["maintenance/exam-revisions-20260919"]
+    paths: [".github/workflows/refresh-review-summary-once.yml"]
+permissions:
+  contents: read
+jobs:
+  apply:
+    if: github.repository == '2067169120-png/shanghai-chemistry-teaching-agent'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - shell: python
+        run: |
+          import os,pathlib,subprocess
+          branch='maintenance/exam-revisions-20260919'
+          assert os.environ['GITHUB_REF']=='refs/heads/'+branch
+          def git(*args):return subprocess.check_output(['git',*args],text=True).strip()
+          assert git('rev-parse','HEAD^')=='9f39ab9834878faa605197e1b1d305b1e5f01460'
+          ui=pathlib.Path('integrations/deeptutor_shchem_v1/desktop_workbench/exam_revision_ui.py')
+          test=pathlib.Path('staging/coordination/deeptutor_gateway/tests/test_exam_revision_ui.py')
+          original=ui.read_text(encoding='utf-8')
+          before='                    self.preview=None; self.approved=False; self.show_task(); dialog.accept()'
+          assert original.count(before)==1
+          ui.write_text(original.replace(before,'                    self.preview=None; self.approved=False; self.d.render(); dialog.accept()',1),encoding='utf-8')
+          original=test.read_text(encoding='utf-8')
+          before="    assert panel.preview_button.isEnabled() and not panel.export.isEnabled()\n    assert d.current_result() is None"
+          assert original.count(before)==1
+          test.write_text(original.replace(before,before+"\n    assert '0项复练依据待核对' in d.overview_note.text()\n    assert '0项复练依据待核对' in d.problem_note.text()",1),encoding='utf-8')
+          subprocess.run(['python','-m','compileall','-q',str(ui),str(test)],check=True)
+          git('diff','--check');git('add',str(ui),str(test))
+          assert set(git('diff','--cached','--name-only').splitlines())=={str(ui),str(test)}
+          git('config','user.name','github-actions[bot]')
+          git('config','user.email','41898282+github-actions[bot]@users.noreply.github.com')
+          git('commit','-m','fix: update summary and diagnostics after successful task evidence review')
+          git('push','origin','HEAD:refs/heads/'+branch)
