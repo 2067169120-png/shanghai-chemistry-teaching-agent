@@ -1,0 +1,40 @@
+name: Apply exact reviewed task patch on isolated branch
+on:
+  push:
+    branches: ["maintenance/exam-practice-20260919"]
+permissions:
+  contents: read
+jobs:
+  apply:
+    if: github.repository == '2067169120-png/shanghai-chemistry-teaching-agent'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - shell: python
+        run: |
+          import hashlib, os, pathlib, subprocess
+          branch = 'maintenance/exam-practice-20260919'
+          assert os.environ['GITHUB_REF'] == 'refs/heads/' + branch
+          patch = pathlib.Path('.maintenance/round2.patch')
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).strip()
+          if not patch.is_file():
+              raise SystemExit(0)
+          assert git('rev-parse', 'HEAD^') == '749e9a04f3fa8a8b6b29cdea1a41b11d3b83e746'
+          assert hashlib.sha256(patch.read_bytes()).hexdigest() == '5c767f4e8411a31a04e2eecdf8d904f994797a0cb04249c3b900640ecf119b59'
+          expected = {'README.md', 'docs/WORKFLOW_STATUS.md', 'docs/roadmaps/audit-followup.md',
+              'integrations/deeptutor_shchem_v1/desktop_workbench/exam_followup_panel.py'}
+          stat = git('apply', '--numstat', str(patch))
+          assert {line.split('\t')[-1] for line in stat.splitlines()} == expected
+          git('apply', '--check', '--index', str(patch))
+          git('apply', '--index', str(patch))
+          git('rm', str(patch))
+          assert set(git('diff', '--cached', '--name-only').splitlines()) == expected | {str(patch)}
+          git('config', 'user.name', 'github-actions[bot]')
+          git('config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com')
+          git('commit', '-m', 'feat: connect independent task selection and keep full guide current')
+          git('push', 'origin', 'HEAD:refs/heads/' + branch)
