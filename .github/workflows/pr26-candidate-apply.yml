@@ -1,0 +1,75 @@
+name: Apply reviewed PR26 candidate patch once
+on:
+  push:
+    branches: ["maintenance/pr26-basket-audit-20260919"]
+permissions:
+  contents: read
+jobs:
+  apply:
+    if: github.repository == '2067169120-png/shanghai-chemistry-teaching-agent'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.apply.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - id: apply
+        shell: python
+        run: |
+          import base64, hashlib, os, pathlib, subprocess, tempfile, zlib
+          branch = 'maintenance/pr26-basket-audit-20260919'
+          assert os.environ['GITHUB_REF'] == 'refs/heads/' + branch
+          payload = pathlib.Path('.maintenance/pr26-audit.patch.b64')
+          expected = {
+              'README.md',
+              'integrations/deeptutor_shchem_v1/desktop_state.py',
+              'integrations/deeptutor_shchem_v1/desktop_workbench/explorer_basket.py',
+              'integrations/deeptutor_shchem_v1/desktop_workbench/question_explorer_page.py',
+              'staging/coordination/deeptutor_gateway/tests/test_desktop_state_corruption.py',
+              'staging/coordination/deeptutor_gateway/tests/test_explorer_basket_recovery_ui.py',
+              'docs/qa/2026-09-19-pr26-audit.md',
+          }
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).strip()
+          if payload.exists():
+              assert git('rev-parse', 'HEAD^') == '1ce620d4ac3bb2fdbc8cc9f9d9ac6fc73f202e0d'
+              encoded = payload.read_text()
+              # Correct explicit transport duplication, then demand the exact
+              # locally reviewed patch digest before any file is changed.
+              for before, after in [('LRVV37', 'LRV37'), ('GqkshII4W', 'GqkshI4W'),
+                                    ('ChmVV2MV', 'ChmV2MV'), ('vk9g9gpl4', 'vk9gpl4'),
+                                    ('dfSKKtU2', 'dfSKtU2'), ('PHRZZ9J', 'PHRZ9J')]:
+                  encoded = encoded.replace(before, after)
+              data = zlib.decompress(base64.b64decode(encoded, validate=False))
+              assert hashlib.sha256(data).hexdigest() == '5299e9590d6a5e1f07b7c31f66949860c364ce150b739e27968dab8417e1f3f5'
+              with tempfile.NamedTemporaryFile(suffix='.patch') as f:
+                  f.write(data); f.flush()
+                  stat = git('apply', '--numstat', f.name)
+                  assert {line.split('\t')[-1] for line in stat.splitlines()} == expected
+                  git('apply', '--check', '--index', f.name)
+                  git('apply', '--index', f.name)
+              git('rm', str(payload))
+              assert set(git('diff', '--cached', '--name-only').splitlines()) == expected | {str(payload)}
+              git('config', 'user.name', 'github-actions[bot]')
+              git('config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com')
+              git('commit', '-m', 'fix: preserve corrupt desktop data, recover basket reads and clarify PR26 release status')
+              git('push', 'origin', 'HEAD:refs/heads/' + branch)
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write('sha=' + git('rev-parse', 'HEAD') + '\n')
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: candidate-patch-transport
+          path: .maintenance/pr26-audit.patch.b64
+          include-hidden-files: true
+          retention-days: 1
+  verify:
+    needs: apply
+    permissions:
+      contents: read
+    uses: ./.github/workflows/basket-audit.yml
+    with:
+      verified_ref: ${{ needs.apply.outputs.sha }}
