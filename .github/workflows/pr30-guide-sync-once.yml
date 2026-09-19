@@ -25,12 +25,12 @@ jobs:
       - name: Verify evidence and change only the guide and two real screenshots
         shell: python
         run: |
-          import hashlib, json, os, pathlib, shutil, subprocess
+          import hashlib, json, os, pathlib, subprocess
           branch = 'maintenance/exam-practice-20260919'
           assert os.environ['GITHUB_REF'] == 'refs/heads/' + branch
           def git(*args):
               return subprocess.check_output(['git', *args], text=True).strip()
-          assert git('rev-parse', 'HEAD^') == '8e25d56452c5d9292b0a33f36394906ea7b6e597'
+          assert git('rev-parse', 'HEAD^') == 'ca9a5e7e3c94528d145a44dc6869791015b75a9d'
           assert git('rev-parse', 'HEAD:README.md') == '5e7404dbf940b95158621cd0d718a5dca98f5b37'
           evidence = pathlib.Path('.guide-evidence/candidate-qa')
           assert json.loads((evidence/'source.json').read_text())['source_commit'] == '8e25d56452c5d9292b0a33f36394906ea7b6e597'
@@ -64,15 +64,13 @@ jobs:
           本轮已完成 **142项题集/组卷/UI定向回归**及真实LibreOffice两版导出流程；它不是全仓测试或新的EXE发行。截图直接取自受测提交的CI附件，没有改名冒充发布版；本轮未进行人工逐像素审美验收。实现、保存冲突边界和证据见[题集整理与回调防护](docs/qa/2026-09-19-practice-editor.md)。
 
           '''
-          # Triple-quoted prose is indented only to keep this workflow readable.
-          import textwrap
-          addition = '\n'.join(line[10:] if line.startswith('          ') else line for line in addition.split('\n'))
           revised = original.replace(marker, addition + marker, 1)
           assert revised.split('## 使用导航', 1)[1] == original.split('## 使用导航', 1)[1]
           readme.write_text(revised, encoding='utf-8')
           subprocess.run(['python', 'runtime/deeptutor_shchem/documentation_policy.py'], check=True)
           allowed = {'README.md'} | {destination for destination, _ in targets.values()}
-          git('add', *sorted(allowed))
+          # Only these exact, hash-verified synthetic images are added from an ignored directory.
+          git('add', '-f', *sorted(allowed))
           assert set(git('diff', '--cached', '--name-only').splitlines()) == allowed
           git('config', 'user.name', 'github-actions[bot]')
           git('config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com')
