@@ -19,6 +19,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+          fetch-depth: 20
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -37,6 +38,7 @@ jobs:
         run: |
           import json, pathlib, subprocess, sys
           files = ['test_exam_practice_set.py', 'test_exam_practice_set_ui.py',
+              'test_practice_editor_core.py', 'test_practice_editor_ui.py',
               'test_desktop_mixed_paper_service.py', 'test_teaching_closure.py',
               'test_teaching_closure_ui.py', 'test_complete_readme.py',
               'test_maintenance_release_safety.py']
@@ -51,10 +53,32 @@ jobs:
               '--junitxml=candidate-qa/pytest.xml'], check=True)
       - name: Install real pagination converter
         run: choco install libreoffice-fresh -y --no-progress
-      - name: Save, remove from global basket, reopen, paginate and export
+      - name: Save, edit, remove from basket, reopen, paginate and export
         env:
           QT_QPA_PLATFORM: offscreen
         run: python runtime/deeptutor_shchem/exam_practice_ci.py candidate-qa/practice-office
+      - name: Evidence summary and exact source patch
+        if: always()
+        shell: python
+        run: |
+          import hashlib, json, pathlib, subprocess
+          import xml.etree.ElementTree as ET
+          out = pathlib.Path('candidate-qa'); out.mkdir(exist_ok=True)
+          report = out/'pytest.xml'
+          if report.exists():
+              suites = ET.parse(report).getroot().iter('testsuite')
+              print('JUNIT_SUMMARY', json.dumps([node.attrib for node in suites]))
+          source = out/'source.json'
+          if source.exists(): print('TESTED_SOURCE', source.read_text(encoding='utf-8'))
+          acceptance = out/'practice-office'/'acceptance.json'
+          if acceptance.exists(): print('OFFICE_ACCEPTANCE', acceptance.read_text(encoding='utf-8'))
+          base = '749e9a04f3fa8a8b6b29cdea1a41b11d3b83e746'
+          patch = subprocess.check_output(['git', 'diff', '--binary', base, 'HEAD', '--'])
+          (out/'pr30.patch').write_bytes(patch)
+          inventory = {str(path.relative_to(out)).replace('\\','/'): hashlib.sha256(path.read_bytes()).hexdigest()
+                       for path in out.rglob('*') if path.is_file() and path.name != 'sha256.json'}
+          (out/'sha256.json').write_text(json.dumps(inventory, indent=2), encoding='utf-8')
+          print('EVIDENCE_INVENTORY', json.dumps(inventory))
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -63,5 +87,6 @@ jobs:
             candidate-qa/
             README.md
             docs/qa/2026-09-19-practice-set.md
+            docs/qa/2026-09-19-practice-editor.md
           if-no-files-found: error
           retention-days: 14
