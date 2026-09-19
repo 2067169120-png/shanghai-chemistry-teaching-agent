@@ -1,0 +1,19 @@
+name: Integrate reviewed score revision hooks once
+on:
+  push:
+    branches: ["maintenance/exam-revisions-20260919"]
+    paths: [".github/workflows/exam-revision-integrate-once.yml"]
+permissions:
+  contents: read
+jobs:
+  integrate:
+    if: github.repository == '2067169120-png/shanghai-chemistry-teaching-agent'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - name: Apply only the exact baseline hooks and full-guide insertion
+        run: python .maintenance/integrate-exam-revisions.py
