@@ -646,7 +646,13 @@ class QuestionExplorerPage(QWidget):
         if not card.ready or card is not self._active_card or card.entry["key"] in self._adding:
             return
         entry = card.entry
-        if entry_is_selected(entry, self.facade.basket()):
+        try:
+            basket = self.facade.basket()
+        except Exception:
+            self._basket_unavailable()
+            return
+        if entry_is_selected(entry, basket):
+            self.refresh_basket()
             return
         card.add.setEnabled(False)
         self._adding.add(entry["key"])
@@ -670,13 +676,20 @@ class QuestionExplorerPage(QWidget):
                 self.refresh_basket()
         self.tasks.submit("加入统一选题篮", run, on_success=done, on_failure=failed)
 
+    def _basket_unavailable(self):
+        self.basket_button.setText("选题篮 · 待核对")
+        self.basket_label.setText("题篮暂不能读取；打开选题篮重新读取，原记录未清空")
+        self.preview_button.setEnabled(False)
+        for card in self.cards:
+            card.add.setText("题篮待核对")
+            card.add.setEnabled(False)
+
     def refresh_basket(self, *_):
         try:
             basket = self.facade.basket()
         except Exception:
-            self.basket_label.setText("题篮暂不能读取")
-            self.preview_button.setEnabled(False)
-            return
+            self._basket_unavailable()
+            return None
         count = len(basket)
         self.basket_button.setText(f"选题篮  {count}")
         self.basket_label.setText(f"已选 {count} 项 · 完整题目/主题" if count else "尚未选题 · 展开题面后加入")
@@ -685,6 +698,7 @@ class QuestionExplorerPage(QWidget):
             selected = entry_is_selected(card.entry, basket)
             card.add.setText("已在题篮" if selected else "＋ 加入选题篮")
             card.add.setEnabled(card.ready and not selected and card.entry["key"] not in self._adding)
+        return count
 
     def open_basket(self):
         dialog = ExplorerBasketDialog(self.facade, self.window())
@@ -707,8 +721,9 @@ class QuestionExplorerPage(QWidget):
         if dialog.exec() == dialog.DialogCode.Accepted and dialog.preparation_reference is not None:
             self.word_reference_requested.emit(dialog.preparation_reference)
         dialog.deleteLater()
-        self.refresh_basket()
-        self.basket_changed.emit(len(self.facade.basket()))
+        count = self.refresh_basket()
+        if count is not None:
+            self.basket_changed.emit(count)
         if lane in PERSONAL_LANES:
             self.reload()
 

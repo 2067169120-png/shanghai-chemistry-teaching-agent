@@ -65,10 +65,13 @@ class DesktopStateStore:
         result.update(value)
         if not isinstance(result["window"], dict):
             result["window"] = {}
+        # Missing optional fields retain the legacy defaults. Present but
+        # malformed durable data must not be "repaired" by an unrelated save:
+        # that would overwrite recoverable questions or lesson drafts.
         if not isinstance(result["basket"], list):
-            result["basket"] = []
+            raise DesktopStateError("题篮数据格式异常，已停止保存；请保留原状态文件并核对备份。")
         if not isinstance(result["drafts"], dict):
-            result["drafts"] = {}
+            raise DesktopStateError("草稿数据格式异常，已停止保存；请保留原状态文件并核对备份。")
         _reject_sensitive_fields(result)
         return result
 
