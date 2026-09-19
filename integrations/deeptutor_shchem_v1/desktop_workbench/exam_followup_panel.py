@@ -8,9 +8,10 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QGridLayout, QLabel, QPushB
     QComboBox, QPlainTextEdit, QDialog, QListWidget, QListWidgetItem, QLineEdit,
     QDialogButtonBox, QDateEdit, QDoubleSpinBox, QFormLayout, QInputDialog)
 from ..desktop_exam_data import ExamError
-from ..desktop_exam_followup import (create_followup, link_basket, practice_request,
+from ..desktop_exam_followup import (create_followup, practice_request,
     record_attempt, task_summary, followup_text)
 from ..desktop_question_explorer import personal_options
+from ..desktop_exam_practice import (freeze_selection, selection_items, paper_session, request_revision)
 
 
 def checked_rows(title, rows, parent):
@@ -31,25 +32,42 @@ class ExamFollowupPanel(QWidget):
     def __init__(self, dashboard):
         super().__init__(dashboard); self.d = dashboard; self.preview = None; self.approved = False
         self.preview_task_id = None
+        self.preview_revision = None
         box = QVBoxLayout(self); box.setContentsMargins(8,8,8,8)
         self.hint = QLabel('先选考试题目，确认学生与目标，再选题、排卷并记录实际复测。')
         self.hint.setWordWrap(True); box.addWidget(self.hint)
         self.question = QComboBox(); self.question.setAccessibleName('复练对应的考试题目'); box.addWidget(self.question)
         self.tasks = QComboBox(); self.tasks.setAccessibleName('已保存的复练任务'); box.addWidget(self.tasks)
         actions = QGridLayout(); box.addLayout(actions)
+        self.actions = actions; self._action_columns = 3
         self.new = QPushButton('建立复练任务'); self.find = QPushButton('去题库按标签选题')
-        self.link = QPushButton('关联题篮中的题'); self.preview_button = QPushButton('预览本任务练习卷')
+        self.link = QPushButton('保存本任务题集'); self.preview_button = QPushButton('预览本任务练习卷')
         self.export = QPushButton('导出已核对练习卷'); self.record = QPushButton('记录实际复测')
         for i,b in enumerate((self.new,self.find,self.link,self.preview_button,self.export,self.record)):
             b.setAutoDefault(False); actions.addWidget(b,i//3,i%3)
         for b in (self.find,self.link,self.preview_button,self.export):
             b.setObjectName('QuietButton')
+        self.selection_status = QLabel(); self.selection_status.setWordWrap(True)
+        self.selection_status.setAccessibleName('本任务题集状态')
+        box.addWidget(self.selection_status)
         self.text = QPlainTextEdit(); self.text.setReadOnly(True); self.text.setMinimumHeight(160); box.addWidget(self.text,1)
         self.new.clicked.connect(self.new_task); self.find.clicked.connect(self.find_questions)
         self.link.clicked.connect(self.link_questions); self.preview_button.clicked.connect(self.preview_paper)
         self.export.clicked.connect(self.export_paper); self.record.clicked.connect(self.record_result)
         self.tasks.currentIndexChanged.connect(self.show_task)
         self.refresh()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        columns = 3 if self.width() >= 640 else 2 if self.width() >= 400 else 1
+        if columns == self._action_columns:
+            return
+        self._action_columns = columns
+        buttons = (self.new, self.find, self.link, self.preview_button, self.export, self.record)
+        for button in buttons:
+            self.actions.removeWidget(button)
+        for index, button in enumerate(buttons):
+            self.actions.addWidget(button, index // columns, index % columns)
 
     def current(self):
         identity = self.tasks.currentData()
@@ -73,7 +91,19 @@ class ExamFollowupPanel(QWidget):
             index=self.question.findData(task['question'])
             if index>=0:self.question.setCurrentIndex(index)
         for w in (self.find,self.link,self.preview_button,self.record):w.setEnabled(task is not None)
-        self.export.setEnabled(bool(task and self.preview and self.approved and task['id']==self.preview_task_id))
+        valid_preview = bool(task and self.preview and task['id']==self.preview_task_id
+                             and self.preview_revision == request_revision(task))
+        self.export.setEnabled(bool(valid_preview and self.approved))
+        if task and 'practice_set' in task:
+            try:
+                count = len(selection_items(task))
+                self.selection_status.setText(f'独立题集 · {count}项完整题目 · 移出全局题篮后仍可使用；原题文件须保留。')
+            except ExamError as error:
+                self.selection_status.setText(error.message_zh)
+                self.preview_button.setEnabled(False); self.export.setEnabled(False)
+        else:
+            self.selection_status.setText('旧题篮关联：重新勾选并保存，可转为本任务独立题集。'
+                if task and task.get('links') else '尚未保存题集：先选题，再明确勾选本任务使用的完整题目。')
         self.new.setEnabled(self.question.count()>0)
         self.text.setPlainText(followup_text([task]) if task else '尚无复练任务。缺考、缺失分数不自动认定为知识错误；仅有总分时需先补逐题映射。')
 
@@ -135,37 +165,49 @@ class ExamFollowupPanel(QWidget):
         try:
             basket=self.d.facade.basket()
             keys=checked_rows('只勾选用于本任务的题目（整主题保留公共材料）',[(r['key'],r.get('title_zh','未命名题')+' · '+r.get('source_zh','')) for r in basket],self)
-            if keys and self.store(link_basket(task,basket,keys)):
+            if keys and self.store(freeze_selection(task,basket,keys)):
                 self.preview=None;self.approved=False;self.show_task()
         except Exception as e:self.d.status.setText(getattr(e,'message_zh','题篮未能读取；未改动已有任务。'))
 
     def preview_paper(self):
         task=deepcopy(self.current())
         if not task:return
-        self.preview=None;self.approved=False;self.preview_task_id=task['id'];self.show_task()
+        self.preview=None;self.approved=False;self.preview_task_id=task['id']
+        self.preview_revision=request_revision(task);self.show_task()
         def prepare(report,cancelled):
-            facade=self.d.facade
+            facade=paper_session(self.d.facade, task)
             request=practice_request(task,facade.basket(),facade.paper_basket_projection())
             if cancelled():raise ExamError('本次预览已取消。')
             content=facade.create_paper_preview(request)
             return facade.prepare_mixed_paper_pagination(content.preview_id,content.preview_hash)
         def ready(value):
             from .assembly_page import MixedPaperPaginationDialog
+            current = self.current()
+            if not current or request_revision(current) != request_revision(task):
+                raise ExamError('任务题集或目标已变化，请重新预览；未替换当前任务。')
+            session = paper_session(self.d.facade, task)
             self.preview=value
             dialog=MixedPaperPaginationDialog(value.preview_model,self.d.tasks,
-                lambda key:self.d.facade.paper_preview_image(value.preview_id,key),self.d)
+                lambda key:session.paper_preview_image(value.preview_id,key),self.d)
             self._preview_dialog=dialog
             def approve():
+                current = self.current()
+                if self.preview is not value or not current or request_revision(current) != request_revision(task):
+                    self.d.status.setText('任务题集或目标已变化，旧预览不能确认；请重新预览。')
+                    return
                 def done(result):
                     if result.get('status')=='approved':
                         self.approved=True;dialog.mark_confirmed();self.show_task()
-                self.d.run('确认本任务两版分页',lambda report,cancelled:self.d.facade.approve_paper_preview(value.preview_id,value.preview_hash),done)
+                self.d.run('确认本任务两版分页',lambda report,cancelled:session.approve_paper_preview(value.preview_id,value.preview_hash),done)
             dialog.preview_confirmed.connect(approve);dialog.show()
         self.d.run('生成本任务学生与教师版真实分页',prepare,ready)
 
     def export_paper(self):
         task=deepcopy(self.current());value=self.preview
         if not task or not value or not self.approved or task['id']!=self.preview_task_id:return
+        if self.preview_revision != request_revision(task):
+            self.approved=False;self.show_task()
+            self.d.status.setText('任务题集或目标已变化，请重新预览并确认；旧输出仍保留。');return
         def done(result):
             if result.get('pdf_status')!='generated':raise ExamError('两版文件未完整生成。')
             task['exports'].append({'preview_id':value.preview_id,'preview_hash':value.preview_hash,
@@ -173,7 +215,7 @@ class ExamFollowupPanel(QWidget):
             if self.store(task):
                 self.d.status.setText('本任务练习卷已导出；文件位置见下方任务记录。原题篮和组卷草稿未改动。')
                 self.text.appendPlainText('\n导出文件：\n'+'\n'.join(a['path'] for a in result['artifacts']))
-        self.d.run('导出本任务练习卷',lambda report,cancelled:self.d.facade.export_paper_preview(value.preview_id,value.preview_hash),done)
+        self.d.run('导出本任务练习卷',lambda report,cancelled:paper_session(self.d.facade, task).export_paper_preview(value.preview_id,value.preview_hash),done)
 
     def record_result(self):
         task=self.current()
