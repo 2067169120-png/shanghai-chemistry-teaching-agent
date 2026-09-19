@@ -147,3 +147,11 @@ def test_advice_versions_cover_data_paper_notes_and_scope_but_not_audit_time(exa
 def test_corrupt_score_history_does_not_get_replaced(exam):
     exam['score_changes']={'broken':True}
     with pytest.raises(ExamError):changed(exam)
+
+
+def test_advice_versions_include_diagnostics(exam):
+    original=advice_revision(exam,{},'',None)
+    copy=deepcopy(exam);copy['warnings'].append('新核对提醒')
+    assert advice_revision(copy,{},'',None)!=original
+    copy=deepcopy(exam);copy['issues'].append({'row':2,'field':'总分','detail':'新异常'})
+    assert advice_revision(copy,{},'',None)!=original

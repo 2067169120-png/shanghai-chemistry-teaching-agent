@@ -96,6 +96,7 @@ class ExamRevisionMixin:
         self.revision_history_button = QPushButton('改分与旧建议记录')
         for button in (self.correct_button,self.recalculate_button,self.revision_history_button):
             button.setAutoDefault(False); button.setObjectName('QuietButton'); bar.addWidget(button)
+        self.score_tools.setEnabled(bool(self.exam) and not bool(self._task))
         self.student_table.parentWidget().layout().insertWidget(1,self.score_tools)
         self.correct_button.clicked.connect(self.open_score_correction)
         self.recalculate_button.clicked.connect(self.recalculate)
@@ -131,7 +132,10 @@ class ExamRevisionMixin:
 
     def freshness_text(self):
         if not self.exam:return '尚无考试数据。'
-        stale = sum(task_freshness(self.exam,task)['state']!='current' for task in self.followups)
+        allowed = {row['id'] for row in self.report['students']} if self.report else set()
+        relevant = [task for task in self.followups if any(
+            target.get('exam_student_id') in allowed for target in task.get('targets', []))]
+        stale = sum(task_freshness(self.exam,task)['state']!='current' for task in relevant)
         advice = 'AI建议依据一致，仍待教师核对' if self.current_result() else (
             '旧AI建议不可作为当前建议' if self.result or self.advice_history else '尚无当前AI建议')
         return f'当前本地统计已重算；{advice}；{stale}项复练依据待核对。'
@@ -162,7 +166,8 @@ class ExamRevisionMixin:
     def open_saved(self, identity, task_id=None):
         bundle = self.store.load(identity)
         history = bundle.get('advice_history',[])
-        if not isinstance(history,list):raise ExamError('旧建议历史格式异常，请保留文件，不覆盖该记录。')
+        if not isinstance(history,list) or any(not isinstance(item,dict) or 'result' not in item for item in history):
+            raise ExamError('旧建议历史格式异常，请保留文件，不覆盖该记录。')
         self.accept_exam(bundle['exam'],persist=False)
         self.paper = bundle.get('paper',{'text':'','pages':[],'warnings':[]})
         self._rendering=True

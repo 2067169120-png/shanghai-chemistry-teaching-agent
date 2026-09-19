@@ -150,3 +150,21 @@ def test_native_layout_and_screenshots(desk):
     d.followup_panel.evidence_button.click(); settle(app)
     capture(d.followup_panel._evidence_dialog,'score-evidence-review.png')
     d.followup_panel._evidence_dialog.reject()
+
+
+def test_pending_task_count_respects_current_class(desk):
+    d,app,_=desk;seed(d);d.apply_score_change('S0001','1',0,'核对录入')
+    owner=d.exam['students'][0]['class']
+    other=next(row['class'] for row in d.exam['students'] if row['class']!=owner)
+    d.classes.setCurrentIndex(d.classes.findData(other));settle(app)
+    assert '0项复练依据待核对' in d.freshness_text()
+    d.classes.setCurrentIndex(d.classes.findData(owner));settle(app)
+    assert '1项复练依据待核对' in d.freshness_text()
+
+
+def test_invalid_advice_history_rejected_before_loading_over_current_work(desk):
+    d,app,_=desk;seed(d);original=deepcopy(d.exam)
+    bundle=d.bundle();bundle['advice_history']=['损坏的历史']
+    d.store.save(bundle,expected_revision=d._saved_revision)
+    with pytest.raises(ExamError):d.open_saved(d.exam['id'])
+    assert d.exam==original and d.store.load(d.exam['id'])==bundle

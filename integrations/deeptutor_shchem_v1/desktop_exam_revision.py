@@ -25,7 +25,8 @@ def score_revision(exam):
 
 def advice_revision(exam, paper, notes, scope):
     return digest({'exam': score_revision(exam), 'paper': paper,
-                   'notes': notes, 'scope': scope})
+                   'notes': notes, 'scope': scope,
+                   'issues': exam.get('issues', []), 'warnings': exam.get('warnings', [])})
 
 
 def full_mapping(exam):
