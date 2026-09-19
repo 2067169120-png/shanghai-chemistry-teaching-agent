@@ -66,7 +66,7 @@ def scroll_widget(widget):
     s=QScrollArea();s.setWidgetResizable(True);s.setWidget(widget);return s
 
 
-class ExamDashboard(QDialog):
+class _ExamDashboardBase(QDialog):
     preparation_requested=Signal(str)
     def __init__(self,facade,tasks,parent=None):
         super().__init__(parent);self.facade=facade;self.tasks=tasks
@@ -307,6 +307,10 @@ class ExamDashboard(QDialog):
 
     def request_ai(self):
         if not self.exam or self._task:return
+        try:
+            self.check_disk_current(); self.render()
+        except ExamError as error:self.status.setText(error.message_zh);return
+        request_stamp=self.advice_input_stamp(); expected_disk=self._saved_revision
         profile=self.model.currentData()
         if profile is None:self.status.setText('请先在工作台“设置”保存API连接，再点击刷新模型。');return
         try:
@@ -325,9 +329,10 @@ class ExamDashboard(QDialog):
         accepted=d.exec()==QDialog.DialogCode.Accepted;d.deleteLater()
         if not accepted:return
         scope=self.classes.currentData()
+        if request_stamp!=self.advice_input_stamp():
+            self.status.setText('确认期间资料已变化，请重新核对发送内容。');return
         def done(result):
-            self.result=result;self.result_scope=scope;self.dirty=True;self.ai_result.setPlainText(advice_text(result));self.save_current()
-            self.status.setText('讲评草稿已返回。统计数字没有被模型修改，请教师核对建议后安排教学。')
+            self.accept_advice_result(result,scope,request_stamp,expected_disk)
         self.run('API生成讲评草稿',lambda report,cancelled:generate_advice(self.facade,profile.profile_id,profile.revision,payload,pages,confirmed=True,cancelled=cancelled,transport=getattr(self.facade,"_exam_transport",None)),done)
 
     def bundle(self):
@@ -397,3 +402,10 @@ class ExamDashboard(QDialog):
             self.status.setText('任务进行中，请先停止等待，任务结束后再返回。');event.ignore();return
         if not self.flush_or_discard():event.ignore();return
         self._closed=True;event.accept()
+
+
+from .exam_revision_ui import ExamRevisionMixin
+
+
+class ExamDashboard(ExamRevisionMixin, _ExamDashboardBase):
+    """Existing exam dashboard with explicit local evidence-version support."""
