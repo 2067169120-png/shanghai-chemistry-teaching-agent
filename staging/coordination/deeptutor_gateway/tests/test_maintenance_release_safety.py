@@ -53,7 +53,7 @@ def assert_read_only(workflow):
         for step in job.get('steps', []):
             if step.get('uses', '').startswith('actions/checkout@'):
                 assert step.get('with', {}).get('persist-credentials') == 'false'
-    body = json.dumps(workflow, ensure_ascii=False)
+    body = json.dumps({'jobs': workflow.get('jobs', {}), 'env': workflow.get('env', {})}, ensure_ascii=False)
     for forbidden in ('prepare_verified_release.py', 'gh release ', 'git push', 'secrets.'):
         assert forbidden not in body
 
@@ -109,3 +109,10 @@ def test_branch_filters_do_not_hide_a_future_maintenance_publisher():
     assert not active_on_branch({'on': {'push': {'branches': ['feature/lesson-design-0.1.100']}}})
     assert not active_on_branch({'on': {'workflow_dispatch': None}})
     assert not matches(['**', '!feature/**'], BRANCH)
+
+
+def test_watching_a_publisher_file_is_not_executing_it():
+    workflow = {'on': {'push': {'paths': ['runtime/deeptutor_shchem/prepare_verified_release.py']}},
+                'permissions': {'contents': 'read'}, 'jobs': {'verify': {'steps': [{'run': 'python check_docs.py'}]}}}
+    assert active_on_branch(workflow)
+    assert_read_only(workflow)
