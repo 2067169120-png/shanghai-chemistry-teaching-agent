@@ -54,7 +54,7 @@ jobs:
               'test_backup_paths.py', 'test_exam_analysis.py',
               'test_teaching_closure.py', 'test_work_batches.py',
               'test_desktop_state_corruption.py', 'test_explorer_basket_recovery_ui.py',
-              'test_complete_readme.py',
+              'test_complete_readme.py', 'test_maintenance_release_safety.py',
           ]
           out = pathlib.Path('candidate-qa'); out.mkdir(exist_ok=True)
           sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
