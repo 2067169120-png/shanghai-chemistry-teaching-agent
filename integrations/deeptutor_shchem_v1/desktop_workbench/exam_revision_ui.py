@@ -346,7 +346,7 @@ class FollowupRevisionMixin:
                 current=self.current_for(task)
                 changed=review_task(self.d.exam,current,reason.text())
                 if self.store(changed,expected=current):
-                    self.preview=None; self.approved=False; self.show_task(); dialog.accept()
+                    self.preview=None; self.approved=False; self.d.render(); dialog.accept()
                 else:message.setText('核对记录未保存，请检查主窗口提示；输入仍保留。')
             except ExamError as error:message.setText(error.message_zh)
         buttons.accepted.connect(save)

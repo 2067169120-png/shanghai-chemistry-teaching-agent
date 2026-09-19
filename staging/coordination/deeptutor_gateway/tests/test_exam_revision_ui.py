@@ -89,6 +89,8 @@ def test_teacher_review_restores_task_but_does_not_revive_ai(desk):
     assert task['targets']==original['targets'] and task['attempts']==original['attempts']
     assert panel.preview_button.isEnabled() and not panel.export.isEnabled()
     assert d.current_result() is None
+    assert '0项复练依据待核对' in d.overview_note.text()
+    assert '0项复练依据待核对' in d.problem_note.text()
 
 
 def test_stale_task_cannot_reuse_an_existing_approval(desk):
