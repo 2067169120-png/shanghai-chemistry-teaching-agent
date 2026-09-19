@@ -72,7 +72,8 @@ def revise_selection(task, keys, goal):
 def request_revision(task):
     """Attempts/export history do not alter a paper; selected content does."""
     return digest({name: task.get(name) for name in (
-        'id', 'exam_id', 'question', 'goal', 'links', 'practice_set')})
+        'id', 'exam_id', 'question', 'goal', 'links', 'practice_set',
+        '_baseline_evidence', '_evidence_reviews')})
 
 
 def append_export(current, expected, preview, result):

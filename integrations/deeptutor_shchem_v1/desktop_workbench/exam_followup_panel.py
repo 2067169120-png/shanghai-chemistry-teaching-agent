@@ -29,7 +29,7 @@ def checked_rows(title, rows, parent):
     dialog.deleteLater(); return keys
 
 
-class ExamFollowupPanel(QWidget):
+class _ExamFollowupPanelBase(QWidget):
     def __init__(self, dashboard):
         super().__init__(dashboard); self.d = dashboard; self.preview = None; self.approved = False
         self.preview_task_id = None; self.preview_revision = None
@@ -224,7 +224,7 @@ class ExamFollowupPanel(QWidget):
     def preview_paper(self):
         task=deepcopy(self.current())
         if not task:return
-        try:self.current_for(task)
+        try:self.current_for(task,require_fresh=True)
         except ExamError as error:self.d.status.setText(error.message_zh);return
         self.preview=None;self.approved=False;self.preview_task_id=task['id']
         self.preview_revision=request_revision(task);self.show_task()
@@ -236,18 +236,18 @@ class ExamFollowupPanel(QWidget):
             return facade.prepare_mixed_paper_pagination(content.preview_id,content.preview_hash)
         def ready(value):
             from .assembly_page import MixedPaperPaginationDialog
-            self.current_for(task)
+            self.current_for(task,require_fresh=True)
             session = paper_session(self.d.facade, task); self.preview=value
             dialog=MixedPaperPaginationDialog(value.preview_model,self.d.tasks,
                 lambda key:session.paper_preview_image(value.preview_id,key),self.d)
             self._preview_dialog=dialog
             def approve():
                 try:
-                    self.current_for(task)
+                    self.current_for(task,require_fresh=True)
                     if self.preview is not value:raise ExamError('预览已更新，请核对当前版本。')
                 except ExamError as error:self.d.status.setText(error.message_zh);return
                 def done(result):
-                    self.current_for(task)
+                    self.current_for(task,require_fresh=True)
                     if self.preview is not value:raise ExamError('旧预览的确认结果已忽略，请核对当前版本。')
                     if result.get('status')=='approved':
                         self.approved=True;dialog.mark_confirmed();self.show_task()
@@ -261,10 +261,10 @@ class ExamFollowupPanel(QWidget):
         if self.preview_revision != request_revision(task):
             self.approved=False;self.show_task()
             self.d.status.setText('任务题集或目标已变化，请重新预览并确认；旧输出仍保留。');return
-        try:self.current_for(task)
+        try:self.current_for(task,require_fresh=True)
         except ExamError as error:self.d.status.setText(error.message_zh);return
         def done(result):
-            current = self.current_for(task)
+            current = self.current_for(task,require_fresh=True)
             if self.preview is not value:raise ExamError('预览已更新，未登记旧输出；已生成文件仍保留。')
             changed = append_export(current, task, value, result)
             if self.store(changed, expected=current):
@@ -300,3 +300,10 @@ class ExamFollowupPanel(QWidget):
                 if self.store(record, expected=current):dialog.accept()
             except ExamError as error:msg.setText(error.message_zh)
         buttons.accepted.connect(save);dialog.exec();dialog.deleteLater()
+
+
+from .exam_revision_ui import FollowupRevisionMixin
+
+
+class ExamFollowupPanel(FollowupRevisionMixin, _ExamFollowupPanelBase):
+    """Existing task editor with an explicit score-evidence review gate."""

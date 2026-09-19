@@ -37,10 +37,11 @@ def create_followup(exam, question_number, student_ids, goal, due_date):
             raise ExamError('缺考或本题缺少有效成绩的学生，请先补充证据，不作为本次失分复练对象。')
         targets.append({'exam_student_id': sid, 'local_label': s['local_label'],
                         'baseline_score': score, 'baseline_maximum': question['max_score']})
-    return {'schema': 'shchem.exam-followup.v1', 'id': uuid4().hex, 'exam_id': exam['id'],
+    from .desktop_exam_revision import bind_task
+    return bind_task(exam, {'schema': 'shchem.exam-followup.v1', 'id': uuid4().hex, 'exam_id': exam['id'],
             'created_at': datetime.now(timezone.utc).isoformat(), 'question': question_number,
             'knowledge': question['knowledge'], 'goal': goal.strip(), 'due_date': due_date,
-            'targets': targets, 'library_filter': None, 'links': [], 'exports': [], 'attempts': []}
+            'targets': targets, 'library_filter': None, 'links': [], 'exports': [], 'attempts': []})
 
 
 def link_basket(task, basket, keys):
