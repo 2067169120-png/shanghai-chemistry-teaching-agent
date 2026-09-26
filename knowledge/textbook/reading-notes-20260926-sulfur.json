@@ -1,0 +1,163 @@
+{
+  "schema_version": "shchem.textbook-page-reading-notes.v1",
+  "purpose": "补充既有383概念的页面研读与课堂应用，不计为新增概念。通过同批PKG-014讲义增补接入现有备课参考；本记录不自动附入原教材图片。",
+  "human_reviewed": false,
+  "original_source_redistribution": false,
+  "review_method": "page_images_read_by_model",
+  "source": {
+    "volume_id": "TB-M1",
+    "title": "普通高中教科书 化学 必修 第一册",
+    "sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+    "pdf_pages_viewed": [
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88
+    ],
+    "printed_pages_viewed": [
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83
+    ]
+  },
+  "notes": [
+    {
+      "id": "READ-TB-M1-20260926-01",
+      "section_key": "TB-M1-C3:3.1",
+      "title": "硫的价态表与条件",
+      "pdf_pages": [
+        80,
+        81,
+        88
+      ],
+      "printed_pages": [
+        75,
+        76,
+        83
+      ],
+      "source_anchors": [
+        "图3.1",
+        "印刷76页的反应比较",
+        "练习巩固第3题"
+      ],
+      "summary": "先列硫及主要含硫物质的价态，再逐条补反应物和条件；分清同一元素的不同价态与金属生成物中的价态。单凭元素处于中间价态不能代替具体反应证据。",
+      "classroom_check": "让学生为一条转化注明条件并指出氧化剂、还原剂；答案由教师回看原页核对。",
+      "lecture_package_id": "PKG-014"
+    },
+    {
+      "id": "READ-TB-M1-20260926-02",
+      "section_key": "TB-M1-C3:3.1",
+      "title": "由现象区分酸性、漂白和还原",
+      "pdf_pages": [
+        81,
+        82,
+        83
+      ],
+      "printed_pages": [
+        76,
+        77,
+        78
+      ],
+      "source_anchors": [
+        "图3.2",
+        "图3.3",
+        "二氧化硫的还原性实验"
+      ],
+      "summary": "把石蕊、品红及氧化剂的反应分别记录。品红受热复色的证据用于讨论漂白生成物稳定性，不把所有褪色归为漂白；实验现象与化学解释分栏。",
+      "classroom_check": "给三种试剂的观察结果，要求学生分别说出证据能够支持的性质，避免只答褪色。",
+      "lecture_package_id": "PKG-014"
+    },
+    {
+      "id": "READ-TB-M1-20260926-03",
+      "section_key": "TB-M1-C3:3.1",
+      "title": "二氧化硫的两种氧化还原角色",
+      "pdf_pages": [
+        83,
+        88
+      ],
+      "printed_pages": [
+        78,
+        83
+      ],
+      "source_anchors": [
+        "印刷78页反应式",
+        "练习巩固第3题"
+      ],
+      "summary": "二氧化硫遇硫化氢与遇氧气时，硫的价态变化方向不同；与氧气的转化须保留加热、催化剂和可逆符号。三氧化硫与水生成硫酸的转化不涉及硫价态改变。",
+      "classroom_check": "让学生画价态箭头并注明条件，而非只背物质顺序。",
+      "lecture_package_id": "PKG-014"
+    },
+    {
+      "id": "READ-TB-M1-20260926-04",
+      "section_key": "TB-M1-C3:3.1",
+      "title": "浓硫酸的特性与适用条件",
+      "pdf_pages": [
+        84,
+        85,
+        87
+      ],
+      "printed_pages": [
+        79,
+        80,
+        82
+      ],
+      "source_anchors": [
+        "图3.4",
+        "图3.5",
+        "学习指南的鉴别方案评价"
+      ],
+      "summary": "吸水、脱水和强氧化性分开整理；铜的反应与常温铁铝钝化要同时写浓度和温度。鉴别方案评价应说明物性或反应前提，不把一种现象解释套用到所有材料。",
+      "classroom_check": "比较同一金属面对浓、稀硫酸的条件，检查能否说明钝化不是零反应。",
+      "lecture_package_id": "PKG-014"
+    },
+    {
+      "id": "READ-TB-M1-20260926-05",
+      "section_key": "TB-M1-C3:3.1",
+      "title": "硫酸根检验中的先后顺序",
+      "pdf_pages": [
+        86
+      ],
+      "printed_pages": [
+        81
+      ],
+      "source_anchors": [
+        "表3.1",
+        "印刷81页硫酸根检验及干扰讨论"
+      ],
+      "summary": "将酸化、必要时分离沉淀并取清液、加入氯化钡分成步骤；明确观察的是哪一步新生成的沉淀。教材从碳酸盐干扰展开，讲义进一步提醒银离子等情形，二者的来源分别保留。",
+      "classroom_check": "学生为每一步写出目的，并指出不能由任意白色沉淀直接推出硫酸根。",
+      "lecture_package_id": "PKG-014"
+    },
+    {
+      "id": "READ-TB-M1-20260926-06",
+      "section_key": "TB-M1-C3:3.1",
+      "title": "用评价任务收束两课时",
+      "pdf_pages": [
+        87,
+        88
+      ],
+      "printed_pages": [
+        82,
+        83
+      ],
+      "source_anchors": [
+        "学习指南",
+        "练习巩固第2—4题"
+      ],
+      "summary": "课堂先建立性质和证据的表格，再做鉴别方案评价和转化条件整理。教材练习的完整图表应从本机原页查看；此记录只描述教学用途，不复制原题或附造官方评分点。",
+      "classroom_check": "检查学生的答题依据是否包含试剂、条件和排干扰，不用题目做过与否代替掌握证据。",
+      "lecture_package_id": "PKG-014"
+    }
+  ]
+}
