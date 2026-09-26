@@ -677,6 +677,18 @@ class PersonalVisualQuestionService:
         current = self._image_for_row(row, snapshot, pages, image_id, raw_pages=raw_pages, crop_records=records)
         affected = [{"key": item["key"], "title": item["title"], "revision": item["revision"]}
                     for item in rows if any(image["evidence_id"] == evidence["evidence_id"] for image in item["images"])]
+        evidence_by_id = {item["evidence_id"]: item for item in snapshot["candidate"]["evidence"]}
+        review_images = []
+        # Preserve the original question's descriptor order and source roles.
+        # This only exposes locators; each selection must read its exact version again.
+        for image in row["images"]:
+            item = evidence_by_id[image["evidence_id"]]
+            source = pages[(item["source_file_id"], item["page_number"], item["page_sha256"])]
+            review_images.append({
+                "image_id": image["image_id"], "role": image["role"],
+                "page_number": source["page_number"], "page_sha256": source["page_sha256"],
+                "source_label": source["source_name"],
+            })
         options = {
             "batch_id": batch_id, "key": key, "revision": revision, "image_id": image_id,
             "evidence_id": evidence["evidence_id"], "source_role": evidence["source_role"],
@@ -689,6 +701,7 @@ class PersonalVisualQuestionService:
             "crop_revision": state["crop_revision"], "source_binding": state["binding"],
             "crop_active": state["active"],
             "original_image": original, "current_image": current,
+            "review_images": review_images,
             "affected_questions": affected, "affected_question_keys": [item["key"] for item in affected],
             "history": self.crop_store.history(batch_id, evidence["evidence_id"]),
             "warning": (row["crop_warning"] + " " + COPY_WARNING).strip(),

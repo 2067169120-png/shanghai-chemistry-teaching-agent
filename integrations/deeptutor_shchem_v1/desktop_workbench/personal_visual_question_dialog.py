@@ -1224,10 +1224,11 @@ class PersonalVisualQuestionDialog(QDialog):
                 return
             accepted = editor.exec() == QDialog.DialogCode.Accepted
             result = deepcopy(editor.saved_result)
+            saved_options = deepcopy(editor.options)
             editor.deleteLater()
             self._crop_busy = False
             if accepted and result is not None:
-                self._crop_saved(token, options, result)
+                self._crop_saved(token, saved_options, result)
             else:
                 set_status(self.status, "info", "已取消裁剪调整；来源原页、裁片与本窗口选题均未改动。")
                 self._update_actions()

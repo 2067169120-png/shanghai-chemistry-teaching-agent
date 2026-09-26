@@ -493,8 +493,10 @@ class WordQuestionService:
                 "catalog": catalog,
                 "history": self.attribute_store.history(key),
                 "stored_revision": stored["revision"] if stored else None,
+                "range_review_required": bool(stored and not bound),
+                "previous_attributes": deepcopy(stored) if stored and not bound else None,
                 "warning": "\n".join(catalog.get("warnings",[])) + "\n" + (
-                    "题目范围已变化；下面是当前题目的新建议。原教师修改仍保存在历史中，请重新核对。"
+                    "题目范围已变化；下面是当前题目的新建议。原标签仍保存在历史中，请对照新范围重新核对。"
                     if stored and not bound
                     else ""
                 ),
@@ -522,6 +524,7 @@ class WordQuestionService:
         *,
         expected_attribute_revision,
         expected_stored_revision=None,
+        reconfirm_range=False,
     ):
         # The UI shares one service across its task workers. Range changes and
         # label saves must not interleave between source resolution and commit.
@@ -532,6 +535,7 @@ class WordQuestionService:
                 updates,
                 expected_attribute_revision=expected_attribute_revision,
                 expected_stored_revision=expected_stored_revision,
+                reconfirm_range=reconfirm_range,
             )
 
     def _save_attributes(
@@ -542,6 +546,7 @@ class WordQuestionService:
         *,
         expected_attribute_revision,
         expected_stored_revision=None,
+        reconfirm_range=False,
     ):
         # Fresh source resolution precedes both comparison and atomic store CAS.
         options = self.attribute_options(key, revision)
@@ -557,6 +562,8 @@ class WordQuestionService:
             if stored_revision and stored_revision != attributes["revision"]
             else None
         )
+        if type(reconfirm_range) is not bool or (reconfirm_range and replacement is None):
+            raise WordQuestionError("仅可明确重核已变化的题目范围；请刷新标签后继续。")
         try:
             return self.attribute_store.save_teacher_edit(
                 key,
@@ -565,6 +572,7 @@ class WordQuestionService:
                 curriculum_entries=options["catalog"],
                 initial_attributes=initial,
                 replacement_attributes=replacement,
+                reconfirm_range=reconfirm_range,
             )
         except WordQuestionAttributeError as exc:
             raise WordQuestionError(exc.message_zh) from exc

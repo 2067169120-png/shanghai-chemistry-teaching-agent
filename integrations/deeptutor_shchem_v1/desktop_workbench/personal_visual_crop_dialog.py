@@ -7,10 +7,12 @@ import math
 from collections.abc import Mapping
 from copy import deepcopy
 
-from PySide6.QtCore import QRectF, Qt, Signal
+from PySide6.QtCore import QEvent, QRectF, QSignalBlocker, QTimer, Qt, Signal
 from PySide6.QtGui import QColor, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
+    QBoxLayout,
     QCheckBox,
+    QComboBox,
     QDialog,
     QGraphicsScene,
     QGraphicsView,
@@ -23,13 +25,14 @@ from PySide6.QtWidgets import (
     QSlider,
     QSpinBox,
     QSplitter,
+    QStackedWidget,
     QTabWidget,
     QVBoxLayout,
     QWidget,
 )
 
 from ..desktop_visual_import_v2 import _MAX_IMAGE_EDGE, _MAX_PAGE_BYTES
-from .components import set_status
+from .components import page_scroll, set_status
 from .preparation_images_widget import _LocalImagePreview
 
 
@@ -117,6 +120,7 @@ class CropCanvas(QGraphicsView):
     """Scene coordinates are original-page pixels, including at any zoom."""
 
     bounds_changed = Signal(object)
+    view_changed = Signal(float, bool)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -137,6 +141,7 @@ class CropCanvas(QGraphicsView):
         self._rectangle = None
 
     def set_source(self, pixmap, current):
+        self._anchor = None
         self.scene().clear()
         self.scene().addPixmap(pixmap)
         self.scene().setSceneRect(QRectF(0, 0, pixmap.width(), pixmap.height()))
@@ -162,14 +167,18 @@ class CropCanvas(QGraphicsView):
             self._rectangle.setRect(QRectF(left, top, right - left, bottom - top))
 
     def fit_page(self):
+        self._anchor = None
         self._fit_mode = True
         if self._size:
             self.fitInView(self.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
+            self.view_changed.emit(self.transform().m11() * 100, True)
 
     def set_zoom(self, percent):
+        self._anchor = None
         self._fit_mode = False
         self.resetTransform()
         self.scale(percent / 100, percent / 100)
+        self.view_changed.emit(float(percent), False)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -221,6 +230,133 @@ class CropCanvas(QGraphicsView):
             super().mouseReleaseEvent(event)
 
 
+class _CropImagePreview(QWidget):
+    """Zoom and pan the actual crop inside the comparison window."""
+
+    # Retain the optional existing detached viewer for callers using it.
+    _open_zoom = _LocalImagePreview._open_zoom
+    _forget_zoom = _LocalImagePreview._forget_zoom
+    close_zoom = _LocalImagePreview.close_zoom
+
+    def __init__(self):
+        super().__init__()
+        self._source = QPixmap()
+        self._caption = "裁片"
+        self._zoom_dialog = None
+        self._fit_mode = True
+        self._fit_timer = QTimer(self)
+        self._fit_timer.setSingleShot(True)
+        self._fit_timer.timeout.connect(self._fit_visible_crop)
+        self.setMinimumWidth(0)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        self.viewer = QStackedWidget()
+        self.viewer.setMinimumSize(0, 180)
+        self.image = QGraphicsView()
+        self.image.setScene(QGraphicsScene(self.image))
+        self.image.setMinimumSize(0, 150)
+        self.image.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        self.image.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self.image.setAccessibleName("实际裁片同窗缩放预览，可拖动平移")
+        self.image.horizontalScrollBar().setStyleSheet("QScrollBar:horizontal { height: 10px; }")
+        self.image.viewport().installEventFilter(self)
+        self.empty = _label("")
+        self.empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.viewer.addWidget(self.image)
+        self.viewer.addWidget(self.empty)
+        root.addWidget(self.viewer, 1)
+        toolbar = QHBoxLayout()
+        self.fit_button = QPushButton("适合裁片")
+        self.fit_button.setAutoDefault(False)
+        self.zoom = QSlider(Qt.Orientation.Horizontal)
+        self.zoom.setRange(25, 200)
+        self.zoom.setValue(100)
+        self.zoom.setMinimumWidth(20)
+        self.zoom.setAccessibleName("实际裁片同窗缩放百分比")
+        self.zoom_value = _label("适合")
+        self.zoom_value.setFixedWidth(52)
+        self.zoom_value.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+        self.zoom_button = QPushButton("另窗")
+        self.zoom_button.setAccessibleName("另开窗口放大查看裁片")
+        self.zoom_button.setAutoDefault(False)
+        for control in (self.fit_button, self.zoom, self.zoom_value, self.zoom_button):
+            toolbar.addWidget(control, 1 if control is self.zoom else 0)
+        root.addLayout(toolbar)
+        self.fit_button.clicked.connect(self.fit_crop)
+        self.zoom.valueChanged.connect(self.set_zoom)
+        self.zoom_button.clicked.connect(self._open_zoom)
+        self.clear("尚未读取裁片。")
+
+    @property
+    def has_image(self):
+        return not self._source.isNull()
+
+    def clear(self, message):
+        self.close_zoom()
+        self._fit_timer.stop()
+        self._source = QPixmap()
+        self.image.scene().clear()
+        self.empty.setText(message)
+        self.viewer.setCurrentWidget(self.empty)
+        for control in (self.fit_button, self.zoom, self.zoom_button):
+            control.setEnabled(False)
+
+    def set_bytes(self, raw, caption):
+        source = QPixmap()
+        if not isinstance(raw, bytes) or not source.loadFromData(raw):
+            raise ValueError("裁片无法完整显示。")
+        self.clear("")
+        self._source, self._caption = source, caption
+        self.image.scene().addPixmap(source)
+        self.image.scene().setSceneRect(QRectF(0, 0, source.width(), source.height()))
+        self.viewer.setCurrentWidget(self.image)
+        for control in (self.fit_button, self.zoom, self.zoom_button):
+            control.setEnabled(True)
+        self.fit_crop()
+
+    def fit_crop(self):
+        self._fit_mode = True
+        self._fit_visible_crop()
+        # A hidden tab still has its previous viewport geometry. Refit once
+        # layout/show has completed, without overriding a later manual zoom.
+        self._fit_timer.start(0)
+
+    def _fit_visible_crop(self):
+        if not self._fit_mode or not self.image.isVisible():
+            return
+        if self.has_image:
+            self.image.fitInView(self.image.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
+            percent = round(self.image.transform().m11() * 100)
+            self.zoom_value.setText(f"{percent}%")
+            with QSignalBlocker(self.zoom):
+                self.zoom.setValue(percent)
+
+    def set_zoom(self, percent):
+        if self.has_image:
+            self._fit_mode = False
+            self._fit_timer.stop()
+            self.image.resetTransform()
+            self.image.scale(percent / 100, percent / 100)
+            self.zoom_value.setText(f"{percent}%")
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self._fit_mode:
+            self._fit_timer.start(0)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if self._fit_mode:
+            self._fit_timer.start(0)
+
+    def eventFilter(self, watched, event):
+        if (watched is self.image.viewport()
+                and event.type() in (QEvent.Type.Resize, QEvent.Type.Show)
+                and self._fit_mode):
+            self._fit_timer.start(0)
+        return super().eventFilter(watched, event)
+
+
 class PersonalVisualCropDialog(QDialog):
     """Only a successful frozen service save closes this dialog as Accepted."""
 
@@ -234,28 +370,40 @@ class PersonalVisualCropDialog(QDialog):
         self._generation = 0
         self._preview = None
         self._task_id = None
+        self._task_serial = 0
+        self._drafts = {}
+        self._context = tuple(self.options.get(key) for key in ("batch_id", "key", "revision"))
         self._size = (1, 1)
         self._initial_bounds = (0, 0, 1, 1)
-        self.setWindowTitle('调整题图截取范围')
+        self.setWindowTitle("原页与裁片审核")
         self.resize(1160, 820)
-        self.setMinimumSize(420, 600)
-        root = QVBoxLayout(self)
-        title = " · ".join(
-            str(self.options.get(key) or "")
-            for key in ("theme_title", "role_label", "source_label")
-        )
-        self.heading = _label(title or "图片裁剪返工")
+        self.setMinimumSize(320, 400)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(10, 10, 10, 10)
+        content = QWidget()
+        root = QVBoxLayout(content)
+        root.setContentsMargins(4, 4, 4, 4)
+        self.scroll = page_scroll(content)
+        outer.addWidget(self.scroll, 1)
+        self.heading = _label(str(self.options.get("theme_title") or "图片裁剪返工"))
         self.heading.setObjectName("CardTitle")
         root.addWidget(self.heading)
+        self.image_combo = QComboBox()
+        self.image_combo.setMinimumWidth(0)
+        self.image_combo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.image_combo.setAccessibleName("选择本题的题面、共同材料或答案原页")
+        root.addWidget(self.image_combo)
+        self.source_note = _label("")
+        root.addWidget(self.source_note)
         self.scope = _label("正在核对原页与关联题目…")
         root.addWidget(self.scope)
         self.affected = QPlainTextEdit()
         self.affected.setReadOnly(True)
         self.affected.setAccessibleName("本次裁剪影响的完整题目清单")
-        self.affected.setFixedHeight(62)
+        self.affected.setFixedHeight(52)
         root.addWidget(self.affected)
         self.copy_note = _label(
-            "已带入备课、教案或课件的副本不会自动更新；保存后请重新带入完整主题。"
+            "每次只保存当前裁片，其他页暂存范围不会保存。备课、教案或课件副本不会自动更新；保存后请重新带入完整主题。"
         )
         root.addWidget(self.copy_note)
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -269,19 +417,25 @@ class PersonalVisualCropDialog(QDialog):
         )
         zoom_row = QHBoxLayout()
         self.fit_button = QPushButton("适合整页")
+        self.fit_button.setAutoDefault(False)
         self.zoom = QSlider(Qt.Orientation.Horizontal)
         self.zoom.setRange(25, 200)
         self.zoom.setValue(100)
         self.zoom.setAccessibleName("原页缩放百分比")
         self.zoom.setMinimumWidth(0)
         zoom_row.addWidget(self.fit_button)
-        zoom_row.addWidget(_label("缩放"))
         zoom_row.addWidget(self.zoom, 1)
+        self.zoom_value = _label("适合")
+        self.zoom_value.setFixedWidth(52)
+        self.zoom_value.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+        zoom_row.addWidget(self.zoom_value)
         left_layout.addLayout(zoom_row)
         self.canvas = CropCanvas()
         left_layout.addWidget(self.canvas, 1)
-        grid = QGridLayout()
+        self.edges_grid = QGridLayout()
+        self._edges_narrow = False
         self.edges = {}
+        self.edge_labels = {}
         for index, (key, label) in enumerate(
             (("left", "左边"), ("top", "上边"), ("right", "右边"), ("bottom", "下边"))
         ):
@@ -289,32 +443,39 @@ class PersonalVisualCropDialog(QDialog):
             field.setRange(0, _MAX_IMAGE_EDGE + 1)
             field.setSuffix(" px")
             field.setAccessibleName("原图像素" + label)
-            field.setMinimumWidth(0)
+            field.setMinimumWidth(field.sizeHint().width())
+            field.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             self.edges[key] = field
-            grid.addWidget(_label(label), index // 2, (index % 2) * 2)
-            grid.addWidget(field, index // 2, (index % 2) * 2 + 1)
+            edge_label = _label(label)
+            edge_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+            edge_label.setMinimumWidth(edge_label.fontMetrics().horizontalAdvance(label))
+            self.edge_labels[key] = edge_label
+            self.edges_grid.addWidget(edge_label, index // 2, (index % 2) * 2)
+            self.edges_grid.addWidget(field, index // 2, (index % 2) * 2 + 1)
             field.valueChanged.connect(self._edges_changed)
-        left_layout.addLayout(grid)
+        left_layout.addLayout(self.edges_grid)
         self.reset_button = QPushButton("恢复当前范围")
+        self.reset_button.setAutoDefault(False)
         left_layout.addWidget(self.reset_button)
         self.splitter.addWidget(left)
         self.previews = QTabWidget()
         self.previews.setMinimumWidth(0)
-        self.current_image = _LocalImagePreview()
-        self.new_image = _LocalImagePreview()
-        for preview in (self.current_image, self.new_image):
-            preview.image.setMinimumHeight(110)
-            preview.image.setMaximumHeight(16777215)
-            preview.image.setSizePolicy(
-                QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding
-            )
-            preview.layout().setStretch(0, 1)
-        self.previews.addTab(self.new_image, '调整后')
-        self.previews.addTab(self.current_image, '调整前')
+        self.current_image = _CropImagePreview()
+        self.new_image = _CropImagePreview()
+        self.previews.addTab(self.new_image, "新裁片 · 未保存")
+        self.previews.addTab(self.current_image, "当前裁片")
+        self.previews.setCurrentIndex(1)
         self.splitter.addWidget(self.previews)
         self.splitter.setSizes([650, 450])
-        root.addWidget(self.splitter, 1)
-        self.impact_confirmed = QCheckBox("已检查新裁片边界及对关联题目的影响")
+        # QSplitter recalculates its own maximum height from its children.
+        # Bound a surrounding widget so image size hints cannot push the
+        # confirmation/status below a wide viewport after a page change.
+        self.comparison = QWidget()
+        comparison_layout = QVBoxLayout(self.comparison)
+        comparison_layout.setContentsMargins(0, 0, 0, 0)
+        comparison_layout.addWidget(self.splitter)
+        root.addWidget(self.comparison)
+        self.impact_confirmed = QCheckBox("已核对边界与关联题影响")
         self.impact_confirmed.setAccessibleName("明确确认已核对新裁片及影响题目")
         self.impact_confirmed.setSizePolicy(
             QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred
@@ -322,19 +483,20 @@ class PersonalVisualCropDialog(QDialog):
         root.addWidget(self.impact_confirmed)
         self.status = _label("未预览、未保存。")
         root.addWidget(self.status)
-        controls = QHBoxLayout()
+        self.controls = QBoxLayout(QBoxLayout.Direction.LeftToRight)
         self.cancel_button = QPushButton("取消")
         self.preview_button = QPushButton('预览截取结果')
         self.save_button = QPushButton("确认保存裁剪")
         self.save_button.setObjectName("PrimaryButton")
         for button in (self.cancel_button, self.preview_button, self.save_button):
             button.setAutoDefault(False)
-            controls.addWidget(button)
+            self.controls.addWidget(button)
         self.cancel_button.setDefault(True)
-        root.addLayout(controls)
+        outer.addLayout(self.controls)
         self.fit_button.clicked.connect(self.canvas.fit_page)
         self.zoom.valueChanged.connect(self.canvas.set_zoom)
         self.canvas.bounds_changed.connect(self._set_bounds)
+        self.canvas.view_changed.connect(self._source_zoom_changed)
         self.reset_button.clicked.connect(
             lambda: self._set_bounds(self._initial_bounds)
         )
@@ -343,6 +505,7 @@ class PersonalVisualCropDialog(QDialog):
         self.cancel_button.clicked.connect(self.reject)
         self.impact_confirmed.toggled.connect(self._actions)
         try:
+            self._load_image_choices()
             self._load_options()
         except (KeyError, TypeError, ValueError, RuntimeError):
             self._valid = False
@@ -353,8 +516,96 @@ class PersonalVisualCropDialog(QDialog):
             )
         self._actions()
 
-    def _load_options(self):
-        options = self.options
+    def _source_zoom_changed(self, percent, fit):
+        self.zoom_value.setText(f"{round(percent)}%")
+        if fit:
+            with QSignalBlocker(self.zoom):
+                self.zoom.setValue(round(percent))
+
+    def _load_image_choices(self):
+        choices = self.options.get("review_images")
+        if choices is None:
+            choices = [self.options]
+        if not isinstance(choices, list) or not choices:
+            raise ValueError("Missing review images")
+        self._review_images = {}
+        for choice in choices:
+            image_id = choice["image_id"]
+            if not isinstance(image_id, str) or not image_id or image_id in self._review_images:
+                raise ValueError("Ambiguous review image")
+            role, page = choice["role"], choice["page_number"]
+            if role not in {"question", "shared_material", "answer"} or type(page) is not int or page < 1:
+                raise ValueError("Invalid review image")
+            self._review_images[image_id] = {
+                key: choice.get(key)
+                for key in ("image_id", "role", "page_number", "page_sha256")
+            }
+            label = {"question": "题面", "shared_material": "共同材料", "answer": "参考答案"}[role]
+            self.image_combo.addItem(f"{label} · 第 {page} 页 · {choice.get('source_label') or '归档原页'}", image_id)
+        index = self.image_combo.findData(self.options["image_id"])
+        if index < 0:
+            raise ValueError("Current review image missing")
+        self.image_combo.setCurrentIndex(index)
+        self.image_combo.currentIndexChanged.connect(self._choose_image)
+
+    @staticmethod
+    def _draft_key(options):
+        return tuple(options[key] for key in ("image_id", "page_sha256", "crop_revision"))
+
+    def _choose_image(self, index):
+        image_id = self.image_combo.itemData(index)
+        if self._closed or self._busy or image_id == self.options.get("image_id"):
+            return
+        if image_id not in self._review_images:
+            return
+        old_options, old_bounds = self.options, self._pixel_bounds()
+        self._drafts[self._draft_key(old_options)] = old_bounds
+        self._invalidate_preview()
+        generation = self._generation
+        self._busy = True
+        self._actions()
+        set_status(self.status, "info", "正在读取所选原页；其他页面的范围仅在本窗口暂存。")
+
+        def failed(message):
+            if self._closed or generation != self._generation:
+                return
+            self._busy = False
+            with QSignalBlocker(self.image_combo):
+                self.image_combo.setCurrentIndex(self.image_combo.findData(old_options["image_id"]))
+            set_status(self.status, "error", str(message) or "所选原页无法核对，请刷新题目后重试。")
+            self._actions()
+
+        def ready(value):
+            if self._closed or generation != self._generation:
+                return
+            try:
+                if (not isinstance(value, Mapping)
+                        or tuple(value.get(key) for key in ("batch_id", "key", "revision")) != self._context
+                        or value.get("image_id") != image_id
+                        or any(value.get(key) != self._review_images[image_id].get(key)
+                               for key in ("role", "page_number", "page_sha256"))):
+                    raise ValueError("原页或题目版本已变化，请返回刷新后重新审核。")
+                self._load_options(value)
+            except (KeyError, TypeError, ValueError, RuntimeError):
+                failed("所选原页、裁片或版本无法核对；仍保留上一页范围，请返回刷新后重试。")
+                return
+            self._busy = False
+            with QSignalBlocker(self.image_combo):
+                self.image_combo.setCurrentIndex(self.image_combo.findData(image_id))
+            draft = self._drafts.get(self._draft_key(self.options))
+            if draft is not None:
+                self._set_bounds(draft)
+            set_status(self.status, "info", "已切换原页。保存只提交当前裁片并关闭窗口；其他暂存范围不会保存。")
+            self._actions()
+
+        self._submit(
+            "读取本题其他裁片的原页",
+            lambda: self.facade.personal_visual_question_crop_options(*self._context, image_id),
+            ready, failed,
+        )
+
+    def _load_options(self, options=None):
+        options = self.options if options is None else deepcopy(dict(options))
         width, height = options["width"], options["height"]
         if any(
             type(size) is not int or not 0 < size <= _MAX_IMAGE_EDGE
@@ -403,6 +654,17 @@ class PersonalVisualCropDialog(QDialog):
             or options["key"] not in keys
         ):
             raise ValueError("Affected question scope changed")
+        current = QPixmap()
+        raw_crop = options["current_image"]["bytes"]
+        if (not isinstance(raw_crop, bytes) or not 0 < len(raw_crop) <= _MAX_PAGE_BYTES
+                or not current.loadFromData(raw_crop)
+                or (current.width(), current.height()) != (bounds[2] - bounds[0], bounds[3] - bounds[1])):
+            raise ValueError("Current crop dimensions changed")
+        history = options.get("history", [])
+        if not isinstance(history, list):
+            raise ValueError("Invalid crop history")
+        # All new-page data is checked before replacing the visible page or draft.
+        self.options = options
         self._size, self._initial_bounds = (width, height), bounds
         self.canvas.set_source(pixmap, bounds)
         for key, field in self.edges.items():
@@ -415,18 +677,18 @@ class PersonalVisualCropDialog(QDialog):
         self.current_image.set_bytes(
             options["current_image"]["bytes"], "当前裁片，仅用于对照"
         )
-        if (
-            self.current_image._source.width(),
-            self.current_image._source.height(),
-        ) != (bounds[2] - bounds[0], bounds[3] - bounds[1]):
-            raise ValueError("Current crop dimensions changed")
+        self.previews.setCurrentIndex(1)
+        self.source_note.setText(
+            f"{options.get('role_label') or '裁片'} · 原页 {width} × {height} 像素 · 已有 {len(history)} 次裁剪记录。"
+            "保存保留历史；原页可能包含其他题或答案。"
+        )
         self.scope.setText(
             f"本次调整影响 {len(keys)} 道题。旧标签保留并待重核，受影响题需重新看图选用；不改原页、文字或答案。"
         )
         self.affected.setPlainText(
             "\n".join(str(row.get("title") or "关联题目") for row in questions)
         )
-        self.new_image.clear("在左侧画出新范围，再点击“预览新裁片”。")
+        self.new_image.clear("在原页画出新范围，再点击“预览截取结果”。")
         self._valid = True
         if bounds[2] > width or bounds[3] > height:
             self.scope.setText(
@@ -491,27 +753,38 @@ class PersonalVisualCropDialog(QDialog):
         )
         self.impact_confirmed.setEnabled(ready and self._preview is not None)
         self.cancel_button.setEnabled(not self._saving)
-        self.canvas.setEnabled(self._valid and not self._busy)
-        self.reset_button.setEnabled(self._valid and not self._busy)
+        editable = self._valid and not self._busy and not self._closed
+        self.image_combo.setEnabled(
+            editable and self.image_combo.count() > 1
+            and callable(getattr(self.facade, "personal_visual_question_crop_options", None))
+        )
+        self.canvas.setEnabled(editable)
+        self.reset_button.setEnabled(editable)
+        self.fit_button.setEnabled(editable)
+        self.zoom.setEnabled(editable)
         for field in self.edges.values():
-            field.setEnabled(self._valid and not self._busy)
+            field.setEnabled(editable)
 
     def _submit(self, label, operation, success, failure):
+        self._task_serial += 1
+        serial = self._task_serial
         self._task_id = "starting"
 
         def ready(value):
-            self._task_id = None
+            if serial == self._task_serial:
+                self._task_id = None
             success(value)
 
         def failed(message):
-            self._task_id = None
+            if serial == self._task_serial:
+                self._task_id = None
             failure(message)
 
         try:
             task_id = self.tasks.submit(
                 label, operation, on_success=ready, on_failure=failed
             )
-            if self._task_id == "starting":
+            if serial == self._task_serial and self._task_id == "starting":
                 self._task_id = task_id
         except (RuntimeError, TypeError):
             failed("本地裁剪任务暂时无法启动，请重试。")
@@ -541,15 +814,14 @@ class PersonalVisualCropDialog(QDialog):
                 expected_crop_revision=options["crop_revision"],
             ),
             lambda value: self._preview_ready(generation, expected_pixels, value),
-            self._preview_failed,
+            lambda message: self._preview_failed(message, generation=generation),
         )
 
     def _preview_ready(self, generation, expected_pixels, value):
-        self._busy = False
         if self._closed or generation != self._generation:
             self._discard(value)
-            self._actions()
             return
+        self._busy = False
         try:
             if (
                 not isinstance(value, Mapping)
@@ -597,11 +869,12 @@ class PersonalVisualCropDialog(QDialog):
         )
         self._actions()
 
-    def _preview_failed(self, message):
+    def _preview_failed(self, message, *, generation=None):
+        if self._closed or (generation is not None and generation != self._generation):
+            return
         self._busy = False
         self._invalidate_preview()
-        if not self._closed:
-            set_status(self.status, "error", str(message) or "新裁片暂时无法核对。")
+        set_status(self.status, "error", str(message) or "新裁片暂时无法核对。")
         self._actions()
 
     def _save(self):
@@ -621,6 +894,8 @@ class PersonalVisualCropDialog(QDialog):
         )
 
     def _saved(self, value):
+        if self._closed:
+            return
         self._busy = self._saving = False
         if not isinstance(value, Mapping) or not isinstance(
             value.get("revision_changes"), list
@@ -642,6 +917,7 @@ class PersonalVisualCropDialog(QDialog):
         if self._saving:
             return
         self._closed = True
+        self._generation += 1
         self._discard(self._preview)
         self._preview = None
         self.current_image.close_zoom()
@@ -659,11 +935,27 @@ class PersonalVisualCropDialog(QDialog):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         if hasattr(self, "splitter"):
+            narrow = self.width() < 760
+            compact = self.width() < 520
+            if compact != self._edges_narrow:
+                self._edges_narrow = compact
+                for key in self.edges:
+                    self.edges_grid.removeWidget(self.edge_labels[key])
+                    self.edges_grid.removeWidget(self.edges[key])
+                for index, key in enumerate(self.edges):
+                    row, column = (index, 0) if compact else (index // 2, index % 2 * 2)
+                    self.edges_grid.addWidget(self.edge_labels[key], row, column)
+                    self.edges_grid.addWidget(self.edges[key], row, column + 1)
             orientation = (
                 Qt.Orientation.Vertical
-                if self.width() < 760
+                if narrow
                 else Qt.Orientation.Horizontal
             )
             if self.splitter.orientation() != orientation:
                 self.splitter.setOrientation(orientation)
-                self.splitter.setSizes([400, 260])
+            self.comparison.setFixedHeight(900 if compact else 780 if narrow else max(380, self.height() - 370))
+            self.splitter.setSizes([560, 340] if compact else [450, 330] if narrow else [650, 450])
+            self.controls.setDirection(
+                QBoxLayout.Direction.TopToBottom if compact
+                else QBoxLayout.Direction.LeftToRight
+            )

@@ -116,11 +116,24 @@ class WordQuestionAttributesDialog(QDialog):
         self.catalog = deepcopy(options["catalog"])
         self.expected_attribute_revision = self.attributes["revision"]
         self.expected_stored_revision = options.get("stored_revision")
+        self.range_review_required = options.get("range_review_required") is True
+        self.previous_attributes = None
+        self.reconfirm_range = False
+        if self.range_review_required:
+            previous = validate_attributes(options.get("previous_attributes"))
+            if (
+                previous["key"] != self.attributes["key"]
+                or previous["source_sha256"] != self.attributes["source_sha256"]
+                or previous["revision"] != self.expected_stored_revision
+                or previous["question_revision"] == self.attributes["question_revision"]
+            ):
+                raise WordQuestionAttributeError("旧标签与本次范围重核不一致，请重新打开。")
+            self.previous_attributes = previous
         self.updates = None
         self._proposal = None
         self.setWindowTitle("修改教学标签")
         self.resize(720, 780)
-        self.setMinimumSize(400, 520)
+        self.setMinimumSize(360, 520)
         outer = QVBoxLayout(self)
         outer.addWidget(_label(item.get("title") or "当前 Word 题目"))
         outer.addWidget(
@@ -137,6 +150,23 @@ class WordQuestionAttributesDialog(QDialog):
         content.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         form = QFormLayout(content)
         form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
+        self.range_review_check = QCheckBox("已核对新范围与下列标签", content)
+        self.range_review_check.setAccessibleName("明确确认已按当前题目范围重新核对标签")
+        self.range_review_check.setVisible(self.range_review_required)
+        if self.range_review_required:
+            previous_view = QPlainTextEdit()
+            previous_view.setReadOnly(True)
+            previous_view.setAccessibleName("旧范围标签，仅供对照，不自动沿用")
+            previous_view.setFixedHeight(138)
+            previous_view.setPlainText("\n".join(
+                f"{name}：{value}"
+                for name, value in attribute_summary(self.previous_attributes).items()
+            ))
+            form.addRow("旧范围标签（只读，不自动沿用）", previous_view)
+            form.addRow(_label(
+                "下方表单是新范围的建议。核对题干、共同材料和答案范围后，可保留这些值、修改标签，或保留待确认；保存前请明确勾选重核。"
+            ))
+            form.addRow(self.range_review_check)
         self.primary_combo = _combo("主知识点，从现有知识目录选择")
         self.primary_combo.addItem("待标记 / 暂不映射规范知识点", "unknown")
         knowledge = self.catalog.get("knowledge_points", [])
@@ -216,7 +246,8 @@ class WordQuestionAttributesDialog(QDialog):
         entries = []
         for raw in history:
             entry = validate_attributes(raw)
-            if entry["key"] != self.attributes["key"]:
+            if (entry["key"] != self.attributes["key"]
+                    or entry["source_sha256"] != self.attributes["source_sha256"]):
                 raise WordQuestionAttributeError("标签历史与当前题目不一致。")
             origin = (
                 "教师修订"
@@ -275,6 +306,11 @@ class WordQuestionAttributesDialog(QDialog):
             item.setHidden(bool(query and query not in item.text().casefold()))
 
     def _preview(self):
+        self._proposal = None
+        self.reconfirm_range = False
+        if self.range_review_required and not self.range_review_check.isChecked():
+            set_status(self.status, "attention", "请先核对当前题目范围，并勾选已重新核对标签。")
+            return
         try:
             proposal = build_teacher_updates(
                 self.attributes,
@@ -292,11 +328,12 @@ class WordQuestionAttributesDialog(QDialog):
                 },
                 self.catalog,
             )
-            if not proposal:
+            if not proposal and not self.range_review_required:
                 set_status(self.status, "info", "尚无变更；可继续修改或取消。")
                 return
-            after = apply_teacher_edits(
-                self.attributes, proposal, curriculum_entries=self.catalog
+            after = (
+                apply_teacher_edits(self.attributes, proposal, curriculum_entries=self.catalog)
+                if proposal else self.attributes
             )
         except (KeyError, TypeError, WordQuestionAttributeError) as error:
             set_status(
@@ -306,13 +343,22 @@ class WordQuestionAttributesDialog(QDialog):
             )
             return
         old, new = attribute_summary(self.attributes), attribute_summary(after)
-        self.comparison.setPlainText(
-            "\n\n".join(
+        comparison = "\n\n".join(
                 f"{field}\n修改前：{old[field]}\n修改后：{new[field]}"
                 for field in old
                 if old[field] != new[field]
-            )
         )
+        if self.range_review_required:
+            previous = attribute_summary(self.previous_attributes)
+            comparison = (
+                "本次将标签绑定到已核对的新题目范围；旧范围标签和历史继续保留。\n"
+                "以下逐项对照旧范围标签与本次保存值。待确认项目仍保持待确认，不表示化学审核通过。\n\n"
+                + "\n\n".join(
+                    f"{field}\n旧范围：{previous[field]}\n本次保存：{new[field]}"
+                    for field in previous
+                )
+            )
+        self.comparison.setPlainText(comparison)
         self._proposal = proposal
         self.pages.setCurrentIndex(1)
         self.preview_button.hide()
@@ -324,6 +370,7 @@ class WordQuestionAttributesDialog(QDialog):
 
     def _back(self):
         self._proposal = None
+        self.reconfirm_range = False
         self.pages.setCurrentIndex(0)
         self.preview_button.show()
         self.back_button.hide()
@@ -331,11 +378,17 @@ class WordQuestionAttributesDialog(QDialog):
         self.status.clear()
 
     def _confirm(self):
-        if self.pages.currentIndex() == 1 and self._proposal:
+        if self.pages.currentIndex() == 1 and self._proposal is not None:
+            if self.range_review_required and not self.range_review_check.isChecked():
+                self._back()
+                set_status(self.status, "attention", "范围重核已取消，请重新核对后预览。")
+                return
+            self.reconfirm_range = self.range_review_required
             self.updates = deepcopy(self._proposal)
             self.accept()
 
     def reject(self):
         self.updates = None
         self._proposal = None
+        self.reconfirm_range = False
         super().reject()
