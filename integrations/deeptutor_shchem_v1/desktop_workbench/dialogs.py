@@ -114,15 +114,27 @@ class ImportDialog(QDialog):
         self.resume_card = CardFrame()
         resume_layout = QVBoxLayout(self.resume_card)
         resume_layout.setContentsMargins(16, 13, 16, 13)
-        resume_title = QLabel("继续上次视觉导入")
+        resume_title = QLabel("已保存的导入批次")
         resume_title.setObjectName("CardTitle")
         resume_layout.addWidget(resume_title)
         self.resume_summary = QLabel()
         self.resume_summary.setObjectName("MutedLabel")
         self.resume_summary.setWordWrap(True)
         resume_layout.addWidget(self.resume_summary)
-        self.resume_button = QPushButton("继续最近一批")
-        self.resume_button.setAccessibleName("继续最近一批待处理的视觉导入")
+        self.resume_combo = QComboBox()
+        self.resume_combo.setAccessibleName("选择已保存的导入批次")
+        self.resume_combo.setMinimumContentsLength(10)
+        self.resume_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.resume_combo.currentIndexChanged.connect(self._show_batch_summary)
+        resume_layout.addWidget(self.resume_combo)
+        self.batch_details_button = QPushButton("查看文件结果／重试失败 Word…")
+        self.batch_details_button.setObjectName("QuietButton")
+        self.batch_details_button.clicked.connect(self._open_batch_details)
+        self.batch_details_button.setVisible(callable(getattr(self.facade, "import_batch_details", None)))
+        resume_layout.addWidget(self.batch_details_button)
+        self.resume_button = QPushButton("继续所选批次的图片识别")
+        self.resume_button.setObjectName("QuietButton")
+        self.resume_button.setAccessibleName("继续所选批次的视觉导入；发送前需预览并确认")
         self.resume_button.clicked.connect(self._resume_latest)
         resume_layout.addWidget(
             self.resume_button, alignment=Qt.AlignmentFlag.AlignLeft
@@ -303,7 +315,8 @@ class ImportDialog(QDialog):
 
     def _load_resumable_batches(self) -> None:
         try:
-            receipts = tuple(self.facade.list_resumable_visual_import_batches())
+            loader = getattr(self.facade, "list_import_batches", None)
+            receipts = tuple(loader() if callable(loader) else self.facade.list_resumable_visual_import_batches())
         except (
             AttributeError,
             DesktopFacadeError,
@@ -319,22 +332,64 @@ class ImportDialog(QDialog):
                 "上次保存的视觉导入暂时无法读取；仍可开始新的离线保存。",
             )
         self._resumable_receipts = receipts
+        selected = self.resume_combo.currentData()
+        self.resume_combo.blockSignals(True)
+        self.resume_combo.clear()
+        for receipt in receipts:
+            names = "、".join(source.filename for source in receipt.sources[:2])
+            state = "有失败文件" if receipt.native_failed_count else {
+                "failed": "图片待重试", "pending": "图片待处理", "candidate_ready_for_review": "候选待核对",
+            }.get(receipt.status, "待核对")
+            self.resume_combo.addItem(f"{receipt.created_at[:16].replace('T', ' ')} · {state} · {names}", receipt.batch_id)
+        current = self.resume_combo.findData(selected)
+        self.resume_combo.setCurrentIndex(current if current >= 0 else len(receipts) - 1)
+        self.resume_combo.blockSignals(False)
         if not receipts:
             self.resume_card.setVisible(False)
             return
-        latest = receipts[-1]
-        state = "上次生成未完成" if latest.status == "failed" else "已离线保存"
-        self.resume_summary.setText(
-            f"{state}：{latest.source_type}，{latest.source_count} 份来源，"
-            f"{latest.visual_queue_count} 份待视觉资料。无需重新选择本地文件。"
-        )
+        self._show_batch_summary()
         self.resume_card.setVisible(True)
+
+    def _selected_batch(self):
+        batch_id = self.resume_combo.currentData()
+        return next((receipt for receipt in self._resumable_receipts if receipt.batch_id == batch_id), None)
+
+    def _show_batch_summary(self, *_args):
+        latest = self._selected_batch()
+        if latest is None:
+            self.resume_summary.clear()
+            return
+        self.resume_summary.setText(
+            f"{latest.source_type} · {latest.source_count} 份来源。"
+            f"Word读取成功 {latest.native_completed_count} 份、失败 {latest.native_failed_count} 份。"
+            + ("上次生成未完成；" if latest.visual_status == "failed" else "")
+            + ("图片候选已生成，仍待核对。" if latest.visual_status == "completed" else
+               f"{latest.visual_queue_count} 份图片资料待处理。")
+        )
+        self.resume_button.setEnabled(not self._active_task_id and latest.visual_queue_count > 0 and latest.visual_status != "completed")
+
+    def _open_batch_details(self):
+        from .import_batch_dialog import ImportBatchDialog
+
+        receipt = self._selected_batch()
+        if self._active_task_id or receipt is None:
+            return
+        dialog = ImportBatchDialog(self.facade, self.tasks, receipt.batch_id, self)
+        dialog.exec()
+        updated = dialog.receipt
+        dialog.deleteLater()
+        self._load_resumable_batches()
+        self._load_word_batches()
+        if updated is not None and self._saved_visual_receipt is not None and self._saved_visual_receipt.batch_id == updated.batch_id:
+            self._saved_visual_receipt = updated
+            self._show_saved_receipt(updated)
 
     def _resume_latest(self) -> None:
         if self._active_task_id or not self._resumable_receipts:
             return
-        self._saved_visual_receipt = self._resumable_receipts[-1]
-        self.resume_card.setVisible(False)
+        self._saved_visual_receipt = self._selected_batch()
+        if self._saved_visual_receipt is None:
+            return
         self._show_saved_receipt(self._saved_visual_receipt, resumed=True)
         self._provider_reveal_timer.start(0)
 
@@ -464,6 +519,8 @@ class ImportDialog(QDialog):
         self.save_button.setEnabled(not busy)
         self.close_button.setEnabled(not busy)
         self.resume_button.setEnabled(not busy)
+        self.resume_combo.setEnabled(not busy)
+        self.batch_details_button.setEnabled(not busy)
         self.word_batch_combo.setEnabled(not busy)
         self.word_reference_button.setEnabled(
             not busy and self.word_batch_combo.count() > 0
@@ -475,6 +532,7 @@ class ImportDialog(QDialog):
             self.generate_button.setEnabled(False)
         else:
             self._update_generate_enabled()
+            self._show_batch_summary()
 
     def _import_progress(self, value: object) -> None:
         payload = value.as_dict() if hasattr(value, "as_dict") else value
@@ -536,6 +594,12 @@ class ImportDialog(QDialog):
             f"讲义 {handout_count}）；可完整读取的 Word 来源 {receipt.native_quick_count} 份；"
             f"待视觉资料 {receipt.visual_queue_count} 份。"
         )
+        if receipt.native_failed_count:
+            self.provider_card.setVisible(receipt.visual_queue_count > 0 and receipt.visual_status != "completed")
+            if self.provider_card.isVisible():
+                self._refresh_visual_profiles()
+            set_status(self.status, "attention", receipt.message_zh)
+            return
         if receipt.visual_status == "completed" or receipt.visual_queue_count <= 0:
             self.provider_card.setVisible(False)
             set_status(
@@ -825,9 +889,11 @@ class ImportDialog(QDialog):
         self.progress.setValue(3)
         self.progress.setFormat("第一步已完成：已保存并分流")
         self._show_saved_receipt(receipt)
+        self._load_resumable_batches()
         if (
             callable(getattr(self.facade, "annotate_imported_word_batch", None))
             and receipt.batch_id in self._word_receipts
+            and not receipt.native_failed_count
         ):
             # Start only after the save worker's finished signal. Its cleanup
             # must not clear the newly started annotation task or preview.

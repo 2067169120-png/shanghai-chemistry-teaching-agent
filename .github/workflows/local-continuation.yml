@@ -53,6 +53,14 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: python runtime/deeptutor_shchem/library_progress_qa.py --output local-continuation-qa/review-screenshots
+      - name: Check saved import history, selected retries and visual preservation
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_import_file_retry.py staging/coordination/deeptutor_gateway/tests/test_import_batch_dialog.py staging/coordination/deeptutor_gateway/tests/test_word_handout_import.py staging/coordination/deeptutor_gateway/tests/test_desktop_visual_import_facade.py staging/coordination/deeptutor_gateway/tests/test_desktop_visual_import_v2.py staging/coordination/deeptutor_gateway/tests/test_desktop_visual_import_ui.py staging/coordination/deeptutor_gateway/tests/test_desktop_import_preview.py staging/coordination/deeptutor_gateway/tests/test_desktop_visual_egress.py staging/coordination/deeptutor_gateway/tests/test_visual_egress_actual_pipeline.py staging/coordination/deeptutor_gateway/tests/test_word_import_annotation_ui.py --junitxml=local-continuation-qa/import-retry.xml
+      - name: Capture file results at desktop and narrow widths
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/import_batch_review_qa.py --output local-continuation-qa/import-retry
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -1986,9 +1986,21 @@ class DesktopImportCoordinatorV2:
             )
         return deepcopy(dict(existing))
 
-    def _write_manifest(self, result: DesktopImportResult) -> str | None:
+    def _write_manifest(
+        self, result: DesktopImportResult, *, native_retry_revision: str | None = None
+    ) -> str | None:
         if self.archive is None:
             return None
+        from .desktop_import_recovery import import_batch_lock
+
+        # Serialize the read/compare/replace across both native and visual jobs.
+        # The separate short-lived lock can be acquired inside a native retry.
+        with import_batch_lock(self.archive.root / "manifest-commits", result.batch_id):
+            return self._write_manifest_locked(result, native_retry_revision=native_retry_revision)
+
+    def _write_manifest_locked(
+        self, result: DesktopImportResult, *, native_retry_revision: str | None = None
+    ) -> str:
         batches = self.archive.root / "batches"
         try:
             if batches.exists() and batches.is_symlink():
@@ -2063,7 +2075,20 @@ class DesktopImportCoordinatorV2:
                 and existing.get("visual_candidate_sha256") is None
                 and existing.get("candidate_only") is True
                 and existing.get("central_question_bank_write") is False
+                and existing.get("native_import_receipt") == value.get("native_import_receipt")
             )
+            if native_retry_revision is not None:
+                from .desktop_import_recovery import native_failure_count
+
+                before = dict(existing)
+                after = dict(value)
+                before.pop("native_import_receipt", None)
+                after.pop("native_import_receipt", None)
+                retryable = (
+                    hashlib.sha256(existing_raw).hexdigest() == native_retry_revision
+                    and native_failure_count(existing.get("native_import_receipt")) > 0
+                    and canonical_json_bytes(before) == canonical_json_bytes(after)
+                )
             if not retryable:
                 raise DesktopImportBridgeError(
                     "manifest_conflict", "同一批次已有不同的桌面导入回执。", 409
@@ -2086,6 +2111,90 @@ class DesktopImportCoordinatorV2:
             with suppress(OSError):
                 temporary.unlink()
         return str(path)
+
+    def retry_native(
+        self,
+        request: DesktopImportRequest,
+        *,
+        expected_revision: str,
+        source_ids: Sequence[str],
+    ) -> DesktopImportResult:
+        """Advance only failed native files; leave pages, visual CAS and labels intact."""
+        from .desktop_import_recovery import native_failure_count, native_rows
+
+        plan = self.plan(request)
+        existing = self._load_existing_manifest(plan, source_type=request.source_type)
+        if (
+            existing is None or not isinstance(expected_revision, str)
+            or hashlib.sha256(canonical_json_bytes(existing)).hexdigest() != expected_revision
+        ):
+            raise DesktopImportBridgeError("native_retry_stale", "批次状态已变化，请刷新失败清单后重试。", 409)
+        previous = existing.get("native_import_receipt")
+        if not isinstance(previous, Mapping) or native_failure_count(previous) <= 0:
+            raise DesktopImportBridgeError("native_retry_invalid", "本批没有失败的原生文字文件。", 409)
+        legacy_receipt = "documents" not in previous
+        if legacy_receipt:
+            describe = getattr(self.native_importer, "describe_receipt", None)
+            if callable(describe):
+                previous = describe(request.sources, plan.native_inspections, previous)
+        rows = native_rows(previous)
+        failed_ids = {row["source_file_id"] for row in rows if row["status"] == "failed"}
+        if (
+            not isinstance(source_ids, (tuple, list)) or not source_ids
+            or any(not isinstance(item, str) for item in source_ids)
+            or len(set(source_ids)) != len(source_ids) or not set(source_ids).issubset(failed_ids)
+        ):
+            raise DesktopImportBridgeError("native_retry_invalid", "只能选择本批当前失败的文字文件。", 409)
+        retry = getattr(self.native_importer, "retry", None)
+        if not callable(retry):
+            raise DesktopImportBridgeError("native_retry_unavailable", "原生文字重试器不可用。", 503)
+        inspections = tuple(item for item in plan.native_inspections if item.quick_import_eligible)
+        inspection_ids = {item.source_file_id for item in inspections}
+        sources = tuple(source for source in request.sources if source.effective_source_file_id in inspection_ids)
+        if set(row["source_file_id"] for row in rows) != inspection_ids:
+            raise DesktopImportBridgeError("native_retry_stale", "原生文件范围已变化，请重新核对。", 409)
+
+        def with_native(receipt):
+            return DesktopImportResult(
+                batch_id=plan.batch_id, source_type=request.source_type, plan=plan,
+                native_records=tuple(existing["native_records"]), native_import_receipt=dict(receipt),
+                visual_status=existing["visual_status"], visual_candidate=existing["visual_candidate"],
+                visual_candidate_sha256=existing["visual_candidate_sha256"],
+                visual_revision_token=existing["visual_revision_token"],
+                visual_queue=tuple(existing["visual_queue"]), pixel_pages=tuple(existing["pixel_pages"]),
+                blockers=tuple(existing["blockers"]), manifest_path=None,
+            )
+
+        if legacy_receipt:
+            # Persist the source-bound failure list before the native writer
+            # advances it, so a crash cannot erase the only legacy failure map.
+            prepared = with_native(previous)
+            self._write_manifest(prepared, native_retry_revision=expected_revision)
+            expected_revision = hashlib.sha256(canonical_json_bytes(prepared.as_dict())).hexdigest()
+        updated = retry(sources, inspections, previous_receipt=previous, source_ids=source_ids)
+        if (
+            not isinstance(updated, Mapping) or updated.get("candidate_only") is not True
+            or updated.get("central_question_bank_write") is not False
+            or updated.get("native_batch_id") != previous.get("native_batch_id")
+        ):
+            raise DesktopImportBridgeError("native_import_receipt_invalid", "重试结果不属于原批次。", 409)
+        _assert_no_secret_fields(updated)
+        new_rows = {row["source_file_id"]: row for row in native_rows(updated)}
+        if set(new_rows) != inspection_ids or any(
+            new_rows[row["source_file_id"]] != row for row in rows if row["source_file_id"] not in source_ids
+        ):
+            raise DesktopImportBridgeError("native_import_receipt_invalid", "重试改变了未选择的文件结果。", 409)
+        for row in rows:
+            if row["source_file_id"] not in source_ids:
+                continue
+            new = new_rows[row["source_file_id"]]
+            immutable = ("source_file_id", "source_sha256", "filename", "native_name", "document_key")
+            if any(new.get(key) != row.get(key) for key in immutable) or new["attempt_count"] != row["attempt_count"] + 1:
+                raise DesktopImportBridgeError("native_import_receipt_invalid", "重试结果的文件身份或次数不一致。", 409)
+            if new.get("attempt_count_known", True) != row.get("attempt_count_known", True):
+                raise DesktopImportBridgeError("native_import_receipt_invalid", "历史尝试次数的记录状态不可改写。", 409)
+        result = with_native(updated)
+        return replace(result, manifest_path=self._write_manifest(result, native_retry_revision=expected_revision))
 
     def process(
         self,

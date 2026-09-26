@@ -76,6 +76,10 @@ class _PreviewFacade:
         assert batch_id == self.descriptor["batch_id"]
         return dict(self.descriptor)
 
+    def import_batch_details(self, batch_id: str):
+        assert batch_id == self.descriptor["batch_id"]
+        return SimpleNamespace(visual_status=self.descriptor["visual_status"])
+
     def _visual_import_profile(self, profile_id: str, revision: str):
         self.profile_calls.append((profile_id, revision))
         return {
@@ -438,6 +442,7 @@ def test_run_saved_visual_import_batch_injects_frozen_renderer_before_provider()
             )
 
     facade._saved_visual_import_batch = lambda _batch_id: descriptor
+    facade.import_batch_details = lambda _batch_id: SimpleNamespace(visual_status="awaiting_teacher_confirmation")
     facade._visual_import_profile = lambda _profile_id, _revision: {"profile_id": "profile"}
     facade._restore_visual_import_sources = lambda _descriptor: (source,)
     facade._visual_egress_service_instance = lambda: EgressPort()

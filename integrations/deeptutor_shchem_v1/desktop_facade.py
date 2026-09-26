@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import AbstractContextManager
 from copy import deepcopy
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 import hashlib
 import json
 from pathlib import Path
@@ -767,8 +767,18 @@ class DesktopVisualImportSourceSummary:
 
 
 @dataclass(frozen=True)
+class DesktopNativeImportFile:
+    source_id: str = field(repr=False)
+    filename: str
+    status: str
+    attempt_count: int
+    error_code: str = field(default="", repr=False)
+    attempt_count_known: bool = True
+
+
+@dataclass(frozen=True)
 class DesktopVisualImportReceipt:
-    """Teacher-facing visual import summary without paths, hashes or bytes."""
+    """Display summary with opaque retry tokens, without source paths or bytes."""
 
     batch_id: str
     source_type: str
@@ -782,6 +792,11 @@ class DesktopVisualImportReceipt:
     candidate_only: bool = True
     central_question_bank_write: bool = False
     failure_codes: tuple[str, ...] = ()
+    native_failed_count: int = 0
+    native_completed_count: int = 0
+    native_files: tuple[DesktopNativeImportFile, ...] = ()
+    native_revision: str = field(default="", repr=False)
+    created_at: str = ""
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -797,6 +812,11 @@ class DesktopVisualImportReceipt:
             "candidate_only": self.candidate_only,
             "central_question_bank_write": self.central_question_bank_write,
             "failure_codes": list(self.failure_codes),
+            "native_failed_count": self.native_failed_count,
+            "native_completed_count": self.native_completed_count,
+            "native_files": [asdict(item) for item in self.native_files],
+            "native_revision": self.native_revision,
+            "created_at": self.created_at,
         }
 
 
@@ -2241,7 +2261,7 @@ class DesktopWorkbenchFacade:
         failure_codes = _visual_failure_codes_from_blockers(
             result.blockers, failed=result.visual_status == "failed"
         )
-        return DesktopVisualImportReceipt(
+        receipt = DesktopVisualImportReceipt(
             batch_id=result.batch_id,
             source_type=result.source_type,
             status=status,
@@ -2255,6 +2275,43 @@ class DesktopWorkbenchFacade:
             ),
             failure_codes=failure_codes,
         )
+        manifest = result.as_dict()
+        manifest["manifest_path"] = None
+        return DesktopWorkbenchFacade._with_native_import_results(
+            receipt, result.native_import_receipt, _canonical_digest(manifest)
+        )
+
+    @staticmethod
+    def _with_native_import_results(
+        receipt: DesktopVisualImportReceipt,
+        native: Mapping[str, Any] | None,
+        revision: str,
+    ) -> DesktopVisualImportReceipt:
+        from .desktop_import_recovery import native_failure_count, native_rows
+
+        failed = native_failure_count(native)
+        rows = native_rows(native)
+        completed = native.get("documents_completed", 0) if native else 0
+        if type(completed) is not int or completed < 0:
+            raise DesktopImportBridgeError("native_import_receipt_invalid", "文字导入结果无法核验。", 409)
+        files = tuple(DesktopNativeImportFile(
+            source_id=row["source_file_id"], filename=row["filename"],
+            status=row["status"], attempt_count=row["attempt_count"],
+            error_code=str(row.get("error_code") or ""),
+            attempt_count_known=row.get("attempt_count_known", True),
+        ) for row in rows)
+        status = "failed" if failed else DesktopWorkbenchFacade._visual_import_status(receipt.visual_status)
+        message = DesktopWorkbenchFacade._visual_import_message(
+            DesktopWorkbenchFacade._visual_import_status(receipt.visual_status),
+            receipt.visual_status, receipt.failure_codes,
+        )
+        if failed:
+            message = f"Word读取成功 {completed} 份，失败 {failed} 份。请在批次详情中选择失败文件重试；成功文件保留。"
+            if receipt.visual_queue_count:
+                message += " 图片识别进度另行保留。"
+        return replace(receipt, status=status, message_zh=message,
+                       native_failed_count=failed, native_completed_count=completed,
+                       native_files=files, native_revision=revision)
 
     @staticmethod
     def _visual_import_receipt_from_saved(
@@ -2275,7 +2332,7 @@ class DesktopWorkbenchFacade:
         try:
             status = str(receipt["status"])
             visual_status = str(receipt["visual_status"])
-            failed = status == "failed" or visual_status == "failed"
+            failed = visual_status == "failed"
             if failed:
                 failure_codes = _normalize_visual_failure_codes(
                     receipt.get("failure_codes"), failed=True
@@ -2289,7 +2346,7 @@ class DesktopWorkbenchFacade:
             else:
                 failure_codes = ()
             message_zh = str(receipt["message_zh"])
-            if status == "failed":
+            if status == "failed" and visual_status == "failed":
                 message_zh = DesktopWorkbenchFacade._visual_import_message(
                     status, visual_status, failure_codes
                 )
@@ -2318,6 +2375,11 @@ class DesktopWorkbenchFacade:
                     receipt.get("central_question_bank_write") is True
                 ),
                 failure_codes=failure_codes,
+                native_failed_count=int(receipt.get("native_failed_count", 0)),
+                native_completed_count=int(receipt.get("native_completed_count", 0)),
+                native_files=tuple(DesktopNativeImportFile(**row) for row in receipt.get("native_files", [])),
+                native_revision=str(receipt.get("native_revision", "")),
+                created_at=str(value.get("created_at", "")),
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise DesktopFacadeError(
@@ -2368,6 +2430,94 @@ class DesktopWorkbenchFacade:
                 "visual_import_batch_missing", "未找到可继续的视觉导入批次。"
             )
         return dict(value)
+
+    def _import_batch_manifest(self, descriptor: Mapping[str, Any]) -> tuple[dict[str, Any], str]:
+        batch_id = descriptor.get("batch_id")
+        sources = descriptor.get("sources")
+        if (
+            not isinstance(batch_id, str) or _VISUAL_BATCH_ID.fullmatch(batch_id) is None
+            or _visual_source_projection(sources) is None
+            or descriptor.get("source_closure_sha256") != _canonical_digest(sources)
+        ):
+            raise DesktopFacadeError("visual_import_state_invalid", "批次来源目录无法核验。")
+        batches = self._visual_import_root / "batches"
+        path = batches / f"{batch_id}.json"
+        try:
+            if batches.is_symlink() or path.is_symlink():
+                raise ValueError("unsafe path")
+            with path.open("rb") as handle:
+                raw = handle.read(_VISUAL_FAILURE_MANIFEST_MAX_BYTES + 1)
+            if len(raw) > _VISUAL_FAILURE_MANIFEST_MAX_BYTES:
+                raise ValueError("oversized manifest")
+            value = _strict_json_loads(raw)
+            if (
+                not isinstance(value, dict) or value.get("batch_id") != batch_id
+                or value.get("candidate_only") is not True or value.get("central_question_bank_write") is not False
+                or not isinstance(value.get("plan"), Mapping)
+                or _visual_source_projection(value["plan"].get("sources")) != _visual_source_projection(sources)
+                or value.get("source_type") != descriptor.get("source_type")
+            ):
+                raise ValueError("source mismatch")
+        except (OSError, UnicodeError, TypeError, ValueError) as exc:
+            raise DesktopFacadeError("visual_import_state_invalid", "批次处理结果不完整或已变化，请重新核对。") from exc
+        return value, hashlib.sha256(raw).hexdigest()
+
+    def import_batch_details(self, batch_id: str) -> DesktopVisualImportReceipt:
+        descriptor = self._saved_visual_import_batch(batch_id)
+        manifest, revision = self._import_batch_manifest(descriptor)
+        # The manifest is authoritative if the app closed after its atomic save
+        # but before the lightweight desktop descriptor was refreshed.
+        value = deepcopy(descriptor)
+        visual_status = str(manifest.get("visual_status"))
+        value["receipt"]["visual_status"] = visual_status
+        value["receipt"]["status"] = self._visual_import_status(visual_status)
+        value["receipt"]["failure_codes"] = list(_visual_failure_codes_from_blockers(
+            manifest.get("blockers"), failed=visual_status == "failed"
+        ))
+        try:
+            receipt = self._visual_import_receipt_from_saved(value)
+            native = manifest.get("native_import_receipt")
+            if isinstance(native, Mapping) and native.get("documents_failed") and "documents" not in native:
+                describe = getattr(self._visual_import_native_importer, "describe_receipt", None)
+                if callable(describe):
+                    # Only legacy failed batches need source-backed recovery.
+                    sources = self._restore_visual_import_sources(descriptor)
+                    plan = DesktopImportCoordinatorV2().plan(DesktopImportRequest(
+                        sources=sources, batch_id=batch_id, source_type=str(descriptor["source_type"]),
+                    ))
+                    native = describe(sources, plan.native_inspections, native)
+            return self._with_native_import_results(receipt, native, revision)
+        except DesktopImportBridgeError as exc:
+            raise DesktopFacadeError(exc.code, exc.message_zh) from exc
+
+    def list_import_batches(self) -> tuple[DesktopVisualImportReceipt, ...]:
+        values = [value for key, value in self._state.snapshot().get("drafts", {}).items()
+                  if isinstance(key, str) and key.startswith(_VISUAL_IMPORT_DRAFT_PREFIX)
+                  and isinstance(value, Mapping) and value.get("schema_version") == _VISUAL_IMPORT_DRAFT_SCHEMA]
+        values.sort(key=lambda value: (str(value.get("created_at") or ""), str(value.get("batch_id") or "")))
+        return tuple(self.import_batch_details(str(value.get("batch_id"))) for value in values)
+
+    def retry_failed_word_import_files(
+        self, batch_id: str, *, expected_revision: str, source_ids: Sequence[str]
+    ) -> DesktopVisualImportReceipt:
+        from .desktop_import_recovery import import_batch_lock
+
+        try:
+            with import_batch_lock(self._visual_import_root, batch_id):
+                descriptor = self._saved_visual_import_batch(batch_id)
+                _manifest, current_revision = self._import_batch_manifest(descriptor)
+                if current_revision != expected_revision:
+                    raise DesktopFacadeError("native_retry_stale", "批次状态已变化，请刷新后重新选择。")
+                sources = self._restore_visual_import_sources(descriptor)
+                request = DesktopImportRequest(sources=sources, batch_id=batch_id, source_type=str(descriptor["source_type"]))
+                result = self._visual_import_coordinator().retry_native(
+                    request, expected_revision=expected_revision, source_ids=source_ids,
+                )
+                return self._save_visual_import_descriptor(
+                    sources=sources, result=result, created_at=str(descriptor["created_at"]),
+                )
+        except DesktopImportBridgeError as exc:
+            raise DesktopFacadeError(exc.code, exc.message_zh) from exc
 
     def _visual_import_failure_codes_from_manifest(
         self, value: Mapping[str, Any]
@@ -2620,11 +2770,8 @@ class DesktopWorkbenchFacade:
                 if isinstance(drafts, Mapping)
                 else None
             )
-            if (
-                isinstance(existing, Mapping)
-                and existing.get("status") == "candidate_ready_for_review"
-            ):
-                return self._visual_import_receipt_from_saved(existing)
+            if isinstance(existing, Mapping):
+                return self.import_batch_details(plan.batch_id)
             if _expected_inputs is not None:
                 # Confirmation is the final cancellation gate. Once persistence
                 # starts, finish this whole-file batch rather than report a
@@ -2759,12 +2906,7 @@ class DesktopWorkbenchFacade:
                 values.append(value)
         values.sort(key=lambda value: str(value.get("created_at") or ""))
         return tuple(
-            self._visual_import_receipt_from_saved(
-                value,
-                fallback_failure_codes=self._visual_import_failure_codes_from_manifest(
-                    value
-                ),
-            )
+            self.import_batch_details(str(value["batch_id"]))
             for value in values
         )
 
@@ -3165,7 +3307,7 @@ class DesktopWorkbenchFacade:
                 "发送前图片预览不完整，请重新预览后确认。",
             )
         descriptor = self._saved_visual_import_batch(batch_id)
-        if descriptor.get("status") == "candidate_ready_for_review":
+        if self.import_batch_details(batch_id).visual_status in {"completed", "not_required"}:
             raise DesktopFacadeError(
                 "visual_import_already_completed",
                 "该视觉导入批次已完成，不能重复覆盖。",
@@ -3241,27 +3383,7 @@ class DesktopWorkbenchFacade:
     def list_resumable_visual_import_batches(
         self,
     ) -> tuple[DesktopVisualImportReceipt, ...]:
-        drafts = self._state.snapshot().get("drafts")
-        if not isinstance(drafts, Mapping):
-            return ()
-        values = [
-            value
-            for key, value in drafts.items()
-            if isinstance(key, str)
-            and key.startswith(_VISUAL_IMPORT_DRAFT_PREFIX)
-            and isinstance(value, Mapping)
-            and value.get("status") in {"pending", "failed"}
-        ]
-        values.sort(key=lambda value: str(value.get("created_at") or ""))
-        return tuple(
-            self._visual_import_receipt_from_saved(
-                value,
-                fallback_failure_codes=self._visual_import_failure_codes_from_manifest(
-                    value
-                ),
-            )
-            for value in values
-        )
+        return tuple(item for item in self.list_import_batches() if item.status in {"pending", "failed"})
 
     def run_word_handout_import_batch(
         self,

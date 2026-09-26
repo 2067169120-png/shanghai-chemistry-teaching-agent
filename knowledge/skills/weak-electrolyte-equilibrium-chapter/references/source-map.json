@@ -1,0 +1,148 @@
+{
+  "schema_version": "shchem.chapter-skill-source-map.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "full_book_distilled": false,
+  "textbook": {
+    "volume_id": "TB-E1",
+    "section_key": "TB-E1-C3:3.2",
+    "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+    "pdf_pages": [
+      70,
+      71,
+      72,
+      73
+    ],
+    "printed_pages": [
+      64,
+      65,
+      66,
+      67
+    ]
+  },
+  "lecture": {
+    "package_id": "PKG-056",
+    "source_sha256": "8cda068028bafa475614cd124effaf56caea133084813b9609926af8e325bfb2",
+    "source_preview_revision": "465eee61e5e2c5d94a478c24b857e17eb64f9d33e3725d75aadea3eff8f20556",
+    "source_extraction_revision": "20260909-editable-chemistry-v2",
+    "total_blocks": 298,
+    "total_assets": 134,
+    "directly_viewed_asset_blocks": [
+      31,
+      40,
+      218
+    ],
+    "all_assets_viewed": false
+  },
+  "routes": [
+    {
+      "id": "experimental-evidence",
+      "pdf_pages": [
+        70,
+        73
+      ],
+      "lecture_blocks": [
+        31,
+        35,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        67,
+        68,
+        70,
+        71,
+        72,
+        73,
+        74
+      ]
+    },
+    {
+      "id": "conditions",
+      "pdf_pages": [
+        70,
+        72,
+        73
+      ],
+      "lecture_blocks": [
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        52,
+        53,
+        54,
+        55,
+        126,
+        137,
+        142,
+        143
+      ]
+    },
+    {
+      "id": "external-acid",
+      "pdf_pages": [
+        71
+      ],
+      "lecture_blocks": [
+        122,
+        132,
+        227,
+        231
+      ],
+      "limitation": "231部分原公式未完整提取，使用完整227题设独立推导"
+    },
+    {
+      "id": "stepwise-graph",
+      "pdf_pages": [
+        71,
+        72
+      ],
+      "lecture_blocks": [
+        217,
+        218,
+        219,
+        220,
+        221,
+        222,
+        223,
+        224
+      ]
+    },
+    {
+      "id": "table-conflict",
+      "pdf_pages": [
+        71,
+        72
+      ],
+      "values_by_pdf_page": {
+        "71": "4.8e-11",
+        "72": "4.7e-11"
+      }
+    }
+  ],
+  "consumer": {
+    "extension": "knowledge/lectures/extensions-20260927-weak-electrolytes.json",
+    "reading_notes": "knowledge/textbook/reading-notes-20260927-weak-electrolytes.json",
+    "existing_reader": "integrations/deeptutor_shchem_v1/desktop_lecture_study.py",
+    "skill_runtime_hook_implemented": false
+  },
+  "upstream_method": {
+    "url": "https://github.com/simbajigege/book2skills",
+    "commit": "e5ba66cac91c857dce254dc6b6195d52201068d8",
+    "external_scripts_executed": false
+  },
+  "files_excluded": [
+    "original PDF/DOCX",
+    "page or formula images",
+    "native preview cache",
+    "personal database",
+    "API credentials",
+    "absolute original paths"
+  ]
+}
