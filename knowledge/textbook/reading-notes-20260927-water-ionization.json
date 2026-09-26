@@ -1,0 +1,747 @@
+{
+  "schema_version": "shchem.textbook-page-reading-notes.v1",
+  "purpose": "选必一3.1 PDF65—69原页研读候选；与PKG-044来源绑定，保留温度常数/指示剂差异和未读公式限制。主代理已独立核对这五页、关联选段及声明原图；未人审，不代表全书蒸馏完成。",
+  "human_reviewed": false,
+  "candidate_only": true,
+  "original_source_redistribution": false,
+  "review_method": "page_images_read_by_model",
+  "source": {
+    "volume_id": "TB-E1",
+    "title": "普通高中教科书 化学 选择性必修1 化学反应原理",
+    "sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+    "pdf_pages_viewed": [
+      65,
+      66,
+      67,
+      68,
+      69
+    ],
+    "printed_pages_viewed": [
+      59,
+      60,
+      61,
+      62,
+      63
+    ],
+    "toc_pdf_pages_viewed": [],
+    "linked_pdf_pages": [
+      65,
+      66,
+      67,
+      68,
+      69
+    ]
+  },
+  "notes": [
+    {
+      "id": "READ-TB-E1-20260927-WATER-01",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.1",
+      "title": "用质子转移解释水电离的简写",
+      "pdf_pages": [
+        65
+      ],
+      "printed_pages": [
+        59
+      ],
+      "source_anchors": [
+        "图3.1及图下完整/简写电离方程式",
+        "Kw的定义和温度说明"
+      ],
+      "summary": "印刷59页图3.1直接展示两个水分子间的质子转移，形成水合氢离子和氢氧根离子。紧随的正文说明H⁺是H₃O⁺的习惯简写，并给出Kw。图中的过程与符号含义应一起读，不能用讲义33未显示的旧式域公式代替教材可见式。",
+      "classroom_check": "请学生标出水、水合氢离子、氢氧根离子三个名称，再说明为何课内简式只写一个H₂O；不把该简写作裸H⁺模型。",
+      "lecture_package_id": "PKG-044",
+      "lecture_block_indices": [
+        32,
+        33,
+        48,
+        49,
+        50,
+        51,
+        52
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-044/第05讲 水的电离和溶液的酸碱性（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "d5a592d0372ad9edaf6000089dcfb8d87deabcc30927d3e99630188266655a14",
+      "source_preview_revision": "7db4b8ae2c49d0071ba408383c24f555501a5e5c7689e0b9aeb3cbe17dd2b434",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 32,
+          "end": 33,
+          "start_xml_locator": "word/document.xml#/w:body/*[35]",
+          "end_xml_locator": "word/document.xml#/w:body/*[36]"
+        },
+        {
+          "start": 48,
+          "end": 52,
+          "start_xml_locator": "word/document.xml#/w:body/*[51]",
+          "end_xml_locator": "word/document.xml#/w:body/*[56]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.1",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          65
+        ],
+        "printed_pages": [
+          59
+        ],
+        "anchors": [
+          "图3.1及图下完整/简写电离方程式",
+          "Kw的定义和温度说明"
+        ],
+        "support_role": "direct_concept_support_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": []
+    },
+    {
+      "id": "READ-TB-E1-20260927-WATER-02",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.1",
+      "title": "从表3.1得到随温度改变的中性pH",
+      "pdf_pages": [
+        65,
+        66
+      ],
+      "printed_pages": [
+        59,
+        60
+      ],
+      "source_anchors": [
+        "印刷59页温度影响",
+        "表3.1",
+        "印刷60页酸碱判据"
+      ],
+      "summary": "印刷60页表3.1在5、15、25、35、45℃依次列Kw为0.19、0.46、1.0、2.1、3.9乘10⁻¹⁴。中性时两离子相等，可由√Kw求中性浓度；45℃得pH约6.704，仍中性。讲义95、115、135是各自题设图，尤其115的100℃刻度与49/164通式数值不同，应保留数据来源。",
+      "classroom_check": "以表3.1为唯一数据源算25℃与45℃中性pH，回答“pH变小是否等于变酸”；再在95和115图旁分别写所用坐标与乘积。",
+      "lecture_package_id": "PKG-044",
+      "lecture_block_indices": [
+        48,
+        49,
+        50,
+        51,
+        52,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        164
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-044/第05讲 水的电离和溶液的酸碱性（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "d5a592d0372ad9edaf6000089dcfb8d87deabcc30927d3e99630188266655a14",
+      "source_preview_revision": "7db4b8ae2c49d0071ba408383c24f555501a5e5c7689e0b9aeb3cbe17dd2b434",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 48,
+          "end": 52,
+          "start_xml_locator": "word/document.xml#/w:body/*[51]",
+          "end_xml_locator": "word/document.xml#/w:body/*[56]"
+        },
+        {
+          "start": 94,
+          "end": 118,
+          "start_xml_locator": "word/document.xml#/w:body/*[100]",
+          "end_xml_locator": "word/document.xml#/w:body/*[124]"
+        },
+        {
+          "start": 134,
+          "end": 147,
+          "start_xml_locator": "word/document.xml#/w:body/*[140]",
+          "end_xml_locator": "word/document.xml#/w:body/*[153]"
+        },
+        {
+          "start": 164,
+          "end": 164,
+          "start_xml_locator": "word/document.xml#/w:body/*[172]",
+          "end_xml_locator": "word/document.xml#/w:body/*[172]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.1",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          65,
+          66
+        ],
+        "printed_pages": [
+          59,
+          60
+        ],
+        "anchors": [
+          "印刷59页温度影响",
+          "表3.1",
+          "印刷60页酸碱判据"
+        ],
+        "support_role": "direct_concept_support_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "45℃中性pH为AI计算值；教材表没有100℃行，不能替讲义高温差异裁决。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-WATER-03",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.1",
+      "title": "先分清总浓度与题目所说的水贡献",
+      "pdf_pages": [
+        65,
+        66
+      ],
+      "printed_pages": [
+        59,
+        60
+      ],
+      "source_anchors": [
+        "水的电离式与Kw",
+        "印刷60页想一想和首段"
+      ],
+      "summary": "印刷60页提出任何水溶液均有H⁺和OH⁻，其浓度乘积与水的离子积联系，同时要求讨论酸碱溶液中水电离程度。讲义56—65给出同pH的NaOH和Na₂CO₃对照：相同的总c(H⁺)、c(OH⁻)并不意味着按题目约定计算出的水贡献相同。盐的水解涉及消耗微粒，不能把游离H⁺浓度直接等同于水产生的全部H⁺。",
+      "classroom_check": "填写三列“总c(H⁺)、总c(OH⁻)、据体系判断的水贡献”，明确NaOH与Na₂CO₃各自以哪一种离子推算，并写适用的单一体系条件。",
+      "lecture_package_id": "PKG-044",
+      "lecture_block_indices": [
+        44,
+        45,
+        46,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-044/第05讲 水的电离和溶液的酸碱性（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "d5a592d0372ad9edaf6000089dcfb8d87deabcc30927d3e99630188266655a14",
+      "source_preview_revision": "7db4b8ae2c49d0071ba408383c24f555501a5e5c7689e0b9aeb3cbe17dd2b434",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 44,
+          "end": 46,
+          "start_xml_locator": "word/document.xml#/w:body/*[47]",
+          "end_xml_locator": "word/document.xml#/w:body/*[49]"
+        },
+        {
+          "start": 56,
+          "end": 65,
+          "start_xml_locator": "word/document.xml#/w:body/*[60]",
+          "end_xml_locator": "word/document.xml#/w:body/*[69]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.1",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          65,
+          66
+        ],
+        "printed_pages": [
+          59,
+          60
+        ],
+        "anchors": [
+          "水的电离式与Kw",
+          "印刷60页想一想和首段"
+        ],
+        "support_role": "direct_concept_support_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "教材3.1未展开水解，Na₂CO₃数据来自讲义教师解析候选，不标教材原结论。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-WATER-04",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.1",
+      "title": "把pH差转成浓度比，而非酸总量比",
+      "pdf_pages": [
+        66,
+        67,
+        69
+      ],
+      "printed_pages": [
+        60,
+        61,
+        63
+      ],
+      "source_anchors": [
+        "pH定义",
+        "图3.2",
+        "练习2"
+      ],
+      "summary": "印刷60页定义pH为氢离子浓度的负对数；61页图3.2把0—14与10⁰—10⁻¹⁴并列，63页练习2用pH 2与4检验对数含义。因此差2对应浓度100倍。讲义319—325则提示，相同pH不能独立决定完全中和所需的碱量，必须另知电离及总量信息。",
+      "classroom_check": "写出c甲/c乙＝10^(pH乙−pH甲)，代入2与4；再解释为何不能把所得比值直接当作醋酸与盐酸总浓度之比。",
+      "lecture_package_id": "PKG-044",
+      "lecture_block_indices": [
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324,
+        325
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-044/第05讲 水的电离和溶液的酸碱性（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "d5a592d0372ad9edaf6000089dcfb8d87deabcc30927d3e99630188266655a14",
+      "source_preview_revision": "7db4b8ae2c49d0071ba408383c24f555501a5e5c7689e0b9aeb3cbe17dd2b434",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 151,
+          "end": 162,
+          "start_xml_locator": "word/document.xml#/w:body/*[157]",
+          "end_xml_locator": "word/document.xml#/w:body/*[170]"
+        },
+        {
+          "start": 319,
+          "end": 325,
+          "start_xml_locator": "word/document.xml#/w:body/*[346]",
+          "end_xml_locator": "word/document.xml#/w:body/*[352]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.1",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          66,
+          67,
+          69
+        ],
+        "printed_pages": [
+          60,
+          61,
+          63
+        ],
+        "anchors": [
+          "pH定义",
+          "图3.2",
+          "练习2"
+        ],
+        "support_role": "direct_concept_support_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "教材练习本页没有答案；数值讲评为AI推导。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-WATER-05",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.1",
+      "title": "测量方法的精细程度与化学适用范围分开判断",
+      "pdf_pages": [
+        67,
+        68,
+        69
+      ],
+      "printed_pages": [
+        61,
+        62,
+        63
+      ],
+      "source_anchors": [
+        "图3.3",
+        "广泛与精密pH试纸段落",
+        "pH计段落与图3.4",
+        "练习3D"
+      ],
+      "summary": "印刷61页广泛试纸为1—14、约1单位分辨，精密试纸量程较窄、可辨约0.2或0.3单位，pH计可达0.01单位。图3.3石蕊4.5—8.3、酚酞8.0—10.0与讲义173/284不同。颜色只支持所在区间；讲义补充NaClO破坏试纸颜色与气体检验预湿要求，这些属于方法适用性，不能被仪器小数位数替代。",
+      "classroom_check": "给定甲基橙黄色、酚酞无色及需区分3.88和3.38三种需求，分别说明可得结论与应选方法。对照169/170说明溶液试纸干燥、气体试纸润湿的对象差异。",
+      "lecture_package_id": "PKG-044",
+      "lecture_block_indices": [
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        208,
+        209,
+        210,
+        211,
+        212,
+        213,
+        214,
+        215,
+        216,
+        267,
+        268,
+        269,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275,
+        276,
+        277,
+        278,
+        279,
+        280,
+        281,
+        282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        292
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-044/第05讲 水的电离和溶液的酸碱性（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "d5a592d0372ad9edaf6000089dcfb8d87deabcc30927d3e99630188266655a14",
+      "source_preview_revision": "7db4b8ae2c49d0071ba408383c24f555501a5e5c7689e0b9aeb3cbe17dd2b434",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 165,
+          "end": 175,
+          "start_xml_locator": "word/document.xml#/w:body/*[175]",
+          "end_xml_locator": "word/document.xml#/w:body/*[189]"
+        },
+        {
+          "start": 197,
+          "end": 216,
+          "start_xml_locator": "word/document.xml#/w:body/*[211]",
+          "end_xml_locator": "word/document.xml#/w:body/*[230]"
+        },
+        {
+          "start": 267,
+          "end": 292,
+          "start_xml_locator": "word/document.xml#/w:body/*[290]",
+          "end_xml_locator": "word/document.xml#/w:body/*[315]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.1",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          67,
+          68,
+          69
+        ],
+        "printed_pages": [
+          61,
+          62,
+          63
+        ],
+        "anchors": [
+          "图3.3",
+          "广泛与精密pH试纸段落",
+          "pH计段落与图3.4",
+          "练习3D"
+        ],
+        "support_role": "direct_concept_support_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "教材叙述的0.01不自动保证任意仪器的准确度；本次未实施测量、校准或漂白实验。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-WATER-06",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.1",
+      "title": "中和例题先认反应量，再认最终体积",
+      "pdf_pages": [
+        68,
+        69
+      ],
+      "printed_pages": [
+        62,
+        63
+      ],
+      "source_anchors": [
+        "例题导引的完整题设与计算",
+        "练习3C、4"
+      ],
+      "summary": "印刷62页先以等体积、等浓度NaOH与盐酸说明恰好反应，再计算多加0.05 mL、0.10 mol·L⁻¹ NaOH且最终总体积50 mL时的pH。这个体积已是最终值；剩余OH⁻物质的量为5×10⁻⁶ mol、浓度约10⁻⁴ mol·L⁻¹，pH约10。印刷63页练习3C提醒，应比较可中和当量而非任意强酸强碱物质的量。",
+      "classroom_check": "圈出教材最终总体积并独立写量纲；用225—227可读条件自拟题，明确NaOH∶硫酸顺序和硫酸充分电离的稀强酸模型，不把缺失比值顺序冒充原式。已由pH得到c(H⁺)时不重复乘2。",
+      "lecture_package_id": "PKG-044",
+      "lecture_block_indices": [
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        225,
+        226,
+        227,
+        315,
+        316,
+        317,
+        318
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-044/第05讲 水的电离和溶液的酸碱性（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "d5a592d0372ad9edaf6000089dcfb8d87deabcc30927d3e99630188266655a14",
+      "source_preview_revision": "7db4b8ae2c49d0071ba408383c24f555501a5e5c7689e0b9aeb3cbe17dd2b434",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 178,
+          "end": 194,
+          "start_xml_locator": "word/document.xml#/w:body/*[192]",
+          "end_xml_locator": "word/document.xml#/w:body/*[208]"
+        },
+        {
+          "start": 225,
+          "end": 227,
+          "start_xml_locator": "word/document.xml#/w:body/*[243]",
+          "end_xml_locator": "word/document.xml#/w:body/*[245]"
+        },
+        {
+          "start": 315,
+          "end": 318,
+          "start_xml_locator": "word/document.xml#/w:body/*[340]",
+          "end_xml_locator": "word/document.xml#/w:body/*[343]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.1",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          68,
+          69
+        ],
+        "printed_pages": [
+          62,
+          63
+        ],
+        "anchors": [
+          "例题导引的完整题设与计算",
+          "练习3C、4"
+        ],
+        "support_role": "direct_concept_support_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "HCl/NaOH例为无显著水解且水贡献可忽略的近似模型；练习本页未附答案。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-WATER-07",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.1",
+      "title": "常规pH简式要留下近似检查",
+      "pdf_pages": [
+        65,
+        66,
+        69
+      ],
+      "printed_pages": [
+        59,
+        60,
+        63
+      ],
+      "source_anchors": [
+        "Kw与温度",
+        "pH定义与中性判据",
+        "练习4"
+      ],
+      "summary": "本节常规练习的0.05 mol·L⁻¹酸/碱远离中性，水贡献可忽略。讲义308—314的2×10⁻⁷ mol·L⁻¹盐酸则必须把水电离纳入电荷守恒与Kw，AI推得pH约6.617。236—248稀释表若靠近中性同样只能作近似；193对酸浓度计算忽略温度的措辞不可无条件采用。",
+      "classroom_check": "给常规盐酸与极稀盐酸分别写“可否略去水贡献、所用Kw温度、近似结果是否自洽”；将强碱pH8稀释100倍误算成pH6的步骤定位出来。",
+      "lecture_package_id": "PKG-044",
+      "lecture_block_indices": [
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        236,
+        237,
+        238,
+        239,
+        240,
+        241,
+        242,
+        243,
+        244,
+        245,
+        246,
+        247,
+        248,
+        308,
+        309,
+        310,
+        311,
+        312,
+        313,
+        314
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-044/第05讲 水的电离和溶液的酸碱性（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "d5a592d0372ad9edaf6000089dcfb8d87deabcc30927d3e99630188266655a14",
+      "source_preview_revision": "7db4b8ae2c49d0071ba408383c24f555501a5e5c7689e0b9aeb3cbe17dd2b434",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 178,
+          "end": 194,
+          "start_xml_locator": "word/document.xml#/w:body/*[192]",
+          "end_xml_locator": "word/document.xml#/w:body/*[208]"
+        },
+        {
+          "start": 236,
+          "end": 248,
+          "start_xml_locator": "word/document.xml#/w:body/*[257]",
+          "end_xml_locator": "word/document.xml#/w:body/*[271]"
+        },
+        {
+          "start": 308,
+          "end": 314,
+          "start_xml_locator": "word/document.xml#/w:body/*[333]",
+          "end_xml_locator": "word/document.xml#/w:body/*[339]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.1",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          65,
+          66,
+          69
+        ],
+        "printed_pages": [
+          59,
+          60,
+          63
+        ],
+        "anchors": [
+          "Kw与温度",
+          "pH定义与中性判据",
+          "练习4"
+        ],
+        "support_role": "direct_concept_support_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "极稀溶液二次式为对本节原理的AI延伸，教材这些页没有直接给出该推导；题源身份未外部核验。"
+      ]
+    }
+  ]
+}

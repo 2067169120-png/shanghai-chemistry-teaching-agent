@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import uuid
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
@@ -26,6 +27,7 @@ from .intake_batches_v2 import (
 # Bump whenever extraction or crop-review semantics change incompatibly.
 REVIEW_CONTRACT = "shchem.desktop-reviewed-visual-shard.v1"
 MAX_CHECKPOINT_BYTES = 16 * 1024 * 1024
+ATTEMPT_CONTRACT = "shchem.desktop-visual-shard-attempts.v1"
 
 
 class VisualCheckpointError(IntakeBatchV2Error):
@@ -35,6 +37,7 @@ class VisualCheckpointError(IntakeBatchV2Error):
             "visual_checkpoint_stale": "图片处理进度已变化，请重新预览后继续。",
             "visual_checkpoint_scope_changed": "页面、模型或分片范围已变化，请重新预览。",
             "visual_checkpoint_write_failed": "图片分片未能安全保存，本次停止；已保存分片保留。",
+            "visual_checkpoint_selection_invalid": "重做范围已变化或不完整，请重新选择并更新预览。",
         }
         super().__init__(code, messages[code], 409)
         self.message_zh = messages[code]
@@ -95,18 +98,30 @@ class VisualShardCheckpoints:
         if len(self._by_id) != len(self.requests) or any(request.batch_id != batch_id for request in requests):
             raise VisualCheckpointError()
         self._approved_records: dict[str, str | None] | None = None
+        self._approved_active_sha: str | None = None
 
     def _paths_safe(self) -> None:
         for path in (self.root, self.batch_root, self.directory):
-            if path.is_symlink() or (path.exists() and not path.is_dir()):
+            if (path.is_symlink() or getattr(path, "is_junction", lambda: False)()
+                    or (path.exists() and not path.is_dir())):
                 raise VisualCheckpointError()
         if not self.directory.resolve().is_relative_to(self.root.resolve()):
             raise VisualCheckpointError()
 
-    def _read(self, path: Path) -> tuple[dict[str, Any], str] | None:
+    def _safe_path(self, path: Path) -> None:
         self._paths_safe()
-        if path.is_symlink():
+        if not path.is_relative_to(self.directory):
             raise VisualCheckpointError()
+        for part in (path, *path.parents):
+            if part.is_symlink() or (getattr(part, "is_junction", lambda: False)()):
+                raise VisualCheckpointError()
+            if part == self.directory:
+                break
+        if not path.resolve().is_relative_to(self.directory.resolve()):
+            raise VisualCheckpointError()
+
+    def _raw(self, path: Path) -> bytes | None:
+        self._safe_path(path)
         if not path.exists():
             return None
         try:
@@ -114,6 +129,13 @@ class VisualShardCheckpoints:
                 raw = handle.read(MAX_CHECKPOINT_BYTES + 1)
             if len(raw) > MAX_CHECKPOINT_BYTES:
                 raise ValueError("size")
+            return raw
+        except (OSError, ValueError) as exc:
+            raise VisualCheckpointError() from exc
+
+    @staticmethod
+    def _decode(raw: bytes) -> tuple[dict[str, Any], str]:
+        try:
             def unique_pairs(pairs):
                 value = {}
                 for key, item in pairs:
@@ -128,14 +150,37 @@ class VisualShardCheckpoints:
         except (OSError, UnicodeError, ValueError, TypeError, RecursionError) as exc:
             raise VisualCheckpointError() from exc
 
-    def _path(self, request: VisualShardRequest) -> Path:
+    def _read(self, path: Path) -> tuple[dict[str, Any], str] | None:
+        raw = self._raw(path)
+        return self._decode(raw) if raw is not None else None
+
+    def _attempts(self) -> tuple[dict[str, str], str | None]:
+        stored = self._read(self.directory / "active-attempts.json")
+        if stored is None:
+            return {}, None
+        value, digest = stored
+        active = value.get("active")
+        if (set(value) != {"contract", "scope_sha256", "active"}
+                or value["contract"] != ATTEMPT_CONTRACT or value["scope_sha256"] != self.scope_sha256
+                or not isinstance(active, dict) or not active or not set(active) <= set(self._by_id)
+                or any(not isinstance(v, str) or re.fullmatch(r"[0-9a-f]{32}", v) is None for v in active.values())):
+            raise VisualCheckpointError()
+        return active, digest
+
+    def _path(self, request: VisualShardRequest, active: dict[str, str] | None = None) -> Path:
         expected = self._by_id.get(request.shard_id)
         if expected is None or _request_subject(request) != _request_subject(expected):
             raise VisualCheckpointError("visual_checkpoint_scope_changed")
-        return self.directory / f"shard-{request.shard_index:04d}.json"
+        active = self._attempts()[0] if active is None else active
+        directory = self.directory
+        if request.shard_id in active:
+            directory = directory / "attempts" / active[request.shard_id]
+        path = directory / f"shard-{request.shard_index:04d}.json"
+        self._safe_path(path)
+        return path
 
-    def _record(self, request: VisualShardRequest) -> tuple[dict[str, Any], str] | None:
-        stored = self._read(self._path(request))
+    def _record(self, request: VisualShardRequest, *, raw: bytes | None = None) -> tuple[dict[str, Any], str] | None:
+        stored = self._read(self._path(request)) if raw is None else self._decode(raw)
         if stored is None:
             return None
         value, raw_sha = stored
@@ -156,41 +201,105 @@ class VisualShardCheckpoints:
             raise VisualCheckpointError()
         return fragment, raw_sha
 
-    def inspect(self) -> dict[str, Any]:
+    def inspect(self, *, diagnostics: bool = False) -> dict[str, Any]:
         self._paths_safe()
         scope_record = self._read(self.directory / "scope.json")
         if scope_record is not None and scope_record[0] != self.scope:
             raise VisualCheckpointError()
-        expected_names = {"scope.json", *(self._path(request).name for request in self.requests)}
+        active, active_sha = self._attempts()
+        expected_names = {"scope.json", "active-attempts.json", *(self._path(request, active).name for request in self.requests)}
         if self.directory.exists() and any(path.name not in expected_names for path in self.directory.glob("*.json")):
             raise VisualCheckpointError()
-        records, complete = {}, []
+        records, complete, invalid = {}, [], []
         for request in self.requests:
-            record = self._record(request)
-            if record is not None and scope_record is None:
+            raw = self._raw(self._path(request, active))
+            if (raw is not None or active) and scope_record is None:
                 raise VisualCheckpointError()
-            records[request.shard_id] = record[1] if record else None
-            if record is not None:
+            records[request.shard_id] = hashlib.sha256(raw).hexdigest() if raw is not None else None
+            if raw is None:
+                continue
+            try:
+                self._record(request, raw=raw)
                 complete.append(request.shard_id)
+            except VisualCheckpointError:
+                if not diagnostics:
+                    raise
+                invalid.append(request.shard_id)
         other_scopes = self.batch_root.exists() and any(path.name != self.scope_sha256 and path.is_dir() for path in self.batch_root.iterdir())
         return {
             "scope_sha256": self.scope_sha256,
-            "revision": _sha({"scope": self.scope_sha256, "records": records}),
+            "revision": _sha({"scope": self.scope_sha256, "scope_record": scope_record[1] if scope_record else None,
+                              "active": active_sha, "records": records}),
             "records": records, "completed_shard_ids": complete,
+            "invalid_shard_ids": invalid, "active": active,
             "total_shards": len(self.requests), "completed_shards": len(complete),
             "pending_shards": len(self.requests) - len(complete),
             "has_other_scopes": other_scopes,
         }
+
+    def select_reprocess(self, expected_revision: str, shard_ids: Sequence[str]) -> dict[str, Any]:
+        """Commit one explicit selection atomically; retain every old record.
+
+        The caller holds the batch lock and has verified source/model/pixels and
+        the teacher's revised sending preview. Before this method, selection is
+        memory-only. A crash leaves either the old active map or the complete new
+        one; empty selected slots simply remain pending on the next launch.
+        """
+        snapshot = self.inspect(diagnostics=True)
+        if snapshot["revision"] != expected_revision:
+            raise VisualCheckpointError("visual_checkpoint_stale")
+        selected = self.validate_selection(snapshot, shard_ids)
+        if not set(snapshot["invalid_shard_ids"]) <= set(selected):
+            raise VisualCheckpointError()
+        if not selected:
+            return self.approve_snapshot(expected_revision)
+        attempt = uuid.uuid4().hex
+        active = {**snapshot["active"], **dict.fromkeys(selected, attempt)}
+        history = self.directory / "attempts" / attempt / "previous-state.json"
+        self._write_new(history, {
+            "contract": ATTEMPT_CONTRACT, "scope_sha256": self.scope_sha256,
+            "previous_revision": expected_revision, "previous_active": snapshot["active"],
+            "previous_records": snapshot["records"], "selected_shard_ids": list(selected),
+        })
+        path = self.directory / "active-attempts.json"
+        temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
+        try:
+            with temporary.open("xb") as handle:
+                handle.write(_bytes({"contract": ATTEMPT_CONTRACT, "scope_sha256": self.scope_sha256, "active": active}))
+                handle.flush()
+                os.fsync(handle.fileno())
+            if self.inspect(diagnostics=True)["revision"] != expected_revision:
+                raise VisualCheckpointError("visual_checkpoint_stale")
+            self._safe_path(path)
+            os.replace(temporary, path)
+        except OSError as exc:
+            raise VisualCheckpointError("visual_checkpoint_write_failed") from exc
+        finally:
+            if temporary.exists():
+                temporary.unlink()
+        current = self.inspect()
+        return self.approve_snapshot(current["revision"])
+
+    @staticmethod
+    def validate_selection(snapshot: Mapping[str, Any], shard_ids: Sequence[str]) -> tuple[str, ...]:
+        available = set(snapshot["completed_shard_ids"]) | set(snapshot["invalid_shard_ids"])
+        if (not isinstance(shard_ids, (list, tuple)) or any(not isinstance(v, str) for v in shard_ids)
+                or len(set(shard_ids)) != len(shard_ids) or not set(shard_ids) <= available):
+            raise VisualCheckpointError("visual_checkpoint_selection_invalid")
+        return tuple(sorted(shard_ids))
 
     def approve_snapshot(self, expected_revision: str) -> dict[str, Any]:
         snapshot = self.inspect()
         if snapshot["revision"] != expected_revision:
             raise VisualCheckpointError("visual_checkpoint_stale")
         self._approved_records = snapshot["records"]
+        self._approved_active_sha = self._attempts()[1]
         return snapshot
 
     def load(self, request: VisualShardRequest) -> Mapping[str, Any] | None:
         if self._approved_records is None:
+            raise VisualCheckpointError("visual_checkpoint_stale")
+        if self._attempts()[1] != self._approved_active_sha:
             raise VisualCheckpointError("visual_checkpoint_stale")
         record = self._record(request)
         if (record[1] if record else None) != self._approved_records[request.shard_id]:
@@ -198,12 +307,12 @@ class VisualShardCheckpoints:
         return record[0] if record else None
 
     def _write_new(self, path: Path, value: Mapping[str, Any]) -> None:
-        self._paths_safe()
+        self._safe_path(path)
         raw = _bytes(value)
         if len(raw) > MAX_CHECKPOINT_BYTES or path.exists() or path.is_symlink():
             raise VisualCheckpointError("visual_checkpoint_write_failed")
-        self.directory.mkdir(parents=True, exist_ok=True)
-        self._paths_safe()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self._safe_path(path)
         temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
         try:
             with temporary.open("xb") as handle:

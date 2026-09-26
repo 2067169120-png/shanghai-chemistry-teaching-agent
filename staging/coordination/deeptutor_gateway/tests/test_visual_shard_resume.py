@@ -154,8 +154,11 @@ def test_corrupt_checkpoint_cannot_silently_restart_or_claim_review(desktop_path
     value["human_reviewed"] = True
     record.write_text(json.dumps(value), encoding="utf-8")
     before = record.read_bytes()
+    plan = _preview(facade, saved)
+    assert plan["can_confirm"] is False and plan["resume"]["blocked_shards"] == 1
+    assert [page["checkpoint_state"] for page in plan["pages"]] == ["blocked", "blocked", "pending"]
     with pytest.raises(DesktopFacadeError) as caught:
-        _preview(facade, saved)
+        _run(facade, saved, plan)
     assert caught.value.code == "visual_checkpoint_invalid"
     assert record.read_bytes() == before and provider.borrow_calls == 1
 

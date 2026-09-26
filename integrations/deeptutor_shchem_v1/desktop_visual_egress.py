@@ -5,10 +5,11 @@ The visual-import workflow has two distinct local stages:
 * the teacher previews the exact source pages that would leave the machine;
 * a later confirmed run sends those same page bytes to the visual provider.
 
-This module owns the in-process snapshot between those stages.  It never
-borrows credentials, invokes a provider, writes a candidate, or deletes the
-original visual-import archive.  A snapshot is intentionally memory-backed;
-``discard`` releases only that snapshot.
+This module owns the in-process snapshot between those stages. Preview and
+selection changes are read-only. A confirmed run can activate a new checkpoint
+attempt while holding the batch lock; old records and original archives remain.
+It never borrows credentials, invokes a provider, or writes a candidate.
+``discard`` releases only the memory-backed snapshot.
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ from .desktop_visual_import_v2 import (
     _render_visual_pages,
 )
 from .intake_batches_v2 import RenderedPixelPage, VisualShardRequest
-from .desktop_visual_checkpoints import VisualShardCheckpoints, preview_shards
+from .desktop_visual_checkpoints import VisualCheckpointError, VisualShardCheckpoints, preview_shards
 
 MAX_EGRESS_PAGES = 500
 MAX_EGRESS_BYTES = 512 * 1024 * 1024
@@ -126,6 +127,7 @@ class _PreviewSnapshot:
     pages: tuple[_FrozenPage, ...]
     requests: tuple[VisualShardRequest, ...]
     checkpoint_revision: str
+    reprocess_shard_ids: tuple[str, ...] = ()
 
 
 class FrozenPageRenderer:
@@ -473,12 +475,36 @@ class DesktopVisualEgressService:
             profile_id=profile_id, profile_revision=expected_profile_revision,
             model_label=model_label, request_policy=request_policy, requests=requests,
         )
-        checkpoint_snapshot = checkpoints.inspect()
-        completed_ids = set(checkpoint_snapshot["completed_shard_ids"])
+        checkpoint_snapshot = checkpoints.inspect(diagnostics=True)
+        if progress_callback is not None:
+            progress_callback({"stage": "completed", "batch_id": batch_id, "page_count": len(pages)})
+        return self._publish(
+            batch_id=batch_id, profile_id=profile_id, expected_profile_revision=expected_profile_revision,
+            model_label=model_label, request_policy=request_policy, source_manifests=source_manifests,
+            pages=pages, requests=requests, checkpoint_snapshot=checkpoint_snapshot,
+        )
+
+    def _publish(self, *, batch_id, profile_id, expected_profile_revision, model_label,
+                 request_policy, source_manifests, pages, requests, checkpoint_snapshot,
+                 reprocess_shard_ids=()) -> dict[str, Any]:
+        selected = VisualShardCheckpoints.validate_selection(checkpoint_snapshot, reprocess_shard_ids)
+        invalid_ids = set(checkpoint_snapshot["invalid_shard_ids"])
+        blocked_ids = invalid_ids - set(selected)
+        completed_ids = set(checkpoint_snapshot["completed_shard_ids"]) - set(selected)
         reuse = {(page.source_file_id, page.page_number): request.shard_id in completed_ids
                  for request in requests for page in request.pages}
+        shard_for_page = {(page.source_file_id, page.page_number): request.shard_id
+                          for request in requests for page in request.pages}
+        pages = [_FrozenPage(deepcopy(page.manifest), page.pixels) for page in pages]
         for page in pages:
-            page.manifest["will_send"] = not reuse[(page.manifest["source_file_id"], page.manifest["page_number"])]
+            key = (page.manifest["source_file_id"], page.manifest["page_number"])
+            shard_id = shard_for_page[key]
+            page.manifest.update(
+                shard_id=shard_id, will_send=not reuse[key] and shard_id not in blocked_ids,
+                checkpoint_state=("blocked" if shard_id in blocked_ids else
+                                  "reprocess" if shard_id in selected else
+                                  "saved" if shard_id in completed_ids else "pending"),
+            )
         page_subject = [dict(page.manifest) for page in pages]
         revision = "ve_rev_" + _digest(
             {
@@ -488,6 +514,7 @@ class DesktopVisualEgressService:
                 "model_label": model_label,
                 "request_policy": request_policy,
                 "checkpoint_revision": checkpoint_snapshot["revision"],
+                "reprocess_shard_ids": selected,
                 "sources": list(source_manifests),
                 "pages": page_subject,
             }
@@ -520,24 +547,32 @@ class DesktopVisualEgressService:
                 pages=tuple(pages),
                 requests=requests,
                 checkpoint_revision=checkpoint_snapshot["revision"],
+                reprocess_shard_ids=selected,
             )
             self._snapshots[preview_id] = snapshot
-        if progress_callback is not None:
-            progress_callback(
-                {
-                    "stage": "completed",
-                    "batch_id": batch_id,
-                    "page_count": len(pages),
-                }
-            )
         public_pages = [deepcopy(page.manifest) for page in pages]
         resume = {key: checkpoint_snapshot[key] for key in ("total_shards", "completed_shards", "pending_shards", "has_other_scopes")}
-        resume["reused_page_count"] = sum(not page["will_send"] for page in public_pages)
-        resume["send_page_count"] = len(public_pages) - resume["reused_page_count"]
-        confirmation = self._confirmation_text(model_label, public_pages, request_policy)
+        resume.update(
+            completed_shards=len(completed_ids), pending_shards=len(requests) - len(completed_ids) - len(blocked_ids),
+            blocked_shards=len(blocked_ids), reprocess_shards=len(selected),
+            reused_page_count=sum(page["checkpoint_state"] == "saved" for page in public_pages),
+            send_page_count=sum(page["will_send"] for page in public_pages),
+            blocked_page_count=sum(page["checkpoint_state"] == "blocked" for page in public_pages),
+        )
+        shards = [{
+            "shard_id": request.shard_id, "shard_index": request.shard_index, "source_role": request.source_role,
+            "page_ids": [page["page_id"] for page in public_pages if page["shard_id"] == request.shard_id],
+            "stored_state": "invalid" if request.shard_id in invalid_ids else
+                            "saved" if request.shard_id in checkpoint_snapshot["completed_shard_ids"] else "pending",
+            "reprocess": request.shard_id in selected,
+        } for request in requests]
+        confirmation = ("已保存结果有无法核验的页组。请在“处理进度”选择重做并更新预览；当前不能发送或汇总。"
+                        if blocked_ids else self._confirmation_text(model_label, public_pages, request_policy))
+        if selected:
+            confirmation = f"已选择重做 {len(selected)} 组；确认后才启用新记录，旧记录保留。重做会再次调用模型并可能计费。\n" + confirmation
         if resume["has_other_scopes"] and not resume["completed_shards"]:
             confirmation = "已有分片不匹配当前页面或模型配置，本次需要重新处理；旧记录保留。\n" + confirmation
-        if not resume["pending_shards"]:
+        if not resume["pending_shards"] and not blocked_ids:
             confirmation = "所有分片已核验，本次只在本机汇总候选，不发送页面或调用模型。\n" + confirmation
         return {
             "preview_id": preview_id,
@@ -549,8 +584,39 @@ class DesktopVisualEgressService:
             "request_policy": deepcopy(request_policy),
             "pages": public_pages,
             "resume": resume,
+            "shards": shards,
+            "can_confirm": not blocked_ids,
             "confirmation_text": confirmation,
         }
+
+    def revise(self, preview_id: str, revision: str, reprocess_shard_ids: Sequence[str]) -> dict[str, Any]:
+        """Change sending intent only; keep all saved records untouched."""
+        snapshot = self._snapshot(preview_id, revision)
+        if self.facade.import_batch_details(snapshot.batch_id).visual_status in {"completed", "not_required"}:
+            raise VisualEgressError("visual_egress_batch_completed", "该批次已完成视觉识别，不能重复发送。")
+        profile = self.facade._visual_import_profile(snapshot.profile_id, snapshot.profile_revision)
+        if _request_policy(profile) != snapshot.request_policy:
+            raise VisualEgressError("visual_egress_policy_changed", "识别预算或处理规则已变化，请重新预览并确认。")
+        descriptor = self.facade._saved_visual_import_batch(snapshot.batch_id)
+        FrozenPageRenderer(snapshot).validate(self.facade._restore_visual_import_sources(descriptor))
+        checkpoints = self._checkpoints(snapshot)
+        current = checkpoints.inspect(diagnostics=True)
+        if current["revision"] != snapshot.checkpoint_revision:
+            raise VisualCheckpointError("visual_checkpoint_stale")
+        return self._publish(
+            batch_id=snapshot.batch_id, profile_id=snapshot.profile_id, expected_profile_revision=snapshot.profile_revision,
+            model_label=snapshot.model_label, request_policy=snapshot.request_policy,
+            source_manifests=snapshot.source_manifests, pages=snapshot.pages, requests=snapshot.requests,
+            checkpoint_snapshot=current, reprocess_shard_ids=reprocess_shard_ids,
+        )
+
+    def _checkpoints(self, snapshot: _PreviewSnapshot) -> VisualShardCheckpoints:
+        return VisualShardCheckpoints(
+            self.facade._visual_import_root / "shard-checkpoints",
+            batch_id=snapshot.batch_id, sources=snapshot.source_manifests,
+            profile_id=snapshot.profile_id, profile_revision=snapshot.profile_revision,
+            model_label=snapshot.model_label, request_policy=snapshot.request_policy, requests=snapshot.requests,
+        )
 
     def _snapshot(
         self,
@@ -620,14 +686,8 @@ class DesktopVisualEgressService:
             )
         renderer = FrozenPageRenderer(snapshot)
         renderer.validate(sources)
-        checkpoints = VisualShardCheckpoints(
-            self.facade._visual_import_root / "shard-checkpoints",
-            batch_id=batch_id, sources=snapshot.source_manifests,
-            profile_id=profile_id, profile_revision=expected_profile_revision,
-            model_label=snapshot.model_label, request_policy=snapshot.request_policy,
-            requests=snapshot.requests,
-        )
-        checkpoint_snapshot = checkpoints.approve_snapshot(snapshot.checkpoint_revision)
+        checkpoints = self._checkpoints(snapshot)
+        checkpoint_snapshot = checkpoints.select_reprocess(snapshot.checkpoint_revision, snapshot.reprocess_shard_ids)
         renderer.checkpoints = checkpoints
         renderer.pending_shards = checkpoint_snapshot["pending_shards"]
         return renderer

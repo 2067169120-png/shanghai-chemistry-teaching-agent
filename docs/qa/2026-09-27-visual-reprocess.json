@@ -1,0 +1,184 @@
+{
+  "schema_version": "shchem.visual-shard-reprocess-qa.v1",
+  "date": "2026-09-27",
+  "base_commit": "4189f9ee4e40f85cfae17cd18b372e1935ff6aff",
+  "scope": "Maintenance source; synthetic UI/transport; private candidate-only local data updates",
+  "regression": {
+    "tests": 523,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "documentation": {
+    "status": "passed",
+    "policy": "passed",
+    "tests": {
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "screenshots": {
+    "synthetic_only": true,
+    "directly_viewed_by_model": true,
+    "human_reviewed": false,
+    "sha256": {
+      "visual-resume-blocked-360x900.png": "f2f4664bc542227ca11b0d43bf77b22ef06cea948b598a3424275a392e22ca50",
+      "visual-resume-blocked-420x900.png": "115b70f9b910fc19e3f352a4d8fb4bc6e11f6ad4dc8d78c772801615784c9a72",
+      "visual-resume-blocked-900x820.png": "7f40c22109e66f51817a32a9a9dc1e8be25c264d4e3aae6f083cb5113bfebabb",
+      "visual-resume-local-360x900.png": "943df7dac9b9fc3cc34844044ce35f8a30e94ad883456ca31f06fecc04b04746",
+      "visual-resume-local-420x900.png": "a0318e3103665f6d3d47c25c53be424ea412feeaf8520133d789da776bfcc137",
+      "visual-resume-local-900x820.png": "215dc869aa4f668525b854aba686d9ee4e7c3aab9fd4c3686d0aa319567d9382",
+      "visual-resume-partial-360x900.png": "876247c2d017091bfe79ad02a48ae441cf08b7442de6b8dd2d5b70583691da75",
+      "visual-resume-partial-420x900.png": "88af84c358eb874b768c37e2dae866c5c37aad16ebfcbdbbed0511e27160cd30",
+      "visual-resume-partial-900x820.png": "677e634438c4d08e09eb6c1339009e2408ee73f9cd24d3b6f43086649ed7eee7",
+      "visual-resume-reprocess-360x900.png": "40123dd1682b82a14fe1c9bb14ab37a942fb4939a0a6b361918be7a254e761c4",
+      "visual-resume-reprocess-420x900.png": "b2ffcf60e00ff986905780b87905a6c6e723c6a7fea1ff4bbfd035dd1f5f33ba",
+      "visual-resume-reprocess-900x820.png": "85fab1e4c60e93aeeb36a68bddfc068e4c03c2682904639c873458728c064a7d"
+    }
+  },
+  "checkpoint_reprocess": {
+    "preview_read_only": true,
+    "explicit_revised_confirmation": true,
+    "atomic_active_map": true,
+    "old_records_retained": true,
+    "batch_process_lock": true,
+    "cancel_before_activation_preserves_active_map": true,
+    "post_activation_restart_stays_pending": true,
+    "cross_shard_conflict_repaired_in_synthetic_transport": true,
+    "corrupt_scope_or_active_map_not_repaired": true,
+    "human_chemistry_review": false
+  },
+  "local_label_increment": {
+    "changed_questions": 24,
+    "primary_filled": 18,
+    "curriculum_filled": 21,
+    "unchanged_attribute_rows": 3660,
+    "old_history_rows_unchanged": 9200,
+    "new_history_rows": 24,
+    "protected_input_count": 269,
+    "previously_absent_paths_still_absent": 3,
+    "human_reviewed": false,
+    "provider_invoked": false
+  },
+  "local_queue": {
+    "analysis_sources": 98,
+    "current_questions": 3579,
+    "current_primary_known": 2821,
+    "current_curriculum_mapped": 2653,
+    "pending_tasks": 1169,
+    "category_counts": {
+      "readable_pure_text": 325,
+      "requires_image": 785,
+      "scope_or_material_incomplete": 56,
+      "teacher_or_pinned_protected": 3
+    },
+    "attribute_binding_counts": {
+      "current": 3567,
+      "missing": 6,
+      "stale": 6
+    },
+    "original_exam_known": 837,
+    "original_exam_unknown": 2742,
+    "surplus_attribute_rows_not_counted_as_questions": 111
+  },
+  "repeat_label_preview_changes": 0,
+  "queue_input_hashes_unchanged": 209,
+  "water_ionization": {
+    "candidate_only": true,
+    "human_reviewed": false,
+    "new_claims": 14,
+    "reading_notes": 7,
+    "coverage": {
+      "knowledge": 278,
+      "methods": 124,
+      "pitfalls": 103,
+      "teaching_flow": 30
+    },
+    "lecture_count": 46,
+    "sources_with_flow": 15,
+    "sources_without_flow": 31,
+    "textbook_concepts": 383,
+    "validation": {
+      "new_claims_in_actual_reader": 14,
+      "total_notes_in_actual_reader": 22,
+      "textbook_concepts_linked": 3,
+      "stale_reference_excluded": true,
+      "removed_support_cases": [
+        {
+          "removed": 32,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 151,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 94,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 44,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 236,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 178,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 172,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 165,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 48,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 178,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 34,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 250,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 32,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 165,
+          "dependent_claim_excluded": true
+        }
+      ],
+      "repeat_new_notes": 0
+    },
+    "other_cards_unchanged": 45,
+    "protected_files_unchanged": 764,
+    "original_word_files_unchanged": 196,
+    "private_state_files_unchanged": 488,
+    "provider_calls": 0,
+    "article_search_count": 0,
+    "new_papers_collected": 0,
+    "catalog_rows_before": 113,
+    "catalog_rows_after": 114
+  },
+  "limitations": [
+    "Synthetic UI/transport and model page viewing are not human chemistry or real provider validation.",
+    "No full Word rendering; 10/132 image references viewed, including none of 84 WMF references.",
+    "No rebuilt Windows executable, global skill installation or automatic skill routing.",
+    "Corrupt checkpoint metadata, candidate stores and semantic/hierarchy repair remain outside this recovery action."
+  ]
+}

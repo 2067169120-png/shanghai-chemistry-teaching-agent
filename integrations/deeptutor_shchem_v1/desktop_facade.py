@@ -126,13 +126,25 @@ _VISUAL_SOURCE_MANIFEST_FIELDS = (
     "content_addressed",
 )
 _VISUAL_FAILURE_GUIDANCE = {
+    "provider_output_evidence_conflict": (
+        "不同页组返回了相同标识但指向不同原页的证据，无法合并候选。",
+        "核对原页后，在发送预览的处理进度中选择相关页组重做，再更新预览并确认；原记录保留。",
+    ),
+    "provider_output_answer_id_duplicate": (
+        "不同页组返回了重复的答案标识，无法合并候选。",
+        "核对答案页后，在发送预览的处理进度中选择相关页组重做，再更新预览并确认；原记录保留。",
+    ),
     "visual_checkpoint_write_failed": (
         "本次图片分片未能安全保存，处理已停止；此前保存的分片保留。",
         "检查本机剩余空间和目录写入权限，再重新预览；未保存分片重新调用时可能再次计费。",
     ),
     "visual_checkpoint_invalid": (
         "已保存的图片分片无法核验，本次没有继续使用该记录。",
-        "保留当前记录并检查本地文件，修复后重新预览；不要直接把记录标成通过。",
+        "重新预览，在处理进度中选择无法核验的页组重做；若预览仍无法打开，请检查本地记录。",
+    ),
+    "visual_checkpoint_selection_invalid": (
+        "重做范围已变化或不完整，本次未重新发送。",
+        "重新预览，在处理进度中选择页组并更新发送预览，再确认。",
     ),
     "visual_checkpoint_stale": (
         "图片分片进度与确认时不一致，本次处理已停止。",
@@ -3293,6 +3305,12 @@ class DesktopWorkbenchFacade:
 
         return self._visual_egress_call("image", preview_id, revision, page_id)
 
+    def revise_visual_import_egress(
+        self, preview_id: str, revision: str, reprocess_shard_ids: Sequence[str],
+    ) -> dict[str, Any]:
+        """Preview selected shard reprocessing without changing files or sending."""
+        return self._visual_egress_call("revise", preview_id, revision, reprocess_shard_ids)
+
     def discard_visual_import_egress(self, preview_id: str) -> bool:
         """Release a page-preview snapshot without deleting source archives."""
 
@@ -3351,6 +3369,8 @@ class DesktopWorkbenchFacade:
             )
         self._visual_import_profile(profile_id, expected_profile_revision)
         sources = self._restore_visual_import_sources(descriptor)
+        if should_cancel is not None and should_cancel():
+            raise DesktopFacadeError("cancelled", "视觉导入已取消；已保存结果保留。")
         frozen_renderer = self._visual_egress_call(
             "frozen_renderer",
             batch_id=batch_id,
