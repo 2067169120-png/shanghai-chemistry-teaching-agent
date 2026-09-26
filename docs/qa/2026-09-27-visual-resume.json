@@ -1,0 +1,98 @@
+{
+  "schema_version": "shchem.visual-shard-resume-qa.v1",
+  "date": "2026-09-27",
+  "base_commit": "442389308c8226d7f68fa17e1e54d1f29d8a789b",
+  "scope": "Maintenance source; synthetic regression/UI and private candidate-only label writes",
+  "regression": {
+    "tests": 382,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "documentation": {
+    "status": "pass",
+    "complete_readme_tests": 14,
+    "failures": 0,
+    "policy": "pass"
+  },
+  "screenshots": {
+    "synthetic_only": true,
+    "directly_viewed_by_model": true,
+    "human_reviewed": false,
+    "sha256": {
+      "visual-resume-local-360x900.png": "cae293669e3dcf84356381d152c873afb9b07343e15540b9c502a7c940f32f12",
+      "visual-resume-local-420x900.png": "09d14d2297cdfbfe6ba79e950e38b6113851abaeda1e2ac26afa0ad03ad059f1",
+      "visual-resume-local-900x820.png": "003c30dc840e492329121930ef6e43a1861e8948339185f226ab7d8738eddbdc",
+      "visual-resume-partial-360x900.png": "daba80f3138f62da0946936bcb6b2160a26c637d041fe6fdd2cde551d18ef065",
+      "visual-resume-partial-420x900.png": "de4c7e3579f4992127ac81ff2a9c0e33ccf8517d8735e0b95b72f5b138bf5982",
+      "visual-resume-partial-900x820.png": "23c6172422efd7696f69adadfbd4904a224333ed1f682d4c2ed12dd2134bd74e"
+    }
+  },
+  "real_batch_reader": {
+    "sources": 98,
+    "manifest_bytes": 69365666,
+    "bound_bytes": 134217728,
+    "failure_summary_bound_bytes": 8388608,
+    "formal_read_seconds": 1.935,
+    "selected_source_question_attribute_matches": 24,
+    "full_manifest_reads": 1
+  },
+  "local_label_increment": {
+    "changed_questions": 24,
+    "primary_filled": 18,
+    "curriculum_filled": 22,
+    "unchanged_attribute_rows": 3660,
+    "old_history_rows_unchanged": 9176,
+    "new_history_rows": 24,
+    "protected_input_count": 270,
+    "previously_absent_paths_still_absent": 3,
+    "human_reviewed": false,
+    "provider_invoked": false
+  },
+  "local_queue": {
+    "analysis_sources": 98,
+    "current_questions": 3579,
+    "current_primary_known": 2803,
+    "current_curriculum_mapped": 2632,
+    "pending_tasks": 1193,
+    "category_counts": {
+      "readable_pure_text": 349,
+      "requires_image": 785,
+      "scope_or_material_incomplete": 56,
+      "teacher_or_pinned_protected": 3
+    },
+    "attribute_binding_counts": {
+      "current": 3567,
+      "missing": 6,
+      "stale": 6
+    },
+    "original_exam_known": 837,
+    "original_exam_unknown": 2742,
+    "surplus_attribute_rows_not_counted_as_questions": 111
+  },
+  "repeat_label_preview_changes": 0,
+  "queue_input_hashes_unchanged": true,
+  "chapter_skill": {
+    "cases": 5,
+    "passed": 5,
+    "criteria": 16,
+    "human_reviewed": false,
+    "provider_calls": 0,
+    "baseline_comparison": false,
+    "classroom_effectiveness_evaluation": false,
+    "global_installation": false,
+    "automatic_application_routing": false
+  },
+  "remaining_lecture_coverage": {
+    "lectures": 46,
+    "with_teaching_flow": 14,
+    "without_teaching_flow": 32,
+    "textbook_concepts": 383
+  },
+  "limitations": [
+    "Corrupt checkpoint repair and selected-successful-shard rerun UI remain pending.",
+    "Cross-shard semantic or hierarchy conflicts are not automatically repaired.",
+    "Candidate labels and machine crop review are not human chemistry verification.",
+    "No real provider call or rebuilt Windows executable in this maintenance round."
+  ]
+}

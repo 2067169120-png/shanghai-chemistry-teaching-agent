@@ -4,6 +4,9 @@ import hashlib
 import re
 from copy import deepcopy
 
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QLayout
+
 from ..desktop_visual_import_v2 import _image_dimensions
 from .preparation_egress_dialog import PreparationEgressDialog
 
@@ -49,11 +52,16 @@ class VisualImportEgressDialog(PreparationEgressDialog):
                     raise ValueError("Invalid dimensions")
                 if page["mime_type"] not in _MIMES:
                     raise ValueError("Invalid page format")
+                if type(page.get("will_send", True)) is not bool:
+                    raise ValueError("Invalid resume state")
+                sending = page.get("will_send", True)
+                action = "本次发送" if sending else "本机复用"
                 assets.append({
                     "asset_id": page_id, "sha256": page["sha256"],
-                    "caption": f"{role} · {name} · 第 {page['page_number']} 页",
+                    "caption": f"{action} · {role} · {name} · 第 {page['page_number']} 页",
                     "source": f"{name} · 第 {page['page_number']} 页",
-                    "purpose": f"{role}；整页像素将交给模型识别，结果仍待核对",
+                    "purpose": (f"{role}；整页像素将交给模型识别，结果仍待核对" if sending
+                                else f"{role}；复用已保存分片，本次不发送，结果仍待教师核对"),
                     "width": page["width"], "height": page["height"],
                     "content_type": page["mime_type"],
                 })
@@ -68,7 +76,11 @@ class VisualImportEgressDialog(PreparationEgressDialog):
             image_loader=self._page_loader, parent=parent,
         )
         self.setObjectName("VisualImportEgressDialog")
+        self.layout().setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
+        self.setMinimumWidth(0)
         if self._valid_plan:
+            sending_count = sum(page.get("will_send", True) for page in self._plan["pages"])
+            reused_count = len(assets) - sending_count
             policy = self._plan.get("request_policy")
             budget = ""
             if isinstance(policy, dict) and all(
@@ -85,6 +97,7 @@ class VisualImportEgressDialog(PreparationEgressDialog):
             self.summary.setText(
                 f"接收模型：{self._plan['model_label']}\n"
                 f"{len(assets)} 页本次选定的源页 · 点击缩略图切换，放大检查内容与边界"
+                f"\n{sending_count} 页本次发送 · {reused_count} 页从本机复用"
                 + budget
                 + (
                     f"\n提取后追加原页与实际裁片的图像复核，每组最多 {policy['crop_review_batch_limit']} 条裁片。"
@@ -95,9 +108,52 @@ class VisualImportEgressDialog(PreparationEgressDialog):
                     and policy["crop_review_batch_limit"] > 0 else ""
                 )
             )
-        self.image_list.setAccessibleName("本次实际发送的题目、答案与讲义页面")
+        self.image_list.setAccessibleName("本批题目、答案与讲义页面；每页标明本次发送或本机复用")
         self.confirm_button.setText("确认发送并识别")
         self.cancel_button.setText("返回，不发送")
+        if self._valid_plan and reused_count:
+            self.confirm_button.setText("确认发送剩余页面" if sending_count else "在本机汇总候选")
+            if not sending_count:
+                self.heading.setText("本机恢复候选")
+                self.reminder.setText("只汇总已保存的分片结果；不调用模型。恢复后的候选仍待教师核对。")
+                self.tabs.setTabText(self.tabs.indexOf(self.disclosure), "本机恢复说明")
+                self.summary.setText(
+                    f"{reused_count} 页均可复用已保存的结果\n本次在本机汇总候选，不发送页面或调用模型。\n"
+                    "可逐页查看原件；候选仍需教师核对。"
+                )
+                self.cancel_button.setText("返回")
+        self._full_summary = self.summary.text()
+        self._compact_summary = self._full_summary
+        if self._valid_plan and sending_count:
+            self._compact_summary = (
+                f"接收模型：{self._plan['model_label']}\n"
+                f"{sending_count} 页本次发送 · {reused_count} 页从本机复用\n"
+                "提取后追加原页与裁片复核；追加调用会计费。\n"
+                "完整预算和处理范围见“发送范围与费用”。"
+            )
+            resume = self._plan.get("resume", {})
+            if isinstance(resume, dict) and resume.get("has_other_scopes") and not reused_count:
+                notice = "已有记录与当前页面或配置不匹配，本次重新处理。\n"
+                self._full_summary = notice + self._full_summary
+                self._compact_summary = notice + self._compact_summary
+        self._adapt_layout()
+
+    def _adapt_layout(self):
+        if not hasattr(self, "_full_summary"):
+            return
+        narrow = self.width() < 640
+        self.layout().setContentsMargins(12 if narrow else 20, 12, 12 if narrow else 20, 12)
+        self.summary.setText(self._compact_summary if narrow else self._full_summary)
+        self.image_list.setMinimumWidth(0 if narrow else 150)
+        self.image_list.setMaximumHeight(112 if narrow else 16777215)
+        orientation = Qt.Orientation.Vertical if narrow else Qt.Orientation.Horizontal
+        if self.gallery.orientation() != orientation:
+            self.gallery.setOrientation(orientation)
+            self.gallery.setSizes([112, 360] if narrow else [240, 580])
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._adapt_layout()
 
     def _normalize_assets(self, assets):
         if not self._valid_plan or not assets:

@@ -31,7 +31,8 @@ from .desktop_visual_import_v2 import (
     _image_dimensions,
     _render_visual_pages,
 )
-from .intake_batches_v2 import RenderedPixelPage
+from .intake_batches_v2 import RenderedPixelPage, VisualShardRequest
+from .desktop_visual_checkpoints import VisualShardCheckpoints, preview_shards
 
 MAX_EGRESS_PAGES = 500
 MAX_EGRESS_BYTES = 512 * 1024 * 1024
@@ -123,6 +124,8 @@ class _PreviewSnapshot:
     request_policy: dict[str, Any]
     source_manifests: tuple[dict[str, Any], ...]
     pages: tuple[_FrozenPage, ...]
+    requests: tuple[VisualShardRequest, ...]
+    checkpoint_revision: str
 
 
 class FrozenPageRenderer:
@@ -308,9 +311,18 @@ class DesktopVisualEgressService:
     def _confirmation_text(
         model_label: str, pages: Sequence[Mapping[str, Any]], policy: Mapping[str, Any]
     ) -> str:
+        outbound = [page for page in pages if page.get("will_send", True)]
+        reused = len(pages) - len(outbound)
+        if pages and not outbound:
+            return (
+                f"本机恢复候选：{reused} 页所属分片已保存并核验。\n"
+                "本次只在本机汇总，不发送页面或调用模型；已保存结果仍待教师核对。\n"
+                "下方可查看绑定的原页；页面或处理进度变化后需重新预览。"
+            )
         lines = [
             f"接收模型：{model_label}。",
-            f"首轮发送内容：本批次已冻结的 {len(pages)} 张原始或本机渲染页面像素。",
+            f"首轮发送内容：本批次已冻结的 {len(outbound)} 张原始或本机渲染页面像素。",
+            f"本机复用 {reused} 页已通过提取和裁片机器复核的分片；这些页面本次不重新发送，仍待教师核对。",
             f"每次请求输出上限 {policy['max_output_tokens']} tokens（包含模型推理）；最长等待 {policy['timeout_seconds']} 秒。",
             (f"本机输入预算 {policy['max_input_tokens']} tokens（文字及图片估算，非服务商精确用量）。"
              if policy.get("max_input_tokens") is not None else
@@ -324,11 +336,11 @@ class DesktopVisualEgressService:
             "复核也会携带首轮AI观察得到的题目结构、文字和引用关系作为待核对数据，不附加其他本地资料。",
             "提取或复核失败时不完成导入，不会默认为通过；不会自动重试或自动修复，也不采用残缺结果。",
             "请在图片预览中逐页检查题面、公共材料、答案页与化学图形，并核对上述追加复核范围。",
-            "图内全部可见内容及文件元数据会离开本机；请先核对学校授权，并确认不含未经授权的个人信息。",
+            "标为“本次发送”的页面中全部可见内容及文件元数据会离开本机；请先核对学校授权，并确认不含未经授权的个人信息。",
         ]
         for index, page in enumerate(pages, 1):
             lines.append(
-                f"{index}. {page['source_name']} · {page['source_role']} · "
+                f"{index}. {'本次发送' if page.get('will_send', True) else '本机复用'} · {page['source_name']} · {page['source_role']} · "
                 f"第 {page['page_number']} 页 · {page['width']} × {page['height']} 像素"
             )
         lines.extend(
@@ -452,9 +464,22 @@ class DesktopVisualEgressService:
                 "visual_egress_pages_invalid", "批次页面数量不在可预览范围内。"
             )
         source_manifests = tuple(_source_manifest(source) for source in sources)
-        page_subject = [dict(page.manifest) for page in pages]
         model_label = _model_label(profile)
         request_policy = _request_policy(profile)
+        requests = preview_shards(rendered_pages, batch_id=batch_id, max_pages_per_shard=coordinator.max_pages_per_shard)
+        checkpoints = VisualShardCheckpoints(
+            self.facade._visual_import_root / "shard-checkpoints",
+            batch_id=batch_id, sources=source_manifests,
+            profile_id=profile_id, profile_revision=expected_profile_revision,
+            model_label=model_label, request_policy=request_policy, requests=requests,
+        )
+        checkpoint_snapshot = checkpoints.inspect()
+        completed_ids = set(checkpoint_snapshot["completed_shard_ids"])
+        reuse = {(page.source_file_id, page.page_number): request.shard_id in completed_ids
+                 for request in requests for page in request.pages}
+        for page in pages:
+            page.manifest["will_send"] = not reuse[(page.manifest["source_file_id"], page.manifest["page_number"])]
+        page_subject = [dict(page.manifest) for page in pages]
         revision = "ve_rev_" + _digest(
             {
                 "batch_id": batch_id,
@@ -462,6 +487,7 @@ class DesktopVisualEgressService:
                 "profile_revision": expected_profile_revision,
                 "model_label": model_label,
                 "request_policy": request_policy,
+                "checkpoint_revision": checkpoint_snapshot["revision"],
                 "sources": list(source_manifests),
                 "pages": page_subject,
             }
@@ -492,6 +518,8 @@ class DesktopVisualEgressService:
                 request_policy=deepcopy(request_policy),
                 source_manifests=source_manifests,
                 pages=tuple(pages),
+                requests=requests,
+                checkpoint_revision=checkpoint_snapshot["revision"],
             )
             self._snapshots[preview_id] = snapshot
         if progress_callback is not None:
@@ -503,6 +531,14 @@ class DesktopVisualEgressService:
                 }
             )
         public_pages = [deepcopy(page.manifest) for page in pages]
+        resume = {key: checkpoint_snapshot[key] for key in ("total_shards", "completed_shards", "pending_shards", "has_other_scopes")}
+        resume["reused_page_count"] = sum(not page["will_send"] for page in public_pages)
+        resume["send_page_count"] = len(public_pages) - resume["reused_page_count"]
+        confirmation = self._confirmation_text(model_label, public_pages, request_policy)
+        if resume["has_other_scopes"] and not resume["completed_shards"]:
+            confirmation = "已有分片不匹配当前页面或模型配置，本次需要重新处理；旧记录保留。\n" + confirmation
+        if not resume["pending_shards"]:
+            confirmation = "所有分片已核验，本次只在本机汇总候选，不发送页面或调用模型。\n" + confirmation
         return {
             "preview_id": preview_id,
             "revision": revision,
@@ -512,7 +548,8 @@ class DesktopVisualEgressService:
             "model_label": model_label,
             "request_policy": deepcopy(request_policy),
             "pages": public_pages,
-            "confirmation_text": self._confirmation_text(model_label, public_pages, request_policy),
+            "resume": resume,
+            "confirmation_text": confirmation,
         }
 
     def _snapshot(
@@ -583,6 +620,16 @@ class DesktopVisualEgressService:
             )
         renderer = FrozenPageRenderer(snapshot)
         renderer.validate(sources)
+        checkpoints = VisualShardCheckpoints(
+            self.facade._visual_import_root / "shard-checkpoints",
+            batch_id=batch_id, sources=snapshot.source_manifests,
+            profile_id=profile_id, profile_revision=expected_profile_revision,
+            model_label=snapshot.model_label, request_policy=snapshot.request_policy,
+            requests=snapshot.requests,
+        )
+        checkpoint_snapshot = checkpoints.approve_snapshot(snapshot.checkpoint_revision)
+        renderer.checkpoints = checkpoints
+        renderer.pending_shards = checkpoint_snapshot["pending_shards"]
         return renderer
 
     def discard(self, preview_id: str) -> bool:
