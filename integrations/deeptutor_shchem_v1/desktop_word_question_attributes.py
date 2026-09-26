@@ -948,10 +948,7 @@ def complete_missing_attributes(existing, proposed):
         )
     ):
         raise WordQuestionAttributeError("补标签前题目范围或来源已变化，请重新核对。")
-    if (
-        old["annotation_source"] == "teacher_modified"
-        or "pinned" in old["rule_revision"]
-    ):
+    if automatic_tags_protected(old):
         return old
     result = deepcopy(old)
     if (

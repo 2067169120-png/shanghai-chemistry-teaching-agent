@@ -539,6 +539,7 @@ class WordQuestionDialog(QDialog):
         parent: QWidget | None = None,
         *,
         initial_source_id: str | None = None,
+        initial_question_key: str | None = None,
         batch_id: str | None = None,
         lesson_topic: str = "",
     ):
@@ -548,6 +549,7 @@ class WordQuestionDialog(QDialog):
         self.reference: dict | None = None
         self.preparation_reference: dict | None = None
         self._initial_source_id = initial_source_id
+        self._initial_question_key = _text(initial_question_key).strip() or None
         self._initial_batch_id = batch_id
         self._lesson_topic = _text(lesson_topic).strip()
         self._lesson_suggestions: list[dict] = []
@@ -579,7 +581,7 @@ class WordQuestionDialog(QDialog):
         self._attributes_busy = False
         self._closing_result: QDialog.DialogCode | None = None
         self._rendering_list = False
-        self._current_key: str | None = None
+        self._current_key: str | None = self._initial_question_key
         self._preview_reference: dict | None = None
         self._preview_selection: tuple = ()
         self._image_cache: OrderedDict[tuple, QPixmap] = OrderedDict()
@@ -761,6 +763,7 @@ class WordQuestionDialog(QDialog):
         tools_layout.setSpacing(4)
         self.question_tools.hide()
         self.question_tools_button.toggled.connect(self.question_tools.setVisible)
+        self.question_tools_button.setChecked(bool(self._initial_question_key))
         right_layout.addWidget(self.question_tools)
         self.attribute_note = _label("", muted=True)
         self.attribute_note.setAccessibleName("当前 Word 题目知识点与出处摘要")
@@ -1083,8 +1086,12 @@ class WordQuestionDialog(QDialog):
             self._set_curriculum_catalog(catalog.get("attribute_catalog"))
             self._catalog_revision = _text(catalog.get("revision"))
             selected_source = self.source_combo.currentData()
+            requested_key = self._initial_question_key if not self._loaded_once else None
+            requested_missing = bool(requested_key and requested_key not in items)
             if not self._loaded_once:
-                selected_source = self._initial_source_id or next(
+                # Resolve against the freshly read catalogue, never a progress
+                # snapshot's old revision or source label.
+                selected_source = items.get(requested_key, {}).get("source_id") or self._initial_source_id or next(
                     (
                         item.get("source_id")
                         for item in items.values()
@@ -1112,6 +1119,10 @@ class WordQuestionDialog(QDialog):
             self._catalog_busy = False
             self._refresh_attribute_filters()
             self._filter_items()
+            if requested_missing:
+                self.question_list.clearSelection()
+                self.question_list.setCurrentRow(-1)
+                self._show_question(None)
             warnings = [
                 warning
                 for warning in catalog.get("warnings", ())
@@ -1131,9 +1142,11 @@ class WordQuestionDialog(QDialog):
                 self._queue_selection_save()
             if warnings:
                 message += f" 有 {len(warnings)} 条来源读取提醒，请先核对。"
+            if requested_missing:
+                message = "待处理题目已变化或不在当前目录，未选中其他题。请返回刷新进度后重新定位。"
             set_status(
                 self.status,
-                "attention" if removed or warnings or not items else "success",
+                "attention" if requested_missing or removed or warnings or not items else "success",
                 message,
             )
         except (KeyError, TypeError, ValueError):
