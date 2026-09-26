@@ -84,6 +84,8 @@ def _failed_result(code: str) -> DesktopImportResult:
         "provider_response_too_large",
         "provider_output_invalid",
         "provider_output_evidence_invalid",
+        "provider_output_evidence_conflict",
+        "provider_output_answer_id_duplicate",
         "provider_output_role_invalid",
         "visual_provider_output_invalid",
         "visual_candidate_schema_invalid",
@@ -92,6 +94,7 @@ def _failed_result(code: str) -> DesktopImportResult:
         "visual_checkpoint_invalid",
         "visual_checkpoint_stale",
         "visual_checkpoint_scope_changed",
+        "visual_checkpoint_selection_invalid",
     ),
 )
 def test_failed_result_exposes_only_stable_teacher_guidance(code: str) -> None:

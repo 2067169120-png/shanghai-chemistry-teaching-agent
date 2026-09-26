@@ -1,0 +1,1416 @@
+{
+  "schema_version": "shchem.lecture-source-extension.v1",
+  "purpose": "PKG-044水的电离专题候选：研读选必一3.1 PDF65—69和讲义关联完整选段、10幅原图；补温度与水贡献、极稀溶液、当量/体积、测量证据及两节40分钟流程。主代理独立核对声明范围并复算例值；高温Kw、指示剂边界差异和未读公式保留。索引/同步状态以本次验收回执为准，未人审。",
+  "human_reviewed": false,
+  "candidate_only": true,
+  "entries": [
+    {
+      "package_id": "PKG-044",
+      "source_sha256": "d5a592d0372ad9edaf6000089dcfb8d87deabcc30927d3e99630188266655a14",
+      "source_preview_revision": "7db4b8ae2c49d0071ba408383c24f555501a5e5c7689e0b9aeb3cbe17dd2b434",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "knowledge": [
+        {
+          "summary": "教材图3.1把水的电离画成两个水分子间的质子转移：H₂O＋H₂O⇌H₃O⁺＋OH⁻（水生成水合氢离子和氢氧根离子）。课内简写H₂O⇌H⁺＋OH⁻中的H⁺代表水溶液中的H₃O⁺，不应把示意图解释为游离裸质子长期存在。讲义33的域公式仍保留缺式提示，新增式来自教材原页。",
+          "block_indices": [
+            32,
+            33
+          ]
+        },
+        {
+          "summary": "pH是对数标度，pH较低的溶液与较高者相比，氢离子浓度比为10的pH差次方。教材印刷63页第2题中pH为2和4的两溶液，前者c(H⁺)是后者的100倍；这比较的是当前溶液氢离子浓度，不能直接推出酸的总浓度或可中和的总量。",
+          "block_indices": [
+            151,
+            152,
+            153,
+            154,
+            155,
+            156,
+            157,
+            158,
+            159,
+            160,
+            161,
+            162,
+            319,
+            320,
+            321,
+            322,
+            323,
+            324,
+            325
+          ]
+        }
+      ],
+      "methods": [
+        {
+          "summary": "读水的电离曲线先认两轴为c(H⁺)、c(OH⁻)，再逐点相乘求Kw；在同一温度曲线上移动表示酸碱组成改变，对角线上的两浓度相等点才表示中性。95图的A、C分别给Kw＝10⁻¹⁴、10⁻¹²，A与D同曲线；115是另一张图，必须独立读取标数，不能沿用95图的字母与温度数据。",
+          "block_indices": [
+            94,
+            95,
+            96,
+            97,
+            98,
+            99,
+            100,
+            101,
+            102,
+            103,
+            104,
+            105,
+            106,
+            107,
+            108,
+            109,
+            110,
+            111,
+            112,
+            113,
+            114,
+            115,
+            116,
+            117,
+            118
+          ]
+        },
+        {
+          "summary": "求“水电离贡献”先列实际体系与离子来源，再算溶液总浓度。按讲义56—65的高中约定，25℃、pH＝10的NaOH溶液以c(H⁺)＝10⁻¹⁰ mol·L⁻¹确定水贡献；同pH的Na₂CO₃溶液按其水解生成的OH⁻计，水贡献为10⁻⁴ mol·L⁻¹。相同pH不表示水电离贡献相同；混合酸碱或多种水解体系不能直接套这两例。",
+          "block_indices": [
+            44,
+            45,
+            46,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64,
+            65
+          ]
+        },
+        {
+          "summary": "极稀一元强酸不能只令c(H⁺)＝配制浓度C，也不能固定再加10⁻⁷。以25℃、仅含HCl的稀溶液为例，电荷守恒给h＝C＋Kw/h，故h＝(C＋√(C²＋4Kw))/2。C＝2.0×10⁻⁷ mol·L⁻¹时，h≈2.414×10⁻⁷，pH≈6.617；强碱可对OH⁻作同样处理。先检查水贡献，再决定是否采用稀释简式。",
+          "block_indices": [
+            236,
+            237,
+            238,
+            239,
+            240,
+            241,
+            242,
+            243,
+            244,
+            245,
+            246,
+            247,
+            248,
+            308,
+            309,
+            310,
+            311,
+            312,
+            313,
+            314
+          ]
+        },
+        {
+          "summary": "中和先比较可反应的H⁺与OH⁻物质的量，不把任意酸、碱化学式单位的等物质的量当成等当量。在题设采用充分电离的稀强酸模型时，已知硫酸pH得到的已是c(H⁺)，不再乘2。体积以题给最终体积为准：教材印刷62页多加0.05 mL、0.10 mol·L⁻¹ NaOH后，总体积已给50 mL，应除以50 mL得c(OH⁻)≈10⁻⁴ mol·L⁻¹、pH≈10，不另加0.05 mL。",
+          "block_indices": [
+            178,
+            179,
+            180,
+            181,
+            182,
+            183,
+            184,
+            185,
+            186,
+            187,
+            188,
+            189,
+            190,
+            191,
+            192,
+            193,
+            194,
+            225,
+            226,
+            227,
+            315,
+            316,
+            317,
+            318
+          ]
+        },
+        {
+          "summary": "由指示剂颜色只能先得到对应的pH区间，再与同温中性值比较。甲基橙呈黄色不能单独证明碱性，酚酞无色也不能单独证明酸性。查表时保留版本：教材图3.3石蕊4.5—8.3、酚酞8.0—10.0，讲义173分别列5.0—8.0、8.2—10.0；按明确采用的表作答，不把边界差异静默改成同一组数。",
+          "block_indices": [
+            172,
+            173,
+            197,
+            198,
+            199,
+            200,
+            201,
+            202,
+            203,
+            204,
+            205,
+            280,
+            281,
+            282,
+            283,
+            284
+          ]
+        },
+        {
+          "summary": "选择pH测量方法要同时核对量程、分辨率和样品干扰。广泛试纸适于约1个pH单位的粗测，不能支持百分位读数；需要更细比较时用适配量程的方法。测溶液用干燥试纸，检验气体则先润湿以形成水相，不能互换。预湿会使样液局部稀释，但粗比色未必出现可辨读数变化；NaClO等会破坏指示剂颜色的样品不能只按普通试纸颜色判pH。",
+          "block_indices": [
+            165,
+            166,
+            167,
+            168,
+            169,
+            170,
+            171,
+            172,
+            173,
+            174,
+            175,
+            206,
+            207,
+            208,
+            209,
+            210,
+            211,
+            212,
+            213,
+            214,
+            215,
+            216,
+            267,
+            268,
+            269,
+            270,
+            271,
+            272,
+            273,
+            285,
+            286,
+            287,
+            288,
+            289,
+            290,
+            291,
+            292
+          ]
+        }
+      ],
+      "pitfalls": [
+        {
+          "summary": "讲义49、164用100℃时Kw＝1×10⁻¹²，115原图却把100℃中性点的两离子浓度都标为10⁻⁶·¹，对应Kw≈6.31×10⁻¹³；135图把95℃曲线中性点标为10⁻⁶。不同图的温度与数值须按各自题设保留，不能当成一张精确温度常数表。教材表3.1只列5—45℃，本批不据它替这些高温值裁决。",
+          "block_indices": [
+            48,
+            49,
+            50,
+            51,
+            52,
+            114,
+            115,
+            116,
+            117,
+            118,
+            134,
+            135,
+            136,
+            137,
+            138,
+            139,
+            140,
+            141,
+            142,
+            143,
+            144,
+            145,
+            146,
+            147,
+            164
+          ]
+        },
+        {
+          "summary": "讲义193“按酸浓度计算pH不必考虑温度”只能在充分电离、浓度定义已固定且水贡献可忽略的强酸近似下使用。接近中性时，连强酸也须用该温度的Kw；弱酸还涉及自身平衡条件。247的强酸/强碱十倍稀释简式也须满足水贡献可忽略，248虽限制不越过7，仍不能把接近7的计算当成严格等式。",
+          "block_indices": [
+            178,
+            179,
+            180,
+            181,
+            182,
+            183,
+            184,
+            185,
+            186,
+            187,
+            188,
+            189,
+            190,
+            191,
+            192,
+            193,
+            194,
+            236,
+            237,
+            238,
+            239,
+            240,
+            241,
+            242,
+            243,
+            244,
+            245,
+            246,
+            247,
+            248,
+            308,
+            309,
+            310,
+            311,
+            312,
+            313,
+            314
+          ]
+        },
+        {
+          "summary": "讲义41—42把活泼金属与水反应概括为“促进水电离”。讲评时应区分金属反应进行时的净反应与反应后溶液的酸碱平衡：钠与水反应会生成氢氧化钠，终态溶液还需按碱性体系判断。原表没有明确比较时点与“电离程度”的计量定义，本批将此列为待复核表述，不作为无条件结论或课堂计算依据。",
+          "block_indices": [
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            44,
+            45,
+            46
+          ]
+        },
+        {
+          "summary": "讲义265在同段用“X碱性比Y强”和“稀释后X碱性比Y弱”，容易把碱本身的强弱与当前溶液c(OH⁻)混为一谈。259原图只能直接读出同温稀释后Y的pH高于X；据此比较的是当前溶液。若进一步判断电离强弱、初始总浓度或耗酸量，还须说明单一碱、元数、平衡及无其他反应等前提，不能只凭两条曲线下通论。",
+          "block_indices": [
+            250,
+            251,
+            252,
+            253,
+            254,
+            255,
+            256,
+            257,
+            258,
+            259,
+            260,
+            261,
+            262,
+            263,
+            264,
+            265
+          ]
+        }
+      ],
+      "teaching_flow": [
+        {
+          "summary": "第1课时（40分钟）：5分钟读教材印刷59页图3.1并写微粒名称；8分钟由60页表3.1计算25℃、45℃的中性pH；10分钟读95原图，逐点标Kw与酸碱性，再做教材63页练习1—3；10分钟讲评56—65同pH的NaOH/Na₂CO₃水贡献及115图高温数据差异；7分钟提交“温度—总离子浓度—水贡献—中性判据”四栏笔记和一条带条件的订正。盐水解作为对照线索，不展开完整推导。",
+          "block_indices": [
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64,
+            65,
+            94,
+            95,
+            96,
+            97,
+            98,
+            99,
+            100,
+            101,
+            102,
+            103,
+            104,
+            105,
+            106,
+            107,
+            108,
+            109,
+            110,
+            111,
+            112,
+            113,
+            114,
+            115,
+            116,
+            117,
+            118,
+            150,
+            151,
+            152,
+            153,
+            154,
+            155,
+            156,
+            157,
+            158,
+            159,
+            160,
+            161,
+            162,
+            163,
+            164
+          ]
+        },
+        {
+          "summary": "第2课时（40分钟）：5分钟用教材63页第2、4题练pH换算；8分钟示范62页多加NaOH例并圈出最终总体积；10分钟按225—227可读条件自拟讲练，明确所求为NaOH∶硫酸体积比，再作308—314极稀盐酸守恒校核；10分钟用教材图3.3和206—216审查指示剂、试纸证据并订正193；7分钟交“总量与体积—Kw温度—近似—测量适用”笔记。225缺失的比值顺序不补成已读原式，232—234半滴题待核公式后使用。",
+          "block_indices": [
+            165,
+            166,
+            167,
+            168,
+            169,
+            170,
+            171,
+            172,
+            173,
+            174,
+            175,
+            176,
+            177,
+            178,
+            179,
+            180,
+            181,
+            182,
+            183,
+            184,
+            185,
+            186,
+            187,
+            188,
+            189,
+            190,
+            191,
+            192,
+            193,
+            194,
+            206,
+            207,
+            208,
+            209,
+            210,
+            211,
+            212,
+            213,
+            214,
+            215,
+            216,
+            225,
+            226,
+            227,
+            308,
+            309,
+            310,
+            311,
+            312,
+            313,
+            314,
+            315,
+            316,
+            317,
+            318
+          ]
+        }
+      ],
+      "textbook_links": [
+        {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            65,
+            66,
+            67,
+            68,
+            69
+          ],
+          "printed_pages": [
+            59,
+            60,
+            61,
+            62,
+            63
+          ],
+          "lecture_block_indices": [
+            32,
+            33,
+            34,
+            35,
+            36,
+            37,
+            38,
+            39,
+            40,
+            41,
+            42,
+            43,
+            44,
+            45,
+            46,
+            47,
+            48,
+            49,
+            50,
+            51,
+            52,
+            53,
+            54,
+            55,
+            56,
+            57,
+            58,
+            59,
+            60,
+            61,
+            62,
+            63,
+            64,
+            65,
+            94,
+            95,
+            96,
+            97,
+            98,
+            99,
+            100,
+            101,
+            102,
+            103,
+            104,
+            105,
+            106,
+            107,
+            108,
+            109,
+            110,
+            111,
+            112,
+            113,
+            114,
+            115,
+            116,
+            117,
+            118,
+            134,
+            135,
+            136,
+            137,
+            138,
+            139,
+            140,
+            141,
+            142,
+            143,
+            144,
+            145,
+            146,
+            147,
+            150,
+            151,
+            152,
+            153,
+            154,
+            155,
+            156,
+            157,
+            158,
+            159,
+            160,
+            161,
+            162,
+            163,
+            164,
+            165,
+            166,
+            167,
+            168,
+            169,
+            170,
+            171,
+            172,
+            173,
+            174,
+            175,
+            176,
+            177,
+            178,
+            179,
+            180,
+            181,
+            182,
+            183,
+            184,
+            185,
+            186,
+            187,
+            188,
+            189,
+            190,
+            191,
+            192,
+            193,
+            194,
+            197,
+            198,
+            199,
+            200,
+            201,
+            202,
+            203,
+            204,
+            205,
+            206,
+            207,
+            208,
+            209,
+            210,
+            211,
+            212,
+            213,
+            214,
+            215,
+            216,
+            225,
+            226,
+            227,
+            236,
+            237,
+            238,
+            239,
+            240,
+            241,
+            242,
+            243,
+            244,
+            245,
+            246,
+            247,
+            248,
+            250,
+            251,
+            252,
+            253,
+            254,
+            255,
+            256,
+            257,
+            258,
+            259,
+            260,
+            261,
+            262,
+            263,
+            264,
+            265,
+            267,
+            268,
+            269,
+            270,
+            271,
+            272,
+            273,
+            280,
+            281,
+            282,
+            283,
+            284,
+            285,
+            286,
+            287,
+            288,
+            289,
+            290,
+            291,
+            292,
+            308,
+            309,
+            310,
+            311,
+            312,
+            313,
+            314,
+            315,
+            316,
+            317,
+            318,
+            319,
+            320,
+            321,
+            322,
+            323,
+            324,
+            325
+          ],
+          "review_method": "page_images_read_by_model",
+          "human_reviewed": false
+        }
+      ]
+    }
+  ],
+  "source_review": {
+    "reviewer": "root_model_current_session",
+    "human_reviewed": false,
+    "textbook_pdf_pages": [
+      65,
+      66,
+      67,
+      68,
+      69
+    ],
+    "root_word_block_ranges": [
+      [
+        32,
+        65
+      ],
+      [
+        94,
+        118
+      ],
+      [
+        134,
+        216
+      ],
+      [
+        225,
+        227
+      ],
+      [
+        236,
+        292
+      ],
+      [
+        308,
+        325
+      ]
+    ],
+    "word_images_viewed": [
+      {
+        "block_index": 28,
+        "sha256": "10af25a7cde57df38011ac91a0cffc95561a0521b1b718c914e345d97f043400"
+      },
+      {
+        "block_index": 95,
+        "sha256": "b0a29a45db5c08525eba119edd0b3c4f78b8fd89fdb028e7431c60675b870aff"
+      },
+      {
+        "block_index": 115,
+        "sha256": "3c29ba0d9410ea4d0fe8c993695fe1d28c6572570816436ab913356d029fbd40"
+      },
+      {
+        "block_index": 121,
+        "sha256": "69f86319b7186da7d3656670301bfb5e7eb683b66263061ffcc9d0e146f0b537"
+      },
+      {
+        "block_index": 129,
+        "sha256": "23c30632c48fe6d805efc535d4c6c979963710fe76168c8eb82a635c7748dbae"
+      },
+      {
+        "block_index": 135,
+        "sha256": "bfc85c938dc348d2e5de63df24895527e2f18b98fe8c8827336f247b0c996a84"
+      },
+      {
+        "block_index": 159,
+        "sha256": "fdfb05aa334f77e7898a46a0dfe5217907e0a80eb65510c14cca3401e993c970"
+      },
+      {
+        "block_index": 223,
+        "sha256": "e90cfc7d7a9c2c5ff0c5f7a9e006800201e52236314a9207f757a3668d52fa3f"
+      },
+      {
+        "block_index": 259,
+        "sha256": "884b160ad20b41ed80bd138856f55e43e8d8df7732cceef3d424deadb4fa0cbc"
+      },
+      {
+        "block_index": 292,
+        "sha256": "6aa63d616fa362632f39f3b49a452288f7f6ad07f1970231856ab2be1f9a3b6c"
+      }
+    ],
+    "unviewed_word_media_references": 122,
+    "unviewed_wmf_references": 84,
+    "claim_evidence": [
+      {
+        "id": "WATER-K01",
+        "group": "knowledge",
+        "summary_sha256": "627b5a8a60878001ddf360e42751c0e6a16c638e7d10ef940e2beacb8a13b9b9",
+        "source_ranges": [
+          {
+            "start": 32,
+            "end": 33,
+            "start_xml_locator": "word/document.xml#/w:body/*[35]",
+            "end_xml_locator": "word/document.xml#/w:body/*[36]"
+          }
+        ],
+        "textbook_evidence": {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            65
+          ],
+          "printed_pages": [
+            59
+          ],
+          "anchors": [
+            "印刷59页图3.1、图下完整式与简写式"
+          ],
+          "support_role": "direct_concept_support_with_AI_application"
+        },
+        "limitations": [
+          "讲义33旧式域公式未完成像素核验，不将教材式称作讲义原式。"
+        ]
+      },
+      {
+        "id": "WATER-K02",
+        "group": "knowledge",
+        "summary_sha256": "729d9dd6d18ea4e69b6fadd4a61d0570f5ed8846f129a7d187a5d3926c921296",
+        "source_ranges": [
+          {
+            "start": 151,
+            "end": 162,
+            "start_xml_locator": "word/document.xml#/w:body/*[157]",
+            "end_xml_locator": "word/document.xml#/w:body/*[170]"
+          },
+          {
+            "start": 319,
+            "end": 325,
+            "start_xml_locator": "word/document.xml#/w:body/*[346]",
+            "end_xml_locator": "word/document.xml#/w:body/*[352]"
+          }
+        ],
+        "textbook_evidence": {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            66,
+            67,
+            69
+          ],
+          "printed_pages": [
+            60,
+            61,
+            63
+          ],
+          "anchors": [
+            "印刷60页pH定义",
+            "图3.2对数标度",
+            "印刷63页练习2"
+          ],
+          "support_role": "direct_concept_support_with_AI_application"
+        },
+        "limitations": [
+          "氢离子浓度式采用本节高中水溶液模型；讲义319所称原考试出处未溯源。"
+        ]
+      },
+      {
+        "id": "WATER-M01",
+        "group": "methods",
+        "summary_sha256": "09d862bf253cb1ce4bd152152c5f54912b5e0be6a91bd093141b34221142436b",
+        "source_ranges": [
+          {
+            "start": 94,
+            "end": 118,
+            "start_xml_locator": "word/document.xml#/w:body/*[100]",
+            "end_xml_locator": "word/document.xml#/w:body/*[124]"
+          }
+        ],
+        "textbook_evidence": {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            65,
+            66
+          ],
+          "printed_pages": [
+            59,
+            60
+          ],
+          "anchors": [
+            "印刷59页Kw乘积式",
+            "印刷60页表3.1与中性判据"
+          ],
+          "support_role": "direct_concept_support_with_AI_application"
+        },
+        "limitations": [
+          "95和115已看原像素；96、98、109等公式资产仍有未核项目，课堂只使用已见坐标，不补原题残句。"
+        ]
+      },
+      {
+        "id": "WATER-M02",
+        "group": "methods",
+        "summary_sha256": "b9113fdb28a88fa8469828601492154f5b1c112b8ff39ef41907768a36d24d4e",
+        "source_ranges": [
+          {
+            "start": 44,
+            "end": 46,
+            "start_xml_locator": "word/document.xml#/w:body/*[47]",
+            "end_xml_locator": "word/document.xml#/w:body/*[49]"
+          },
+          {
+            "start": 56,
+            "end": 65,
+            "start_xml_locator": "word/document.xml#/w:body/*[60]",
+            "end_xml_locator": "word/document.xml#/w:body/*[69]"
+          }
+        ],
+        "textbook_evidence": {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            65,
+            66
+          ],
+          "printed_pages": [
+            59,
+            60
+          ],
+          "anchors": [
+            "印刷59页水的电离与Kw",
+            "印刷60页关于酸碱溶液中水电离程度的思考题"
+          ],
+          "support_role": "direct_concept_support_with_AI_application"
+        },
+        "limitations": [
+          "盐的水解仅作讲义对照；本次教材3.1未展开水解计算，不声称已研读3.3。"
+        ]
+      },
+      {
+        "id": "WATER-M03",
+        "group": "methods",
+        "summary_sha256": "bd059cea71b99f01aff81a87372e5c3f96d672147ff4634d359c0db9e23eb17b",
+        "source_ranges": [
+          {
+            "start": 236,
+            "end": 248,
+            "start_xml_locator": "word/document.xml#/w:body/*[257]",
+            "end_xml_locator": "word/document.xml#/w:body/*[271]"
+          },
+          {
+            "start": 308,
+            "end": 314,
+            "start_xml_locator": "word/document.xml#/w:body/*[333]",
+            "end_xml_locator": "word/document.xml#/w:body/*[339]"
+          }
+        ],
+        "textbook_evidence": {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            65,
+            66,
+            69
+          ],
+          "printed_pages": [
+            59,
+            60,
+            63
+          ],
+          "anchors": [
+            "印刷59—60页水电离和Kw",
+            "印刷63页练习4的常规浓度计算作为比较"
+          ],
+          "support_role": "direct_concept_support_with_AI_application"
+        },
+        "limitations": [
+          "二次式与数值为本地AI推导；教材3.1未直接印出该二次式，讲义所称2020浙江题源未溯源。"
+        ]
+      },
+      {
+        "id": "WATER-M04",
+        "group": "methods",
+        "summary_sha256": "11b850cb18f5d1196535e4dc8f85193be99c3aac50f4ab733d9f46c77ddfeb7c",
+        "source_ranges": [
+          {
+            "start": 178,
+            "end": 194,
+            "start_xml_locator": "word/document.xml#/w:body/*[192]",
+            "end_xml_locator": "word/document.xml#/w:body/*[208]"
+          },
+          {
+            "start": 225,
+            "end": 227,
+            "start_xml_locator": "word/document.xml#/w:body/*[243]",
+            "end_xml_locator": "word/document.xml#/w:body/*[245]"
+          },
+          {
+            "start": 315,
+            "end": 318,
+            "start_xml_locator": "word/document.xml#/w:body/*[340]",
+            "end_xml_locator": "word/document.xml#/w:body/*[343]"
+          }
+        ],
+        "textbook_evidence": {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            68,
+            69
+          ],
+          "printed_pages": [
+            62,
+            63
+          ],
+          "anchors": [
+            "印刷62页例题导引及已给反应后总体积50 mL",
+            "印刷63页练习3C和练习4"
+          ],
+          "support_role": "direct_concept_support_with_AI_application"
+        },
+        "limitations": [
+          "按完全电离、中和后无显著水解及水贡献可忽略的题设；教材练习未附答案，讲评为AI建议。"
+        ]
+      },
+      {
+        "id": "WATER-M05",
+        "group": "methods",
+        "summary_sha256": "0930afed64fb5cee704455b1f883630ae651b2eedb27cf074d1f7dc39969336e",
+        "source_ranges": [
+          {
+            "start": 172,
+            "end": 173,
+            "start_xml_locator": "word/document.xml#/w:body/*[184]",
+            "end_xml_locator": "word/document.xml#/w:body/*[185]"
+          },
+          {
+            "start": 197,
+            "end": 205,
+            "start_xml_locator": "word/document.xml#/w:body/*[211]",
+            "end_xml_locator": "word/document.xml#/w:body/*[219]"
+          },
+          {
+            "start": 280,
+            "end": 284,
+            "start_xml_locator": "word/document.xml#/w:body/*[303]",
+            "end_xml_locator": "word/document.xml#/w:body/*[307]"
+          }
+        ],
+        "textbook_evidence": {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            67,
+            69
+          ],
+          "printed_pages": [
+            61,
+            63
+          ],
+          "anchors": [
+            "印刷61页图3.3四种指示剂变色范围",
+            "印刷63页练习3D"
+          ],
+          "support_role": "direct_concept_support_with_AI_application"
+        },
+        "limitations": [
+          "讲义284又写酚酞8.1—10.0，属于第三种边界；280题干含未核WMF，不把整题视作已完整图文核验。"
+        ]
+      },
+      {
+        "id": "WATER-M06",
+        "group": "methods",
+        "summary_sha256": "3b6f256f0e9f05feb0f17f9ab2cbb6ddd59899dde83e4074ae9d76a734891fbd",
+        "source_ranges": [
+          {
+            "start": 165,
+            "end": 175,
+            "start_xml_locator": "word/document.xml#/w:body/*[175]",
+            "end_xml_locator": "word/document.xml#/w:body/*[189]"
+          },
+          {
+            "start": 206,
+            "end": 216,
+            "start_xml_locator": "word/document.xml#/w:body/*[220]",
+            "end_xml_locator": "word/document.xml#/w:body/*[230]"
+          },
+          {
+            "start": 267,
+            "end": 273,
+            "start_xml_locator": "word/document.xml#/w:body/*[290]",
+            "end_xml_locator": "word/document.xml#/w:body/*[296]"
+          },
+          {
+            "start": 285,
+            "end": 292,
+            "start_xml_locator": "word/document.xml#/w:body/*[308]",
+            "end_xml_locator": "word/document.xml#/w:body/*[315]"
+          }
+        ],
+        "textbook_evidence": {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            67,
+            68
+          ],
+          "printed_pages": [
+            61,
+            62
+          ],
+          "anchors": [
+            "印刷61页广泛/精密试纸量程和分辨率",
+            "印刷61—62页pH计与图3.4"
+          ],
+          "support_role": "direct_concept_support_with_AI_application"
+        },
+        "limitations": [
+          "气体检验、NaClO干扰来自讲义，非本次实施实验；教材pH计0.01的表述不等于未经校准的仪器均有相同准确度。"
+        ]
+      },
+      {
+        "id": "WATER-P01",
+        "group": "pitfalls",
+        "summary_sha256": "3c4eafc6d496d29d584111fac8133dac782cf96793c3227b25889050e78eb3e7",
+        "source_ranges": [
+          {
+            "start": 48,
+            "end": 52,
+            "start_xml_locator": "word/document.xml#/w:body/*[51]",
+            "end_xml_locator": "word/document.xml#/w:body/*[56]"
+          },
+          {
+            "start": 114,
+            "end": 118,
+            "start_xml_locator": "word/document.xml#/w:body/*[120]",
+            "end_xml_locator": "word/document.xml#/w:body/*[124]"
+          },
+          {
+            "start": 134,
+            "end": 147,
+            "start_xml_locator": "word/document.xml#/w:body/*[140]",
+            "end_xml_locator": "word/document.xml#/w:body/*[153]"
+          },
+          {
+            "start": 164,
+            "end": 164,
+            "start_xml_locator": "word/document.xml#/w:body/*[172]",
+            "end_xml_locator": "word/document.xml#/w:body/*[172]"
+          }
+        ],
+        "textbook_evidence": {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            65,
+            66
+          ],
+          "printed_pages": [
+            59,
+            60
+          ],
+          "anchors": [
+            "印刷59页温度关系",
+            "印刷60页表3.1的实际温度范围"
+          ],
+          "support_role": "direct_concept_support_with_AI_application"
+        },
+        "limitations": [
+          "不外查高温标准Kw，不宣称已判定哪处是官方/精确值。"
+        ]
+      },
+      {
+        "id": "WATER-P02",
+        "group": "pitfalls",
+        "summary_sha256": "86113937c50461dfb04475cab7350e3fc89c0d983ea45762bc45c3781430fe86",
+        "source_ranges": [
+          {
+            "start": 178,
+            "end": 194,
+            "start_xml_locator": "word/document.xml#/w:body/*[192]",
+            "end_xml_locator": "word/document.xml#/w:body/*[208]"
+          },
+          {
+            "start": 236,
+            "end": 248,
+            "start_xml_locator": "word/document.xml#/w:body/*[257]",
+            "end_xml_locator": "word/document.xml#/w:body/*[271]"
+          },
+          {
+            "start": 308,
+            "end": 314,
+            "start_xml_locator": "word/document.xml#/w:body/*[333]",
+            "end_xml_locator": "word/document.xml#/w:body/*[339]"
+          }
+        ],
+        "textbook_evidence": {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            65,
+            66,
+            69
+          ],
+          "printed_pages": [
+            59,
+            60,
+            63
+          ],
+          "anchors": [
+            "印刷59—60页Kw与温度",
+            "印刷63页常规浓度pH练习"
+          ],
+          "support_role": "direct_concept_support_with_AI_application"
+        },
+        "limitations": [
+          "弱酸部分仅指出需平衡信息，当前3.1页没有提供Ka数表。"
+        ]
+      },
+      {
+        "id": "WATER-P03",
+        "group": "pitfalls",
+        "summary_sha256": "f73e977eacaf8d6fd0310a46b1e346b03098287d572b8ff1759ab0b2c267b84f",
+        "source_ranges": [
+          {
+            "start": 34,
+            "end": 42,
+            "start_xml_locator": "word/document.xml#/w:body/*[37]",
+            "end_xml_locator": "word/document.xml#/w:body/*[45]"
+          },
+          {
+            "start": 44,
+            "end": 46,
+            "start_xml_locator": "word/document.xml#/w:body/*[47]",
+            "end_xml_locator": "word/document.xml#/w:body/*[49]"
+          }
+        ],
+        "textbook_evidence": {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            65,
+            66
+          ],
+          "printed_pages": [
+            59,
+            60
+          ],
+          "anchors": [
+            "印刷59页可逆电离",
+            "印刷60页酸碱溶液中的水电离程度讨论"
+          ],
+          "support_role": "direct_concept_support_with_AI_application"
+        },
+        "limitations": [
+          "AI提出的待核问题，不等于已用原实验数据推翻原讲义；不改原表。"
+        ]
+      },
+      {
+        "id": "WATER-P04",
+        "group": "pitfalls",
+        "summary_sha256": "156938de238f26fe0b3feaab1a439d3bd76523fa3b392441bda328d7d9231f7f",
+        "source_ranges": [
+          {
+            "start": 250,
+            "end": 265,
+            "start_xml_locator": "word/document.xml#/w:body/*[273]",
+            "end_xml_locator": "word/document.xml#/w:body/*[288]"
+          }
+        ],
+        "textbook_evidence": {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            66,
+            67
+          ],
+          "printed_pages": [
+            60,
+            61
+          ],
+          "anchors": [
+            "印刷60页以实际离子浓度比较酸碱性",
+            "印刷61页图3.2"
+          ],
+          "support_role": "direct_concept_support_with_AI_application"
+        },
+        "limitations": [
+          "259已看原像素；当前课堂不把该题作为判定任意两碱Kb的通法。"
+        ]
+      },
+      {
+        "id": "WATER-F01",
+        "group": "teaching_flow",
+        "summary_sha256": "7a679ba7dda73bf96ff2ec11aa9bb2cfaac97ae62e7e0470b8ec2726960a1c1c",
+        "source_ranges": [
+          {
+            "start": 32,
+            "end": 65,
+            "start_xml_locator": "word/document.xml#/w:body/*[35]",
+            "end_xml_locator": "word/document.xml#/w:body/*[69]"
+          },
+          {
+            "start": 94,
+            "end": 118,
+            "start_xml_locator": "word/document.xml#/w:body/*[100]",
+            "end_xml_locator": "word/document.xml#/w:body/*[124]"
+          },
+          {
+            "start": 150,
+            "end": 164,
+            "start_xml_locator": "word/document.xml#/w:body/*[156]",
+            "end_xml_locator": "word/document.xml#/w:body/*[172]"
+          }
+        ],
+        "textbook_evidence": {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            65,
+            66,
+            67,
+            69
+          ],
+          "printed_pages": [
+            59,
+            60,
+            61,
+            63
+          ],
+          "anchors": [
+            "图3.1",
+            "表3.1",
+            "图3.2",
+            "印刷63页练习1—3"
+          ],
+          "support_role": "direct_concept_support_with_AI_application"
+        },
+        "limitations": [
+          "AI备课候选；教材练习答案须教师核对；原图另行选择才算课堂附图。"
+        ]
+      },
+      {
+        "id": "WATER-F02",
+        "group": "teaching_flow",
+        "summary_sha256": "b2f470c87efedca74dff235f2b68fb9a93953c96b0ed56ca6465470035b88ee5",
+        "source_ranges": [
+          {
+            "start": 165,
+            "end": 194,
+            "start_xml_locator": "word/document.xml#/w:body/*[175]",
+            "end_xml_locator": "word/document.xml#/w:body/*[208]"
+          },
+          {
+            "start": 206,
+            "end": 216,
+            "start_xml_locator": "word/document.xml#/w:body/*[220]",
+            "end_xml_locator": "word/document.xml#/w:body/*[230]"
+          },
+          {
+            "start": 225,
+            "end": 227,
+            "start_xml_locator": "word/document.xml#/w:body/*[243]",
+            "end_xml_locator": "word/document.xml#/w:body/*[245]"
+          },
+          {
+            "start": 308,
+            "end": 318,
+            "start_xml_locator": "word/document.xml#/w:body/*[333]",
+            "end_xml_locator": "word/document.xml#/w:body/*[343]"
+          }
+        ],
+        "textbook_evidence": {
+          "volume_id": "TB-E1",
+          "section_key": "TB-E1-C3:3.1",
+          "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+          "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+          "pdf_pages": [
+            65,
+            66,
+            67,
+            68,
+            69
+          ],
+          "printed_pages": [
+            59,
+            60,
+            61,
+            62,
+            63
+          ],
+          "anchors": [
+            "印刷62页例题导引",
+            "印刷63页练习2、4",
+            "图3.3与图3.4"
+          ],
+          "support_role": "direct_concept_support_with_AI_application"
+        },
+        "limitations": [
+          "数值二次式为AI补充推导，不宣称原题或教材官方答案；本次没有实际组织实验。"
+        ]
+      }
+    ]
+  }
+}

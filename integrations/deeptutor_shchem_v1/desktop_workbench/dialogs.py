@@ -848,6 +848,7 @@ class ImportDialog(QDialog):
                 self,
             )
             result = dialog.exec()
+            reprocess = dialog.selected_reprocess_shards() if result == VisualImportEgressDialog.REVISE_PREVIEW else ()
         except (OSError, RuntimeError, TypeError, ValueError, KeyError):
             self._discard_visual_egress(preview_id)
             set_status(self.status, "error", "图片核对窗口未能打开，未调用模型；请重新预览。")
@@ -856,6 +857,30 @@ class ImportDialog(QDialog):
             if dialog is not None:
                 with suppress(RuntimeError):
                     dialog.deleteLater()
+        if result == VisualImportEgressDialog.REVISE_PREVIEW:
+            self._begin_task("visual_preview", "正在本机更新重做范围；尚未调用模型。")
+            def revise_pages(report, cancelled):
+                try:
+                    updated = self.facade.revise_visual_import_egress(preview_id, plan["revision"], reprocess)
+                    if cancelled():
+                        self._discard_visual_egress(updated.get("preview_id"))
+                    return updated
+                finally:
+                    self._discard_visual_egress(preview_id)
+            def revised(updated):
+                self._pending_visual_egress = (receipt, selected, updated)
+            try:
+                self._active_task_id = self.tasks.submit_progress(
+                    "更新发送预览（本地）", revise_pages,
+                    on_progress=self._import_progress, on_success=revised, on_failure=self._import_failed,
+                )
+            except (AttributeError, RuntimeError, TypeError):
+                self._discard_visual_egress(preview_id)
+                self._active_task_id = self._active_task_kind = None
+                self.cancel_button.hide()
+                self._set_busy(False)
+                set_status(self.status, "error", "发送预览未能更新，未调用模型；请重新预览。")
+            return
         if result != QDialog.DialogCode.Accepted:
             self._discard_visual_egress(preview_id)
             set_status(self.status, "info", "已返回，未发送图片、未调用模型；已保存来源保留。")

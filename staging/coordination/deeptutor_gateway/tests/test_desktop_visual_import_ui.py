@@ -741,6 +741,7 @@ def _visual_dialog(facade: Any, tasks: Any) -> Any:
 
 
 class _FakeVisualImportEgressDialog:
+    REVISE_PREVIEW = 2
     result = None
     instances: ClassVar[list[Any]] = []
     load_pixels = False
@@ -761,6 +762,9 @@ class _FakeVisualImportEgressDialog:
     def deleteLater(self):
         return None
 
+    def selected_reprocess_shards(self):
+        return ("synthetic-shard-1",)
+
 
 def _patch_visual_egress(monkeypatch: pytest.MonkeyPatch, *, result, load_pixels=False):
     import integrations.deeptutor_shchem_v1.desktop_workbench.visual_import_egress_dialog as module
@@ -769,6 +773,33 @@ def _patch_visual_egress(monkeypatch: pytest.MonkeyPatch, *, result, load_pixels
     _FakeVisualImportEgressDialog.load_pixels = load_pixels
     _FakeVisualImportEgressDialog.instances = []
     monkeypatch.setattr(module, "VisualImportEgressDialog", _FakeVisualImportEgressDialog)
+
+
+def test_reprocess_selection_reopens_preview_before_model_run(qt_app, monkeypatch):
+    from PySide6.QtWidgets import QDialog
+    facade = _Facade(profiles=(_visual_profile(),))
+    tasks = _manual_task_bridge()
+    dialog = _visual_dialog(facade, tasks)
+    revised_calls = []
+    def revise(preview_id, revision, selected):
+        revised_calls.append((preview_id, revision, selected))
+        plan = deepcopy(facade.visual_plan)
+        plan.update(preview_id="REVISED-PREVIEW", revision="REVISED-REVISION")
+        _FakeVisualImportEgressDialog.result = QDialog.DialogCode.Accepted
+        return plan
+    facade.revise_visual_import_egress = revise
+    _patch_visual_egress(monkeypatch, result=_FakeVisualImportEgressDialog.REVISE_PREVIEW)
+    dialog._run_visual()
+    tasks.finish_next()
+    _settle(qt_app)
+    assert not facade.run_calls and len(tasks.pending) == 1
+    tasks.finish_next()
+    _settle(qt_app)
+    assert len(revised_calls) == 1 and not facade.run_calls and len(tasks.pending) == 1
+    tasks.finish_next()
+    _settle(qt_app)
+    assert facade.run_calls[0]["egress_preview_id"] == "REVISED-PREVIEW"
+    assert facade.run_calls[0]["egress_revision"] == "REVISED-REVISION"
 
 
 def test_visual_egress_cancel_discards_snapshot_without_model_run(

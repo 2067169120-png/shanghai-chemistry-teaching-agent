@@ -138,6 +138,85 @@ def test_resume_gallery_labels_cached_pages_and_local_only_action(app, pending):
     _close(dialog)
 
 
+def _progress_plan(*, blocked=False, selected=False):
+    plan, pixels = _plan_for([
+        ("前两页的合成题目来源.png", "question", (200, 200, 255), (64, 40)),
+        ("前两页的合成题目来源.png", "question", (200, 255, 200), (64, 40)),
+        ("末页合成来源.png", "question", (255, 200, 200), (64, 40)),
+    ])
+    plan["can_confirm"] = not blocked
+    plan["shards"] = [
+        {"shard_id": "shard-1", "shard_index": 1, "stored_state": "invalid" if blocked else "saved",
+         "reprocess": selected, "page_ids": [p["page_id"] for p in plan["pages"][:2]]},
+        {"shard_id": "shard-2", "shard_index": 2, "stored_state": "pending", "reprocess": False,
+         "page_ids": [plan["pages"][2]["page_id"]]},
+    ]
+    for index, page in enumerate(plan["pages"]):
+        page["will_send"] = index == 2 or selected
+        page["checkpoint_state"] = "pending" if index == 2 else "blocked" if blocked else "reprocess" if selected else "saved"
+    return plan, pixels
+
+
+def test_dirty_selection_blocks_old_confirmation_and_can_be_reverted(app):
+    from PySide6.QtCore import Qt
+    plan, pixels = _progress_plan()
+    dialog, _ = _dialog_for(plan, pixels)
+    _flush(app, dialog)
+    assert dialog.confirm_button.isEnabled() and not dialog.revise_button.isEnabled()
+    first = dialog.shard_list.item(0)
+    assert not (dialog.shard_list.item(1).flags() & Qt.ItemFlag.ItemIsUserCheckable)
+    first.setCheckState(Qt.CheckState.Checked)
+    assert not dialog.confirm_button.isEnabled() and dialog.revise_button.isEnabled()
+    dialog.accept()
+    assert dialog.result() == QDialog.DialogCode.Rejected
+    first.setCheckState(Qt.CheckState.Unchecked)
+    assert dialog.confirm_button.isEnabled() and not dialog.revise_button.isEnabled()
+    first.setCheckState(Qt.CheckState.Checked)
+    dialog.revise_button.click()
+    assert dialog.result() == VisualImportEgressDialog.REVISE_PREVIEW
+    assert dialog.selected_reprocess_shards() == ("shard-1",)
+    assert dialog._timer.isActive() is False
+
+
+def test_broken_saved_record_cannot_be_accepted_after_image_validation(app):
+    from PySide6.QtCore import Qt
+    plan, pixels = _progress_plan(blocked=True)
+    dialog, _ = _dialog_for(plan, pixels)
+    _flush(app, dialog)
+    assert dialog.tabs.tabText(dialog.tabs.currentIndex()) == "处理进度"
+    assert not dialog.confirm_button.isEnabled()
+    assert "本机复用" not in dialog._assets[0]["caption"]
+    assert "无法核验" in dialog.validation_status.text()
+    dialog.accept()
+    assert dialog.result() == QDialog.DialogCode.Rejected
+    dialog.shard_list.item(0).setCheckState(Qt.CheckState.Checked)
+    assert not dialog.confirm_button.isEnabled()
+    dialog.revise_button.click()
+    assert dialog.result() == VisualImportEgressDialog.REVISE_PREVIEW
+
+
+def test_revised_selection_uses_updated_outbound_gallery(app):
+    plan, pixels = _progress_plan(selected=True)
+    dialog, _ = _dialog_for(plan, pixels)
+    _flush(app, dialog)
+    assert dialog.confirm_button.isEnabled() and not dialog.revise_button.isEnabled()
+    assert all("本次发送" in row["caption"] for row in dialog._assets)
+    assert "3 页本次发送" in dialog.summary.text()
+    assert dialog.selected_reprocess_shards() == ("shard-1",)
+    _close(dialog)
+
+
+def test_incomplete_shard_membership_blocks_even_valid_pixels(app):
+    plan, pixels = _progress_plan()
+    plan["shards"][0]["page_ids"].pop()
+    dialog, _ = _dialog_for(plan, pixels)
+    app.processEvents()
+    assert dialog._manifest_error and not dialog.confirm_button.isEnabled()
+    dialog.accept()
+    assert dialog.result() == QDialog.DialogCode.Rejected
+    _close(dialog)
+
+
 def test_gallery_is_open_by_default_and_displays_real_page_pixels(app):
     plan, contents = _plan_for(
         [("题目页.png", "question", (18, 52, 220), (64, 40))]
@@ -448,6 +527,18 @@ def test_empty_or_incomplete_plan_cannot_be_accepted(app, plan):
     assert dialog.image_list.count() == 0
     assert not dialog.confirm_button.isEnabled()
     assert "清单不完整" in dialog.validation_status.text()
+    dialog.accept()
+    assert dialog.result() == QDialog.DialogCode.Rejected
+    _close(dialog)
+
+
+@pytest.mark.parametrize("shards", [None, 3, {}, []])
+def test_malformed_shard_list_blocks_without_crashing(app, shards):
+    plan, contents = _plan_for([("合成原页", "question", (60, 120, 220), (48, 32))])
+    plan["shards"] = shards
+    dialog, _calls = _dialog_for(plan, contents)
+    _flush(app, dialog)
+    assert not dialog.confirm_button.isEnabled()
     dialog.accept()
     assert dialog.result() == QDialog.DialogCode.Rejected
     _close(dialog)

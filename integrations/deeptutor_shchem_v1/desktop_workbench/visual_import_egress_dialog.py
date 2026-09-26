@@ -4,14 +4,24 @@ import hashlib
 import re
 from copy import deepcopy
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLayout
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtWidgets import QDialog, QLayout, QLabel, QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget
 
 from ..desktop_visual_import_v2 import _image_dimensions
 from .preparation_egress_dialog import PreparationEgressDialog
 
 _ROLES = {"question": "题目 / 共同材料", "answer": "参考答案", "handout": "教师讲义"}
 _MIMES = {"image/png", "image/jpeg", "image/webp"}
+
+
+class _ShardList(QListWidget):
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        width = max(80, self.viewport().width() - 60)
+        for index in range(self.count()):
+            item = self.item(index)
+            height = self.fontMetrics().boundingRect(0, 0, width, 10000, Qt.TextFlag.TextWordWrap, item.text()).height()
+            item.setSizeHint(QSize(0, height + 24))
 
 
 class VisualImportEgressDialog(PreparationEgressDialog):
@@ -22,10 +32,15 @@ class VisualImportEgressDialog(PreparationEgressDialog):
     and the currently selected full raster only. No source path is accepted.
     """
 
+    REVISE_PREVIEW = 2
+
     def __init__(self, plan, image_loader, parent=None):
         self._plan = deepcopy(plan) if isinstance(plan, dict) else {}
         self._page_loader = image_loader
         self._valid_plan = False
+        self._selection_dirty = False
+        self._selected_shards = ()
+        self._can_confirm = self._plan.get("can_confirm", True) is True
         assets = []
         try:
             pages = self._plan["pages"]
@@ -55,12 +70,14 @@ class VisualImportEgressDialog(PreparationEgressDialog):
                 if type(page.get("will_send", True)) is not bool:
                     raise ValueError("Invalid resume state")
                 sending = page.get("will_send", True)
-                action = "本次发送" if sending else "本机复用"
+                blocked = page.get("checkpoint_state") == "blocked"
+                action = "需选择重做" if blocked else "本次发送" if sending else "本机复用"
                 assets.append({
                     "asset_id": page_id, "sha256": page["sha256"],
                     "caption": f"{action} · {role} · {name} · 第 {page['page_number']} 页",
                     "source": f"{name} · 第 {page['page_number']} 页",
-                    "purpose": (f"{role}；整页像素将交给模型识别，结果仍待核对" if sending
+                    "purpose": (f"{role}；已存结果无法核验，选择重做并更新预览后才能继续" if blocked else
+                                f"{role}；整页像素将交给模型识别，结果仍待核对" if sending
                                 else f"{role}；复用已保存分片，本次不发送，结果仍待教师核对"),
                     "width": page["width"], "height": page["height"],
                     "content_type": page["mime_type"],
@@ -80,7 +97,8 @@ class VisualImportEgressDialog(PreparationEgressDialog):
         self.setMinimumWidth(0)
         if self._valid_plan:
             sending_count = sum(page.get("will_send", True) for page in self._plan["pages"])
-            reused_count = len(assets) - sending_count
+            reused_count = sum(not page.get("will_send", True) and page.get("checkpoint_state") != "blocked"
+                               for page in self._plan["pages"])
             policy = self._plan.get("request_policy")
             budget = ""
             if isinstance(policy, dict) and all(
@@ -111,7 +129,7 @@ class VisualImportEgressDialog(PreparationEgressDialog):
         self.image_list.setAccessibleName("本批题目、答案与讲义页面；每页标明本次发送或本机复用")
         self.confirm_button.setText("确认发送并识别")
         self.cancel_button.setText("返回，不发送")
-        if self._valid_plan and reused_count:
+        if self._valid_plan and reused_count and self._can_confirm:
             self.confirm_button.setText("确认发送剩余页面" if sending_count else "在本机汇总候选")
             if not sending_count:
                 self.heading.setText("本机恢复候选")
@@ -122,9 +140,19 @@ class VisualImportEgressDialog(PreparationEgressDialog):
                     "可逐页查看原件；候选仍需教师核对。"
                 )
                 self.cancel_button.setText("返回")
+        if not self._can_confirm:
+            self.heading.setText("先检查无法核验的结果")
+            self.summary.setText("已有页组的保存记录无法核验。请在“处理进度”中选择重做，再更新发送预览。")
+            self.reminder.setText("当前不能发送或汇总。原页与旧记录保留；选择重做后仍需确认发送范围。")
+            self.confirm_button.setEnabled(False)
+        self._install_progress_tab()
+        shards = self._plan.get("shards")
+        reprocess_count = sum(s.get("reprocess") is True for s in shards if isinstance(s, dict)) if isinstance(shards, list) else 0
+        if self._valid_plan and reprocess_count and self._can_confirm:
+            self.confirm_button.setText("确认发送选定页面")
         self._full_summary = self.summary.text()
         self._compact_summary = self._full_summary
-        if self._valid_plan and sending_count:
+        if self._valid_plan and sending_count and self._can_confirm:
             self._compact_summary = (
                 f"接收模型：{self._plan['model_label']}\n"
                 f"{sending_count} 页本次发送 · {reused_count} 页从本机复用\n"
@@ -137,6 +165,115 @@ class VisualImportEgressDialog(PreparationEgressDialog):
                 self._full_summary = notice + self._full_summary
                 self._compact_summary = notice + self._compact_summary
         self._adapt_layout()
+
+    def _install_progress_tab(self):
+        shards = self._plan.get("shards")
+        if "shards" not in self._plan:
+            return
+        try:
+            if not isinstance(shards, list) or not shards:
+                raise ValueError("shards")
+            pages = {page["page_id"]: page for page in self._plan["pages"]}
+            seen, page_ids = set(), []
+            for shard in shards:
+                if (not isinstance(shard["shard_id"], str) or shard["shard_id"] in seen
+                        or shard["stored_state"] not in {"saved", "invalid", "pending"}
+                        or type(shard["shard_index"]) is not int or shard["shard_index"] < 1
+                        or type(shard["reprocess"]) is not bool or not isinstance(shard["page_ids"], list)
+                        or not shard["page_ids"] or (shard["reprocess"] and shard["stored_state"] == "pending")
+                        or any(page_id not in pages for page_id in shard["page_ids"])):
+                    raise ValueError("shard state")
+                seen.add(shard["shard_id"])
+                page_ids.extend(shard["page_ids"])
+            if len(page_ids) != len(pages) or set(page_ids) != set(pages):
+                raise ValueError("page membership")
+        except (KeyError, TypeError, ValueError):
+            self._manifest_error = True
+            self._can_confirm = False
+            self.confirm_button.setEnabled(False)
+            self.validation_status.setText("页组清单不完整，请返回重新预览。")
+            return
+        panel = QWidget()
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(8, 8, 8, 8)
+        note = QLabel("按组查看已保存与待处理的页面。勾选需要重做的组，再更新发送预览；旧记录保留。")
+        note.setWordWrap(True)
+        note.setTextFormat(Qt.TextFormat.PlainText)
+        layout.addWidget(note)
+        self.shard_list = _ShardList()
+        self.shard_list.setWordWrap(True)
+        self.shard_list.setTextElideMode(Qt.TextElideMode.ElideNone)
+        self.shard_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.shard_list.setAccessibleName("页组处理进度与重新识别选择")
+        states = {"saved": "已保存", "invalid": "无法核验 · 需选择重做", "pending": "待识别"}
+        self._original_selection = tuple(sorted(s["shard_id"] for s in shards if s["reprocess"]))
+        for shard in shards:
+            source_pages = {}
+            for page_id in shard["page_ids"]:
+                page = pages[page_id]
+                source_pages.setdefault(page["source_name"], []).append(str(page["page_number"]))
+            names = "\n".join(f"{name} 第{'、'.join(numbers)}页" for name, numbers in source_pages.items())
+            state = "已选择重做" if shard["reprocess"] else states[shard["stored_state"]]
+            item = QListWidgetItem(f"第 {shard['shard_index']} 组 · {state}\n{names}")
+            item.setData(Qt.ItemDataRole.UserRole, shard["shard_id"])
+            item.setToolTip(item.text())
+            item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
+            if shard["stored_state"] in {"saved", "invalid"}:
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                item.setCheckState(Qt.CheckState.Checked if shard["reprocess"] else Qt.CheckState.Unchecked)
+            self.shard_list.addItem(item)
+        layout.addWidget(self.shard_list, 1)
+        self.selection_note = QLabel()
+        self.selection_note.setWordWrap(True)
+        layout.addWidget(self.selection_note)
+        self.revise_button = QPushButton("更新发送预览")
+        self.revise_button.setAutoDefault(False)
+        self.revise_button.clicked.connect(lambda: self.done(self.REVISE_PREVIEW))
+        layout.addWidget(self.revise_button)
+        self.shard_list.itemChanged.connect(self._selection_changed)
+        self.tabs.addTab(panel, "处理进度")
+        self._selection_changed()
+        if not self._can_confirm:
+            self.tabs.setCurrentWidget(panel)
+
+    def _selection_changed(self, _item=None):
+        self._selected_shards = tuple(sorted(
+            self.shard_list.item(i).data(Qt.ItemDataRole.UserRole)
+            for i in range(self.shard_list.count())
+            if self.shard_list.item(i).checkState() == Qt.CheckState.Checked
+        ))
+        self._selection_dirty = self._selected_shards != self._original_selection
+        self.revise_button.setEnabled(self._selection_dirty and not self._manifest_error)
+        self.selection_note.setText(
+            f"已勾选 {len(self._selected_shards)} 组重做。更新预览后核对实际发送范围；调用可能再次计费。"
+            if self._selection_dirty else
+            f"当前预览包含 {len(self._selected_shards)} 组重做。可修改勾选后更新预览。"
+        )
+        self._show_status()
+
+    def selected_reprocess_shards(self):
+        return self._selected_shards
+
+    def _show_status(self):
+        super()._show_status()
+        self.confirm_button.setEnabled(self._ready and not self._failed and not self._manifest_error
+                                       and not self._rechecking and not self._selection_dirty and self._can_confirm)
+        if self._selection_dirty or not self._can_confirm:
+            self.confirm_button.setEnabled(False)
+            self.validation_status.setText("重做选择已变化，请先更新发送预览。" if self._selection_dirty else
+                                           "保存记录无法核验，请选择重做并更新预览；尚未发送。")
+
+    def accept(self):
+        if self._selection_dirty or not self._can_confirm:
+            return
+        super().accept()
+
+    def done(self, result):
+        if result == QDialog.DialogCode.Accepted and (self._selection_dirty or not self._can_confirm):
+            return
+        if result == self.REVISE_PREVIEW and (not self._selection_dirty or self._manifest_error):
+            return
+        super().done(result)
 
     def _adapt_layout(self):
         if not hasattr(self, "_full_summary"):

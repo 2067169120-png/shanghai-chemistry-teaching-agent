@@ -49,24 +49,43 @@ def main():
             "mime_type": "image/png",
         })
     captures = []
-    for mode, send_count in (("partial", 1), ("local", 0)):
+    for mode, send_count in (("partial", 1), ("local", 0), ("reprocess", 1), ("blocked", 0)):
         pages = [{**page, "will_send": index >= 3 - send_count} for index, page in enumerate(base_pages)]
+        for index, page in enumerate(pages):
+            page["checkpoint_state"] = ("blocked" if mode == "blocked" and index < 2 else
+                                        "reprocess" if mode == "reprocess" and index == 2 else
+                                        "pending" if page["will_send"] else "saved")
+        shards = [
+            {"shard_id": "synthetic-1", "shard_index": 1, "stored_state": "invalid" if mode == "blocked" else "saved",
+             "page_ids": [p["page_id"] for p in pages[:2]], "reprocess": False},
+            {"shard_id": "synthetic-2", "shard_index": 2, "stored_state": "pending" if mode == "partial" else "saved",
+             "page_ids": [pages[2]["page_id"]], "reprocess": mode == "reprocess"},
+        ]
+        confirmation = ("已保存结果有无法核验的页组。请在“处理进度”选择重做并更新预览；当前不能发送或汇总。"
+                        if mode == "blocked" else DesktopVisualEgressService._confirmation_text("合成模型 · 不调用网络", pages, policy))
+        if mode == "reprocess":
+            confirmation = "已选择重做 1 组；确认后才启用新记录，旧记录保留。重做会再次调用模型并可能计费。\n" + confirmation
         plan = {
             "preview_id": "SYNTHETIC-PREVIEW", "revision": "SYNTHETIC-REVISION",
             "batch_id": "SYNTHETIC-BATCH", "model_label": "合成模型 · 不调用网络",
             "request_policy": policy, "pages": pages,
-            "resume": {"send_page_count": send_count, "reused_page_count": 3 - send_count},
-            "confirmation_text": DesktopVisualEgressService._confirmation_text("合成模型 · 不调用网络", pages, policy),
+            "shards": shards, "can_confirm": mode != "blocked",
+            "resume": {"send_page_count": send_count, "reused_page_count": 1 if mode == "blocked" else 3 - send_count,
+                       "blocked_page_count": 2 if mode == "blocked" else 0},
+            "confirmation_text": confirmation,
         }
         for width, height in ((900, 820), (420, 900), (360, 900)):
             dialog = VisualImportEgressDialog(plan, pixels.__getitem__)
+            if mode in {"reprocess", "blocked"}:
+                dialog.tabs.setCurrentIndex(dialog.tabs.count() - 1)
             dialog.resize(width, height)
             dialog.show()
             for _ in range(50):
                 app.processEvents()
             assert dialog.width() == width, (mode, width, dialog.width())
-            assert dialog.confirm_button.isEnabled()
+            assert dialog.confirm_button.isEnabled() == (mode != "blocked")
             assert dialog.image_list.horizontalScrollBar().maximum() == 0
+            assert dialog.shard_list.horizontalScrollBar().maximum() == 0
             assert dialog.rect().contains(dialog.confirm_button.mapTo(dialog, dialog.confirm_button.rect().bottomRight()))
             path = output / f"visual-resume-{mode}-{width}x{height}.png"
             assert dialog.grab().save(str(path))
