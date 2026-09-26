@@ -1,10 +1,10 @@
 name: Independent practice source and real Office checks
 on:
   push:
-    branches: ["feature/lesson-source-0.1.101"]
+    branches: ["feature/lesson-source-0.1.101", "main"]
     paths: ["integrations/**", "runtime/deeptutor_shchem/exam_practice_ci.py", "staging/coordination/deeptutor_gateway/tests/**", ".github/workflows/exam-practice.yml"]
   pull_request:
-    branches: ["feature/lesson-source-0.1.101"]
+    branches: ["feature/lesson-source-0.1.101", "main"]
 permissions:
   contents: read
 concurrency:
@@ -19,7 +19,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-          fetch-depth: 20
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

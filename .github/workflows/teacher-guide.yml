@@ -1,7 +1,9 @@
 name: Teacher manual and native help checks
 on:
+  push:
+    branches: ["main"]
   pull_request:
-    branches: ["feature/lesson-source-0.1.101"]
+    branches: ["feature/lesson-source-0.1.101", "main"]
 permissions:
   contents: read
 concurrency:
@@ -16,7 +18,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-          fetch-depth: 60
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

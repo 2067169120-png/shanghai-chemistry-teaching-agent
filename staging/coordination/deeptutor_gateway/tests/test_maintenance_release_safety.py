@@ -1,4 +1,4 @@
-"""Regression contracts for the active maintenance lane, not a universal YAML audit."""
+"""Regression contracts for maintenance and main, not a universal YAML audit."""
 from fnmatch import fnmatchcase
 from pathlib import Path
 import json
@@ -7,6 +7,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[4]
 BRANCH = 'feature/lesson-source-0.1.101'
+CHECKED_BRANCHES = (BRANCH, 'main')
 WORKFLOWS = ROOT / '.github/workflows'
 
 
@@ -24,7 +25,7 @@ def matches(patterns, branch):
     return selected
 
 
-def active_on_branch(workflow):
+def active_on_branch(workflow, branch=BRANCH):
     events = workflow.get('on', {})
     if isinstance(events, str):
         events = {events: {}}
@@ -36,7 +37,7 @@ def active_on_branch(workflow):
         config = events[event] or {}
         # Ignore path filters: any possible maintenance event must remain safe.
         branches = config.get('branches', ['**'])
-        if matches(branches, BRANCH) and not matches(config.get('branches-ignore', []), BRANCH):
+        if matches(branches, branch) and not matches(config.get('branches-ignore', []), branch):
             return True
     return False
 
@@ -54,15 +55,34 @@ def assert_read_only(workflow):
             if step.get('uses', '').startswith('actions/checkout@'):
                 assert step.get('with', {}).get('persist-credentials') == 'false'
     body = json.dumps({'jobs': workflow.get('jobs', {}), 'env': workflow.get('env', {})}, ensure_ascii=False)
-    for forbidden in ('prepare_verified_release.py', 'gh release ', 'git push', 'secrets.'):
+    for forbidden in ('prepare_verified_release.py', 'publish_desktop_screenshots.py',
+                      'gh release ', 'git push', 'secrets.'):
         assert forbidden not in body
 
 
-def test_all_active_maintenance_workflows_are_read_only():
-    active = {p.name: load(p.name) for p in WORKFLOWS.glob('*.yml') if active_on_branch(load(p.name))}
+@pytest.mark.parametrize('branch', CHECKED_BRANCHES)
+def test_all_active_maintenance_and_main_workflows_are_read_only(branch):
+    active = {p.name: load(p.name) for p in WORKFLOWS.glob('*.yml') if active_on_branch(load(p.name), branch)}
     assert 'basket-audit.yml' in active
     for workflow in active.values():
         assert_read_only(workflow)
+
+
+@pytest.mark.parametrize('name', ['basket-audit.yml', 'exam-practice.yml',
+                                 'exam-revision.yml', 'teacher-guide.yml'])
+def test_main_push_and_pull_requests_run_current_maintenance_checks(name):
+    workflow = load(name)
+    for event in ('push', 'pull_request'):
+        assert 'main' in workflow['on'][event]['branches']
+    assert_read_only(workflow)
+
+
+@pytest.mark.parametrize('name', ['exam-practice.yml', 'exam-revision.yml', 'teacher-guide.yml'])
+def test_historical_patch_evidence_has_full_git_history(name):
+    workflow = load(name)
+    checkout = next(step for step in workflow['jobs']['verify']['steps']
+                    if step.get('uses', '').startswith('actions/checkout@'))
+    assert checkout['with']['fetch-depth'] == '0'
 
 
 def test_full_windows_verification_is_explicit_not_a_publisher():
@@ -96,7 +116,9 @@ def test_job_permission_escalation_is_rejected(permissions):
         assert_read_only(workflow)
 
 
-@pytest.mark.parametrize('command', ['python prepare_verified_release.py', 'gh release create v0.1.101', 'git push origin HEAD'])
+@pytest.mark.parametrize('command', ['python prepare_verified_release.py',
+                                     'python runtime/deeptutor_shchem/publish_desktop_screenshots.py',
+                                     'gh release create v0.1.101', 'git push origin HEAD'])
 def test_publication_commands_are_rejected(command):
     workflow = {'permissions': {'contents': 'read'}, 'jobs': {'verify': {'steps': [{'run': command}]}}}
     with pytest.raises(AssertionError):

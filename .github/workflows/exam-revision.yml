@@ -1,9 +1,9 @@
 name: Score revisions and downstream evidence checks
 on:
   pull_request:
-    branches: ["feature/lesson-source-0.1.101"]
+    branches: ["feature/lesson-source-0.1.101", "main"]
   push:
-    branches: ["feature/lesson-source-0.1.101"]
+    branches: ["feature/lesson-source-0.1.101", "main"]
     paths: ["integrations/**", "runtime/deeptutor_shchem/exam_revision_ci.py", "staging/coordination/deeptutor_gateway/tests/**", ".github/workflows/exam-revision.yml"]
 permissions:
   contents: read
@@ -19,7 +19,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-          fetch-depth: 30
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
