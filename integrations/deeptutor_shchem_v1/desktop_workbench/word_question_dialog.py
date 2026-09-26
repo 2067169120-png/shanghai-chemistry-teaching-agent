@@ -1702,6 +1702,16 @@ class WordQuestionDialog(QDialog):
                     muted=True,
                 )
             )
+        elif callable(getattr(self.facade, "word_question_source_locations", None)):
+            button = QPushButton("核对本页公式与对象的原文位置")
+            button.setAccessibleName("查看当前题面或答案中的具体对象位置")
+            button.setAutoDefault(False)
+            key, revision = value["key"], value["revision"]
+            scope = "answer" if index else "question"
+            button.clicked.connect(
+                lambda _checked=False, k=key, r=revision, s=scope: self._show_source_locations(k, r, s)
+            )
+            layout.addWidget(button)
         for block in blocks:
             if not isinstance(block, dict):
                 continue
@@ -1735,6 +1745,24 @@ class WordQuestionDialog(QDialog):
             if isinstance(warning, str) and warning:
                 layout.addWidget(_label("本题提醒：" + warning, muted=True))
         layout.addStretch(1)
+
+    def _show_source_locations(self, key, revision, scope):
+        if self._closed or self._current_key != key:
+            return
+        from .word_source_location_dialog import WordSourceLocationDialog
+
+        facade = self.facade
+        dialog = WordSourceLocationDialog(
+            lambda: facade.word_question_source_locations(key, revision, scope=scope),
+            lambda location_id, asset_id: facade.word_question_location_image(
+                key, revision, location_id, asset_id, scope=scope
+            ),
+            self, tasks=self.tasks,
+        )
+        try:
+            dialog.exec()
+        finally:
+            dialog.deleteLater()
 
     def _load_image(
         self,

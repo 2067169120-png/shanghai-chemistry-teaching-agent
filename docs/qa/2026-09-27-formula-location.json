@@ -1,0 +1,197 @@
+{
+  "schema_version": "shchem.word-source-location-qa.v1",
+  "date": "2026-09-27",
+  "base_commit": "1e9c051ac2d39b8655b498a21c85952e87163934",
+  "scope": "Maintenance source, synthetic UI tests, source-bound private candidate-only local updates",
+  "regression": {
+    "tests": 530,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "documentation": {
+    "status": "passed",
+    "policy": "passed",
+    "tests": {
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "screenshots": {
+    "synthetic_only": true,
+    "directly_viewed_by_root_model": true,
+    "human_reviewed": false,
+    "sha256": {
+      "01-loading-wide.png": "e4ae5f51843c51a8ad2be56e7e322842bcb6c2d925c55921587831ab3d6f1860",
+      "02-object-wide.png": "e1c1a205630a3c5d5b6ca71199b5366b94e7149d3548a0f56ccccbcd7d7f5365",
+      "03-table-duplicate-wide.png": "f7794f7b923ca818609f6a72fb585579e11fc29926348a20ac0a484c6ffb87fd",
+      "04-no-objects-wide.png": "e8dcc3b7ff6f829384313ea9ed12f4a51e124199579db50064d3422477adfba5",
+      "05-source-error-wide.png": "65a89068d4be8b149c3a9411fa4fa128b3c71e890df768506129b410b1959d10",
+      "06-wmf-unavailable-wide.png": "41ee7ef4aa0ae4b6fb50605e558628255975c3d34a16d35705e8c5a38d77b645",
+      "07-no-independent-image-wide.png": "95f13c4a90d747a373b771b0a2851480326f56ec3c8a0be686f66db5e951e29f",
+      "08-search-empty-wide.png": "d92bd36f29a97a725e6a938e8ecaac119c47d4331660da10e82ea481561efd86",
+      "09-table-narrow-top.png": "079c0426a9a44895eb60037bc92f6819ce29d4975111741ea333c28216fe6653",
+      "10-table-narrow-controls.png": "25ba9132aeaa02b3f17f26bee3758c491156141073180755bfa0ee5bc95cd013",
+      "11-minimum-narrow.png": "521c25a3e347b99eef065ad4af6cc7dffc6183440efe9f16a7c3ba6aba14385c"
+    }
+  },
+  "local_source_location": {
+    "status": "passed",
+    "selected_blocks": [
+      289,
+      364,
+      378,
+      425,
+      433,
+      436,
+      438,
+      474,
+      500
+    ],
+    "location_count": 14,
+    "kinds": {
+      "image": 13,
+      "ole_object": 1
+    },
+    "all_xml_positions_resolved": true,
+    "unique_occurrence_ids": true,
+    "unique_read_asset_ids": 11,
+    "read_image_occurrences": 12,
+    "unchanged_state_files": 488,
+    "state_file_set_unchanged": true,
+    "original_unchanged": true,
+    "catalog_unchanged": true,
+    "provider_calls": 0,
+    "human_reviewed": false,
+    "native_word_selection_tested": false
+  },
+  "local_label_increment": {
+    "changed_questions": 24,
+    "primary_filled": 18,
+    "curriculum_filled": 20,
+    "unchanged_attribute_rows": 3660,
+    "old_history_rows_unchanged": 9224,
+    "new_history_rows": 24,
+    "protected_input_count": 271,
+    "previously_absent_paths_still_absent": 3,
+    "provider_invoked": false,
+    "human_reviewed": false
+  },
+  "local_queue": {
+    "analysis_sources": 98,
+    "current_questions": 3579,
+    "current_primary_known": 2839,
+    "current_curriculum_mapped": 2673,
+    "pending_tasks": 1145,
+    "category_counts": {
+      "readable_pure_text": 301,
+      "requires_image": 785,
+      "scope_or_material_incomplete": 56,
+      "teacher_or_pinned_protected": 3
+    },
+    "attribute_binding_counts": {
+      "current": 3567,
+      "missing": 6,
+      "stale": 6
+    },
+    "original_exam_known": 837,
+    "original_exam_unknown": 2742,
+    "surplus_attribute_rows_not_counted_as_questions": 111
+  },
+  "repeat_label_preview_changes": 0,
+  "queue_input_hashes_unchanged": 209,
+  "salt_hydrolysis": {
+    "candidate_only": true,
+    "human_reviewed": false,
+    "new_claims": 13,
+    "reading_notes": 7,
+    "coverage": {
+      "knowledge": 281,
+      "methods": 129,
+      "pitfalls": 106,
+      "teaching_flow": 32
+    },
+    "lecture_count": 46,
+    "sources_with_flow": 16,
+    "sources_without_flow": 30,
+    "textbook_concepts": 383,
+    "validation": {
+      "new_claims_in_actual_reader": 13,
+      "total_notes_in_actual_reader": 21,
+      "textbook_concepts_linked": 4,
+      "stale_reference_excluded": true,
+      "removed_support_cases": [
+        {
+          "removed": 288,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 40,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 300,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 432,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 317,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 329,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 401,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 410,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 288,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 329,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 432,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 40,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 383,
+          "dependent_claim_excluded": true
+        }
+      ],
+      "repeat_new_notes": 0
+    },
+    "other_cards_unchanged": 45,
+    "protected_files_unchanged": 767,
+    "original_word_files_unchanged": 196,
+    "private_state_files_unchanged": 488,
+    "provider_calls": 0,
+    "article_search_count": 0,
+    "new_papers_collected": 0,
+    "catalog_rows_before": 114,
+    "catalog_rows_after": 115
+  },
+  "limitations": [
+    "C04 is partial: source-structure location is not native Microsoft Word selection or pagination.",
+    "Synthetic UI checks and model viewing do not establish human chemistry or real provider validation.",
+    "Only declared source ranges and 11 of 218 media references were viewed for distillation; no full Word rendering or OLE visual review.",
+    "No new executable, global skill installation, automatic skill routing or classroom outcome evaluation."
+  ]
+}

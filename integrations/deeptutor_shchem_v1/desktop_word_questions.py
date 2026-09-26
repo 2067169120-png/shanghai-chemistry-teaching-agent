@@ -78,7 +78,7 @@ class WordQuestionService:
         self._locations = {}
         self._lock = threading.RLock()
 
-    def _inventory(self, locations=None):
+    def _inventory(self, locations=None, *, read_only=False):
         """Revalidate archive bytes each time; never cache authority by filename."""
         from .desktop_facade import DesktopFacadeError
 
@@ -118,9 +118,10 @@ class WordQuestionService:
                                 preview = self.reader.word_preview_bytes(
                                     source.content, source.filename
                                 )
-                                self.preview_cache.save(
-                                    source.content, source.filename, preview
-                                )
+                                if not read_only:
+                                    self.preview_cache.save(
+                                        source.content, source.filename, preview
+                                    )
                             indexed = index_word_questions(preview)
                         except (PreparationSourceError, ValueError, TypeError):
                             warnings.append(
@@ -132,8 +133,11 @@ class WordQuestionService:
                 found[source.source_sha256] = (source, batch.batch_id, preview, items)
         return found, warnings
 
-    def _catalog(self, locations=None):
-        inventory, warnings = self._inventory(locations)
+    def _catalog(self, locations=None, *, read_only=False):
+        inventory, warnings = (
+            self._inventory(locations, read_only=True)
+            if read_only else self._inventory(locations)
+        )
         try:
             quality = source_quality_notes(self.facade.paths.workspace_root)
         except (OSError, ValueError, TypeError, KeyError) as exc:
@@ -430,7 +434,7 @@ class WordQuestionService:
             "model_invoked": False,
         }
 
-    def _resolve(self, selections, *, allow_empty=False):
+    def _resolve(self, selections, *, allow_empty=False, read_only=False):
         if (
             not isinstance(selections, list)
             or len(selections) > 100
@@ -449,7 +453,10 @@ class WordQuestionService:
                 for value in choices:
                     batch_id, source_id = self._locations[value["key"]]
                     locations.setdefault(batch_id, set()).add(source_id)
-        catalog, inventory = self._catalog(locations)
+        catalog, inventory = (
+            self._catalog(locations, read_only=True)
+            if read_only else self._catalog(locations)
+        )
         rows = {row["key"]: row for row in catalog["items"]}
         result = []
         for chosen in choices:
@@ -466,6 +473,48 @@ class WordQuestionService:
     def source(self, key, revision):
         rows, inventory = self._resolve([{"key": key, "revision": revision}])
         return deepcopy(inventory[rows[0]["source_id"]][2])
+
+    def _location_selection(self, key, revision, scope):
+        if scope not in {"question", "answer"}:
+            raise WordQuestionError("请选择题面或答案的原文位置。")
+        rows, inventory = self._resolve(
+            [{"key": key, "revision": revision}], read_only=True
+        )
+        row = rows[0]
+        blocks = (
+            row.get("answer_blocks", []) if scope == "answer"
+            else row.get("context_blocks", []) + row.get("question_blocks", [])
+        )
+        if any(block.get("display_only_split") or block.get("text_range") is not None for block in blocks):
+            raise WordQuestionError(
+                "题面与答案共用原文区块，暂不能可靠分开对象位置。请在完整教案中核对这一段。"
+            )
+        indices = sorted({block["index"] for block in blocks})
+        if not indices:
+            raise WordQuestionError("本范围没有已绑定的原文区块。")
+        return row, inventory[row["source_id"]][2], indices
+
+    def source_locations(self, key, revision, *, scope="question"):
+        row, preview, indices = self._location_selection(key, revision, scope)
+        return self.facade.imported_word_source_locations(
+            row["batch_id"], row["archive_source_id"], row["source_sha256"],
+            preview["revision"], indices,
+        )
+
+    def location_image(self, key, revision, location_id, asset_id, *, scope="question"):
+        row, preview, indices = self._location_selection(key, revision, scope)
+        arguments = (
+            row["batch_id"], row["archive_source_id"], row["source_sha256"],
+            preview["revision"],
+        )
+        located = self.facade.imported_word_source_locations(*arguments, indices)
+        if not any(
+            location.get("location_id") == location_id
+            and any(asset.get("asset_id") == asset_id for asset in location.get("assets", []))
+            for block in located["blocks"] for location in block["locations"]
+        ):
+            raise WordQuestionError("原图不属于当前题目的所选对象，请重新定位。")
+        return self.facade.imported_word_location_image(*arguments, location_id, asset_id)
 
     def attribute_options(self, key, revision):
         """Read current, source-bound labels without creating personal state."""

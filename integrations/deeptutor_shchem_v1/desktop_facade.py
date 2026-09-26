@@ -2941,7 +2941,7 @@ class DesktopWorkbenchFacade:
             for value in values
         )
 
-    def imported_word_preview(self, batch_id: str, source_id: str) -> dict[str, Any]:
+    def imported_word_preview(self, batch_id: str, source_id: str, *, read_only=False) -> dict[str, Any]:
         from .desktop_preparation_sources import PreparationSourcesService
         from .desktop_word_preview_cache import WordPreviewCache
 
@@ -2950,8 +2950,27 @@ class DesktopWorkbenchFacade:
         preview = cache.load(source.content, source.filename)
         if preview is None:
             preview = PreparationSourcesService(self.paths.workspace_root).word_preview_bytes(source.content, source.filename)
-            cache.save(source.content, source.filename, preview)
+            if not read_only:
+                cache.save(source.content, source.filename, preview)
         return preview
+
+    def imported_word_source_locations(
+        self, batch_id, source_id, source_sha256, expected_revision, block_indices=None
+    ):
+        from .desktop_word_source_locations import WordSourceLocationService
+
+        return WordSourceLocationService(self).preview(
+            batch_id, source_id, source_sha256, expected_revision, block_indices
+        )
+
+    def imported_word_location_image(
+        self, batch_id, source_id, source_sha256, expected_revision, location_id, asset_id
+    ):
+        from .desktop_word_source_locations import WordSourceLocationService
+
+        return WordSourceLocationService(self).image(
+            batch_id, source_id, source_sha256, expected_revision, location_id, asset_id
+        )
 
     def imported_word_asset(self, batch_id: str, source_id: str, asset_id: str) -> dict[str, Any]:
         from .desktop_preparation_sources import (
@@ -3096,6 +3115,14 @@ class DesktopWorkbenchFacade:
 
     def word_question_source(self, key, revision):
         return self._word_questions().source(key, revision)
+
+    def word_question_source_locations(self, key, revision, *, scope="question"):
+        return self._word_questions().source_locations(key, revision, scope=scope)
+
+    def word_question_location_image(self, key, revision, location_id, asset_id, *, scope="question"):
+        return self._word_questions().location_image(
+            key, revision, location_id, asset_id, scope=scope
+        )
 
     def word_question_image(self, key, revision, asset_id):
         return self._word_questions().image(key, revision, asset_id)
