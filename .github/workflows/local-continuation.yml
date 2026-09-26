@@ -21,14 +21,18 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r requirements-dev.txt
-      - name: Check dashboard and read-only continuation with synthetic data
+      - name: Check dashboard, review workflow and local continuation with synthetic data
         env:
           QT_QPA_PLATFORM: offscreen
-        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_home_dashboard_ui.py staging/coordination/deeptutor_gateway/tests/test_local_import_continuation.py staging/coordination/deeptutor_gateway/tests/test_maintenance_release_safety.py --junitxml=local-continuation-qa/pytest.xml
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_home_dashboard_ui.py staging/coordination/deeptutor_gateway/tests/test_local_import_continuation.py staging/coordination/deeptutor_gateway/tests/test_maintenance_release_safety.py staging/coordination/deeptutor_gateway/tests/test_desktop_library_progress.py staging/coordination/deeptutor_gateway/tests/test_library_progress_dialog.py staging/coordination/deeptutor_gateway/tests/test_offline_word_label_review.py staging/coordination/deeptutor_gateway/tests/test_word_missing_attribute_merge.py staging/coordination/deeptutor_gateway/tests/test_word_semantic_tags.py staging/coordination/deeptutor_gateway/tests/test_extend_lecture_knowledge.py --junitxml=local-continuation-qa/pytest.xml
       - name: Capture the native dashboard in temporary synthetic storage
         env:
           QT_QPA_PLATFORM: offscreen
         run: python runtime/deeptutor_shchem/home_dashboard_qa.py --output local-continuation-qa/screenshots
+      - name: Capture the native review list in temporary synthetic storage
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/library_progress_qa.py --output local-continuation-qa/review-screenshots
       - uses: actions/upload-artifact@v4
         if: always()
         with:

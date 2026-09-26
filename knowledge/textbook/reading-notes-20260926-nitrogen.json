@@ -1,0 +1,94 @@
+{
+  "schema_version": "shchem.textbook-page-reading-notes.v1",
+  "purpose": "补充既有教材概念的原页研读与课堂应用，不计为新增概念。与同批PKG-024讲义候选共同供备课复核；未自动附入原教材图片，未填写教材实验空表或生成原题官方答案。",
+  "human_reviewed": false,
+  "original_source_redistribution": false,
+  "review_method": "page_images_read_by_model",
+  "source": {
+    "volume_id": "TB-M1",
+    "title": "普通高中教科书 化学 必修 第一册",
+    "sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+    "pdf_pages_viewed": [89, 90, 91, 92, 93, 94, 95],
+    "printed_pages_viewed": [84, 85, 86, 87, 88, 89, 90]
+  },
+  "notes": [
+    {
+      "id": "READ-TB-M1-20260926-N-01",
+      "section_key": "TB-M1-C3:3.2",
+      "title": "固氮的边界和转化条件",
+      "pdf_pages": [89, 90, 95],
+      "printed_pages": [84, 85, 90],
+      "source_anchors": ["固氮正文与合成氨反应", "链接学科中的合成氨条件说明", "练习巩固第2题价态图"],
+      "summary": "由游离态氮进入化合态界定固氮，再比较氮转化为氨或一氧化氮时的价态方向。合成氨的高温、高压、催化剂及可逆关系必须同时保留；后续氮氧化物之间的转化另作区分。",
+      "classroom_check": "学生标出属于固氮的转化，并为一条路线补写反应物与条件；原练习的完整答案仍由教师核对。",
+      "lecture_package_id": "PKG-024",
+      "lecture_block_indices": [49, 55, 58, 62, 65, 66],
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-M1-20260926-N-02",
+      "section_key": "TB-M1-C3:3.2",
+      "title": "喷泉中的压力证据与颜色证据",
+      "pdf_pages": [91, 92],
+      "printed_pages": [86, 87],
+      "source_anchors": ["图3.11 氨的喷泉实验", "印刷87页氨水性质及一水合氨电离"],
+      "summary": "把液体进入烧瓶的原因与酚酞变红的原因分开说明。前者连接氨的快速吸收和瓶内外压强差，后者连接溶液碱性；讨论氨水时区分混合物、氨和一水合氨，不把颜色本身当作压差证据。",
+      "classroom_check": "用箭头说明水最初进入后的变化，并用另一句话解释指示剂的作用；不把页面空白记录栏当成已有答案。",
+      "lecture_package_id": "PKG-024",
+      "lecture_block_indices": [289, 292, 300, 302, 304, 307, 309, 310, 311],
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-M1-20260926-N-03",
+      "section_key": "TB-M1-C3:3.2",
+      "title": "白烟和氯化铵受热变化",
+      "pdf_pages": [92, 93],
+      "printed_pages": [87, 88],
+      "source_anchors": ["图3.12 氨与氯化氢反应的实验现象", "图3.13 氯化铵受热分解", "印刷88页实验后的解释正文"],
+      "summary": "白烟对应氨与氯化氢生成的氯化铵固体；氯化铵受热分解后，冷却时气体可重新化合。将观察到固体位置变化与物质发生化学变化分开，避免直接套用升华。",
+      "classroom_check": "要求学生为加热处和冷处分别说明物质变化，保留加热、冷却条件。",
+      "lecture_package_id": "PKG-024",
+      "lecture_block_indices": [293, 324],
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-M1-20260926-N-04",
+      "section_key": "TB-M1-C3:3.2",
+      "title": "铵根检验的完整证据链",
+      "pdf_pages": [93],
+      "printed_pages": [88],
+      "source_anchors": ["铵盐的性质实验第2步", "现象—性质—方程式空白记录表", "制备氨和检验铵根的正文"],
+      "summary": "把加碱、加热、湿润红色石蕊试纸靠近管口上方和气体检验连成证据链。教材明确由铵盐与碱反应放出氨引出检验用途；讲义进一步给出发生、干燥和收集要求，二者不混称为同一套教材装置。",
+      "classroom_check": "学生解释为什么要检验逸出气体，并指出讲义349图只显示哪些环节；课堂完整装置须经教师另行复核。",
+      "lecture_package_id": "PKG-024",
+      "lecture_block_indices": [334, 335, 336, 338, 339, 341, 343, 349, 352, 353, 354, 358, 359],
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-M1-20260926-N-05",
+      "section_key": "TB-M1-C3:3.2",
+      "title": "用铜的反应核对硝酸的两类去向",
+      "pdf_pages": [93, 94],
+      "printed_pages": [88, 89],
+      "source_anchors": ["硝态氮肥和硝酸的强氧化性正文", "印刷89页铜与浓、稀硝酸的两式"],
+      "summary": "教材分别印出铜与浓、稀硝酸的反应，含氮还原产物和化学计量数不同。以这两个明确体系区分成盐的硝酸根与被还原的氮，再核对氮原子、电子和气体符号；不把典型式扩成所有金属的绝对规律。",
+      "classroom_check": "在原式上分别标记氮的两类去向，说明一氧化氮接触空气后的颜色变化不代表初始产物改变。",
+      "lecture_package_id": "PKG-024",
+      "lecture_block_indices": [81, 84, 506, 517, 518, 628, 629],
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-M1-20260926-N-06",
+      "section_key": "TB-M1-C3:3.2",
+      "title": "以条件和证据收束两课时",
+      "pdf_pages": [89, 91, 92, 93, 94, 95],
+      "printed_pages": [84, 86, 87, 88, 89, 90],
+      "source_anchors": ["图3.11—3.13", "印刷89页铜与硝酸反应", "练习巩固第1、2题"],
+      "summary": "第一课时连接固氮、氮氧化物和氨的性质证据；第二课时连接铵盐检验、制氨装置辨析和硝酸守恒。用“物质—条件—现象—推论”检查学习结果，不以是否做过原题替代掌握证据。",
+      "classroom_check": "给出一个省略条件或混淆产物的说法，由学生指出缺失证据并回到对应原页核对；这里只给课堂组织，不给原题官方评分点。",
+      "lecture_package_id": "PKG-024",
+      "lecture_block_indices": [49, 55, 58, 62, 81, 84, 85, 289, 293, 300, 304, 309, 324, 334, 336, 341, 349, 352, 354, 358, 506, 518, 628, 629],
+      "human_reviewed": false
+    }
+  ]
+}

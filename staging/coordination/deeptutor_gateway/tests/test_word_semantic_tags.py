@@ -426,12 +426,14 @@ def test_missing_only_merge_preserves_nonempty_teacher_exam_fields_and_revision(
     existing = _seal(existing)
     unit = _unit(existing)
     result = merge_response(_response(), unit, _catalog())
-    assert result["primary_knowledge"]["id"] == "K05"
+    # A field-level teacher confirmation protects the whole old record, even
+    # when legacy imports did not stamp annotation_source=teacher_modified.
+    assert result == existing
     assert result["curriculum_candidates"][0]["section_key"] == "n-solution"
     assert result["original_source"]["exam_type"]["value"] == "first_mock"
     assert result["original_source"]["display_label"] == "讲义收录题·一模"
     assert result["teacher_note"] == "教师保留的说明"
-    assert result["rule_revision"] == REVISION
+    assert result["rule_revision"] == existing["rule_revision"]
 
     protected = deepcopy(existing)
     protected["annotation_source"] = "teacher_modified"

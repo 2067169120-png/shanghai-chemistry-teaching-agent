@@ -112,6 +112,24 @@ def test_only_missing_target_fields_change_and_existing_nonempty_fields_survive(
     assert attributes.validate_attributes(result) == result
 
 
+@pytest.mark.parametrize("confirmed_field", ["primary", "supporting", "mapping", "curriculum_status"])
+def test_field_level_teacher_confirmation_protects_entire_row(confirmed_field):
+    proposed = _proposal()
+    existing = _missing(proposed)
+    if confirmed_field == "primary":
+        existing["primary_knowledge"] = {**_knowledge("K04"), "status": "teacher_confirmed"}
+    elif confirmed_field == "supporting":
+        existing["supporting_knowledge"][0]["status"] = "teacher_confirmed"
+    elif confirmed_field == "mapping":
+        existing["curriculum_candidates"] = [{**deepcopy(proposed["curriculum_candidates"][0]), "status": "teacher_confirmed"}]
+    else:
+        existing["curriculum_status"] = "teacher_confirmed"
+    existing = _sealed(existing)
+    assert existing["annotation_source"] == "auto_suggested"
+    assert attributes.automatic_tags_protected(existing)
+    assert attributes.complete_missing_attributes(existing, proposed) == existing
+
+
 def test_unknown_proposal_does_not_change_existing_fields_or_revision():
     proposed = _missing(_proposal())
     existing = _sealed(proposed, rule_revision="synthetic-older-rules")

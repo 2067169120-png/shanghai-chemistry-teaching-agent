@@ -8,13 +8,49 @@ import hashlib
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT))
 
 from validate_lecture_knowledge import validate
 
+from integrations.deeptutor_shchem_v1.desktop_lecture_library import _index_cards
 from integrations.deeptutor_shchem_v1.desktop_word_preview_cache import WordPreviewCache
+
+
+class _ProjectedIndexPath:
+    """Expose proposed JSONL to the real reader without staging any files."""
+
+    def __init__(self, contents, parts=()):
+        self.contents, self.parts = contents, parts
+
+    def __truediv__(self, part):
+        return type(self)(self.contents, (*self.parts, part))
+
+    def is_file(self):
+        return self.parts in self.contents
+
+    def stat(self):
+        return SimpleNamespace(st_size=len(self.contents[self.parts].encode("utf-8")))
+
+    def read_text(self, *, encoding):
+        return self.contents[self.parts]
+
+
+def _validate_projected_indexes(files):
+    # Keep the writer aligned with the consumer's complete identity, claim,
+    # textbook-link and page-locator contract. A later extension must not make
+    # an entire previously readable index disappear from the workbench.
+    contents = {
+        ("knowledge", "lectures", path.name): "\n".join(
+            json.dumps(row, ensure_ascii=False, separators=(",", ":")) for row in rows
+        ) + "\n"
+        for path, rows in files.items()
+    }
+    cards, warnings = _index_cards(_ProjectedIndexPath(contents))
+    if warnings or len(cards) != sum(len(rows) for rows in files.values()):
+        raise ValueError("Merged lecture indexes fail reader validation: " + "; ".join(warnings))
 
 
 def main():
@@ -106,6 +142,8 @@ def main():
                     isinstance(claim["summary"], str)
                     and 0 < len(claim["summary"]) <= 300
                 )
+                if "【待查看原文" in claim["summary"]:
+                    raise ValueError("Raw missing-object marker cannot become a knowledge statement")
                 assert claim["block_indices"] and all(
                     type(i) is int and i in positions for i in claim["block_indices"]
                 )
@@ -138,6 +176,7 @@ def main():
         if row.get("textbook_links") != entry["textbook_links"]:
             row["textbook_links"] = entry["textbook_links"]
             changed.add(target)
+    _validate_projected_indexes(files)
     if args.apply:
         # Bulk mechanical JSONL rewrite only after all origins and additions
         # have been checked. No original Word, PDF or cache is written.
