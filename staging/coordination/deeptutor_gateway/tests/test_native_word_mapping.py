@@ -2,6 +2,7 @@
 
 import base64
 from copy import deepcopy
+import hashlib
 import io
 import json
 import zipfile
@@ -530,3 +531,212 @@ def test_math_display_type_is_not_interchangeable_with_inline():
     body = make_body()
     with pytest.raises(PreparationSourceError, match="native_object_type_mismatch"):
         proof(body, 2, native_type=0)
+
+
+def document_root_comments(body, *, tail=None):
+    document = E.fromstring(parts(body)["word/document.xml"][1])
+    comment = E.Comment("Synthetic non-displaying producer comment")
+    comment.tail = tail
+    document.insert(0, comment)
+    document.append(E.Comment("Synthetic trailing document-root comment"))
+    return {"word/document.xml": (MAIN_TYPE, E.tostring(document))}
+
+
+def test_document_root_comments_preserve_source_hash_tree_and_original_locators():
+    body = make_body()
+    data = docx(body, document_root_comments(body, tail="\n  "))
+    before = hashlib.sha256(data).hexdigest()
+    inspection = mapping.inspect_source(data)
+    assert set(inspection) == {"schema", "source_sha256", "events", "objects"}
+    assert inspection["source_sha256"] == before
+    assert inspection["events"] == mapping.inspect_source(docx(body))["events"]
+    assert [item["xml_locator"] for item in inspection["objects"]] == [locator(item, body) for item in hosts(body)]
+    package = mapping._source_package(data)
+    assert len(package.document) == 3
+    assert isinstance(package.document[0], E._Comment)
+    assert package.document[1].tag == W + "body"
+    assert isinstance(package.document[2], E._Comment)
+    plan = mapping.build_source_plan(data, locator(hosts(body)[5], body))
+    assert all(plan[key] == inspection[key] for key in inspection)
+    assert mapping.verify_range(plan, flat(body), flat(fragment(body, 5)), flat(prefix(body, 5)),
+                                flat(prefix(body, 5, True)), "inline", 3)["verified"]
+    assert hashlib.sha256(data).hexdigest() == before
+
+
+def test_flat_document_root_comments_are_inert_but_drawing_identity_is_not():
+    body = make_body()
+    plan = mapping.build_source_plan(docx(body, document_root_comments(body)), locator(hosts(body)[1], body))
+
+    def comments(members):
+        members.update(document_root_comments(body))
+
+    assert mapping.verify_document(plan, flat(body, comments))["verified"]
+    with pytest.raises(mapping.NativeWordMappingError, match="range_occurrence_identity_mismatch"):
+        mapping.verify_range(plan, flat(body), flat(fragment(body, 0)), flat(prefix(body, 1)),
+                             flat(prefix(body, 1, True)), "inline", 3)
+
+
+@pytest.mark.parametrize("location", ["body", "paragraph", "format", "relationship", "flat_package", "flat_xml_data"])
+def test_comments_elsewhere_remain_rejected(location):
+    body = make_body()
+    data = docx(body)
+    plan = mapping.build_source_plan(data, locator(hosts(body)[0], body))
+    comment = E.Comment("unsupported comment position")
+    if location in {"body", "paragraph", "format"}:
+        parent = body if location == "body" else body[0]
+        if location == "format":
+            parent = E.SubElement(body[0][0], W + "rPr")
+        parent.insert(0, comment)
+        with pytest.raises(mapping.NativeWordMappingError) as caught:
+            mapping.inspect_source(docx(body))
+    elif location == "relationship":
+        rels = E.fromstring(parts(body)["word/_rels/document.xml.rels"][1])
+        rels.insert(0, comment)
+        with pytest.raises(mapping.NativeWordMappingError) as caught:
+            mapping.inspect_source(docx(body, {"word/_rels/document.xml.rels": (REL_TYPE, E.tostring(rels))}))
+    else:
+        package = E.fromstring(flat(body).encode())
+        parent = package if location == "flat_package" else package.find(PKG + "part/" + PKG + "xmlData")
+        parent.insert(0, comment)
+        with pytest.raises(mapping.NativeWordMappingError) as caught:
+            mapping.verify_document(plan, E.tostring(package, encoding="unicode"))
+    assert caught.value.code == "xml_non_element_node"
+
+
+@pytest.mark.parametrize("kind", ["document_text", "comment_tail", "body_tail", "nested_document_comment"])
+def test_document_root_exception_does_not_discard_non_display_text(kind):
+    body = make_body()
+    document = E.fromstring(document_root_comments(body)["word/document.xml"][1])
+    if kind == "document_text":
+        document.text = "unexpected text"
+    elif kind == "comment_tail":
+        document[0].tail = "unexpected text"
+    elif kind == "body_tail":
+        document[1].tail = "unexpected text"
+    else:
+        nested = E.SubElement(document[1], W + "document")
+        nested.append(E.Comment("not a package document root"))
+    with pytest.raises(mapping.NativeWordMappingError) as caught:
+        mapping.inspect_source(docx(body, {"word/document.xml": (MAIN_TYPE, E.tostring(document))}))
+    assert caught.value.code in {"unexpected_story_text", "unexpected_story_tail", "xml_non_element_node"}
+
+
+@pytest.mark.parametrize("tag", [W + "object", W + "fldSimple"])
+def test_root_comment_compatibility_does_not_open_active_content_gate(tag):
+    body = make_body()
+    body[0].append(node(tag))
+    data = docx(body, document_root_comments(body))
+    with pytest.raises(mapping.NativeWordMappingError) as caught:
+        mapping.inspect_source(data)
+    assert caught.value.code == "unsupported_active_or_revision_content"
+
+
+def test_root_comment_compatibility_does_not_open_external_relationship_gate():
+    body = make_body()
+    extra = document_root_comments(body)
+    rels = E.fromstring(parts(body)["word/_rels/document.xml.rels"][1])
+    rels[0].set("TargetMode", "External")
+    rels[0].set("Target", "https://example.invalid/image.png")
+    extra["word/_rels/document.xml.rels"] = (REL_TYPE, E.tostring(rels))
+    with pytest.raises(mapping.NativeWordMappingError) as caught:
+        mapping.inspect_source(docx(body, extra))
+    assert caught.value.code == "external_or_active_relationship"
+
+
+def test_structured_error_keeps_preparation_source_error_and_original_text():
+    error = mapping.NativeWordMappingError("unsupported_active_or_revision_content", "object")
+    assert isinstance(error, PreparationSourceError)
+    assert error.code == "unsupported_active_or_revision_content"
+    assert error.detail == "object"
+    assert str(error) == error.message_zh == "无法验证原 Word 对象位置：unsupported_active_or_revision_content；object"
+
+
+@pytest.mark.parametrize("targeted", [False, True])
+def test_inspection_and_target_plan_share_output_budget(monkeypatch, targeted):
+    body = make_body()
+    monkeypatch.setattr(mapping, "MAX_PLAN_BYTES", 100)
+    with pytest.raises(mapping.NativeWordMappingError) as caught:
+        if targeted:
+            mapping.build_source_plan(docx(body), locator(hosts(body)[0], body))
+        else:
+            mapping.inspect_source(docx(body))
+    assert caught.value.code == "plan_budget"
+
+
+@pytest.mark.parametrize("placement", ["before", "after", "inside"])
+@pytest.mark.parametrize("part", ["word/document.xml", "word/_rels/document.xml.rels"])
+def test_processing_instructions_in_source_parts_remain_rejected(placement, part):
+    body = make_body()
+    mime, raw = parts(body)[part]
+    pi = b'<?mso-application progid="Word.Document"?>'
+    if placement == "before":
+        raw = pi + raw
+    elif placement == "after":
+        raw += pi
+    else:
+        root = E.fromstring(raw)
+        root.insert(0, E.ProcessingInstruction("mso-application", 'progid="Word.Document"'))
+        raw = E.tostring(root)
+    with pytest.raises(mapping.NativeWordMappingError) as caught:
+        mapping.inspect_source(docx(body, {part: (mime, raw)}))
+    assert caught.value.code == "xml_non_element_node"
+
+
+def test_only_exact_word_flat_opc_prolog_is_allowed_and_counts_toward_budget(monkeypatch):
+    body = make_body()
+    plan = mapping.build_source_plan(docx(body), locator(hosts(body)[0], body))
+    content = flat(body)
+    prolog = '<?mso-application progid="Word.Document"?>'
+    assert mapping.verify_document(plan, prolog + content)["verified"]
+    node_count = sum(1 for _ in E.fromstring(content.encode()).iter())
+    monkeypatch.setattr(mapping, "MAX_XML_NODES", node_count)
+    assert mapping.verify_document(plan, content)["verified"]
+    with pytest.raises(mapping.NativeWordMappingError) as caught:
+        mapping.verify_document(plan, prolog + content)
+    assert caught.value.code == "xml_structure_budget"
+
+
+@pytest.mark.parametrize("before,after", [
+    ('<?other progid="Word.Document"?>', ""),
+    ('<?mso-application progid="Other.Document"?>', ""),
+    ('<?mso-application progid="Word.Document" extra="x"?>', ""),
+    ("<?mso-application progid='Word.Document'?>", ""),
+    ('<?mso-application progid="Word.Document"?>' * 2, ""),
+    ("", '<?mso-application progid="Word.Document"?>'),
+    ("<!--outside-root-comment-->", ""),
+    ("", "<!--outside-root-comment-->"),
+])
+def test_other_flat_opc_prolog_or_epilog_nodes_are_rejected(before, after):
+    body = make_body()
+    plan = mapping.build_source_plan(docx(body), locator(hosts(body)[0], body))
+    with pytest.raises(mapping.NativeWordMappingError) as caught:
+        mapping.verify_document(plan, before + flat(body) + after)
+    assert caught.value.code == "xml_non_element_node"
+
+
+def test_flat_package_cannot_embed_the_allowed_prolog_pi():
+    body = make_body()
+    plan = mapping.build_source_plan(docx(body), locator(hosts(body)[0], body))
+    package = E.fromstring(flat(body).encode())
+    package.insert(0, E.ProcessingInstruction("mso-application", 'progid="Word.Document"'))
+    with pytest.raises(mapping.NativeWordMappingError) as caught:
+        mapping.verify_document(plan, E.tostring(package, encoding="unicode"))
+    assert caught.value.code == "xml_non_element_node"
+
+
+@pytest.mark.parametrize("placement", ["before", "after"])
+def test_source_comments_outside_the_document_element_are_not_allowed(placement):
+    body = make_body()
+    mime, raw = parts(body)["word/document.xml"]
+    comment = b"<!--outside-document-element-->"
+    raw = comment + raw if placement == "before" else raw + comment
+    with pytest.raises(mapping.NativeWordMappingError) as caught:
+        mapping.inspect_source(docx(body, {"word/document.xml": (mime, raw)}))
+    assert caught.value.code == "xml_non_element_node"
+
+
+def test_flat_prolog_exception_requires_a_package_root():
+    raw = b'<?mso-application progid="Word.Document"?><document/>'
+    with pytest.raises(mapping.NativeWordMappingError) as caught:
+        mapping._xml(raw, allow_word_flat_opc_prolog=True)
+    assert caught.value.code == "xml_non_element_node"

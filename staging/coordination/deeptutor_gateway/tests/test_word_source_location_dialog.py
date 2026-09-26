@@ -184,6 +184,45 @@ def make_dialog(qt_app):
     qt_app.processEvents()
 
 
+@pytest.fixture
+def make_service_dialog(qt_app, tmp_path):
+    """Use actual DOCX bytes, preview, occurrence binding and original images."""
+    from test_word_source_locations import _Facade, _args
+    from integrations.deeptutor_shchem_v1.desktop_word_source_locations import WordSourceLocationService
+
+    dialogs = []
+
+    def make(document, *, native=False):
+        facade = _Facade(document, tmp_path)
+        source_path = tmp_path / f"synthetic-original-{len(dialogs)}.docx"
+        source_path.write_bytes(facade.data)
+        facade.imported_word_path = lambda *_args: source_path
+        service, arguments = WordSourceLocationService(facade), _args(facade)
+        tasks = SyntheticTasks()
+        dialog = WordSourceLocationDialog(
+            lambda: service.preview(**arguments),
+            lambda location_id, asset_id: service.image(
+                **arguments, location_id=location_id, asset_id=asset_id,
+            ),
+            tasks=tasks,
+            select_native=(lambda location_id, cancelled: service.select_native(
+                **arguments, location_id=location_id, cancelled=cancelled,
+            )) if native else None,
+        )
+        dialogs.append(dialog)
+        dialog.show()
+        qt_app.processEvents()
+        assert len(tasks.jobs) == 1
+        return dialog, tasks, facade, source_path
+
+    yield make
+    for dialog in dialogs:
+        if isValid(dialog):
+            dialog.close()
+            dialog.deleteLater()
+    qt_app.processEvents()
+
+
 def _image_color(dialog):
     return dialog._pixmap.toImage().pixelColor(60, 100).name()
 
@@ -469,11 +508,172 @@ def native_payload():
     for block in source["blocks"][:2]:
         block["locations"][0].update(kind="image", source_states=[])
     source["blocks"][2]["locations"][0].update(kind="omml", source_states=[])
+    from integrations.deeptutor_shchem_v1.desktop_native_word_compatibility import SCHEMA
+    for block in source["blocks"]:
+        for location in block["locations"]:
+            location["native_selection"] = {
+                "schema": SCHEMA, "source_sha256": source["source_sha256"],
+                "source_revision": source["source_revision"], "xml_locator": location["xml_locator"],
+                "status": "available", "code": "source_preflight_passed",
+            }
     return source
 
 
 def native_success():
     return {"status": "selected", "selection_verified": True, "source_unchanged": True}
+
+
+@pytest.mark.parametrize("change", ["missing", "schema", "source_sha256", "source_revision", "xml_locator", "status", "code"])
+def test_native_missing_or_stale_preflight_does_not_open_word(make_dialog, change):
+    source = native_payload()
+    location = source["blocks"][0]["locations"][0]
+    if change == "missing":
+        location.pop("native_selection")
+    else:
+        location["native_selection"][change] = "unverified-value"
+    calls = []
+    dialog, tasks, _ = make_dialog(source, select_native=lambda *args: calls.append(args))
+    tasks.succeed(0)
+    tasks.succeed(1)
+    before = len(tasks.jobs)
+    dialog.native_button.click()
+    assert not dialog.native_button.isEnabled() and not calls and len(tasks.jobs) == before
+    assert dialog.copy_button.isEnabled() and dialog.zoom_button.isEnabled()
+    assert dialog.context.toPlainText() == location["context_text"]
+
+
+def test_blocked_preflight_preserves_original_image_and_explains_next_action(make_dialog):
+    from integrations.deeptutor_shchem_v1.desktop_native_word_compatibility import issue_message
+    source = native_payload()
+    location = source["blocks"][0]["locations"][0]
+    location["native_selection"].update(
+        status="blocked", code="unsupported_active_or_revision_content",
+        message_zh=issue_message("unsupported_active_or_revision_content", "pict"),
+    )
+    calls = []
+    dialog, tasks, _ = make_dialog(source, select_native=lambda *args: calls.append(args))
+    tasks.succeed(0)
+    tasks.succeed(1)
+    assert not dialog.native_button.isEnabled()
+    assert "旧式公式" in dialog.native_status.text() and "复制位置" in dialog.native_status.text()
+    assert dialog.copy_button.isEnabled() and dialog.zoom_button.isEnabled()
+    dialog.native_button.click()
+    assert not calls
+
+
+@pytest.mark.parametrize("state", ["visible", "hidden", "deleted"])
+def test_service_ole_paths_stay_in_collapsed_details_and_copy_keeps_evidence(make_service_dialog, state):
+    from docx import Document
+    from docx.oxml import OxmlElement
+    from test_word_source_locations import _ole
+
+    document = Document()
+    paragraph = document.add_paragraph("原创合成对象段落，不含真实题目。")
+    host, _ = _ole(document, paragraph, with_preview=True)
+    if state == "hidden":
+        paragraph.runs[-1].font.hidden = True
+    elif state == "deleted":
+        run = host.getparent()
+        paragraph._p.remove(run)
+        deletion = OxmlElement("w:del")
+        deletion.append(run)
+        paragraph._p.append(deletion)
+    dialog, tasks, facade, source_path = make_service_dialog(document)
+    original_data, original_preview = facade.data, deepcopy(facade.value)
+    dialog.resize(420, 580)
+    tasks.succeed(0)
+    row = next(i for i in range(dialog.location_list.count()) if
+               dialog.location_list.item(i).data(Qt.ItemDataRole.UserRole)["kind"] == "ole_object")
+    dialog.location_list.setCurrentRow(row)
+    tasks.succeed(len(tasks.jobs) - 1)
+    location = dialog._current
+    assert location["assets"] and dialog._pixmap is not None
+    assert dialog.copy_button.isEnabled() and dialog.zoom_button.isEnabled()
+    assert not dialog.technical.isVisible()
+    assert "旧式嵌入对象" in dialog.notices.text()
+    if state in {"hidden", "deleted"}:
+        assert "不能视为当前可见正文" in dialog.notices.text()
+    for fragment in ("word/document.xml#", "/word/embeddings/ole-fixture.bin", "二进制对象节点"):
+        assert fragment not in dialog.notices.text()
+        assert fragment in dialog.technical.toPlainText()
+    dialog.technical_button.click()
+    assert dialog.technical.isVisible()
+    assert all(note in dialog.technical.toPlainText() for note in location["notices"])
+    dialog.copy_button.click()
+    copied = QApplication.clipboard().text()
+    assert location["context_text"] in copied and location["xml_locator"] in copied
+    assert "/word/embeddings/ole-fixture.bin" in copied
+    assert dialog._payload["source_sha256"] in copied
+    assert facade.data == source_path.read_bytes() == original_data
+    assert facade.value == original_preview
+
+
+@pytest.mark.parametrize("code,expected", [
+    ("document_semantics_changed", "读取的内容与原文件不一致"),
+    ("document_object_count_changed", "对象数量与原文件不一致"),
+    ("native_object_type_mismatch", "对象类型与所选对象不一致"),
+    ("range_occurrence_identity_mismatch", "出现位置不一致"),
+    ("range_prefix_identity_mismatch", "唯一确认其出现位置"),
+    ("range_is_not_one_object", "一个完整对象"),
+    ("range_has_extra_content_or_containers", "所选对象以外的内容"),
+    ("unsupported_story_node", "暂不能可靠地自动定位"),
+    ("future_private_reason", "暂不能可靠地自动定位"),
+])
+def test_service_runtime_mapping_failure_uses_controlled_copy_and_keeps_original_image(
+    make_service_dialog, monkeypatch, code, expected,
+):
+    from docx import Document
+    from test_word_source_locations import _picture
+    from integrations.deeptutor_shchem_v1 import desktop_native_word_selection as selection
+    from integrations.deeptutor_shchem_v1.desktop_native_word_mapping import NativeWordMappingError
+    from integrations.deeptutor_shchem_v1.desktop_workbench.tasks import _FunctionWorker
+
+    document = Document()
+    _picture(document.add_paragraph("原创合成正文图片，仅测试运行期错误提示。"))
+    dialog, tasks, facade, source_path = make_service_dialog(document, native=True)
+    original_preview, original_data = deepcopy(facade.value), facade.data
+    tasks.succeed(0)
+    tasks.succeed(1)
+    assert dialog.native_button.isEnabled()
+    original_pixels = dialog._pixmap.toImage()
+    expected_locator = dialog._current["xml_locator"]
+    private_detail = "SyntheticPrivateXMLNode word/document.xml#private C:/synthetic/private.docx"
+    attempted = []
+
+    def proof_failure(path, data, locator, *, cancelled, revalidate):
+        # Replace the COM boundary only; the real source service still checks
+        # source/revision and the exact occurrence again before reaching here.
+        assert path == source_path and data == original_data
+        assert locator == expected_locator
+        assert not cancelled.is_set()
+        attempted.append(locator)
+        raise NativeWordMappingError(code, private_detail)
+
+    monkeypatch.setattr(selection, "select_original", proof_failure)
+    dialog.native_button.click()
+    job = len(tasks.jobs) - 1
+    worker = _FunctionWorker("synthetic-proof-failure", "合成选区验证", tasks.jobs[job][0], threading.Event())
+    failures = []
+
+    def failed(_task, _label, message):
+        failures.append(message)
+        tasks.fail(job, message)
+
+    worker.signals.failed.connect(failed)
+    worker.run()  # Exercise the production task bridge's exception-to-text path.
+    assert len(attempted) == len(failures) == 1
+    assert expected in failures[0] and expected in dialog.native_status.text()
+    assert code not in failures[0] and private_detail not in failures[0]
+    assert "SyntheticPrivateXMLNode" not in dialog.native_status.text()
+    assert "C:/synthetic" not in dialog.native_status.text()
+    assert "word/document.xml" not in dialog.native_status.text()
+    assert "已在 Word 中选中" not in dialog.native_status.text()
+    assert dialog.search.isEnabled() and dialog.location_list.isEnabled()
+    assert dialog.native_button.isEnabled() and not dialog.cancel_native_button.isVisible()
+    assert dialog.copy_button.isEnabled() and dialog.zoom_button.isEnabled()
+    assert dialog._pixmap.toImage() == original_pixels
+    assert facade.data == source_path.read_bytes() == original_data
+    assert facade.value == original_preview
 
 
 def test_native_entry_without_callback_or_selection_cannot_submit(make_dialog):
