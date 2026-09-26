@@ -17,7 +17,6 @@ from jsonschema import Draft202012Validator
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[4]
 FORMAL_FIXTURE_ROOT = Path(__file__).with_name("fixtures") / "desktop_visual_import_v2"
-SOURCE_TEST_SUPPORT_ROOT = WORKSPACE_ROOT / "parallel_outputs" / "intake_batches_v2"
 FIXTURE_PATH = FORMAL_FIXTURE_ROOT / "synthetic_multifile_theme.json"
 DESKTOP_FIXTURE_PATH = FORMAL_FIXTURE_ROOT / "desktop_import_contract.json"
 MIXED_FIXTURE_PATH = FORMAL_FIXTURE_ROOT / "mixed_desktop_batch.json"
@@ -1383,7 +1382,7 @@ def test_pending_manifest_can_resume_after_provider_is_added(tmp_path: Path) -> 
     assert first.visual_status == "awaiting_visual_provider"
     assert native_calls == [("SRC-NATIVE-RESUME",)]
 
-    path = SOURCE_TEST_SUPPORT_ROOT / "tests" / "test_intake_batches_v2.py"
+    path = Path(__file__).with_name("synthetic_visual_provider.py")
     spec = importlib.util.spec_from_file_location("resume_fixture_provider_v2", path)
     assert spec is not None and spec.loader is not None
     provider_module = importlib.util.module_from_spec(spec)
@@ -1459,7 +1458,7 @@ def test_full_visual_core_can_be_called_from_desktop_coordinator(
 ) -> None:
     # Reuse the independent deterministic provider from the sibling v2 E2E
     # suite; it observes request pages only and never receives source text.
-    path = SOURCE_TEST_SUPPORT_ROOT / "tests" / "test_intake_batches_v2.py"
+    path = Path(__file__).with_name("synthetic_visual_provider.py")
     spec = importlib.util.spec_from_file_location("fixture_provider_v2", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)

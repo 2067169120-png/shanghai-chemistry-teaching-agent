@@ -1496,6 +1496,7 @@ class WordHandoutImporter:
         persist: bool = True,
         progress_callback: Callable[[ImportProgress], None] | None = None,
         should_cancel: Callable[[], bool] | None = None,
+        retry_document_keys: Sequence[str] | None = None,
     ) -> BatchResult:
         documents = tuple(Path(item).resolve() for item in raw_documents)
         if not documents:
@@ -1525,6 +1526,74 @@ class WordHandoutImporter:
                 "sources": sorted(source_basis, key=lambda item: str(item["document_key"])),
             }
         )[:24]
+        retry_keys: set[str] | None = None
+        prior_failures: dict[str, Mapping[str, Any]] = {}
+        preserved_documents: dict[str, DocumentResult] = {}
+        if retry_document_keys is not None:
+            # Rebuild the same batch projection, but never reparse an unselected
+            # document. The old manifest and successful cache must both agree
+            # with the immutable source identities before any retry can write.
+            if (
+                not persist or self.store_root is None or not retry_document_keys
+                or any(not isinstance(key, str) for key in retry_document_keys)
+            ):
+                raise WordHandoutImportError("import_retry_invalid", "请选择本批需要重试的失败文件。")
+            retry_keys = set(retry_document_keys)
+            if len(retry_keys) != len(retry_document_keys):
+                raise WordHandoutImportError("import_retry_invalid", "重试文件不可重复。")
+            try:
+                previous = json.loads(self._batch_path(batch_id).read_text(encoding="utf-8"))
+                if (
+                    previous.get("batch_id") != batch_id
+                    or previous.get("parser_version") != WORD_HANDOUT_PARSER_VERSION
+                    or previous.get("documents_total") != len(keyed)
+                ):
+                    raise ValueError("batch mismatch")
+                basis_by_name = {str(item["source_name"]): item for item in source_basis}
+                if len(basis_by_name) != len(source_basis):
+                    raise ValueError("ambiguous source names")
+                for failure in previous["failures"]:
+                    basis = basis_by_name[failure["source_name"]]
+                    key = str(basis["document_key"])
+                    if (
+                        key in prior_failures
+                        or failure.get("document_key", key) != key
+                        or failure.get("source_sha256", basis["source_sha256"]) != basis["source_sha256"]
+                    ):
+                        raise ValueError("failure mismatch")
+                    prior_failures[key] = {**failure, "document_key": key, "source_sha256": basis["source_sha256"]}
+                successful = {str(item["document_key"]): item for item in previous["documents"]}
+                if (
+                    # A native write may have completed before the enclosing
+                    # visual manifest failed to commit. Recover its verified
+                    # cache instead of making this interrupted retry permanent.
+                    not retry_keys.issubset(set(prior_failures) | set(successful))
+                    or len(successful) != len(previous["documents"])
+                    or previous.get("documents_completed") != len(successful)
+                    or previous.get("documents_failed") != len(prior_failures)
+                    or set(successful) & set(prior_failures)
+                    or set(successful) | set(prior_failures) != {key for _, key in keyed}
+                ):
+                    raise ValueError("incomplete prior results")
+                for basis in source_basis:
+                    key = str(basis["document_key"])
+                    if key not in successful:
+                        continue
+                    row = successful[key]
+                    cached = self._load_cached(key)
+                    if (
+                        row.get("source_sha256") != basis["source_sha256"]
+                        or row.get("source_name") != basis["source_name"]
+                        or cached is None
+                        or cached.source_sha256 != basis["source_sha256"]
+                        or cached.source_name != basis["source_name"]
+                    ):
+                        raise ValueError("successful cache changed")
+                    preserved_documents[key] = cached
+            except (OSError, UnicodeError, KeyError, TypeError, ValueError) as exc:
+                raise WordHandoutImportError(
+                    "import_retry_stale", "原批次或已完成文件的记录已变化，请重新核对导入状态。"
+                ) from exc
         completed: list[DocumentResult] = []
         failures: list[Mapping[str, Any]] = []
         cached_count = 0
@@ -1533,11 +1602,15 @@ class WordHandoutImporter:
             if should_cancel is not None and should_cancel():
                 raise WordHandoutImportError("import_cancelled", "导入已取消；已完成文档可在下次继续。")
             current: DocumentResult | None = None
-            if persist:
+            if retry_keys is not None and document_key not in retry_keys:
+                current = preserved_documents.get(document_key)
+                if current is None:
+                    failures.append(prior_failures[document_key])
+            elif persist:
                 current = self._load_cached(document_key)
             if current is not None:
                 cached_count += 1
-            else:
+            elif retry_keys is None or document_key in retry_keys:
                 try:
                     current = self.scan_document(path)
                     if persist:
@@ -1547,6 +1620,8 @@ class WordHandoutImporter:
                         {
                             "package_id": _infer_package_id(path),
                             "source_name": path.name,
+                            "document_key": document_key,
+                            "source_sha256": source_basis[position - 1]["source_sha256"],
                             "error_code": exc.code,
                             "message_zh": exc.message_zh,
                         }

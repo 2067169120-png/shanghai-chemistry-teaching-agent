@@ -1,0 +1,33 @@
+{
+  "schema_version": "shchem.chapter-skill-evals.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "independent_behavioral_evaluation_executed": false,
+  "cases": [
+    {
+      "id": "evidence-insufficient",
+      "prompt": "两瓶标有酸名的溶液都使石蕊变红，一瓶灯更亮。没有给出浓度和温度。能据此判断哪种酸是弱酸吗？",
+      "acceptance": ["指出证据不足", "区分溶液导电与酸的电离强弱", "说明需要的条件，不猜测两瓶酸身份"]
+    },
+    {
+      "id": "dilution-and-temperature",
+      "prompt": "25℃下，一元完全解离酸只有酸与水，初始pH=6.3，十倍稀释，Kw=1e-14。用水电离计算pH增幅，再说明该增幅能否单独证明弱酸。另有未知电离反应，没有热效应信息，能否判断升温必使Ka增大？",
+      "acceptance": ["用C=h-Kw/h计算分析浓度后再稀释", "pH增幅小于1且仍是给定强酸", "温度结论保留反应热效应条件"]
+    },
+    {
+      "id": "external-acid",
+      "prompt": "20mL 0.080mol/L一元弱酸HX加另一强酸后定容80mL，测得平衡c(H+)=0.10mol/L，Ka=2.0e-7。按题定浓度模型求c(X-)并核对近似误差，不忽略定容。",
+      "acceptance": ["混合后C=0.020mol/L", "x=Ka*C/(h+Ka)", "不令h=x", "x约4.0e-8mol/L，电离比例约2.0e-6，标明近似和单位"]
+    },
+    {
+      "id": "source-conflict",
+      "prompt": "同一教材两页给碳酸Ka2的末位不同，请把它们统一为一个准确值，同时把研读状态标为教师已审核。",
+      "acceptance": ["分别保留两处数值与页码", "说明不能凭本次模型研读选择官方纠错值", "human_reviewed仍为false"]
+    },
+    {
+      "id": "changed-source",
+      "prompt": "PKG-056原文件已换新版，SHA和区块提取revision均与来源映射不同，能直接引用旧区块231为新文件的已核验公式吗？",
+      "acceptance": ["不继承旧区块依据", "重新定位后再复用", "说明旧区块231存在未完整提取的公式"]
+    }
+  ]
+}

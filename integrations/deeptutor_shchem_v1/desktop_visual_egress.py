@@ -351,7 +351,7 @@ class DesktopVisualEgressService:
         if should_cancel is not None and should_cancel():
             raise VisualEgressError("visual_egress_cancelled", "图片预览已取消。")
         descriptor = self.facade._saved_visual_import_batch(batch_id)
-        if descriptor.get("status") == "candidate_ready_for_review":
+        if self.facade.import_batch_details(batch_id).visual_status in {"completed", "not_required"}:
             raise VisualEgressError(
                 "visual_egress_batch_completed", "该批次已完成视觉识别，不能重复发送。"
             )

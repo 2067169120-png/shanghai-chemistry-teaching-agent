@@ -1,8 +1,4 @@
-"""Deterministic synthetic intake provider; no network or private source fixture.
-
-Extracted from the original local intake prototype support to make the public
-personal-visual service regression suite self-contained.
-"""
+"""Deterministic synthetic visual provider, retained with the public tests."""
 from __future__ import annotations
 from copy import deepcopy
 from typing import Any

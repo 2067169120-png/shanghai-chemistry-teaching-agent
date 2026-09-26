@@ -1,0 +1,147 @@
+{
+  "schema_version": "shchem.import-retry-qa.v1",
+  "date": "2026-09-27",
+  "base_commit": "ea63ed1ebc284152f7b1b9d912c12639669b04c1",
+  "scope": "maintenance source, synthetic regression and local candidate-only knowledge sync",
+  "documentation": {"complete_readme_tests": 14, "failures": 0, "policy": "pass"},
+  "regression": {
+    "tests": 293,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit": "private artifacts/import-retry-qa-20260927/final-all.xml"
+  },
+  "screenshots": {
+    "synthetic_only": true,
+    "directly_viewed_by_model": true,
+    "human_reviewed": false,
+    "sha256": {
+      "import-batch-360x740.png": "fdb0ec5577abfb60fe576799592a64a42ccb100f619ed793c9edb4e027491941",
+      "import-batch-420x740.png": "617c27cc7749c06c76b0eec9376d8a741c20a80ec7e47b28532548b3205b5e27",
+      "import-batch-900x760.png": "5019504f3de4e7ac8dd418e673c4d24b2449bb679ba272d4a3703c5d2893d0cb",
+      "import-history-540x860.png": "b383b4265400629d0bbe4a64e533844691c2cd482d22e38993b3bf4f7688c433"
+    }
+  },
+  "local_knowledge": {
+    "new_claims": 13,
+    "new_reading_notes": 7,
+    "lecture_count": 46,
+    "sources_with_flow": 14,
+    "sources_without_flow": 32,
+    "coverage": {
+      "knowledge": 276,
+      "methods": 118,
+      "pitfalls": 99,
+      "teaching_flow": 28
+    },
+    "textbook_concepts_unchanged": 383,
+    "protected_files_unchanged": 753,
+    "catalog_rows": 113,
+    "human_reviewed": false,
+    "validation": {
+      "new_claims_in_actual_reader": 13,
+      "total_notes_in_actual_reader": 26,
+      "textbook_concepts_linked": 4,
+      "stale_reference_excluded": true,
+      "removed_support_cases": [
+        {
+          "removed": 31,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 122,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 58,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 35,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 42,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 122,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 122,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 45,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 58,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 42,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 130,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 31,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 44,
+          "dependent_claim_excluded": true
+        }
+      ],
+      "repeat_new_notes": 0
+    }
+  },
+  "local_questions": {
+    "candidate_count_unchanged": 3579,
+    "pending_count_unchanged": 1217,
+    "new_labels_applied": 0,
+    "next_evidence_prepared": 24,
+    "geography_gate": false
+  },
+  "book2skills": {
+    "upstream_commit": "e5ba66cac91c857dce254dc6b6195d52201068d8",
+    "chapter_skill_format_check": "pass",
+    "package_files": 4,
+    "source_bindings_match": true,
+    "original_media_included": false,
+    "external_scripts_executed": false,
+    "global_install_performed": false,
+    "application_auto_hook": false,
+    "independent_behavioral_evaluation_executed": false,
+    "calculation_checks": {
+      "source": "original synthetic cases in skill evals",
+      "independent_behavioral_evaluation": false,
+      "dilution": {
+        "initial_pH": 6.3,
+        "final_pH": 6.896484187455389,
+        "increment": 0.5964841874553892,
+        "Kw": 1e-14
+      },
+      "external_acid": {
+        "C_mol_per_L": 0.02,
+        "X_mol_per_L": 3.999992000016e-08,
+        "ionized_fraction": 1.999996000008e-06,
+        "approximation_relative_error": 2.0000000000532283e-06
+      },
+      "status": "deterministic_arithmetic_pass_only"
+    }
+  },
+  "real_external_model_calls": 0,
+  "new_exe_built": false,
+  "remaining": [
+    "visual failed-shard checkpoints",
+    "remaining question labels and source conflicts",
+    "32 lecture teaching flows",
+    "independent chapter-skill behavior evaluation",
+    "full-book distillation"
+  ]
+}

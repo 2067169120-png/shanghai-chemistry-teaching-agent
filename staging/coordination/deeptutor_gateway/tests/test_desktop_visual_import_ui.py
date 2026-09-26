@@ -650,7 +650,7 @@ def test_resumable_batch_has_teacher_card_without_restoring_source_paths(
     dialog.resume_button.click()
     _settle(qt_app)
     assert dialog._saved_visual_receipt is receipt
-    assert not dialog.resume_card.isVisible()
+    assert dialog.resume_card.isVisible()  # Keep all saved batches reachable.
     assert dialog.provider_card.isVisible()
     assert all(panel.paths() == [] for panel in dialog._role_panels())
     dialog.close()

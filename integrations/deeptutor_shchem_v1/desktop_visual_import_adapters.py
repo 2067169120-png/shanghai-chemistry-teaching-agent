@@ -55,7 +55,10 @@ from .visual_provider_runtime import (
     canonical_json_bytes,
     parse_structured_visual_response,
 )
-from .word_handout_import import WordHandoutImporter, WordHandoutImportError
+from .word_handout_import import (
+    WordHandoutImporter, WordHandoutImportError, WORD_HANDOUT_IMPORT_SCHEMA,
+    WORD_HANDOUT_PARSER_VERSION, _canonical_digest, _infer_package_id,
+)
 
 
 class DesktopVisualImportAdapterError(RuntimeError):
@@ -172,6 +175,91 @@ class NativeWordHandoutImporterAdapter:
         sources: Sequence[DesktopSourceFile],
         inspections: Sequence[NativeDocxInspection],
     ) -> Mapping[str, Any] | None:
+        return self._submit(sources, inspections)
+
+    def retry(
+        self,
+        sources: Sequence[DesktopSourceFile],
+        inspections: Sequence[NativeDocxInspection],
+        *,
+        previous_receipt: Mapping[str, Any],
+        source_ids: Sequence[str],
+    ) -> Mapping[str, Any]:
+        result = self._submit(sources, inspections, previous_receipt=previous_receipt, source_ids=source_ids)
+        if result is None:
+            raise DesktopImportBridgeError("native_retry_invalid", "本批没有可重试的文字文件。", 409)
+        return result
+
+    def describe_receipt(
+        self, sources: Sequence[DesktopSourceFile], inspections: Sequence[NativeDocxInspection],
+        previous_receipt: Mapping[str, Any],
+    ) -> Mapping[str, Any]:
+        """Recover old count-only receipts from the exact native batch, read-only."""
+        if "documents" in previous_receipt:
+            return previous_receipt
+        ids = {item.source_file_id for item in inspections if item.quick_import_eligible}
+        selected = [source for source in sources if source.effective_source_file_id in ids]
+        names: set[str] = set()
+        basis = []
+        for index, source in enumerate(selected, 1):
+            name = source.filename
+            while name.casefold() in names:
+                name = f"{index:03d}-{name}"
+            names.add(name.casefold())
+            key_basis = {
+                "schema": WORD_HANDOUT_IMPORT_SCHEMA, "parser": WORD_HANDOUT_PARSER_VERSION,
+                "source_sha256": source.source_sha256, "package_id": _infer_package_id(Path(name)), "source_name": name,
+            }
+            basis.append({"document_key": _canonical_digest(key_basis),
+                          "source_sha256": source.source_sha256, "package_id": key_basis["package_id"], "source_name": name})
+        batch_id = "WHB-" + _canonical_digest({
+            "schema": WORD_HANDOUT_IMPORT_SCHEMA, "parser": WORD_HANDOUT_PARSER_VERSION,
+            "sources": sorted(basis, key=lambda item: str(item["document_key"])),
+        })[:24]
+        try:
+            if batch_id != previous_receipt.get("native_batch_id") or not basis:
+                raise ValueError("unbound native batch")
+            path = self._importer._batch_path(batch_id)
+            if path.is_symlink() or path.parent.is_symlink() or path.stat().st_size > 8_000_000:
+                raise ValueError("unsafe native manifest")
+            value = json.loads(path.read_text(encoding="utf-8"))
+            if value.get("batch_id") != batch_id or value.get("parser_version") != WORD_HANDOUT_PARSER_VERSION:
+                raise ValueError("native version changed")
+            completed = {row["document_key"]: row for row in value["documents"]}
+            failures = {row["source_name"]: row for row in value["failures"]}
+            if (
+                len(completed) != len(value["documents"]) or len(failures) != len(value["failures"])
+                or len(completed) + len(failures) != len(basis)
+                or len(failures) != previous_receipt.get("documents_failed")
+            ):
+                raise ValueError("partial result mismatch")
+            documents = []
+            for source, item in zip(selected, basis):
+                key, name, digest = item["document_key"], item["source_name"], item["source_sha256"]
+                complete, failure = completed.get(key), failures.get(name)
+                if (complete is None) == (failure is None):
+                    raise ValueError("unknown source result")
+                if complete is not None and (complete.get("source_sha256") != digest or complete.get("source_name") != name):
+                    raise ValueError("source changed")
+                if failure is not None and (failure.get("document_key", key) != key or failure.get("source_sha256", digest) != digest):
+                    raise ValueError("failure changed")
+                documents.append({"source_file_id": source.effective_source_file_id,
+                                  "source_sha256": digest, "filename": source.filename, "native_name": name,
+                                  "document_key": key, "status": "failed" if failure else "completed",
+                                  "error_code": str(failure["error_code"]) if failure else "", "attempt_count": 1,
+                                  "attempt_count_known": False})
+            return {**previous_receipt, "documents": documents}
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            raise DesktopImportBridgeError("native_retry_legacy", "旧批次的逐文件结果无法与来源核对，请重新检查原批次。", 409) from exc
+
+    def _submit(
+        self,
+        sources: Sequence[DesktopSourceFile],
+        inspections: Sequence[NativeDocxInspection],
+        *,
+        previous_receipt: Mapping[str, Any] | None = None,
+        source_ids: Sequence[str] | None = None,
+    ) -> Mapping[str, Any] | None:
         inspection_ids = {item.source_file_id for item in inspections}
         selected = tuple(
             source
@@ -191,20 +279,66 @@ class NativeWordHandoutImporterAdapter:
                     # Keep the visible filename whenever possible.  Prefix only
                     # duplicate names; cache identity remains source-bound.
                     name = source.filename
-                    if any(path.name.casefold() == name.casefold() for path in paths):
+                    while any(path.name.casefold() == name.casefold() for path in paths):
                         name = f"{index:03d}-{name}"
                     path = root / name
                     path.write_bytes(source.content)
                     paths.append(path)
-                result = self._importer.run_batch(paths, persist=True)
+                bindings = {
+                    source.effective_source_file_id: (source, path, *self._importer._cache_key_for_path(path))
+                    for source, path in zip(selected, paths)
+                }
+                old_rows: dict[str, Mapping[str, Any]] = {}
+                retry_keys = None
+                if previous_receipt is not None:
+                    rows = previous_receipt.get("documents")
+                    if not isinstance(rows, list):
+                        raise DesktopImportBridgeError("native_retry_legacy", "旧批次缺少逐文件结果，请先重新核对失败清单。", 409)
+                    old_rows = {str(row.get("source_file_id")): row for row in rows if isinstance(row, Mapping)}
+                    if (
+                        not source_ids or len(set(source_ids)) != len(source_ids)
+                        or len(old_rows) != len(rows) or set(old_rows) != set(bindings)
+                        or not set(source_ids).issubset(old_rows)
+                        or previous_receipt.get("candidate_only") is not True
+                        or previous_receipt.get("central_question_bank_write") is not False
+                    ):
+                        raise DesktopImportBridgeError("native_retry_invalid", "重试文件与原批次不一致。", 409)
+                    for source_id, (source, path, key, digest) in bindings.items():
+                        row = old_rows[source_id]
+                        if (
+                            row.get("source_sha256") != digest or row.get("document_key") != key
+                            or row.get("filename") != source.filename or row.get("native_name") != path.name
+                            or row.get("status") not in {"completed", "failed"}
+                            or type(row.get("attempt_count")) is not int or row["attempt_count"] < 1
+                            or (source_id in source_ids and row.get("status") != "failed")
+                        ):
+                            raise DesktopImportBridgeError("native_retry_stale", "文件来源或处理结果已变化，请重新核对。", 409)
+                    retry_keys = [bindings[source_id][2] for source_id in source_ids]
+                result = self._importer.run_batch(paths, persist=True, retry_document_keys=retry_keys)
+                failures = {str(row["document_key"]): row for row in result.failures}
+                documents = []
+                for source_id, (source, path, key, digest) in bindings.items():
+                    old = old_rows.get(source_id)
+                    if old is not None and source_id not in (source_ids or ()):
+                        documents.append(dict(old))
+                        continue
+                    failure = failures.get(key)
+                    documents.append({
+                        "source_file_id": source_id, "source_sha256": digest,
+                        "filename": source.filename, "native_name": path.name,
+                        "document_key": key, "status": "failed" if failure else "completed",
+                        "error_code": str(failure["error_code"]) if failure else "",
+                        "attempt_count": int(old["attempt_count"]) + 1 if old else 1,
+                        "attempt_count_known": old.get("attempt_count_known", True) if old else True,
+                    })
         except WordHandoutImportError as exc:
             raise DesktopImportBridgeError(exc.code, exc.message_zh, 409) from exc
         except OSError as exc:
             raise DesktopImportBridgeError(
                 "native_import_failed", "原生文字候选无法保存到个人库存。", 503
             ) from exc
-        # Deliberately return counts only.  WordHandoutImporter records contain
-        # local paths and source hashes which do not belong in a UI receipt.
+        # This private receipt binds every result to immutable source bytes.
+        # The facade projects human-readable names/statuses for the UI.
         return {
             "lane": "personal_word_handout_inventory",
             "native_batch_id": result.batch_id,
@@ -214,6 +348,7 @@ class NativeWordHandoutImporterAdapter:
             "documents_failed": result.documents_failed,
             "quick_import_candidates": result.quick_import_candidates,
             "visual_completion_candidates": result.visual_completion_candidates,
+            "documents": documents,
             "candidate_only": True,
             "central_question_bank_write": False,
         }

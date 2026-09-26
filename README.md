@@ -27,6 +27,8 @@
 
 **准备自己已有的材料。** 初装题库为空是正常现象。先导入一份有权使用的 Word 讲义，核对完整题目与答案；原文件请单独保管。不要为了升级重复导入全部资料。
 
+**维护源码：** 导入窗口可选择已保存批次，查看文件结果并只重试勾选的失败 Word。成功文件保留，图片识别另按其状态继续。[恢复未完成的导入](docs/teacher/getting-started.md#import-recovery)。
+
 **先走一条不需要 AI 的流程。** 查找已有题目、本地成绩统计、手动教学环节编辑和课堂工具不需要 API。生成 AI 初稿或建议才需配置模型并确认发送；实际试卷分页需本机 Office 转换工具。详见[安装、资料和模型设置](docs/teacher/getting-started.md)。
 
 <a id="preparation"></a><a id="lesson-design"></a><a id="templates"></a>
