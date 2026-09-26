@@ -1,0 +1,755 @@
+{
+  "schema_version": "shchem.textbook-page-reading-notes.v1",
+  "purpose": "选必一3.3 PDF74—80原页研读候选；主代理已逐页查看并复核PKG-068关联原文、声明的11个媒体引用与演算。保留题给数据、温度及未读公式限制，未人审，不代表全书蒸馏完成。",
+  "human_reviewed": false,
+  "candidate_only": true,
+  "original_source_redistribution": false,
+  "review_method": "page_images_read_by_model",
+  "source": {
+    "volume_id": "TB-E1",
+    "title": "普通高中教科书 化学 选择性必修1 化学反应原理",
+    "sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+    "pdf_pages_viewed": [
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80
+    ],
+    "printed_pages_viewed": [
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74
+    ],
+    "toc_pdf_pages_viewed": [],
+    "linked_pdf_pages": [
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80
+    ]
+  },
+  "notes": [
+    {
+      "id": "READ-TB-E1-20260927-HYDRO-01",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.3",
+      "title": "计量点 终点和中性使用不同判据",
+      "pdf_pages": [
+        74,
+        75,
+        76,
+        77
+      ],
+      "printed_pages": [
+        68,
+        69,
+        70,
+        71
+      ],
+      "source_anchors": [
+        "图3.6",
+        "印刷69—70页终点判断",
+        "印刷71页乙酸钠水解"
+      ],
+      "summary": "印刷68—70页以0.1000 mol·L⁻¹NaOH滴定20.00 mL同浓度HCl，区分化学计量点和指示剂终点。计量点前后约半滴造成pH突跃，支持选择适当指示剂；该强酸强碱例的中性不能推广到弱酸或弱碱生成盐的情形。讲义54直接提示恰好中和不一定中性。",
+      "classroom_check": "按25℃与体积可加近似，算距计量点前后0.02 mL时的剩余离子浓度和pH，标出观察终点与计量点不同；再说明乙酸钠水解怎样使计量点偏碱。",
+      "lecture_package_id": "PKG-068",
+      "lecture_block_indices": [
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        401,
+        402,
+        403
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-068/第07讲 盐类的水解（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5d84d4a43ec1f0fceb2644acdbe369dcafe61eaa717dd6eba2b2c2f9a5848976",
+      "source_preview_revision": "5eeedb1c46a35cbf044668a208efa62f950bc3be768702fabce084dfdeb8822b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 40,
+          "end": 54,
+          "start_xml_locator": "word/document.xml#/w:body/*[47]",
+          "end_xml_locator": "word/document.xml#/w:body/*[61]"
+        },
+        {
+          "start": 401,
+          "end": 403,
+          "start_xml_locator": "word/document.xml#/w:body/*[423]",
+          "end_xml_locator": "word/document.xml#/w:body/*[425]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          74,
+          75,
+          76,
+          77
+        ],
+        "printed_pages": [
+          68,
+          69,
+          70,
+          71
+        ],
+        "anchors": [
+          "图3.6",
+          "印刷69—70页终点判断",
+          "印刷71页乙酸钠水解"
+        ],
+        "support_role": "direct_concept_support_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "半滴例的约4.3和9.7是计算近似，不是本次实测；本轮未完整研读讲义滴定部分85—285。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-HYDRO-02",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.3",
+      "title": "把盐的电离和离子的水解分开写",
+      "pdf_pages": [
+        76,
+        77
+      ],
+      "printed_pages": [
+        70,
+        71
+      ],
+      "source_anchors": [
+        "印刷70页盐溶液pH探究表",
+        "氯化铵示意",
+        "印刷71页乙酸钠示意与定义"
+      ],
+      "summary": "印刷70页先留0.1 mol·L⁻¹盐溶液的pH探究空表，再用氯化铵说明铵离子与水电离出的OH⁻形成弱电解质；71页用乙酸钠作对应解释。盐的电离提供离子，水解改变两种水离子的相对浓度，最终酸碱性由两离子比较决定。",
+      "classroom_check": "从NaCl、NH₄Cl、CH₃COONa分别找可能反应的离子；把盐电离式与水解式写在不同位置，并为每个物种标名称。空白实验格继续保留“未测”。",
+      "lecture_package_id": "PKG-068",
+      "lecture_block_indices": [
+        288,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        369,
+        370,
+        371,
+        372,
+        373,
+        374,
+        375
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-068/第07讲 盐类的水解（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5d84d4a43ec1f0fceb2644acdbe369dcafe61eaa717dd6eba2b2c2f9a5848976",
+      "source_preview_revision": "5eeedb1c46a35cbf044668a208efa62f950bc3be768702fabce084dfdeb8822b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 288,
+          "end": 307,
+          "start_xml_locator": "word/document.xml#/w:body/*[304]",
+          "end_xml_locator": "word/document.xml#/w:body/*[327]"
+        },
+        {
+          "start": 369,
+          "end": 375,
+          "start_xml_locator": "word/document.xml#/w:body/*[391]",
+          "end_xml_locator": "word/document.xml#/w:body/*[397]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          76,
+          77
+        ],
+        "printed_pages": [
+          70,
+          71
+        ],
+        "anchors": [
+          "印刷70页盐溶液pH探究表",
+          "氯化铵示意",
+          "印刷71页乙酸钠示意与定义"
+        ],
+        "support_role": "direct_concept_support_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "模型看图不等于人审；不把讲义330的题给pH抄成教材实验结果。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-HYDRO-03",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.3",
+      "title": "总反应式和分步反应都要检查证据",
+      "pdf_pages": [
+        77,
+        78,
+        79
+      ],
+      "printed_pages": [
+        71,
+        72,
+        73
+      ],
+      "source_anchors": [
+        "印刷71页碳酸根分步式及金属水解总式",
+        "印刷73页泡沫灭火器总反应"
+      ],
+      "summary": "印刷71页明确多元弱酸根分步水解，碳酸根一般以第一步为主；一些金属离子也分步水解，但常写总式。普通微弱水解与印刷73页铝离子、碳酸氢根充分反应的情形不同，后者净式显示沉淀和气体。",
+      "classroom_check": "检查3HCO₃⁻＋Al³⁺→Al(OH)₃↓＋3CO₂↑（碳酸氢根与铝离子生成氢氧化铝和二氧化碳）中的元素、电荷和1∶3计量，再说明为何不能把此符号习惯套到任意弱水解；对Fe³⁺总式注明不是一步过程。",
+      "lecture_package_id": "PKG-068",
+      "lecture_block_indices": [
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        353,
+        354,
+        355,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363,
+        364,
+        365,
+        366,
+        367,
+        368,
+        369,
+        370,
+        371,
+        372,
+        373,
+        374,
+        375,
+        401,
+        402,
+        403,
+        404,
+        405
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-068/第07讲 盐类的水解（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5d84d4a43ec1f0fceb2644acdbe369dcafe61eaa717dd6eba2b2c2f9a5848976",
+      "source_preview_revision": "5eeedb1c46a35cbf044668a208efa62f950bc3be768702fabce084dfdeb8822b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 300,
+          "end": 307,
+          "start_xml_locator": "word/document.xml#/w:body/*[318]",
+          "end_xml_locator": "word/document.xml#/w:body/*[327]"
+        },
+        {
+          "start": 353,
+          "end": 375,
+          "start_xml_locator": "word/document.xml#/w:body/*[375]",
+          "end_xml_locator": "word/document.xml#/w:body/*[397]"
+        },
+        {
+          "start": 401,
+          "end": 405,
+          "start_xml_locator": "word/document.xml#/w:body/*[423]",
+          "end_xml_locator": "word/document.xml#/w:body/*[427]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          77,
+          78,
+          79
+        ],
+        "printed_pages": [
+          71,
+          72,
+          73
+        ],
+        "anchors": [
+          "印刷71页碳酸根分步式及金属水解总式",
+          "印刷73页泡沫灭火器总反应"
+        ],
+        "support_role": "direct_concept_support_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "净反应与守恒核对为AI讲评，非评分细则；未核WMF箭头不作原式已经恢复的证据。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-HYDRO-04",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.3",
+      "title": "用平衡常数检查复杂离子比",
+      "pdf_pages": [
+        77,
+        78
+      ],
+      "printed_pages": [
+        71,
+        72
+      ],
+      "source_anchors": [
+        "印刷71页一级水解式",
+        "印刷72页平衡移动"
+      ],
+      "summary": "印刷71页的碳酸根一级水解式与水的离子积可导出KhKa₂＝Kw。讲义433原图含OH⁻和H⁺，436原图只在分母含H⁺，两式不能凭外形同判。438对D项的解释没有消去H⁺随OH⁻联动的因素，因此与其可见公式不一致。",
+      "classroom_check": "逐个标记433和436图中分子分母，分别化简成Kh/c(H⁺)、Kh/Kw；固定温度时判断加入NaOH后的第二比值，再写原解析待复核处。",
+      "lecture_package_id": "PKG-068",
+      "lecture_block_indices": [
+        432,
+        433,
+        434,
+        435,
+        436,
+        437,
+        438
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-068/第07讲 盐类的水解（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5d84d4a43ec1f0fceb2644acdbe369dcafe61eaa717dd6eba2b2c2f9a5848976",
+      "source_preview_revision": "5eeedb1c46a35cbf044668a208efa62f950bc3be768702fabce084dfdeb8822b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 432,
+          "end": 438,
+          "start_xml_locator": "word/document.xml#/w:body/*[454]",
+          "end_xml_locator": "word/document.xml#/w:body/*[460]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          77,
+          78
+        ],
+        "printed_pages": [
+          71,
+          72
+        ],
+        "anchors": [
+          "印刷71页一级水解式",
+          "印刷72页平衡移动"
+        ],
+        "support_role": "direct_concept_support_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "常数关系和原解析差异由本地AI独立验算；不将模型审查标为教师已审答案。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-HYDRO-05",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.3",
+      "title": "稀释后比例 浓度和物质的量并不同步",
+      "pdf_pages": [
+        77,
+        78
+      ],
+      "printed_pages": [
+        71,
+        72
+      ],
+      "source_anchors": [
+        "印刷71页乙酸根反应",
+        "印刷72页浓度影响"
+      ],
+      "summary": "印刷72页把浓度列为水解平衡的外界条件。讲义319、398解释越稀水解比例越大但酸碱性减弱；用330的乙酸钠题给pH作演算，可以把定性陈述化为三个可区分的量。十倍稀释使pH约从8.8降到8.3，水解生成乙酸的浓度下降而总量上升。",
+      "classroom_check": "在同温、单一乙酸钠模型中列c(Na⁺)、c(CH₃COO⁻)、c(CH₃COOH)、H⁺、OH⁻；用电荷与物料守恒检查α和n的变化，并说出近似。",
+      "lecture_package_id": "PKG-068",
+      "lecture_block_indices": [
+        317,
+        318,
+        319,
+        320,
+        329,
+        330,
+        331,
+        332,
+        333,
+        334,
+        335,
+        336,
+        337,
+        394,
+        395,
+        396,
+        397,
+        398,
+        425,
+        426,
+        427,
+        428,
+        429,
+        430,
+        431
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-068/第07讲 盐类的水解（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5d84d4a43ec1f0fceb2644acdbe369dcafe61eaa717dd6eba2b2c2f9a5848976",
+      "source_preview_revision": "5eeedb1c46a35cbf044668a208efa62f950bc3be768702fabce084dfdeb8822b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 317,
+          "end": 320,
+          "start_xml_locator": "word/document.xml#/w:body/*[337]",
+          "end_xml_locator": "word/document.xml#/w:body/*[340]"
+        },
+        {
+          "start": 329,
+          "end": 337,
+          "start_xml_locator": "word/document.xml#/w:body/*[351]",
+          "end_xml_locator": "word/document.xml#/w:body/*[359]"
+        },
+        {
+          "start": 394,
+          "end": 398,
+          "start_xml_locator": "word/document.xml#/w:body/*[416]",
+          "end_xml_locator": "word/document.xml#/w:body/*[420]"
+        },
+        {
+          "start": 425,
+          "end": 431,
+          "start_xml_locator": "word/document.xml#/w:body/*[447]",
+          "end_xml_locator": "word/document.xml#/w:body/*[453]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          77,
+          78
+        ],
+        "printed_pages": [
+          71,
+          72
+        ],
+        "anchors": [
+          "印刷71页乙酸根反应",
+          "印刷72页浓度影响"
+        ],
+        "support_role": "direct_concept_support_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "Kh由讲义一位小数的pH反推，仅作教学算例；教材原页未给该稀释数值结论。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-HYDRO-06",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.3",
+      "title": "应用水解先确定要保留还是要移除离子",
+      "pdf_pages": [
+        77,
+        78,
+        79,
+        80
+      ],
+      "printed_pages": [
+        71,
+        72,
+        73,
+        74
+      ],
+      "source_anchors": [
+        "印刷72页应用",
+        "印刷73页FeCl₃配制",
+        "印刷74页练习2(4)、5"
+      ],
+      "summary": "印刷72页将纯碱去污与明矾净水联系到水解，73页以加酸抑制Fe³⁺水解说明溶液配制。讲义500流程图则显示除铁与保持铜盐溶解分属不同阶段。讲义的蒸干、灼烧解释还需区分脱水、水解和酸逸出，不能仅按盐名猜最终产物。",
+      "classroom_check": "在500流程图标注CuO和HNO₃加入阶段、目标离子和预期影响；对AlCl₃蒸干再灼烧写分阶段解释，将题中未给的温度或中间体标成待核。",
+      "lecture_package_id": "PKG-068",
+      "lecture_block_indices": [
+        401,
+        402,
+        403,
+        404,
+        405,
+        406,
+        407,
+        408,
+        409,
+        410,
+        411,
+        412,
+        413,
+        414,
+        415,
+        447,
+        448,
+        449,
+        450,
+        451,
+        452,
+        453,
+        468,
+        469,
+        470,
+        471,
+        472,
+        473,
+        474,
+        475,
+        476,
+        477,
+        478,
+        479,
+        480,
+        481,
+        482,
+        483,
+        484,
+        485,
+        486,
+        499,
+        500,
+        501,
+        502,
+        503,
+        504
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-068/第07讲 盐类的水解（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5d84d4a43ec1f0fceb2644acdbe369dcafe61eaa717dd6eba2b2c2f9a5848976",
+      "source_preview_revision": "5eeedb1c46a35cbf044668a208efa62f950bc3be768702fabce084dfdeb8822b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 401,
+          "end": 415,
+          "start_xml_locator": "word/document.xml#/w:body/*[423]",
+          "end_xml_locator": "word/document.xml#/w:body/*[437]"
+        },
+        {
+          "start": 447,
+          "end": 453,
+          "start_xml_locator": "word/document.xml#/w:body/*[469]",
+          "end_xml_locator": "word/document.xml#/w:body/*[475]"
+        },
+        {
+          "start": 468,
+          "end": 486,
+          "start_xml_locator": "word/document.xml#/w:body/*[490]",
+          "end_xml_locator": "word/document.xml#/w:body/*[508]"
+        },
+        {
+          "start": 499,
+          "end": 504,
+          "start_xml_locator": "word/document.xml#/w:body/*[521]",
+          "end_xml_locator": "word/document.xml#/w:body/*[526]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          77,
+          78,
+          79,
+          80
+        ],
+        "printed_pages": [
+          71,
+          72,
+          73,
+          74
+        ],
+        "anchors": [
+          "印刷72页应用",
+          "印刷73页FeCl₃配制",
+          "印刷74页练习2(4)、5"
+        ],
+        "support_role": "direct_concept_support_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "不将讲义471的pH3.2当通用阈值；不按有限原页推出全部盐的高温分解规律。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-HYDRO-07",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.3",
+      "title": "把温度 题给数据和实验记录分别保留",
+      "pdf_pages": [
+        76,
+        77,
+        80
+      ],
+      "printed_pages": [
+        70,
+        71,
+        74
+      ],
+      "source_anchors": [
+        "印刷70页探究空表",
+        "印刷74页练习3"
+      ],
+      "summary": "印刷74页练习3给100℃的Kw为5.4×10⁻¹³，说明pH7在此可以呈碱性。讲义330与388分别给同称常温、0.1 mol·L⁻¹NaHCO₃的pH9.7和8.4，不能合并为一条实测记录。印刷70页仍为空白探究表，未给这些数值。",
+      "classroom_check": "算100℃题的c(OH⁻)和中性pH；将讲义两组NaHCO₃题设并排记来源，说明缺少什么实验或版本证据才能判定差异。",
+      "lecture_package_id": "PKG-068",
+      "lecture_block_indices": [
+        288,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299,
+        329,
+        330,
+        331,
+        332,
+        333,
+        334,
+        335,
+        336,
+        337,
+        383,
+        384,
+        385,
+        386,
+        387,
+        388,
+        389,
+        390,
+        391
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-068/第07讲 盐类的水解（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5d84d4a43ec1f0fceb2644acdbe369dcafe61eaa717dd6eba2b2c2f9a5848976",
+      "source_preview_revision": "5eeedb1c46a35cbf044668a208efa62f950bc3be768702fabce084dfdeb8822b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 288,
+          "end": 299,
+          "start_xml_locator": "word/document.xml#/w:body/*[304]",
+          "end_xml_locator": "word/document.xml#/w:body/*[317]"
+        },
+        {
+          "start": 329,
+          "end": 337,
+          "start_xml_locator": "word/document.xml#/w:body/*[351]",
+          "end_xml_locator": "word/document.xml#/w:body/*[359]"
+        },
+        {
+          "start": 383,
+          "end": 391,
+          "start_xml_locator": "word/document.xml#/w:body/*[405]",
+          "end_xml_locator": "word/document.xml#/w:body/*[413]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          76,
+          77,
+          80
+        ],
+        "printed_pages": [
+          70,
+          71,
+          74
+        ],
+        "anchors": [
+          "印刷70页探究空表",
+          "印刷74页练习3"
+        ],
+        "support_role": "direct_concept_support_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未裁决NaHCO₃哪一数值正确；未实测，未外部核验题源，教材本页没有配套答案。"
+      ]
+    }
+  ]
+}

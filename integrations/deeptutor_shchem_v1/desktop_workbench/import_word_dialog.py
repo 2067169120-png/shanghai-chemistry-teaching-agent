@@ -150,6 +150,7 @@ class ImportWordDialog(QDialog):
         self.reader_tabs.addTab(self.reader, "通读教案")
         self.reader.image_requested.connect(self._reading_image_requested)
         self.reader.block_requested.connect(self._reading_block_requested)
+        self.reader.location_requested.connect(lambda index: self._show_source_locations([index]))
         self.reader.image_zoom_requested.connect(self._open_image)
         content = QWidget()
         layout = QVBoxLayout(content)
@@ -173,6 +174,11 @@ class ImportWordDialog(QDialog):
         self.open_word_button.clicked.connect(self._open_original_word)
         # Keep the original-file escape hatch visible in both reading modes.
         root.addWidget(self.open_word_button)
+        self.location_button = QPushButton("核对所选段落的公式与对象位置")
+        self.location_button.setAccessibleName("查看所选原文对象的段落表格位置与对应原图")
+        self.location_button.setEnabled(False)
+        self.location_button.clicked.connect(lambda: self._show_source_locations())
+        layout.addWidget(self.location_button)
         self.block_list = QListWidget()
         self.block_list.setAccessibleName("Word 原文区块")
         self.block_list.setMinimumHeight(120)
@@ -527,6 +533,10 @@ class ImportWordDialog(QDialog):
             self._invalidate_preview()
         valid = self._valid_range()
         self.preview_button.setEnabled(self._valid_selection())
+        self.location_button.setEnabled(
+            self._valid_selection()
+            and callable(getattr(self.facade, "imported_word_source_locations", None))
+        )
         start, end = self.block_start.value(), self.block_end.value()
         blocks = (self._source or {}).get("blocks", ())
         self.range_selection.set_current(start, end, valid, blocks)
@@ -622,6 +632,40 @@ class ImportWordDialog(QDialog):
                 else:
                     self.asset_combo.setCurrentIndex(index)
                 return
+
+    def _show_source_locations(self, indices=None) -> None:
+        if self._loading or not self._source or not callable(
+            getattr(self.facade, "imported_word_source_locations", None)
+        ):
+            return
+        if indices is None:
+            if not self._valid_selection():
+                return
+            ranges = (
+                self.range_selection.ranges() if self.range_selection.enabled.isChecked()
+                else [{"start": self.block_start.value(), "end": self.block_end.value()}]
+            )
+            indices = sorted({index for r in ranges for index in range(r["start"], r["end"] + 1)})
+        valid = {block["index"] for block in self._source.get("blocks", [])}
+        if not indices or any(type(index) is not int or index not in valid for index in indices):
+            return
+        from .word_source_location_dialog import WordSourceLocationDialog
+
+        facade = self.facade
+        arguments = (
+            self._batch_id, self.source_combo.currentData(),
+            self._source["source_sha256"], self._source["revision"],
+        )
+        selected = list(indices)
+        dialog = WordSourceLocationDialog(
+            lambda: facade.imported_word_source_locations(*arguments, selected),
+            lambda location_id, asset_id: facade.imported_word_location_image(*arguments, location_id, asset_id),
+            self,
+        )
+        try:
+            dialog.exec()
+        finally:
+            dialog.deleteLater()
 
     def _open_original_word(self) -> None:
         source_id = self.source_combo.currentData()

@@ -66,6 +66,7 @@ class WordLessonReader(QWidget):
 
     image_requested = Signal(str)
     block_requested = Signal(int)
+    location_requested = Signal(int)
     image_zoom_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None):
@@ -409,6 +410,7 @@ class WordLessonReader(QWidget):
                         self._warning_html(block.get("warnings")),
                         '<p class="note">'
                         + self._link("选此段备课", "block", index)
+                        + " · " + self._link("核对公式与对象位置", "location", index)
                         + "</p>",
                     ]
                 )
@@ -482,6 +484,8 @@ class WordLessonReader(QWidget):
         kind, value = action
         if kind == "block" and value in self._blocks:
             self.block_requested.emit(value)
+        elif kind == "location" and value in self._blocks:
+            self.location_requested.emit(value)
         elif kind == "image" and value in self._assets:
             self.image_requested.emit(value)
         elif kind == "warnings":

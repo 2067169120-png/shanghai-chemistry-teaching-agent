@@ -18,6 +18,7 @@ from test_desktop_visual_import_facade import (
 )
 
 from integrations.deeptutor_shchem_v1.desktop_facade import DesktopFacadeError
+from integrations.deeptutor_shchem_v1.desktop_preparation_limits import MAX_MATERIALS
 from integrations.deeptutor_shchem_v1.desktop_preparation_sources import (
     PreparationSourceError,
 )
@@ -120,17 +121,24 @@ def test_archived_source_hash_range_and_preview_revision_are_checked(desktop_pat
         facade.imported_word_preview(saved.batch_id, source_id)
 
 
-def test_large_reference_is_not_silently_truncated(desktop_paths, tmp_path):
+@pytest.mark.parametrize("over_limit", [False, True])
+def test_large_reference_is_not_silently_truncated(desktop_paths, tmp_path, over_limit):
     doc = Document()
-    doc.add_paragraph("条件不可丢失" * 4100)
+    phrase = "条件不可丢失"
+    text = phrase * (MAX_MATERIALS // len(phrase) + 1 if over_limit else 4100)
+    doc.add_paragraph(text)
     source = tmp_path / "large.docx"
     doc.save(source)
     facade = _facade(desktop_paths, FakeProviderStore(configured=False))
     saved = facade.save_visual_import_batch(handout_files=(source,), source_type="讲义")
     sid = facade.imported_word_sources(saved.batch_id)[0]["source_id"]
     preview = facade.imported_word_preview(saved.batch_id, sid)
-    with pytest.raises(PreparationSourceError, match="未截断"):
-        facade.imported_word_reference(saved.batch_id, sid, preview["source_sha256"], 1, 1, preview["revision"])
+    if over_limit:
+        with pytest.raises(PreparationSourceError, match="未截断"):
+            facade.imported_word_reference(saved.batch_id, sid, preview["source_sha256"], 1, 1, preview["revision"])
+    else:
+        reference = facade.imported_word_reference(saved.batch_id, sid, preview["source_sha256"], 1, 1, preview["revision"])
+        assert text in reference["materials"]
 
 
 def test_metadata_list_is_lazy_but_opening_checks_selected_archive(desktop_paths, tmp_path, monkeypatch):

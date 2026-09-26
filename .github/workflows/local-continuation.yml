@@ -69,6 +69,10 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: python runtime/deeptutor_shchem/visual_resume_qa.py --output local-continuation-qa/visual-resume
+      - name: Check formula occurrence locations and read-only native UI
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_word_source_locations.py staging/coordination/deeptutor_gateway/tests/test_word_source_location_facade.py staging/coordination/deeptutor_gateway/tests/test_word_source_location_dialog.py staging/coordination/deeptutor_gateway/tests/test_word_lesson_reader.py staging/coordination/deeptutor_gateway/tests/test_word_table_preview.py staging/coordination/deeptutor_gateway/tests/test_word_native_text.py staging/coordination/deeptutor_gateway/tests/test_imported_word_sources.py staging/coordination/deeptutor_gateway/tests/test_import_word_dialog.py staging/coordination/deeptutor_gateway/tests/test_word_preview_cache.py --junitxml=local-continuation-qa/formula-locations.xml
       - uses: actions/upload-artifact@v4
         if: always()
         with:
