@@ -1,0 +1,55 @@
+{
+  "adapter_contract_version": "shchem.student_learning_domain_adapter.v1",
+  "required_domain_interface_version": "gateway_student_learning_api_v1",
+  "required_domain_version": "2.0.0",
+  "transport": "in_process_public_python_api",
+  "capabilities": {
+    "private_upload": {
+      "calls": [
+        "GatewayStudentLearningAPI.save_raw_error_image",
+        "GatewayStudentLearningAPI.record_input"
+      ],
+      "structured_input_types": [
+        "score",
+        "grade_progress",
+        "attempt",
+        "timing",
+        "declared_weakness"
+      ],
+      "raw_image_egress_allowed": false
+    },
+    "diagnosis_synthetic": {
+      "calls": [
+        "GatewayStudentLearningAPI.run_diagnosis(mode=synthetic)"
+      ],
+      "gateway_controller_gate": "diagnose_synthetic"
+    },
+    "diagnosis_real": {
+      "calls_in_order": [
+        "GatewayStudentLearningAPI.prepare_real_diagnosis",
+        "GatewayStudentLearningAPI.issue_real_diagnosis_receipt",
+        "GatewayStudentLearningAPI.execute_real_diagnosis"
+      ],
+      "controller_issue_contract": "preflight --mode diagnose returns diagnosis_input_gate.controller_receipt",
+      "controller_receipt_contract": "central_diagnosis_adapter_v2",
+      "execute_time_verification": "diagnosis-receipt-verify --input INPUT --receipt RECEIPT",
+      "caller_supplied_receipt_allowed": false,
+      "gateway_duplicate_preflight_allowed": false,
+      "claim_scope": "machine_only_real_student_candidate",
+      "teaching_effectiveness_unverified": true
+    },
+    "weekly_bundle": {
+      "calls": [
+        "GatewayStudentLearningAPI.build_week_bundle"
+      ],
+      "manifest_schema_version": "student_week_zip_manifest_v1",
+      "real_mode_binding": "issued prepare_id",
+      "return_shape": "tuple(bundle, bundle_path) at Gateway bridge boundary"
+    }
+  },
+  "capabilities_secret_source": "environment_only",
+  "dynamic_probe": true,
+  "failure_behavior": "fail_closed",
+  "human_reviewed": false,
+  "publication_allowed": false
+}

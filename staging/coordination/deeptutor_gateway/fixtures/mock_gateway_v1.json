@@ -1,0 +1,159 @@
+{
+  "contract_version": "shchem.gateway.v1",
+  "fixture_scope": "synthetic_fixture_only",
+  "status": {
+    "capability_stage": "synthetic_mock",
+    "central_validate": "not_applicable_mock",
+    "claims": [
+      "mock_transport_and_ui_only",
+      "not_real_student",
+      "not_teaching_ready",
+      "not_publishable"
+    ]
+  },
+  "evidence": [
+    {
+      "evidence_id": "synthetic-evidence-001",
+      "title": "合成夹具：水溶液平衡练习摘要",
+      "year": 2026,
+      "region_or_school": "synthetic",
+      "evidence_level": "synthetic_fixture_only",
+      "retrieval_eligible": false,
+      "source_authority": "synthetic"
+    },
+    {
+      "evidence_id": "synthetic-evidence-002",
+      "title": "合成夹具：实验信息提取练习摘要",
+      "year": 2026,
+      "region_or_school": "synthetic",
+      "evidence_level": "synthetic_fixture_only",
+      "retrieval_eligible": false,
+      "source_authority": "synthetic"
+    }
+  ],
+  "figures": [
+    {
+      "figure_id": "synthetic-figure-001",
+      "status": "candidate",
+      "claim_scope": "synthetic_fixture_only",
+      "publication_allowed": false,
+      "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"320\" height=\"140\" viewBox=\"0 0 320 140\"><rect x=\"1\" y=\"1\" width=\"318\" height=\"138\" fill=\"white\" stroke=\"black\"/><text x=\"160\" y=\"64\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"16\">Synthetic fixture only</text><text x=\"160\" y=\"90\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"13\">不得教学或出版</text></svg>"
+    }
+  ],
+  "diagnosis_candidate": {
+    "diagnosis_id": "synthetic-diagnosis-001",
+    "summary": "合成夹具仅验证传输、状态与机器 QA 展示。",
+    "input_contributions": {
+      "score_and_trend": {
+        "record_count": 2,
+        "latest_percentage": 72,
+        "trend": "synthetic_declining"
+      },
+      "latest_grade_progress": {
+        "value": {"module": "synthetic-module", "completion_percent": 50},
+        "diagnostic_role": "synthetic stage constraint"
+      },
+      "student_work": {
+        "attempt_count": 2,
+        "student_response_used_count": 2,
+        "sanitized_ocr_or_image_extraction_used_count": 0
+      },
+      "elapsed_time": {
+        "selected_median_seconds": 60,
+        "diagnostic_role": "synthetic speed signal"
+      }
+    },
+    "weaknesses": [
+      {
+        "knowledge": "K10",
+        "ability": "A01",
+        "confidence": "provisional",
+        "support_count": 2,
+        "independent_source_count": 1
+      }
+    ],
+    "weekly_focus": {
+      "main": "K10",
+      "secondary": "A01",
+      "evidence_overlap_audit": {"overlap_count": 0}
+    },
+    "three_day_plan": [
+      "Day 1: synthetic baseline",
+      "Day 2: synthetic transfer",
+      "Day 3: synthetic timed check"
+    ]
+  },
+  "handout_candidate": {
+    "handout_id": "synthetic-handout-001",
+    "title": "合成讲义候选（不得教学使用）",
+    "weekly_plan": {
+      "total_minutes": 420,
+      "focus_bucket_minutes": {
+        "main_focus": 252,
+        "secondary_focus": 105,
+        "spaced_retest": 63
+      },
+      "weekly_schedule": [
+        {"week_day": 1, "minutes": 60},
+        {"week_day": 2, "minutes": 60},
+        {"week_day": 3, "minutes": 60},
+        {"week_day": 4, "minutes": 60},
+        {"week_day": 5, "minutes": 60},
+        {"week_day": 6, "minutes": 60},
+        {"week_day": 7, "minutes": 60}
+      ]
+    },
+    "sections": [
+      "基础巩固（合成）",
+      "中档综合（合成）",
+      "迁移提升（合成）",
+      "Day 7 / Day 14 复测占位"
+    ]
+  },
+  "generation_candidate": {
+    "candidate_id": "synthetic-generation-001",
+    "summary": "合成动态 subject hierarchy 与 child chain，仅验证 UI/契约，不代表真实内容治理通过。",
+    "diagnostic_content": {
+      "provider_version": "synthetic-fixture-provider/1.0",
+      "subject_hierarchy": {
+        "contract_version": "shchem.candidate_subject_hierarchy.v1",
+        "printed_question_ids": ["SYN-PRINT-A", "SYN-PRINT-B"],
+        "atomic_part_ids": ["SYN-ATOM-A", "SYN-ATOM-B", "SYN-ATOM-C"],
+        "exact_registered_child_ids": ["SYN-ATOM-A", "SYN-ATOM-B", "SYN-ATOM-C"],
+        "atomic_to_printed": {
+          "SYN-ATOM-A": "SYN-PRINT-A",
+          "SYN-ATOM-B": "SYN-PRINT-A",
+          "SYN-ATOM-C": "SYN-PRINT-B"
+        },
+        "registry_exact_matches_current_candidate": true,
+        "human_reviewed": false
+      },
+      "content_status": "synthetic_fixture_only",
+      "teacher_managed_delivery_claimed": false,
+      "human_reviewed": false
+    },
+    "content_qa": {
+      "status": "structure_fixture_only",
+      "blockers": ["synthetic_fixture_not_content_complete"]
+    }
+  },
+  "learning_history": {
+    "mastery_history": [
+      {
+        "cycle_index": 1,
+        "tag_id": "K10",
+        "status": "synthetic_provisional_weakness",
+        "loss_rate": 0.5
+      },
+      {
+        "cycle_index": 2,
+        "tag_id": "K10",
+        "status": "synthetic_improving",
+        "loss_rate": 0.25
+      }
+    ],
+    "focus_history": [],
+    "spaced_review_due": [],
+    "next_week_objectives": ["synthetic objective only"]
+  }
+}

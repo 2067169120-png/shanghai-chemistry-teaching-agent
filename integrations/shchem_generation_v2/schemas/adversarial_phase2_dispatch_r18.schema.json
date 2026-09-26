@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.sh-chem.invalid/generation_v2/adversarial_phase2_dispatch_r18.schema.json",
+  "title": "R18 immutable phase-2 adversarial dispatch binding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "record_type", "dispatch_id", "review_protocol", "review_attempt_id", "version_id", "paper_id",
+    "root_dispatch_id", "schema_binding", "formal_freeze", "formal_freeze_sidecar",
+    "formal_freeze_payload", "generator_reconciliation", "phase1_activation",
+    "review_dispatch", "immutable_inputs", "schemas", "policy_inputs", "protocol_policy_digest", "adversarial_prompt", "adversarial_record_schema",
+    "subject", "deterministic_check", "reviews", "adversarial_task",
+    "source_review_files_immutable", "authority", "output_sha256", "human_reviewed"
+  ],
+  "properties": {
+    "schema_version": {"const": "3.0.0-r18"},
+    "record_type": {"const": "adversarial_phase2_dispatch"},
+    "dispatch_id": {"type": "string", "pattern": "^PHASE2-.+-[0-9a-f]{12}-[0-9a-f]{12}$"},
+    "review_protocol": {"const": "R18-PHASE1-TWO-STAGE-REVIEW-V2"},
+    "review_attempt_id": {"type": "string", "pattern": "^R18-REVIEW-ATTEMPT-[0-9a-f]{32}$"},
+    "version_id": {"type": "string", "pattern": "-R18$"},
+    "paper_id": {"type": "string", "minLength": 1},
+    "root_dispatch_id": {"type": "string", "format": "uuid"},
+    "schema_binding": {"$ref": "#/$defs/file_ref"},
+    "formal_freeze": {"$ref": "#/$defs/file_ref"},
+    "formal_freeze_sidecar": {"$ref": "#/$defs/file_ref"},
+    "formal_freeze_payload": {"$ref": "#/$defs/payload_binding"},
+    "generator_reconciliation": {"$ref": "#/$defs/file_ref"},
+    "phase1_activation": {"$ref": "#/$defs/file_ref"},
+    "review_dispatch": {"$ref": "#/$defs/file_ref"},
+    "immutable_inputs": {"$ref": "#/$defs/immutable_inputs"},
+    "schemas": {"$ref": "#/$defs/schemas"},
+    "policy_inputs": {"$ref": "#/$defs/policy_inputs"},
+    "protocol_policy_digest": {"$ref": "#/$defs/sha256"},
+    "adversarial_prompt": {"$ref": "#/$defs/file_ref"},
+    "adversarial_record_schema": {"$ref": "#/$defs/file_ref"},
+    "subject": {"$ref": "#/$defs/subject"},
+    "deterministic_check": {
+      "type": "object", "additionalProperties": false, "required": ["request", "report"],
+      "properties": {"request": {"$ref": "#/$defs/file_ref"}, "report": {"$ref": "#/$defs/file_ref"}}
+    },
+    "reviews": {
+      "type": "object", "additionalProperties": false, "required": ["sol_review_a", "sol_review_b"],
+      "properties": {"sol_review_a": {"$ref": "#/$defs/review_binding"}, "sol_review_b": {"$ref": "#/$defs/review_binding"}}
+    },
+    "adversarial_task": {
+      "type": "object", "additionalProperties": false,
+      "required": ["output_path", "required_engine", "required_reasoning_effort", "new_task_required", "distinct_new_task_required", "dispatch_authorized", "must_not_edit_review_files", "exclusive_output"],
+      "properties": {
+        "output_path": {"$ref": "#/$defs/relpath"}, "required_engine": {"const": "gpt-5.6-sol"},
+        "required_reasoning_effort": {"const": "xhigh"}, "new_task_required": {"const": true},
+        "distinct_new_task_required": {"const": true}, "dispatch_authorized": {"const": true},
+        "must_not_edit_review_files": {"const": true}, "exclusive_output": {"const": true}
+      }
+    },
+    "source_review_files_immutable": {"const": true},
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["adversarial_dispatch_authorized", "adversarial_task_created", "chain_creation_authorized", "controller_registration_authorized", "batch_registration_authorized", "publication_authorized", "delivery_authorized", "external_delivery_authorized"],
+      "properties": {
+        "adversarial_dispatch_authorized": {"const": true}, "adversarial_task_created": {"const": false},
+        "chain_creation_authorized": {"const": false}, "controller_registration_authorized": {"const": false},
+        "batch_registration_authorized": {"const": false}, "publication_authorized": {"const": false},
+        "delivery_authorized": {"const": false}, "external_delivery_authorized": {"const": false}
+      }
+    },
+    "output_sha256": {"$ref": "#/$defs/sha256"},
+    "human_reviewed": {"const": false}
+  },
+  "$defs": {
+    "immutable_inputs": {
+      "type": "object", "additionalProperties": false,
+      "required": ["paper", "task_card", "question_subject", "answer_subject", "deterministic_request", "deterministic_report", "coverage_matrix", "deterministic_atomic_scope", "figure_svg", "figure_png", "figure_spec", "component_registry", "figure_visual_qa", "figure_topology_mutations", "observed_profile", "evidence_manifest", "project_generation_authorization", "prefreeze_receipt", "r18_producer_receipt", "sol_generator_receipt", "generator_provenance_receipt", "formal_freeze", "formal_freeze_sidecar", "generator_reconciliation", "root_phase1_authorization"],
+      "properties": {
+        "paper":{"$ref":"#/$defs/file_ref"},"task_card":{"$ref":"#/$defs/file_ref"},"question_subject":{"$ref":"#/$defs/file_ref"},"answer_subject":{"$ref":"#/$defs/file_ref"},"deterministic_request":{"$ref":"#/$defs/file_ref"},"deterministic_report":{"$ref":"#/$defs/file_ref"},"coverage_matrix":{"$ref":"#/$defs/file_ref"},"deterministic_atomic_scope":{"$ref":"#/$defs/file_ref"},"figure_svg":{"$ref":"#/$defs/file_ref"},"figure_png":{"$ref":"#/$defs/file_ref"},"figure_spec":{"$ref":"#/$defs/file_ref"},"component_registry":{"$ref":"#/$defs/file_ref"},"figure_visual_qa":{"$ref":"#/$defs/file_ref"},"figure_topology_mutations":{"$ref":"#/$defs/file_ref"},"observed_profile":{"$ref":"#/$defs/file_ref"},"evidence_manifest":{"$ref":"#/$defs/file_ref"},"project_generation_authorization":{"$ref":"#/$defs/file_ref"},"prefreeze_receipt":{"$ref":"#/$defs/file_ref"},"r18_producer_receipt":{"$ref":"#/$defs/file_ref"},"sol_generator_receipt":{"$ref":"#/$defs/file_ref"},"generator_provenance_receipt":{"$ref":"#/$defs/file_ref"},"formal_freeze":{"$ref":"#/$defs/file_ref"},"formal_freeze_sidecar":{"$ref":"#/$defs/file_ref"},"generator_reconciliation":{"$ref":"#/$defs/file_ref"},"root_phase1_authorization":{"$ref":"#/$defs/file_ref"}
+      }
+    },
+    "schemas": {
+      "type":"object","additionalProperties":false,
+      "required":["paper_candidate","component_registry","deterministic_check_request","deterministic_check_report","project_generation_authorization","r18_producer_receipt","sol_generator_receipt","generator_provenance_receipt","formal_freeze_receipt","formal_freeze_sidecar","root_provenance_reconciliation","review_phase1_authorization","review_task_creation_attestation","codex_metadata_observation","machine_review_record","adversarial_check_record","review_dispatch_request","phase1_review_dispatch_activation","adversarial_phase2_dispatch"],
+      "properties":{"paper_candidate":{"$ref":"#/$defs/file_ref"},"component_registry":{"$ref":"#/$defs/file_ref"},"deterministic_check_request":{"$ref":"#/$defs/file_ref"},"deterministic_check_report":{"$ref":"#/$defs/file_ref"},"project_generation_authorization":{"$ref":"#/$defs/file_ref"},"r18_producer_receipt":{"$ref":"#/$defs/file_ref"},"sol_generator_receipt":{"$ref":"#/$defs/file_ref"},"generator_provenance_receipt":{"$ref":"#/$defs/file_ref"},"formal_freeze_receipt":{"$ref":"#/$defs/file_ref"},"formal_freeze_sidecar":{"$ref":"#/$defs/file_ref"},"root_provenance_reconciliation":{"$ref":"#/$defs/file_ref"},"review_phase1_authorization":{"$ref":"#/$defs/file_ref"},"review_task_creation_attestation":{"$ref":"#/$defs/file_ref"},"codex_metadata_observation":{"$ref":"#/$defs/file_ref"},"machine_review_record":{"$ref":"#/$defs/file_ref"},"adversarial_check_record":{"$ref":"#/$defs/file_ref"},"review_dispatch_request":{"$ref":"#/$defs/file_ref"},"phase1_review_dispatch_activation":{"$ref":"#/$defs/file_ref"},"adversarial_phase2_dispatch":{"$ref":"#/$defs/file_ref"}}
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "relpath": {
+      "type": "string", "minLength": 1,
+      "allOf": [
+        {"pattern": "^[^/]+(?:/[^/]+)*$"},
+        {"not": {"pattern": "[\\\\:\\u0000]"}},
+        {"not": {"pattern": "(^|/)\\.{1,2}(/|$)"}}
+      ]
+    },
+    "file_ref": {
+      "type": "object", "additionalProperties": false, "required": ["path", "sha256", "bytes"],
+      "properties": {"path": {"$ref": "#/$defs/relpath"}, "sha256": {"$ref": "#/$defs/sha256"}, "bytes": {"type": "integer", "minimum": 1}}
+    },
+    "host_path": {"type": "string", "pattern": "^[A-Za-z]:/[^\\\\:\\u0000]+(?:/[^\\\\:\\u0000]+)*$", "not": {"pattern": "(^|/)\\.{1,2}(/|$)"}},
+    "host_file_ref": {"type": "object", "additionalProperties": false, "required": ["path", "sha256", "bytes"], "properties": {"path": {"$ref": "#/$defs/host_path"}, "sha256": {"$ref": "#/$defs/sha256"}, "bytes": {"type": "integer", "minimum": 1}}},
+    "policy_inputs": {
+      "type": "object", "additionalProperties": false,
+      "required": ["profile_id", "purpose", "inputs", "canonical_sha256", "canonical_bytes"],
+      "properties": {
+        "profile_id": {"const": "shanghai_project_local_v1"}, "purpose": {"const": "mandatory_instruction_only_not_review_evidence"},
+        "inputs": {"type": "object", "additionalProperties": false, "required": ["global_agents", "project_agents", "obsidian_skill", "shchem_skill", "kb_index", "kb_project_note", "task_routes", "evidence_contract"], "properties": {"global_agents": {"$ref": "#/$defs/host_file_ref"}, "project_agents": {"$ref": "#/$defs/host_file_ref"}, "obsidian_skill": {"$ref": "#/$defs/host_file_ref"}, "shchem_skill": {"$ref": "#/$defs/host_file_ref"}, "kb_index": {"$ref": "#/$defs/host_file_ref"}, "kb_project_note": {"$ref": "#/$defs/host_file_ref"}, "task_routes": {"$ref": "#/$defs/host_file_ref"}, "evidence_contract": {"$ref": "#/$defs/host_file_ref"}}},
+        "canonical_sha256": {"$ref": "#/$defs/sha256"}, "canonical_bytes": {"type": "integer", "minimum": 2}
+      }
+    },
+    "payload_binding": {
+      "type": "object", "additionalProperties": false, "required": ["json_pointer", "canonical_sha256", "canonical_bytes"],
+      "properties": {"json_pointer": {"const": "#/freeze_payload"}, "canonical_sha256": {"$ref": "#/$defs/sha256"}, "canonical_bytes": {"type": "integer", "minimum": 2}}
+    },
+    "subject": {
+      "type": "object", "additionalProperties": false, "required": ["question", "answer", "subject_pair_sha256"],
+      "properties": {"question": {"$ref": "#/$defs/file_ref"}, "answer": {"$ref": "#/$defs/file_ref"}, "subject_pair_sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "execution_provenance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider", "thread_id", "turn_id", "receipt_id", "model", "reasoning_effort", "model_source", "reasoning_effort_source", "root_dispatch_id"],
+      "properties": {
+        "provider": {"const": "codex_app_thread"}, "thread_id": {"type": "string", "format": "uuid"},
+        "turn_id": {"type": "string", "minLength": 1}, "receipt_id": {"type": "string", "minLength": 1},
+        "model": {"const": "gpt-5.6-sol"}, "reasoning_effort": {"const": "xhigh"},
+        "model_source": {"const": "task_creation_configuration_attestation.requested_configuration"},
+        "reasoning_effort_source": {"const": "task_creation_configuration_attestation.requested_configuration"},
+        "root_dispatch_id": {"type": "string", "format": "uuid"}
+      }
+    },
+    "review_binding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["file", "root_observation", "task_creation_attestation", "file_self_sha256", "run_id", "isolation_context_id", "output_sha256", "execution_provenance", "verdict"],
+      "properties": {
+        "file": {"$ref": "#/$defs/file_ref"}, "root_observation": {"$ref": "#/$defs/file_ref"}, "task_creation_attestation": {"$ref": "#/$defs/file_ref"},
+        "file_self_sha256": {"$ref": "#/$defs/sha256"}, "run_id": {"type": "string", "minLength": 8},
+        "isolation_context_id": {"type": "string", "minLength": 8}, "output_sha256": {"$ref": "#/$defs/sha256"},
+        "execution_provenance": {"$ref": "#/$defs/execution_provenance"}, "verdict": {"const": "pass"}
+      }
+    }
+  }
+}

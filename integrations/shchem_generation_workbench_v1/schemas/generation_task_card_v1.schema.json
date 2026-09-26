@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shchem:generation-task-card:v1",
+  "title": "Generation task card v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "target_kind",
+    "grade",
+    "teaching_stage",
+    "purpose",
+    "knowledge_scope",
+    "ability_scope",
+    "theme_count",
+    "duration_minutes",
+    "total_score",
+    "difficulty_targets",
+    "paper_structure",
+    "numbering_rules",
+    "selection_scoring_rules",
+    "prohibited_content",
+    "figure_types",
+    "evidence_record_ids",
+    "mode",
+    "provider_profile_id"
+  ],
+  "properties": {
+    "schema_version": {"const": "generation_task_card_v1"},
+    "target_kind": {"enum": ["exercise_set", "full_paper", "weekpack"]},
+    "grade": {"type": "string", "minLength": 1, "maxLength": 64},
+    "teaching_stage": {"type": "string", "minLength": 1, "maxLength": 128},
+    "purpose": {"type": "string", "minLength": 1, "maxLength": 256},
+    "knowledge_scope": {"$ref": "#/$defs/nonemptyUniqueTextArray"},
+    "ability_scope": {"$ref": "#/$defs/nonemptyUniqueTextArray"},
+    "theme_count": {"$ref": "#/$defs/statusInteger"},
+    "duration_minutes": {"$ref": "#/$defs/statusInteger"},
+    "total_score": {"$ref": "#/$defs/statusInteger"},
+    "difficulty_targets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["basic", "intermediate", "advanced"],
+      "properties": {
+        "basic": {"type": "number", "minimum": 0, "maximum": 1},
+        "intermediate": {"type": "number", "minimum": 0, "maximum": 1},
+        "advanced": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "paper_structure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hierarchy", "independent_selection_section"],
+      "properties": {
+        "hierarchy": {
+          "type": "array",
+          "items": {"enum": ["paper", "theme_big_question", "printed_question", "atomic_part"]},
+          "uniqueItems": true,
+          "maxItems": 4
+        },
+        "independent_selection_section": {"const": false}
+      }
+    },
+    "numbering_rules": {"$ref": "#/$defs/statusText"},
+    "selection_scoring_rules": {"$ref": "#/$defs/statusText"},
+    "prohibited_content": {"$ref": "#/$defs/uniqueTextArray"},
+    "figure_types": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 8,
+      "items": {
+        "enum": [
+          "apparatus",
+          "electrochemical_cell",
+          "graph",
+          "organic_structure",
+          "particle_diagram",
+          "process_flow",
+          "table",
+          "other_review_required"
+        ]
+      }
+    },
+    "evidence_record_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 512,
+      "items": {"$ref": "#/$defs/recordId"}
+    },
+    "mode": {"enum": ["plan_only", "machine_candidate"]},
+    "provider_profile_id": {"const": "sol_xhigh_generation_v1"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"target_kind": {"const": "full_paper"}}, "required": ["target_kind"]},
+      "then": {
+        "properties": {
+          "paper_structure": {
+            "properties": {
+              "hierarchy": {
+                "const": ["paper", "theme_big_question", "printed_question", "atomic_part"]
+              },
+              "independent_selection_section": {"const": false}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "recordId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$"
+    },
+    "uniqueTextArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 128,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "nonemptyUniqueTextArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "statusInteger": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value_status", "value"],
+          "properties": {
+            "value_status": {"const": "known"},
+            "value": {"type": "integer", "minimum": 1}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value_status", "value"],
+          "properties": {
+            "value_status": {"enum": ["unknown", "blocked_pending_review"]},
+            "value": {"type": "null"}
+          }
+        }
+      ]
+    },
+    "statusText": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value_status", "value"],
+          "properties": {
+            "value_status": {"const": "known"},
+            "value": {"type": "string", "minLength": 1, "maxLength": 512}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value_status", "value"],
+          "properties": {
+            "value_status": {"enum": ["unknown", "blocked_pending_review"]},
+            "value": {"type": "null"}
+          }
+        }
+      ]
+    }
+  }
+}

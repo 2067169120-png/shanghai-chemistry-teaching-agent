@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/shchem-generation-v2/external-delivery-attestation.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "record_type", "promotion_id", "candidate_path",
+    "candidate_sha256", "task_card_sha256", "promotion_chain", "content_status",
+    "manifest_path", "manifest_sha256", "archive_path", "archive_sha256",
+    "archive_bytes", "zip_integrity_report_path", "zip_integrity_report_sha256",
+    "semantic_pairs", "qa_evidence", "promotion_prerequisite_snapshot", "content_governance",
+    "attestation_included_in_bound_archive", "human_reviewed",
+    "teacher_managed_delivery_candidate", "delivery_scope", "teacher_action_required",
+    "teaching_use_allowed", "official_claim_allowed", "official_publication_allowed",
+    "external_publication_allowed", "publication_allowed", "release_allowed"
+  ],
+  "properties": {
+    "schema_version": {"const": "3.0.0-r17"},
+    "record_type": {"const": "external_teacher_managed_delivery_attestation"},
+    "promotion_id": {"type": "string", "minLength": 1},
+    "candidate_path": {"$ref": "#/$defs/relpath"},
+    "candidate_sha256": {"$ref": "#/$defs/sha256"},
+    "task_card_sha256": {"$ref": "#/$defs/sha256"},
+    "promotion_chain": {
+      "const": ["candidate", "machine_pass", "independent_machine_review", "adversarial_check", "automated_verified_candidate"]
+    },
+    "content_status": {"const": "automated_verified_candidate"},
+    "manifest_path": {"$ref": "#/$defs/relpath"},
+    "manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "archive_path": {"$ref": "#/$defs/relpath"},
+    "archive_sha256": {"$ref": "#/$defs/sha256"},
+    "archive_bytes": {"type": "integer", "minimum": 1},
+    "zip_integrity_report_path": {"$ref": "#/$defs/relpath"},
+    "zip_integrity_report_sha256": {"$ref": "#/$defs/sha256"},
+    "semantic_pairs": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["semantic_kind", "docx", "pdf", "parity_report"],
+        "properties": {
+          "semantic_kind": {"enum": ["exam_student", "exam_solutions", "week_student", "week_solutions"]},
+          "docx": {"$ref": "#/$defs/file"},
+          "pdf": {"$ref": "#/$defs/file"},
+          "parity_report": {"$ref": "#/$defs/file"}
+        }
+      }
+    },
+    "qa_evidence": {"type": "array", "minItems": 10, "items": {"$ref": "#/$defs/file"}},
+    "promotion_prerequisite_snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "check", "status", "paper", "task_card", "registry",
+        "content_governance_freeze", "manifest", "archive", "zip_integrity_report",
+        "governance_chain", "post_generation_preflight", "qa_report_count", "render_tree_sha256s",
+        "controller_chain_revalidation_count", "external_reconciliation_revalidated",
+        "snapshot_graph_sha256", "commit_revalidation", "human_reviewed",
+        "teaching_use_allowed", "publication_allowed", "errors"
+      ],
+      "properties": {
+        "schema_version": {"const": "3.0.0-r17"},
+        "check": {"const": "promotion_registry_content_qa_render_zip_snapshot"},
+        "status": {"const": "pass"},
+        "paper": {"$ref": "#/$defs/file"},
+        "task_card": {"$ref": "#/$defs/file"},
+        "registry": {"$ref": "#/$defs/file"},
+        "content_governance_freeze": {"$ref": "#/$defs/file"},
+        "manifest": {"$ref": "#/$defs/file"},
+        "archive": {"$ref": "#/$defs/file"},
+        "zip_integrity_report": {"$ref": "#/$defs/file"},
+        "governance_chain": {"$ref": "#/$defs/file"},
+        "post_generation_preflight": {"$ref": "#/$defs/file"},
+        "qa_report_count": {"const": 18},
+        "controller_chain_revalidation_count": {"type": "integer", "minimum": 2},
+        "external_reconciliation_revalidated": {"const": true},
+        "render_tree_sha256s": {
+          "type": "array", "minItems": 4, "maxItems": 4,
+          "items": {"$ref": "#/$defs/sha256"}
+        },
+        "snapshot_graph_sha256": {"$ref": "#/$defs/sha256"},
+        "commit_revalidation": {
+          "type": "object", "additionalProperties": false,
+          "required": ["status", "original_snapshot_graph_sha256", "refreshed_snapshot_graph_sha256", "errors"],
+          "properties": {
+            "status": {"const": "pass"},
+            "original_snapshot_graph_sha256": {"$ref": "#/$defs/sha256"},
+            "refreshed_snapshot_graph_sha256": {"$ref": "#/$defs/sha256"},
+            "errors": {"type": "array", "maxItems": 0}
+          }
+        },
+        "human_reviewed": {"const": false},
+        "teaching_use_allowed": {"const": false},
+        "publication_allowed": {"const": false},
+        "errors": {"type": "array", "maxItems": 0}
+      }
+    },
+    "content_governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "controller_governance_chain_path", "controller_governance_chain_sha256",
+        "post_generation_preflight_report_path", "post_generation_preflight_report_sha256",
+        "registry_binding"
+      ],
+      "properties": {
+        "controller_governance_chain_path": {"$ref": "#/$defs/relpath"},
+        "controller_governance_chain_sha256": {"$ref": "#/$defs/sha256"},
+        "post_generation_preflight_report_path": {"$ref": "#/$defs/relpath"},
+        "post_generation_preflight_report_sha256": {"$ref": "#/$defs/sha256"},
+        "registry_binding": {
+          "type": "object",
+          "required": ["registry_path", "registry_sha256", "paper", "atomic", "paper_count", "atomic_count", "all_exact_members"],
+          "properties": {
+            "registry_path": {"$ref": "#/$defs/relpath"},
+            "registry_sha256": {"$ref": "#/$defs/sha256"},
+            "paper": {"type": "object"},
+            "atomic": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["artifact_id", "subject_pair_sha256", "registry_row", "exact_registry_member"],
+                "properties": {
+                  "artifact_id": {"type": "string", "pattern": "^P[0-9]+$"},
+                  "subject_pair_sha256": {"$ref": "#/$defs/sha256"},
+                  "registry_row": {"$ref": "#/$defs/file"},
+                  "exact_registry_member": {"const": true}
+                }
+              }
+            },
+            "paper_count": {"const": 1},
+            "atomic_count": {"type": "integer", "minimum": 1},
+            "all_exact_members": {"const": true}
+          }
+        }
+      }
+    },
+    "attestation_included_in_bound_archive": {"const": false},
+    "human_reviewed": {"const": false},
+    "teacher_managed_delivery_candidate": {"const": true},
+    "delivery_scope": {"const": "teacher_managed_private_delivery"},
+    "teacher_action_required": {"const": true},
+    "teaching_use_allowed": {"const": false},
+    "official_claim_allowed": {"const": false},
+    "official_publication_allowed": {"const": false},
+    "external_publication_allowed": {"const": false},
+    "publication_allowed": {"const": false},
+    "release_allowed": {"const": false}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "relpath": {"type": "string", "pattern": "^(?![A-Za-z]:[\\\\/])(?![/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+"},
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relpath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

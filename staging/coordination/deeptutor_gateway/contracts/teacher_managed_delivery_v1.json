@@ -1,0 +1,29 @@
+{
+  "contract_version": "shchem.teacher_managed_delivery.v1",
+  "purpose": "local teacher-managed delivery candidate, distinct from external publication",
+  "required": {
+    "content_status": "automated_verified_candidate",
+    "teacher_managed_delivery_candidate": true,
+    "candidate_sha256": "64 lowercase hexadecimal characters",
+    "machine_review_chain.status": "pass",
+    "machine_review_chain.receipt_hashes": "at least three distinct 64-character SHA-256 values"
+  },
+  "student_bundle_alternative": {
+    "schema_version": "student_week_zip_manifest_v1",
+    "claim_scope": "machine_only_real_student_candidate",
+    "teacher_managed_delivery_candidate": true,
+    "teacher_managed_delivery_reasons": [],
+    "zip_sha256": "64 lowercase hexadecimal characters",
+    "verification.status": "PASS_MACHINE_ONLY_STRUCTURE",
+    "verification.zip_sha256": "must equal manifest zip_sha256"
+  },
+  "ui_behavior": {
+    "teacher_delivery_download_enabled_only_when_ready": true,
+    "synthetic_mock_zip_is_separate_test_download": true,
+    "otherwise_show_blockers": true
+  },
+  "external_publication_allowed": false,
+  "official_claim_allowed": false,
+  "human_reviewed": false,
+  "failure_behavior": "no teacher delivery artifact is exposed"
+}

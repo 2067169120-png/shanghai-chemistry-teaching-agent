@@ -1,0 +1,1535 @@
+{
+  "version": "0.1.95",
+  "frozen": true,
+  "module_origin": "bundle",
+  "platform": "Windows-2025Server-10.0.26100-SP0",
+  "python": "3.12.10",
+  "qt": "6.11.2",
+  "qt_platform": "offscreen",
+  "routes_opened": [
+    "home",
+    "library",
+    "paper",
+    "student",
+    "preparation",
+    "templates",
+    "classroom",
+    "mywork"
+  ],
+  "local_draft_saved": true,
+  "work_organization": {
+    "draft_lifecycle": true,
+    "task_lifecycle": true,
+    "original_drafts_unchanged": true,
+    "task_files_unchanged": true,
+    "unsaved_editor_preserved": true,
+    "recovery_file_unchanged": true,
+    "original_topic_search": true,
+    "model_calls": 0
+  },
+  "lesson_backup": {
+    "backup_created": true,
+    "restore_checked": true,
+    "source_records_unchanged": true,
+    "original_artifacts_equal": true,
+    "shelves_preserved": true,
+    "recovery_restored": true,
+    "image_reconnected": true,
+    "restored_production_export": true,
+    "restored_profile": "备课恢复-20260915-044753-067bec",
+    "model_calls": 0,
+    "native_restored_cli_start_and_close": true
+  },
+  "teacher_desk": {
+    "recent_current_five": true,
+    "real_word_basket": true,
+    "resume_preserved_editor": true,
+    "home_did_not_write_state": true,
+    "collapsed_diagnostics": true,
+    "actions_visible_800x700": true,
+    "model_calls": 0
+  },
+  "paper_numbering": {
+    "real_word_import": true,
+    "reordered_student_and_teacher": true,
+    "source_bytes_unchanged": true,
+    "reference_numbers_updated": true,
+    "fixed_actions_800x700": true,
+    "chinese_standard_buttons": true,
+    "actual_pdf_pages": {
+      "student": 1,
+      "teacher": 1
+    },
+    "raster_numbers_auto_rewritten": false,
+    "model_calls": 0
+  },
+  "typography": {
+    "family": "Microsoft YaHei UI",
+    "chinese_sample_supported": true,
+    "body_points": 11.0,
+    "small_points": 9.5,
+    "qt_platform": "offscreen",
+    "logical_dpi": 96.0,
+    "device_pixel_ratio": 1.0,
+    "han": {
+      "requested": [
+        "Microsoft YaHei UI"
+      ],
+      "primary": "Microsoft YaHei UI",
+      "points": 11.25,
+      "pixels": 15,
+      "weight": 400,
+      "runs": [
+        {
+          "family": "Microsoft YaHei UI",
+          "style": "Regular",
+          "missing_glyphs": 0
+        }
+      ],
+      "missing_glyphs": 0
+    },
+    "chemistry": {
+      "requested": [
+        "Microsoft YaHei UI"
+      ],
+      "primary": "Microsoft YaHei UI",
+      "points": 11.25,
+      "pixels": 15,
+      "weight": 400,
+      "runs": [
+        {
+          "family": "Microsoft YaHei UI",
+          "style": "Regular",
+          "missing_glyphs": 0
+        },
+        {
+          "family": "Segoe UI Symbol",
+          "style": "Regular",
+          "missing_glyphs": 0
+        }
+      ],
+      "missing_glyphs": 0
+    },
+    "scope": "Current UI glyph samples only; not source images, Word/PPT export or all CJK characters.",
+    "widgets": {
+      "heading": {
+        "requested": [
+          "Microsoft YaHei UI"
+        ],
+        "primary": "Microsoft YaHei UI",
+        "points": 12.0,
+        "pixels": 16,
+        "weight": 600,
+        "runs": [
+          {
+            "family": "Microsoft YaHei UI",
+            "style": "Bold",
+            "missing_glyphs": 0
+          }
+        ],
+        "missing_glyphs": 0
+      },
+      "body": {
+        "requested": [
+          "Microsoft YaHei UI"
+        ],
+        "primary": "Microsoft YaHei UI",
+        "points": 11.25,
+        "pixels": 15,
+        "weight": 400,
+        "runs": [
+          {
+            "family": "Microsoft YaHei UI",
+            "style": "Regular",
+            "missing_glyphs": 0
+          }
+        ],
+        "missing_glyphs": 0
+      },
+      "small": {
+        "requested": [
+          "Microsoft YaHei UI"
+        ],
+        "primary": "Microsoft YaHei UI",
+        "points": 9.75,
+        "pixels": 13,
+        "weight": 400,
+        "runs": [
+          {
+            "family": "Microsoft YaHei UI",
+            "style": "Regular",
+            "missing_glyphs": 0
+          }
+        ],
+        "missing_glyphs": 0
+      },
+      "chemistry": {
+        "requested": [
+          "Microsoft YaHei UI"
+        ],
+        "primary": "Microsoft YaHei UI",
+        "points": 11.25,
+        "pixels": 15,
+        "weight": 400,
+        "runs": [
+          {
+            "family": "Microsoft YaHei UI",
+            "style": "Regular",
+            "missing_glyphs": 0
+          },
+          {
+            "family": "Segoe UI Symbol",
+            "style": "Regular",
+            "missing_glyphs": 0
+          }
+        ],
+        "missing_glyphs": 0
+      },
+      "input": {
+        "requested": [
+          "Microsoft YaHei UI"
+        ],
+        "primary": "Microsoft YaHei UI",
+        "points": 11.25,
+        "pixels": 15,
+        "weight": 400,
+        "runs": [
+          {
+            "family": "Microsoft YaHei UI",
+            "style": "Regular",
+            "missing_glyphs": 0
+          }
+        ],
+        "missing_glyphs": 0
+      },
+      "button": {
+        "requested": [
+          "Microsoft YaHei UI"
+        ],
+        "primary": "Microsoft YaHei UI",
+        "points": 11.25,
+        "pixels": 15,
+        "weight": 400,
+        "runs": [
+          {
+            "family": "Microsoft YaHei UI",
+            "style": "Regular",
+            "missing_glyphs": 0
+          }
+        ],
+        "missing_glyphs": 0
+      }
+    },
+    "editor_unchanged": true,
+    "actions_visible_800x700": true,
+    "model_calls": 0
+  },
+  "editable_pptx_slides": 5,
+  "lesson_docx_created": true,
+  "pdf_pages": 2,
+  "environment": {
+    "schema_version": "shchem.environment.v1",
+    "version": "0.1.95",
+    "execution_mode": "packaged",
+    "platform": "Windows",
+    "python": "3.12.10",
+    "checks": [
+      {
+        "key": "python",
+        "title": "运行解释器",
+        "status": "ready",
+        "detail": "Python 3.12.10",
+        "affects": "应用运行",
+        "action": "源码推荐 Python 3.12；打包版使用随包解释器。"
+      },
+      {
+        "key": "qt_widgets",
+        "title": "原生桌面",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "打开桌面页面",
+        "action": ""
+      },
+      {
+        "key": "qt_svg",
+        "title": "SVG 图标",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "图标与 SVG 显示",
+        "action": ""
+      },
+      {
+        "key": "qt_pdf",
+        "title": "原生 PDF 组件",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "导入与教材 PDF 预览",
+        "action": ""
+      },
+      {
+        "key": "qt_pdf_widgets",
+        "title": "原生 PDF 视图",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "原页 PDF 查看窗口",
+        "action": ""
+      },
+      {
+        "key": "docx",
+        "title": "Word 文件支持",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "Word 导入与 DOCX 输出",
+        "action": ""
+      },
+      {
+        "key": "pptx",
+        "title": "PowerPoint 文件支持",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "PPTX 文件输出",
+        "action": ""
+      },
+      {
+        "key": "pillow",
+        "title": "图片处理",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "缩略图与图片处理",
+        "action": ""
+      },
+      {
+        "key": "pdfium",
+        "title": "PDF 页图支持",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "试卷分页和 PDF 预览",
+        "action": ""
+      },
+      {
+        "key": "pypdf",
+        "title": "PDF 读取",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "PDF 页面与文本读取",
+        "action": ""
+      },
+      {
+        "key": "jsonschema",
+        "title": "结构化结果校验",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "模型结果格式检查",
+        "action": ""
+      },
+      {
+        "key": "state",
+        "title": "个人数据目录",
+        "status": "ready",
+        "detail": "临时写入与清理成功。",
+        "affects": "草稿、题篮、恢复副本及个人设置",
+        "action": ""
+      },
+      {
+        "key": "icons",
+        "title": "输入控件图标资源",
+        "status": "ready",
+        "detail": "五项 SVG 资源存在。",
+        "affects": "下拉框、复选框和数值输入箭头",
+        "action": ""
+      },
+      {
+        "key": "resources",
+        "title": "已声明的软件资源",
+        "status": "ready",
+        "detail": "清单共 55 项，缺少 0 项。仅检查存在，不验证教学内容或全部动态脚本。",
+        "affects": "清单内的图标、JSON 约束与简明知识索引",
+        "action": ""
+      },
+      {
+        "key": "office",
+        "title": "Office 排版转换",
+        "status": "detected",
+        "detail": "发现 LibreOffice；尚未执行文档转换验证。",
+        "affects": "DOCX → PDF 真实试卷分页",
+        "action": "选一份小试卷运行“预览试卷排版”，确认本机实际转换效果。"
+      },
+      {
+        "key": "library",
+        "title": "题库目录",
+        "status": "empty",
+        "detail": "当前题库目录为空，不妨碍打开桌面或保存备课。",
+        "affects": "本机题目与教材检索",
+        "action": "从“导入资料”加入文件，或连接原工作区。"
+      }
+    ],
+    "network_requests": 0,
+    "scope": "本机组件加载、图标存在、目录可写与安装发现；不是模型能力、化学正确性或成品排版验收。报告不含本机路径、题目正文或模型配置。"
+  },
+  "screenshots": [
+    {
+      "file": "packaged-home.png",
+      "sha256": "565d44db529f7d259f894f67da2e881e86bc2f06c189bf2f00e8ba15f791c808"
+    },
+    {
+      "file": "packaged-library.png",
+      "sha256": "8a20e8d5a12587e25c29cefce3c6360cf3d93ec442c4f762ba9a96d0dbe84bc9"
+    },
+    {
+      "file": "packaged-paper.png",
+      "sha256": "7584d8914ec10fa7f4dff660d7154fbd045ae46254b8f2c2fab7dadb4430040b"
+    },
+    {
+      "file": "packaged-student.png",
+      "sha256": "08d878f3a7b99b5583506f6a995b23ced86ae94132f5fd0ee9697e371888f27d"
+    },
+    {
+      "file": "packaged-preparation.png",
+      "sha256": "fbc639482a797ed32e1c7a0b3f156af03191e8975053f38b2beed75c514dfe70"
+    },
+    {
+      "file": "packaged-templates.png",
+      "sha256": "fe9660b5df867683d6e86d68ce7060ec479da7a23e279ba74c2a1762d27f78c3"
+    },
+    {
+      "file": "packaged-classroom.png",
+      "sha256": "359442b9763546cee925ca02e9e2ec38bd1aec8ddde4f6711b76b629bad11919"
+    },
+    {
+      "file": "packaged-mywork.png",
+      "sha256": "ea1a2bec9b0013f8e12cb351ceb340212a573b23de5d191641a829805256f798"
+    },
+    {
+      "file": "packaged-settings.png",
+      "sha256": "feb8c74d703e5f6cdd6d015b5a459aa859fe5b9f725a12ad7008157ddf48294a"
+    },
+    {
+      "file": "work-current.png",
+      "sha256": "82e71328b611437371019f82f778ec56d42acd345fff3e98339ae9374f8f00db"
+    },
+    {
+      "file": "work-archived.png",
+      "sha256": "bd965a546b279dd50a26329d7616ab6d00cf612d8342e22e67e7aaffbcaecf77"
+    },
+    {
+      "file": "work-trash.png",
+      "sha256": "982cb6787aec2c9e54b9ce02665fa6f2f947e21a8c2c34f0723ad862897d3541"
+    },
+    {
+      "file": "work-original-search.png",
+      "sha256": "898550e7f910e37a14c8f486ae8f1f7d7e7aa1c30ac969beecba4f797cab92f7"
+    },
+    {
+      "file": "work-compact.png",
+      "sha256": "320562baa4b314b1a9304dfe97da5b7011c4c20f7456c49c70b5fca58c19e716"
+    },
+    {
+      "file": "backup-plan.png",
+      "sha256": "ff914297c1ac0b823e53ae389d1b2ab208b2f48d7c376d1e173e0af4f33c72f7"
+    },
+    {
+      "file": "backup-checked.png",
+      "sha256": "55d8dbd8f12c29180c41d1bae868ad1cea1240dfa21aaab8ec61f4108bb6a393"
+    },
+    {
+      "file": "backup-restored.png",
+      "sha256": "16dc91da2adb3cc9854c5fb773e861010863e4ccd5b1c23373a902a2682136b2"
+    },
+    {
+      "file": "backup-compact.png",
+      "sha256": "18697262ee92db8996869bb2b74464ef67679a8ad33c7aa556b0dd03e945022e"
+    },
+    {
+      "file": "backup-opened.png",
+      "sha256": "d1ca2ba2efb50907b66614ebaf9f5b415c9a0e08610d18859780eabb52926f9e"
+    },
+    {
+      "file": "backup-missing-image.png",
+      "sha256": "336fad30f85c760437f46ff171f74eeeec4d4439df2b068c05495cdab4dfc0b6"
+    },
+    {
+      "file": "home-current.png",
+      "sha256": "3f47d9d711f1f6f0723ffa3059d8d0da5d7835af4abf367ff496e9a01f787e45"
+    },
+    {
+      "file": "home-compact.png",
+      "sha256": "5310881f5d045da6159ecc53f870ea7b7c8b9f0d7523db26950f2eb9a3781c25"
+    },
+    {
+      "file": "works-pinned-actions.png",
+      "sha256": "f58e5a65333eaf5ffa2dd6e2be0a9c1af0b05536ac65c6e7302191c93a978951"
+    },
+    {
+      "file": "desk-page-home.png",
+      "sha256": "3f47d9d711f1f6f0723ffa3059d8d0da5d7835af4abf367ff496e9a01f787e45"
+    },
+    {
+      "file": "desk-page-library.png",
+      "sha256": "5986365de3a41d0ebe481a6afbd9b27b8233e495076500e621e43417c69cd007"
+    },
+    {
+      "file": "desk-page-paper.png",
+      "sha256": "8ea34630df7e8797e26b700d0802c204b9e4ba72d2561a9d596f5a9a9d116642"
+    },
+    {
+      "file": "desk-page-student.png",
+      "sha256": "c27f4efd11402837227aaf6edcb8afc4ff423ecf1d8afd9315540c5855e4ec69"
+    },
+    {
+      "file": "desk-page-preparation.png",
+      "sha256": "3c1936072d52362288088210769b6ccc09e6b6e55f24a19b5e01d040c89ae4c7"
+    },
+    {
+      "file": "desk-page-templates.png",
+      "sha256": "e3a4236821132df97ce1deb8d457f435acaa7181e77f8a312c576bec34a23eb5"
+    },
+    {
+      "file": "desk-page-classroom.png",
+      "sha256": "a81977158a74127d242c8abfb651a8aae1ba611fdd38dcc30d767e771ae79f9b"
+    },
+    {
+      "file": "desk-page-mywork.png",
+      "sha256": "98b254b337692678df30eec4dbbfb41f6da6c64e980198ae54c5423ebc314141"
+    },
+    {
+      "file": "preparation-fixed-actions.png",
+      "sha256": "8efef639edb58c243d3c35d57411f2332a0e474da621e0ae028c3104a7d30804"
+    },
+    {
+      "file": "preparation-materials.png",
+      "sha256": "62cc98078149f8d8daa11c0298bc050b3e6a185f012d0a3f93b8eba1cbac92fc"
+    },
+    {
+      "file": "chinese-confirmation.png",
+      "sha256": "a82b339d4ae71e230d132be5b37bd9cfb9b3d68df997718335296c690c607c3e"
+    },
+    {
+      "file": "paper-renumbered-student.png",
+      "sha256": "d652e1d9f151e802bbd7f375c6627bb5bd961757924246d6f0226fe9d124e374"
+    },
+    {
+      "file": "paper-renumbered-teacher.png",
+      "sha256": "8d06267064a2f98a51aa583e47c938d9709827b5048a762595e54cdf34a03451"
+    },
+    {
+      "file": "typography-sample.png",
+      "sha256": "6570ba57d255f8ceb2ad8192935ecc592cb88b63c1735f539635587e271ab5c3"
+    },
+    {
+      "file": "typography-check.png",
+      "sha256": "3ccd47422170b740093fd2f91cf696d850098d464ba952c3e065e1f262a14f94"
+    },
+    {
+      "file": "typography-home.png",
+      "sha256": "1687999e25ecef1160dd4e508fb2475219c6a9ea0874462c39998aa0f5a7edec"
+    },
+    {
+      "file": "typography-preparation.png",
+      "sha256": "f6e3b050756e2fea68b47bc638074f2cb6e9b5461971fbf75e1108ef0d5156c6"
+    },
+    {
+      "file": "typography-mywork.png",
+      "sha256": "fb71c5886a50eeae6388bc43792be179e4d1d8aff03194c77830c7fa7b289331"
+    },
+    {
+      "file": "typography-compact.png",
+      "sha256": "0df9fbe5c93953b9dd38a45656367c6815481117ac91abc9d220460ff6b30b1c"
+    }
+  ],
+  "output_files": [
+    {
+      "artifact_id": "candidate_json",
+      "filename": "candidate.json",
+      "size": 2868,
+      "sha256": "0d337e1e2650c22c9cc6d9f4e0b46f306e78213fb5b7d5f24f6f3e53ee596a5a"
+    },
+    {
+      "artifact_id": "deck_json",
+      "filename": "deck.json",
+      "size": 6298,
+      "sha256": "a22cabb0967394b1a859323b72b1998506592ac02d20930c0f7b70bd63252c5a"
+    },
+    {
+      "artifact_id": "pptx",
+      "filename": "lesson_presentation.pptx",
+      "size": 43775,
+      "sha256": "c78a35f4aedc3e382f3b44236e8893f9f56ab19b2e25ea11fb60b85492409e1c"
+    },
+    {
+      "artifact_id": "preview_montage",
+      "filename": "rendered_montage.png",
+      "size": 73135,
+      "sha256": "56b8c7ba481378fc219ffe7f6d96595ebc70a74d60cb803b606b368d8f6e56e2"
+    },
+    {
+      "artifact_id": "lesson_plan_docx",
+      "filename": "lesson_plan.docx",
+      "size": 37852,
+      "sha256": "4ffa93178761f3e7a3ddf3e60b58482b19a5ceedd9c8d7507753f638aba25bc3"
+    },
+    {
+      "artifact_id": "qa_report",
+      "filename": "qa_report.json",
+      "size": 5777,
+      "sha256": "c08e9269ad547a10bac4b6f05fa46b764f1ec266b0944c95fb8a9fb30b5fac45"
+    }
+  ],
+  "uncaught_errors": [],
+  "scope": "Isolated native bundle navigation, settings, saved draft and production renderer DOCX/PPTX creation. Not live API, Office-PPTX visual parity, original library or classroom acceptance.",
+  "font_scaling": [
+    {
+      "family": "Microsoft YaHei UI",
+      "chinese_sample_supported": true,
+      "body_points": 11.0,
+      "small_points": 9.5,
+      "qt_platform": "windows",
+      "logical_dpi": 96.0,
+      "device_pixel_ratio": 1.0,
+      "han": {
+        "requested": [
+          "Microsoft YaHei UI"
+        ],
+        "primary": "Microsoft YaHei UI",
+        "points": 11.25,
+        "pixels": 15,
+        "weight": 400,
+        "runs": [
+          {
+            "family": "Microsoft YaHei UI",
+            "style": "Regular",
+            "missing_glyphs": 0
+          }
+        ],
+        "missing_glyphs": 0
+      },
+      "chemistry": {
+        "requested": [
+          "Microsoft YaHei UI"
+        ],
+        "primary": "Microsoft YaHei UI",
+        "points": 11.25,
+        "pixels": 15,
+        "weight": 400,
+        "runs": [
+          {
+            "family": "MS UI Gothic",
+            "style": "Regular",
+            "missing_glyphs": 0
+          },
+          {
+            "family": "Microsoft YaHei UI",
+            "style": "Regular",
+            "missing_glyphs": 0
+          },
+          {
+            "family": "Tahoma",
+            "style": "Regular",
+            "missing_glyphs": 0
+          }
+        ],
+        "missing_glyphs": 0
+      },
+      "scope": "Current UI glyph samples only; not source images, Word/PPT export or all CJK characters.",
+      "widgets": {
+        "heading": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 12.0,
+          "pixels": 16,
+          "weight": 600,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Bold",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "body": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 11.25,
+          "pixels": 15,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "small": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 9.75,
+          "pixels": 13,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "chemistry": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 11.25,
+          "pixels": 15,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "MS UI Gothic",
+              "style": "Regular",
+              "missing_glyphs": 0
+            },
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            },
+            {
+              "family": "Tahoma",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "input": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 11.25,
+          "pixels": 15,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "button": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 11.25,
+          "pixels": 15,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        }
+      },
+      "editor_unchanged": true,
+      "actions_visible_800x700": true,
+      "model_calls": 0,
+      "version": "0.1.95",
+      "platform": "Windows-2025Server-10.0.26100-SP0",
+      "frozen": true,
+      "source_commit": "4d5fbff425eefc98c255f809e983fdc2eaf39a53",
+      "requested_scale": "1",
+      "screenshots": [
+        {
+          "file": "typography-sample.png",
+          "sha256": "bfecd11916abb4e7f6330568de95154014a73de91d72535b4ca5e9ab39949a83",
+          "physical_pixels": [
+            880,
+            340
+          ],
+          "logical_size": [
+            880,
+            340
+          ],
+          "device_pixel_ratio": 1.0
+        },
+        {
+          "file": "typography-check.png",
+          "sha256": "3ac1f3ba472a5c93fedbc9c8e22266362841570bd9b8bf4d640edfc902b026ae",
+          "physical_pixels": [
+            780,
+            650
+          ],
+          "logical_size": [
+            780,
+            650
+          ],
+          "device_pixel_ratio": 1.0
+        },
+        {
+          "file": "typography-home.png",
+          "sha256": "f353cc870d70ac95d2a37815d20fadd3324b68d75c38408f1bde41ecaf53d102",
+          "physical_pixels": [
+            1360,
+            920
+          ],
+          "logical_size": [
+            1360,
+            920
+          ],
+          "device_pixel_ratio": 1.0
+        },
+        {
+          "file": "typography-preparation.png",
+          "sha256": "8698b68f3b0dfe552916fbe56be5b634af85c9849728ddf53e6dc94c358931aa",
+          "physical_pixels": [
+            1360,
+            920
+          ],
+          "logical_size": [
+            1360,
+            920
+          ],
+          "device_pixel_ratio": 1.0
+        },
+        {
+          "file": "typography-mywork.png",
+          "sha256": "b0b992eb63a5b835ac70d9532896dc4750ca104eb32bc9c21d91cfd6fb0cc909",
+          "physical_pixels": [
+            1360,
+            920
+          ],
+          "logical_size": [
+            1360,
+            920
+          ],
+          "device_pixel_ratio": 1.0
+        },
+        {
+          "file": "typography-compact.png",
+          "sha256": "d16874f7c1c817977c60950aa1786f3c6830998ca0dc192ac7c5dc55a24b2ea4",
+          "physical_pixels": [
+            800,
+            700
+          ],
+          "logical_size": [
+            800,
+            700
+          ],
+          "device_pixel_ratio": 1.0
+        }
+      ],
+      "uncaught_errors": [],
+      "scaling_scope": "Qt scale-factor simulation on the recorded native backend; not OS multi-monitor acceptance."
+    },
+    {
+      "family": "Microsoft YaHei UI",
+      "chinese_sample_supported": true,
+      "body_points": 11.0,
+      "small_points": 9.5,
+      "qt_platform": "windows",
+      "logical_dpi": 96.0,
+      "device_pixel_ratio": 1.25,
+      "han": {
+        "requested": [
+          "Microsoft YaHei UI"
+        ],
+        "primary": "Microsoft YaHei UI",
+        "points": 11.25,
+        "pixels": 15,
+        "weight": 400,
+        "runs": [
+          {
+            "family": "Microsoft YaHei UI",
+            "style": "Regular",
+            "missing_glyphs": 0
+          }
+        ],
+        "missing_glyphs": 0
+      },
+      "chemistry": {
+        "requested": [
+          "Microsoft YaHei UI"
+        ],
+        "primary": "Microsoft YaHei UI",
+        "points": 11.25,
+        "pixels": 15,
+        "weight": 400,
+        "runs": [
+          {
+            "family": "Microsoft YaHei UI",
+            "style": "Regular",
+            "missing_glyphs": 0
+          },
+          {
+            "family": "Tahoma",
+            "style": "Regular",
+            "missing_glyphs": 0
+          },
+          {
+            "family": "MS UI Gothic",
+            "style": "Regular",
+            "missing_glyphs": 0
+          }
+        ],
+        "missing_glyphs": 0
+      },
+      "scope": "Current UI glyph samples only; not source images, Word/PPT export or all CJK characters.",
+      "widgets": {
+        "heading": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 12.0,
+          "pixels": 16,
+          "weight": 600,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Bold",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "body": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 11.25,
+          "pixels": 15,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "small": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 9.75,
+          "pixels": 13,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "chemistry": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 11.25,
+          "pixels": 15,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            },
+            {
+              "family": "Tahoma",
+              "style": "Regular",
+              "missing_glyphs": 0
+            },
+            {
+              "family": "MS UI Gothic",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "input": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 11.25,
+          "pixels": 15,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "button": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 11.25,
+          "pixels": 15,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        }
+      },
+      "editor_unchanged": true,
+      "actions_visible_800x700": true,
+      "model_calls": 0,
+      "version": "0.1.95",
+      "platform": "Windows-2025Server-10.0.26100-SP0",
+      "frozen": true,
+      "source_commit": "4d5fbff425eefc98c255f809e983fdc2eaf39a53",
+      "requested_scale": "1.25",
+      "screenshots": [
+        {
+          "file": "typography-sample.png",
+          "sha256": "aee0ba0c2eb693c4550faae7960471f6fa07ba32209679895ac7c35adb660675",
+          "physical_pixels": [
+            1028,
+            425
+          ],
+          "logical_size": [
+            822,
+            340
+          ],
+          "device_pixel_ratio": 1.25
+        },
+        {
+          "file": "typography-check.png",
+          "sha256": "59b8a1a4fa76c8be51fdfb8528df24155d498aad517fc9ac845e2c2320521f8e",
+          "physical_pixels": [
+            975,
+            749
+          ],
+          "logical_size": [
+            780,
+            599
+          ],
+          "device_pixel_ratio": 1.25
+        },
+        {
+          "file": "typography-home.png",
+          "sha256": "8a479a74bdf06f80c80c6b9f2c831ffe1b4a93256947a2de98e73efef20ea258",
+          "physical_pixels": [
+            1700,
+            1150
+          ],
+          "logical_size": [
+            1360,
+            920
+          ],
+          "device_pixel_ratio": 1.25
+        },
+        {
+          "file": "typography-preparation.png",
+          "sha256": "1c43824c349387c5d278be5c1001df0747bf1d846732fb490efff00b0a2706cb",
+          "physical_pixels": [
+            1700,
+            1150
+          ],
+          "logical_size": [
+            1360,
+            920
+          ],
+          "device_pixel_ratio": 1.25
+        },
+        {
+          "file": "typography-mywork.png",
+          "sha256": "bf9a54bf62db52a326f4f0b3060a926cf83cb701ec1e6361291d1ada52617db4",
+          "physical_pixels": [
+            1700,
+            1150
+          ],
+          "logical_size": [
+            1360,
+            920
+          ],
+          "device_pixel_ratio": 1.25
+        },
+        {
+          "file": "typography-compact.png",
+          "sha256": "ebfc3385103a4a97455ddc151d7446aac8d19115bd512dafed90f9bcfca8bd6a",
+          "physical_pixels": [
+            1000,
+            749
+          ],
+          "logical_size": [
+            800,
+            599
+          ],
+          "device_pixel_ratio": 1.25
+        }
+      ],
+      "uncaught_errors": [],
+      "scaling_scope": "Qt scale-factor simulation on the recorded native backend; not OS multi-monitor acceptance."
+    },
+    {
+      "family": "Microsoft YaHei UI",
+      "chinese_sample_supported": true,
+      "body_points": 11.0,
+      "small_points": 9.5,
+      "qt_platform": "windows",
+      "logical_dpi": 96.0,
+      "device_pixel_ratio": 1.5,
+      "han": {
+        "requested": [
+          "Microsoft YaHei UI"
+        ],
+        "primary": "Microsoft YaHei UI",
+        "points": 11.25,
+        "pixels": 15,
+        "weight": 400,
+        "runs": [
+          {
+            "family": "Microsoft YaHei UI",
+            "style": "Regular",
+            "missing_glyphs": 0
+          }
+        ],
+        "missing_glyphs": 0
+      },
+      "chemistry": {
+        "requested": [
+          "Microsoft YaHei UI"
+        ],
+        "primary": "Microsoft YaHei UI",
+        "points": 11.25,
+        "pixels": 15,
+        "weight": 400,
+        "runs": [
+          {
+            "family": "Microsoft YaHei UI",
+            "style": "Regular",
+            "missing_glyphs": 0
+          },
+          {
+            "family": "MS UI Gothic",
+            "style": "Regular",
+            "missing_glyphs": 0
+          },
+          {
+            "family": "Tahoma",
+            "style": "Regular",
+            "missing_glyphs": 0
+          }
+        ],
+        "missing_glyphs": 0
+      },
+      "scope": "Current UI glyph samples only; not source images, Word/PPT export or all CJK characters.",
+      "widgets": {
+        "heading": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 12.0,
+          "pixels": 16,
+          "weight": 600,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Bold",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "body": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 11.25,
+          "pixels": 15,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "small": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 9.75,
+          "pixels": 13,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "chemistry": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 11.25,
+          "pixels": 15,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            },
+            {
+              "family": "MS UI Gothic",
+              "style": "Regular",
+              "missing_glyphs": 0
+            },
+            {
+              "family": "Tahoma",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "input": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 11.25,
+          "pixels": 15,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        },
+        "button": {
+          "requested": [
+            "Microsoft YaHei UI"
+          ],
+          "primary": "Microsoft YaHei UI",
+          "points": 11.25,
+          "pixels": 15,
+          "weight": 400,
+          "runs": [
+            {
+              "family": "Microsoft YaHei UI",
+              "style": "Regular",
+              "missing_glyphs": 0
+            }
+          ],
+          "missing_glyphs": 0
+        }
+      },
+      "editor_unchanged": true,
+      "actions_visible_800x700": true,
+      "model_calls": 0,
+      "version": "0.1.95",
+      "platform": "Windows-2025Server-10.0.26100-SP0",
+      "frozen": true,
+      "source_commit": "4d5fbff425eefc98c255f809e983fdc2eaf39a53",
+      "requested_scale": "1.5",
+      "screenshots": [
+        {
+          "file": "typography-sample.png",
+          "sha256": "fe19cf72fea444de58287ce942da345127c89418f03e6b4a1094093b3a3d6e94",
+          "physical_pixels": [
+            1028,
+            510
+          ],
+          "logical_size": [
+            685,
+            340
+          ],
+          "device_pixel_ratio": 1.5
+        },
+        {
+          "file": "typography-check.png",
+          "sha256": "3225dcc232055bfc5b7e7e3924571708ac51b345359f8b558b122f3a2de5651e",
+          "physical_pixels": [
+            1028,
+            749
+          ],
+          "logical_size": [
+            685,
+            499
+          ],
+          "device_pixel_ratio": 1.5
+        },
+        {
+          "file": "typography-home.png",
+          "sha256": "eb10abddde808a60cd2844e30100de3d4d50220624c2a0597d3bd76715730437",
+          "physical_pixels": [
+            2040,
+            1380
+          ],
+          "logical_size": [
+            1360,
+            920
+          ],
+          "device_pixel_ratio": 1.5
+        },
+        {
+          "file": "typography-preparation.png",
+          "sha256": "7e5a905b1dab79c6b73bfc21523cc5a46a2111e1ee9617549ae1307d03c03b4a",
+          "physical_pixels": [
+            2040,
+            1380
+          ],
+          "logical_size": [
+            1360,
+            920
+          ],
+          "device_pixel_ratio": 1.5
+        },
+        {
+          "file": "typography-mywork.png",
+          "sha256": "19b30c92e4ccf4c26e487d0e85cba231d1ae2c564b5ae5d24090982a0e7f861d",
+          "physical_pixels": [
+            2040,
+            1380
+          ],
+          "logical_size": [
+            1360,
+            920
+          ],
+          "device_pixel_ratio": 1.5
+        },
+        {
+          "file": "typography-compact.png",
+          "sha256": "9f96561118d21f6a5de98f5af7c5c181f28fa537216c3dd624b6d16e2b7c8322",
+          "physical_pixels": [
+            1200,
+            1050
+          ],
+          "logical_size": [
+            800,
+            700
+          ],
+          "device_pixel_ratio": 1.5
+        }
+      ],
+      "uncaught_errors": [],
+      "scaling_scope": "Qt scale-factor simulation on the recorded native backend; not OS multi-monitor acceptance."
+    }
+  ],
+  "scan_numbering": {
+    "version": "0.1.95",
+    "source_commit": "4d5fbff425eefc98c255f809e983fdc2eaf39a53",
+    "frozen": true,
+    "qt_platform": "offscreen",
+    "image_resolutions": [
+      [
+        800,
+        240
+      ],
+      [
+        1600,
+        480
+      ]
+    ],
+    "edits": 4,
+    "raw_word_import": true,
+    "native_entry_opened": true,
+    "undo_exercised": true,
+    "two_audiences_exported": true,
+    "outside_regions_unchanged": true,
+    "source_unchanged": true,
+    "region_reuse": {
+      "saved_positions_only": true,
+      "reopened_state": true,
+      "new_order_new_numbers": true,
+      "load_requires_add": true,
+      "actions_visible_800x700": true,
+      "answer_openings_with_images": true,
+      "reordered_answer_openings": true
+    },
+    "pages": {
+      "student": 1,
+      "teacher": 2
+    },
+    "screenshots": [
+      {
+        "file": "scan-number-editor.png",
+        "sha256": "cc7846ff4a9a099107cf71729ebee6b320c9be7f2860af94f6e157ec2f23e8c5"
+      },
+      {
+        "file": "scan-number-original.png",
+        "sha256": "660cd12c742526fe98a490f7f889f5657bb458213778e8354bef29b1981bc655"
+      },
+      {
+        "file": "scan-student-page-1.png",
+        "sha256": "a41bd718dc0dd78bfbdf13592bba8ad8b712b28c7b7392a870da32ca5abfea09"
+      },
+      {
+        "file": "scan-teacher-page-1.png",
+        "sha256": "3aac3ee0b10d48e181c95a5923d4e4d36cd91131a447397ea34a72f9db67b4a6"
+      },
+      {
+        "file": "scan-teacher-page-2.png",
+        "sha256": "04a33eb8fb51cd9f4ccf0553946de504e56506c5749bcbbbaaedb45794a94274"
+      },
+      {
+        "file": "scan-reused-regions.png",
+        "sha256": "fa6755c8052e80309b80a16648cb9d248c90858e1bf0a8ef82aacd369de4db55"
+      },
+      {
+        "file": "scan-reordered-student-page-1.png",
+        "sha256": "b77d31619889f886e1d7803313fedab561840fecb14fd5cf33076e18b4162411"
+      },
+      {
+        "file": "scan-reordered-teacher-page-1.png",
+        "sha256": "4d38868dd3b197e8b78512b80e2f98628752571c2d386168e48dd56d1ece7e4c"
+      },
+      {
+        "file": "scan-reordered-teacher-page-2.png",
+        "sha256": "3fbd53d7d377c255bf3c884272bea13aa4941cf0533b3eceda4ff9be8ccbfd5e"
+      }
+    ],
+    "model_calls": 0,
+    "scope": "Synthetic Word-hosted raster images; manual pixel selection, no OCR or real-library acceptance."
+  },
+  "explorer_performance": {
+    "version": "0.1.95",
+    "source_commit": "4d5fbff425eefc98c255f809e983fdc2eaf39a53",
+    "frozen": true,
+    "qt_platform": "offscreen",
+    "synthetic_questions": 16,
+    "first_visible_images": 8,
+    "first_page_ready_ms": 371.42,
+    "first_load": {
+      "schema": "question-page-timing-v1",
+      "lane": "word_native",
+      "projection_build_ms": 0.59,
+      "filter_ms": 0.18,
+      "query_cache_hit": false,
+      "indexed_items": 16,
+      "catalog_ms": 135.99,
+      "index_ms": 0.61,
+      "catalogue_reused": false,
+      "catalog_wait_and_prepare_ms": 136.61,
+      "visible_cards": 8,
+      "card_setup_ms": 96.86,
+      "request_to_cards_ms": 259.67,
+      "scope": "当前目录快照及卡片建立；题图读取另计，不等于全屏绘制或网络计时。",
+      "word_images": [
+        {
+          "images": 8,
+          "completed": 8,
+          "failed": 0,
+          "source_ms": 19.9,
+          "total_ms": 20.67
+        }
+      ]
+    },
+    "next_page": {
+      "schema": "question-page-timing-v1",
+      "lane": "word_native",
+      "projection_build_ms": 0.59,
+      "filter_ms": 0.16,
+      "query_cache_hit": true,
+      "indexed_items": 16,
+      "catalog_ms": 0.0,
+      "index_ms": 0.01,
+      "catalogue_reused": true,
+      "catalog_wait_and_prepare_ms": 0.02,
+      "visible_cards": 8,
+      "card_setup_ms": 27.96,
+      "request_to_cards_ms": 57.07,
+      "scope": "当前目录快照及卡片建立；题图读取另计，不等于全屏绘制或网络计时。"
+    },
+    "diagnostic_sample": {
+      "schema": "question-page-timing-v1",
+      "lane": "word_native",
+      "projection_build_ms": 0.59,
+      "filter_ms": 0.2,
+      "query_cache_hit": false,
+      "indexed_items": 16,
+      "catalog_ms": 0.0,
+      "index_ms": 0.01,
+      "catalogue_reused": true,
+      "catalog_wait_and_prepare_ms": 0.01,
+      "visible_cards": 0,
+      "card_setup_ms": 5.29,
+      "request_to_cards_ms": 7.51,
+      "scope": "当前目录快照及卡片建立；题图读取另计，不等于全屏绘制或网络计时。",
+      "word_images": []
+    },
+    "checks": {
+      "hidden_page_no_catalog": true,
+      "one_resolution_for_eight_images": true,
+      "answer_tab_lazy": true,
+      "paging_reuses_index": true,
+      "source_preference_retained": true,
+      "import_invalidates_index": true,
+      "generic_files_before_old_pack": true,
+      "region_archive_roundtrip": true,
+      "source_and_basket_unchanged": true,
+      "diagnostic_no_content": true,
+      "card_contents_visible": true
+    },
+    "screenshots": [
+      {
+        "file": "explorer-loaded.png",
+        "sha256": "70b0d321397169c6c590eb83c471e22bbbb92e699c64fffd9eafcecbae8a9fe6"
+      },
+      {
+        "file": "explorer-empty-guidance.png",
+        "sha256": "1a9f0536424b90ff7497736c033011d34e52f39f4f8c79157e1219b6777b738f"
+      },
+      {
+        "file": "import-files-first.png",
+        "sha256": "6dc873a1b46d2ba9c7bb9a94d027cb6bbd4fb48e2666ea63b851e3b34cadb6d0"
+      }
+    ],
+    "uncaught_errors": [],
+    "model_calls": 0,
+    "scope": "Synthetic Word data in isolated state. Event-loop readiness timings, not user hardware or actual classroom acceptance."
+  },
+  "source_commit": "4d5fbff425eefc98c255f809e983fdc2eaf39a53",
+  "workflow_run": "34929353512",
+  "executable_sha256": "e6307c5f96be5740ef4c31ddc6f5388c398f4e354771bcd60c69b3a9d3c4b330",
+  "normal_native_start_and_close": true,
+  "detached_directory": true,
+  "cleared_python_and_workspace_environment": true,
+  "system_fonts_bundled": false
+}

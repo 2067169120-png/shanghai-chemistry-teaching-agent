@@ -1,0 +1,456 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "paper_export_renderer_v1.schema.json",
+  "title": "上海高中化学主题式试卷导出渲染器 v1",
+  "oneOf": [
+    {"$ref": "#/$defs/renderBundle"},
+    {"$ref": "#/$defs/qaReport"},
+    {"$ref": "#/$defs/hashManifest"}
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "not": {"pattern": "^(?:[A-Za-z]:|/|\\\\)"}
+    },
+    "pageRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "page_number", "width_px", "height_px", "sha256"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relativePath"},
+        "page_number": {"type": "integer", "minimum": 1},
+        "width_px": {"type": "integer", "minimum": 1},
+        "height_px": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "checks"],
+      "properties": {
+        "status": {"enum": ["pass", "blocked"]},
+        "checks": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"type": "boolean"}
+        },
+        "figure_count": {"type": "integer", "minimum": 0},
+        "body_text_sha256": {"$ref": "#/$defs/sha256"},
+        "text_sha256": {"$ref": "#/$defs/sha256"}
+      },
+      "oneOf": [
+        {"required": ["figure_count", "body_text_sha256"]},
+        {"required": ["text_sha256"]}
+      ]
+    },
+    "toolRecord": {
+      "type": "object",
+      "minProperties": 3,
+      "additionalProperties": true,
+      "required": ["tool", "dpi"],
+      "properties": {
+        "tool": {"type": "string", "minLength": 1},
+        "dpi": {"type": "integer", "minimum": 150, "maximum": 2400},
+        "script_sha256": {"$ref": "#/$defs/sha256"},
+        "executable_sha256": {"$ref": "#/$defs/sha256"},
+        "stderr_sha256": {"$ref": "#/$defs/sha256"},
+        "invocation_mode": {"type": "string", "minLength": 1},
+        "conversion_backend": {"enum": ["libreoffice", "word_com"]}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "format",
+        "path",
+        "sha256",
+        "size_bytes",
+        "audience",
+        "page_count",
+        "rendered_page_count",
+        "figure_count",
+        "docx_render_pages",
+        "pdf_render_pages",
+        "docx_audit",
+        "pdf_audit",
+        "render_docx_tool",
+        "poppler_tool"
+      ],
+      "properties": {
+        "artifact_id": {
+          "enum": ["student_docx", "student_pdf", "teacher_docx", "teacher_pdf"]
+        },
+        "format": {"enum": ["docx", "pdf"]},
+        "path": {"$ref": "#/$defs/relativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "audience": {"enum": ["student", "teacher"]},
+        "page_count": {"type": "integer", "minimum": 1},
+        "rendered_page_count": {"type": "integer", "minimum": 1},
+        "figure_count": {"type": "integer", "minimum": 0},
+        "docx_render_pages": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/pageRecord"}
+        },
+        "pdf_render_pages": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/pageRecord"}
+        },
+        "docx_audit": {"$ref": "#/$defs/audit"},
+        "pdf_audit": {"$ref": "#/$defs/audit"},
+        "render_docx_tool": {"$ref": "#/$defs/toolRecord"},
+        "poppler_tool": {"$ref": "#/$defs/toolRecord"}
+      }
+    },
+    "machineCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check_id", "status", "message_zh"],
+      "properties": {
+        "check_id": {"type": "string", "minLength": 1},
+        "status": {"enum": ["pass", "blocked"]},
+        "message_zh": {"type": "string", "minLength": 1}
+      }
+    },
+    "reviewedPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "status", "notes_zh"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relativePath"},
+        "status": {"const": "pass"},
+        "notes_zh": {"type": "string", "minLength": 1}
+      }
+    },
+    "visualReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "required_page_count",
+        "reviewed_pages",
+        "layout_defect_count",
+        "reviewer_kind",
+        "human_reviewed",
+        "chemistry_reviewed",
+        "additional_review_notes"
+      ],
+      "properties": {
+        "status": {"enum": ["pending", "pass"]},
+        "required_page_count": {"type": "integer", "minimum": 1},
+        "reviewed_pages": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/reviewedPage"}
+        },
+        "layout_defect_count": {"type": ["integer", "null"], "minimum": 0},
+        "reviewer_kind": {"type": ["string", "null"]},
+        "human_reviewed": {"const": false},
+        "chemistry_reviewed": {"const": false},
+        "additional_review_notes": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/additionalReviewNote"}
+        },
+        "reviewed_at": {"type": "string", "format": "date-time"},
+        "publication_allowed": {"const": false},
+        "scope_zh": {"type": "string", "minLength": 1}
+      }
+    },
+    "additionalReviewNote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reviewer_kind",
+        "note_zh",
+        "scope_zh",
+        "human_reviewed",
+        "chemistry_reviewed"
+      ],
+      "properties": {
+        "reviewer_kind": {"type": "string", "minLength": 1},
+        "note_zh": {"type": "string", "minLength": 1},
+        "scope_zh": {"type": "string", "minLength": 1},
+        "human_reviewed": {"const": false},
+        "chemistry_reviewed": {"const": false}
+      }
+    },
+    "styleProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_id", "authority", "page", "body", "header_footer", "named_override_zh"],
+      "properties": {
+        "profile_id": {"const": "shanghai_theme_exam_project_override_v1"},
+        "authority": {"type": "string", "minLength": 1},
+        "page": {"type": "string", "minLength": 1},
+        "body": {"type": "string", "minLength": 1},
+        "header_footer": {"type": "string", "minLength": 1},
+        "named_override_zh": {"type": "string", "minLength": 1}
+      }
+    },
+    "renderBundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "renderer_schema_version",
+        "contract_kind",
+        "bundle_id",
+        "claim_boundary_zh",
+        "preset",
+        "blueprint",
+        "student_plan",
+        "teacher_plan",
+        "preflight_report",
+        "render_request",
+        "publication_allowed"
+      ],
+      "properties": {
+        "renderer_schema_version": {"const": "shchem.paper-export-renderer.v1"},
+        "contract_kind": {"const": "paper_export_render_bundle"},
+        "bundle_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,159}$"},
+        "claim_boundary_zh": {
+          "type": "string",
+          "allOf": [
+            {"pattern": "非上海原题"},
+            {"pattern": "不可发布"}
+          ]
+        },
+        "preset": {"type": "object"},
+        "blueprint": {
+          "type": "object",
+          "required": ["top_level_unit", "standalone_choice_section_allowed", "status"],
+          "properties": {
+            "top_level_unit": {"const": "theme_big_question"},
+            "standalone_choice_section_allowed": {"const": false},
+            "status": {"const": "ready_for_content_resolution"}
+          }
+        },
+        "student_plan": {
+          "type": "object",
+          "required": ["audience", "contract_kind"],
+          "properties": {
+            "audience": {"const": "student"},
+            "contract_kind": {"const": "document_plan"}
+          }
+        },
+        "teacher_plan": {
+          "type": "object",
+          "required": ["audience", "contract_kind"],
+          "properties": {
+            "audience": {"const": "teacher"},
+            "contract_kind": {"const": "document_plan"}
+          }
+        },
+        "preflight_report": {
+          "type": "object",
+          "required": ["status", "publication_allowed"],
+          "properties": {
+            "status": {"const": "ready_for_renderer"},
+            "publication_allowed": {"const": false}
+          }
+        },
+        "render_request": {
+          "type": "object",
+          "required": ["contract_kind", "render_request_digest", "publication_allowed"],
+          "properties": {
+            "contract_kind": {"const": "render_request"},
+            "render_request_digest": {"$ref": "#/$defs/sha256"},
+            "publication_allowed": {"const": false}
+          }
+        },
+        "publication_allowed": {"const": false}
+      }
+    },
+    "renderReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "contract_kind",
+        "artifact_id",
+        "format",
+        "sha256",
+        "render_job_id",
+        "render_request_digest",
+        "plan_digest",
+        "preflight_digest",
+        "page_count",
+        "rendered_page_count",
+        "page_review_receipt_sha256",
+        "all_pages_visual_pass",
+        "metadata_privacy_pass",
+        "content_version_id",
+        "blueprint_digest",
+        "question_anchor_digest",
+        "answer_anchor_digest",
+        "figure_count"
+      ],
+      "properties": {
+        "schema_version": {"const": "shchem.paper-format-contract.v1"},
+        "contract_kind": {"const": "render_receipt"},
+        "artifact_id": {
+          "enum": ["student_docx", "student_pdf", "teacher_docx", "teacher_pdf"]
+        },
+        "format": {"enum": ["docx", "pdf"]},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "render_job_id": {"type": "string", "pattern": "^render_[0-9a-f]{32}$"},
+        "render_request_digest": {"$ref": "#/$defs/sha256"},
+        "plan_digest": {"$ref": "#/$defs/sha256"},
+        "preflight_digest": {"$ref": "#/$defs/sha256"},
+        "page_count": {"type": "integer", "minimum": 1},
+        "rendered_page_count": {"type": "integer", "minimum": 1},
+        "page_review_receipt_sha256": {"$ref": "#/$defs/sha256"},
+        "all_pages_visual_pass": {"const": true},
+        "metadata_privacy_pass": {"const": true},
+        "content_version_id": {"type": "string", "pattern": "^content_[0-9a-f]{64}$"},
+        "blueprint_digest": {"$ref": "#/$defs/sha256"},
+        "question_anchor_digest": {"$ref": "#/$defs/sha256"},
+        "answer_anchor_digest": {"$ref": "#/$defs/sha256"},
+        "figure_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "renderContractCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check_id", "status", "message_zh"],
+      "properties": {
+        "check_id": {"type": "string", "minLength": 1},
+        "status": {"enum": ["pass", "warning", "blocked"]},
+        "message_zh": {"type": "string", "minLength": 1}
+      }
+    },
+    "renderValidationReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "contract_kind",
+        "render_job_id",
+        "render_request_digest",
+        "status",
+        "checks",
+        "blocker_count",
+        "artifact_hashes",
+        "publication_allowed",
+        "teacher_summary_zh"
+      ],
+      "properties": {
+        "schema_version": {"const": "shchem.paper-format-contract.v1"},
+        "contract_kind": {"const": "render_validation_report"},
+        "render_job_id": {"type": "string", "pattern": "^render_[0-9a-f]{32}$"},
+        "render_request_digest": {"$ref": "#/$defs/sha256"},
+        "status": {"enum": ["local_delivery_candidate", "blocked"]},
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/renderContractCheck"}
+        },
+        "blocker_count": {"type": "integer", "minimum": 0},
+        "artifact_hashes": {
+          "type": "object",
+          "minProperties": 4,
+          "maxProperties": 4,
+          "additionalProperties": {"$ref": "#/$defs/sha256"}
+        },
+        "publication_allowed": {"const": false},
+        "teacher_summary_zh": {"type": "string", "minLength": 1}
+      }
+    },
+    "qaReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "renderer_schema_version",
+        "contract_kind",
+        "renderer_version",
+        "render_job_id",
+        "render_request_digest",
+        "status",
+        "claim_boundary_zh",
+        "publication_allowed",
+        "style_profile",
+        "artifacts",
+        "machine_checks",
+        "machine_blocker_count",
+        "visual_review",
+        "receipts",
+        "contract_validation_report"
+      ],
+      "properties": {
+        "renderer_schema_version": {"const": "shchem.paper-export-renderer.v1"},
+        "contract_kind": {"const": "paper_export_render_qa_report"},
+        "renderer_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "render_job_id": {"type": "string", "pattern": "^render_[0-9a-f]{32}$"},
+        "render_request_digest": {"$ref": "#/$defs/sha256"},
+        "status": {"enum": ["awaiting_visual_review", "layout_smoke_passed", "blocked"]},
+        "claim_boundary_zh": {"type": "string", "minLength": 1},
+        "publication_allowed": {"const": false},
+        "style_profile": {"$ref": "#/$defs/styleProfile"},
+        "artifacts": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {"$ref": "#/$defs/artifact"}
+        },
+        "machine_checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/machineCheck"}
+        },
+        "machine_blocker_count": {"type": "integer", "minimum": 0},
+        "visual_review": {"$ref": "#/$defs/visualReview"},
+        "receipts": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {"$ref": "#/$defs/renderReceipt"}
+        },
+        "contract_validation_report": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/renderValidationReport"}
+          ]
+        }
+      }
+    },
+    "hashEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "size_bytes"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "hashManifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "renderer_schema_version",
+        "contract_kind",
+        "publication_allowed",
+        "file_count",
+        "files"
+      ],
+      "properties": {
+        "renderer_schema_version": {"const": "shchem.paper-export-renderer.v1"},
+        "contract_kind": {"const": "paper_export_hash_manifest"},
+        "publication_allowed": {"const": false},
+        "file_count": {"type": "integer", "minimum": 1},
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/hashEntry"}
+        }
+      }
+    }
+  }
+}

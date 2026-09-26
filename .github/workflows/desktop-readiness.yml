@@ -1,0 +1,66 @@
+name: Desktop Readiness 0.1.87
+on:
+  push:
+    branches: ["feature/desktop-onboarding-0.1.87"]
+  pull_request:
+    branches: ["feature/desktop-reliability-0.1.86"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: readiness-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows-source:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Integrate the previously delivered candidate once
+        shell: python
+        run: |
+          import os, pathlib, subprocess, sys
+          if pathlib.Path('.github/bootstrap187.py').exists():
+              subprocess.run([sys.executable, '.github/bootstrap187.py'], check=True)
+          sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          with open(os.environ['GITHUB_ENV'], 'a', encoding='utf-8') as f:
+              f.write('SHCHEM_SOURCE_SHA=' + sha + '\n')
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m compileall -q integrations runtime/deeptutor_shchem
+      - name: Existing settings, local checks and native contracts
+        run: >-
+          python -m pytest -q
+          staging/coordination/deeptutor_gateway/tests/test_desktop_environment.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_package_resources.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_onboarding_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_provider_probe.py
+          staging/coordination/deeptutor_gateway/tests/test_model_provider_settings.py
+          staging/coordination/deeptutor_gateway/tests/test_phase_a_core.py
+          staging/coordination/deeptutor_gateway/tests/test_phase_a_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_question_explorer.py
+          staging/coordination/deeptutor_gateway/tests/test_question_explorer_ui.py
+          --junitxml=readiness-qa/pytest.xml
+      - name: Check explicit software resource inventory
+        run: python runtime/deeptutor_shchem/package_resources.py --inventory readiness-qa/resources.json
+      - name: Open native pages and capture actual settings screens
+        run: python runtime/deeptutor_shchem/onboarding_ci_smoke.py
+      - name: Archive exact tested source
+        if: always()
+        run: git archive --format=zip --output=readiness-source.zip HEAD
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: readiness-${{ github.sha }}
+          path: |
+            readiness-qa/
+            readiness-source.zip
+          if-no-files-found: error
+          retention-days: 14

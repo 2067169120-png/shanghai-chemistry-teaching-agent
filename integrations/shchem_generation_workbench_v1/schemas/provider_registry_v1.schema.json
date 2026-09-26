@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shchem:generation-provider-registry:v1",
+  "title": "Closed requested-configuration provider registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profiles",
+    "registry_closed",
+    "requested_configuration_only",
+    "human_reviewed",
+    "publication_allowed",
+    "official"
+  ],
+  "properties": {
+    "schema_version": {"const": "generation_provider_registry_v1"},
+    "profiles": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {"$ref": "#/$defs/profile"}
+    },
+    "registry_closed": {"const": true},
+    "requested_configuration_only": {"const": true},
+    "human_reviewed": {"const": false},
+    "publication_allowed": {"const": false},
+    "official": {"const": false}
+  },
+  "$defs": {
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_profile_id",
+        "requested_model",
+        "requested_reasoning_effort",
+        "configuration_status",
+        "platform_actual_reported",
+        "signed",
+        "human_reviewed",
+        "publication_allowed",
+        "official"
+      ],
+      "properties": {
+        "provider_profile_id": {"const": "sol_xhigh_generation_v1"},
+        "requested_model": {"const": "gpt-5.6-sol"},
+        "requested_reasoning_effort": {"const": "xhigh"},
+        "configuration_status": {"const": "requested_configuration"},
+        "platform_actual_reported": {"const": false},
+        "signed": {"const": false},
+        "human_reviewed": {"const": false},
+        "publication_allowed": {"const": false},
+        "official": {"const": false}
+      }
+    }
+  }
+}

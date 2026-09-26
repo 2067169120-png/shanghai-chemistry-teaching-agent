@@ -1,0 +1,55 @@
+{
+  "schema_version": "shchem.desktop-import-fixture.v2",
+  "synthetic_only": true,
+  "purpose": "desktop bridge routing and pixel-preservation contract",
+  "sources": [
+    {
+      "source_file_id": "DESKTOP-Q-001",
+      "role": "question",
+      "order_index": 1,
+      "group_id": "desktop-paper-a",
+      "filename": "题面-第一页.png",
+      "mime_type": "image/png",
+      "lane": "visual_required",
+      "expected_page_evidence": true
+    },
+    {
+      "source_file_id": "DESKTOP-Q-002",
+      "role": "question",
+      "order_index": 2,
+      "group_id": "desktop-paper-a",
+      "filename": "纯文字讲义.docx",
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "lane": "native_text_quick_import",
+      "expected_page_evidence": "pending_rendered_page_evidence"
+    },
+    {
+      "source_file_id": "DESKTOP-A-001",
+      "role": "answer",
+      "order_index": 1,
+      "group_id": "desktop-paper-a",
+      "filename": "答案-第一页.png",
+      "mime_type": "image/png",
+      "lane": "visual_required",
+      "expected_page_evidence": true
+    },
+    {
+      "source_file_id": "DESKTOP-H-001",
+      "role": "handout",
+      "order_index": 1,
+      "group_id": "desktop-paper-a",
+      "filename": "含装置讲义.docx",
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "lane": "hybrid_visual_required",
+      "expected_page_evidence": true
+    }
+  ],
+  "invariants": {
+    "role_and_order_are_explicit": true,
+    "filename_is_not_pairing_signal": true,
+    "source_text_layer_supplied_to_visual_model": false,
+    "ocr_or_text_fallback_allowed": false,
+    "central_question_bank_write": false,
+    "candidate_only": true
+  }
+}

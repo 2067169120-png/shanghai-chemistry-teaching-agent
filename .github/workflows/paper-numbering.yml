@@ -1,0 +1,130 @@
+name: Paper numbering and teacher controls 0.1.91
+on:
+  push:
+    branches: ["feature/paper-numbering-0.1.91"]
+  pull_request:
+    branches: ["feature/teacher-desk-0.1.90"]
+permissions:
+  contents: read
+concurrency:
+  group: paper191-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m compileall -q integrations runtime/deeptutor_shchem
+      - name: Paper numbering, teacher copy and existing desktop regression
+        run: >-
+          python -m pytest -q
+          staging/coordination/deeptutor_gateway/tests/test_preparation_workspace.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_environment.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_package_resources.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_onboarding_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_provider_probe.py
+          staging/coordination/deeptutor_gateway/tests/test_model_provider_settings.py
+          staging/coordination/deeptutor_gateway/tests/test_phase_a_core.py
+          staging/coordination/deeptutor_gateway/tests/test_phase_a_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_question_explorer.py
+          staging/coordination/deeptutor_gateway/tests/test_question_explorer_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_preparation_renderer.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_preparation_drafts.py
+          staging/coordination/deeptutor_gateway/tests/test_preparation_draft_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_preparation.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_studio_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_studio_visual.py
+          staging/coordination/deeptutor_gateway/tests/test_work_organization.py
+          staging/coordination/deeptutor_gateway/tests/test_work_organization_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_lesson_backup.py
+          staging/coordination/deeptutor_gateway/tests/test_lesson_backup_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_backup_restore_location_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_backup_reopen_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_backup_paths.py
+          staging/coordination/deeptutor_gateway/tests/test_teacher_desk.py
+          staging/coordination/deeptutor_gateway/tests/test_paper_sequence.py
+          staging/coordination/deeptutor_gateway/tests/test_word_question_export.py
+          staging/coordination/deeptutor_gateway/tests/test_mixed_paper_export.py
+          staging/coordination/deeptutor_gateway/tests/test_personal_visual_theme_writer.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_mixed_paper_service.py
+          staging/coordination/deeptutor_gateway/tests/test_mixed_paper_pagination.py
+          staging/coordination/deeptutor_gateway/tests/test_blueprint_preparation_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_blueprint_draft_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_visual_import_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_student_practice_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_import_word_dialog.py
+          staging/coordination/deeptutor_gateway/tests/test_import_preview_dialog.py
+          staging/coordination/deeptutor_gateway/tests/test_library_preparation_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_personal_visual_questions_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_preparation_egress_dialog.py
+          staging/coordination/deeptutor_gateway/tests/test_preparation_sources_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_word_question_dialog.py
+          staging/coordination/deeptutor_gateway/tests/test_textbook_source_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_visual_import_egress_dialog.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_library_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_handout_practice_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_mixed_paper_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_paper_export_renderer.py
+          --junitxml=readiness-qa/pytest.xml
+      - run: python runtime/deeptutor_shchem/package_resources.py --inventory readiness-qa/resources.json
+      - name: Exercise numbering, Chinese buttons and pinned preparation controls
+        run: python runtime/deeptutor_shchem/onboarding_ci_smoke.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-paper191-${{ github.sha }}
+          path: readiness-qa/
+          retention-days: 14
+          if-no-files-found: warn
+      - run: ./runtime/deeptutor_shchem/desktop_build.ps1 -BuildTag "work${{ github.run_id }}"
+      - run: choco install libreoffice-fresh -y --no-progress
+      - name: Verify actual PDF numbering and native controls in the shipping EXE
+        run: python runtime/deeptutor_shchem/verify_packaged_trial.py "runtime/deeptutor_shchem/desktop_dist_work${{ github.run_id }}/沪上化学智研台"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-verification-${{ github.sha }}
+          path: |
+            readiness-qa/
+            package-qa/
+            release-assets/
+          retention-days: 14
+          if-no-files-found: error
+  publish:
+    needs: verify
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-verification-${{ github.sha }}
+          path: .release-input
+      - run: python -m pip install 'Markdown>=3.7,<4'
+      - name: Record tested evidence, create version tag and publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python runtime/deeptutor_shchem/prepare_verified_release.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: delivery-0.1.91-${{ github.sha }}
+          path: release-delivery/
+          retention-days: 30
+          if-no-files-found: warn

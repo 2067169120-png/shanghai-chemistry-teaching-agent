@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.sh-chem.invalid/generation_v2/task_card.schema.json",
+  "title": "R18 frozen generation task card",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version_id", "paper_id", "target", "grade", "teaching_stage", "purpose",
+    "knowledge_scope", "ability_targets", "difficulty_distribution",
+    "prohibited_content", "duration_minutes", "total_score", "theme_count",
+    "theme_scores", "theme_score_design_basis", "numbering_mode",
+    "selection_rule", "standalone_choice_section", "hierarchy",
+    "hierarchy_counts", "generation_policy"
+  ],
+  "properties": {
+    "version_id": {"const": "SHCHEM-GEN-V2-DEMO-20260813-R18"},
+    "paper_id": {"const": "PAPER-GEN-V2-20260813-018"},
+    "target": {"const": "2026_shanghai_level_exam_style_project_template"},
+    "grade": {"const": "高三"},
+    "teaching_stage": {"const": "高三上海化学等级考综合模拟（项目模板、非官方）"},
+    "purpose": {"const": "machine_only_private_teacher_managed_practice_mock"},
+    "knowledge_scope": {"$ref": "#/$defs/knowledge_scope"},
+    "ability_targets": {"$ref": "#/$defs/ability_targets"},
+    "difficulty_distribution": {"$ref": "#/$defs/difficulty_distribution"},
+    "prohibited_content": {
+      "type": "array",
+      "minItems": 11,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/prohibited_rule"}
+    },
+    "duration_minutes": {"$ref": "#/$defs/bound_value"},
+    "total_score": {"$ref": "#/$defs/bound_value"},
+    "theme_count": {"$ref": "#/$defs/bound_value"},
+    "theme_scores": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}},
+    "theme_score_design_basis": {"type": "string", "minLength": 10},
+    "numbering_mode": {"$ref": "#/$defs/bound_value"},
+    "selection_rule": {"type": "string", "minLength": 10},
+    "standalone_choice_section": {"const": false},
+    "hierarchy": {"const": "paper -> theme_big_question -> printed_question -> atomic_part"},
+    "hierarchy_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["printed_question_count", "atomic_part_count"],
+      "properties": {
+        "printed_question_count": {"const": 30},
+        "atomic_part_count": {"const": 36}
+      }
+    },
+    "generation_policy": {"$ref": "#/$defs/generation_policy"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "safe_path": {"type": "string", "pattern": "^(?![A-Za-z]:(?:/|\\\\))(?!/)(?!\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+"},
+    "taxonomy_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes", "schema_version"],
+      "properties": {
+        "path": {"const": "sh-chem-db/kb/knowledge_taxonomy.json"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "schema_version": {"const": "1.0.0"}
+      }
+    },
+    "bound_value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "value_status", "evidence_refs"],
+      "properties": {
+        "value": {},
+        "value_status": {"enum": ["evidence", "unknown", "project_template"]},
+        "evidence_refs": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "knowledge_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["aggregation_source_fields", "taxonomy_source", "knowledge_points"],
+      "properties": {
+        "aggregation_source_fields": {"const": ["primary_knowledge_K", "supporting_knowledge_K"]},
+        "taxonomy_source": {"$ref": "#/$defs/taxonomy_source"},
+        "knowledge_points": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["id", "name", "textbook_chapter_refs", "atomic_part_ids"],
+            "properties": {
+              "id": {"pattern": "^K(?:0[1-9]|1[0-9])$"},
+              "name": {"type": "string", "minLength": 2},
+              "textbook_chapter_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"pattern": "^TB-"}},
+              "atomic_part_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"pattern": "^P[0-9]{2}$"}}
+            }
+          }
+        }
+      }
+    },
+    "ability_targets": {
+      "type": "object", "additionalProperties": false,
+      "required": ["aggregation_source_field", "taxonomy_source", "abilities"],
+      "properties": {
+        "aggregation_source_field": {"const": "ability_A"},
+        "taxonomy_source": {"$ref": "#/$defs/taxonomy_source"},
+        "abilities": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["id", "name", "atomic_part_ids"],
+            "properties": {
+              "id": {"pattern": "^A(?:0[1-9]|10)$"},
+              "name": {"type": "string", "minLength": 2},
+              "atomic_part_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"pattern": "^P[0-9]{2}$"}}
+            }
+          }
+        }
+      }
+    },
+    "difficulty_distribution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cognitive_prelabel", "measured_difficulty"],
+      "properties": {
+        "cognitive_prelabel": {
+          "type": "object", "additionalProperties": false,
+          "required": ["status", "source", "atomic_part_count", "label_counts", "ten_factor_keys", "ten_factor_value_counts"],
+          "properties": {
+            "status": {"const": "project_template_cognitive_prelabel_aggregate"},
+            "source": {"const": "atomic_part.difficulty.cognitive_prelabel_and_ten_factor_evidence"},
+            "atomic_part_count": {"const": 36},
+            "label_counts": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"type": "object", "additionalProperties": false, "required": ["id", "count"], "properties": {"id": {"pattern": "^D[1-5]$"}, "count": {"type": "integer", "minimum": 0}}}},
+            "ten_factor_keys": {"type": "array", "minItems": 10, "maxItems": 10, "uniqueItems": true, "items": {"type": "string"}},
+            "ten_factor_value_counts": {
+              "type": "object",
+              "minProperties": 10,
+              "maxProperties": 10,
+              "additionalProperties": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["value", "count"],
+                  "properties": {
+                    "value": {"type": "string"},
+                    "count": {"type": "integer", "minimum": 1}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "measured_difficulty": {
+          "type": "object", "additionalProperties": false,
+          "required": ["status", "sample_size", "distribution", "reason_code"],
+          "properties": {
+            "status": {"const": "unknown"},
+            "sample_size": {"const": 0},
+            "distribution": {"type": "null"},
+            "reason_code": {"const": "no_real_student_response_data"}
+          }
+        }
+      }
+    },
+    "prohibited_rule": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "rule"],
+      "properties": {"code": {"type": "string", "minLength": 8}, "rule": {"type": "string", "minLength": 10}}
+    },
+    "generation_policy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["profile_usage", "profile_generation_authority_claimed", "original_question_generation", "source_question_republication", "project_generation_authorization"],
+      "properties": {
+        "profile_usage": {"const": "read_only_structure_observation"},
+        "profile_generation_authority_claimed": {"const": false},
+        "original_question_generation": {"const": true},
+        "source_question_republication": {"const": false},
+        "project_generation_authorization": {
+          "type": "object", "additionalProperties": false,
+          "required": ["path", "sha256", "version", "authorization_id"],
+          "properties": {
+            "path": {"$ref": "#/$defs/safe_path"},
+            "sha256": {"$ref": "#/$defs/sha256"},
+            "version": {"const": "1.0.0"},
+            "authorization_id": {"const": "SH-CHEM-PROJECT-GENERATION-AUTH-001"}
+          }
+        }
+      }
+    }
+  }
+}

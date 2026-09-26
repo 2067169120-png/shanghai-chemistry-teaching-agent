@@ -4,7 +4,7 @@
 
 **第一次使用请下载 Windows 试用包 v0.1.101。** 本页以实际教学任务说明操作；标注“维护源码”的功能尚未进入该试用包。软件不附带个人题库、教材或学生资料。
 
-[下载试用包](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/releases/tag/v0.1.101) · [第一次使用](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/blob/a63bfdc72a4d428220f33d5c106d246ffa7d6840/docs/teacher/getting-started.md) · [操作遇到问题](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/blob/a63bfdc72a4d428220f33d5c106d246ffa7d6840/docs/teacher/save-and-support.md#problems)
+[下载试用包](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/releases/tag/v0.1.101) · [第一次使用](docs/teacher/getting-started.md) · [操作遇到问题](docs/teacher/save-and-support.md#problems)
 
 <a id="features"></a><a id="flows"></a><a id="home"></a>
 ## 今天要完成什么？
@@ -27,7 +27,7 @@
 
 **准备自己已有的材料。** 初装题库为空是正常现象。先导入一份有权使用的 Word 讲义，核对完整题目与答案；原文件请单独保管。不要为了升级重复导入全部资料。
 
-**先走一条不需要 AI 的流程。** 查找已有题目、本地成绩统计、手动教学环节编辑和课堂工具不需要 API。生成 AI 初稿或建议才需配置模型并确认发送；实际试卷分页需本机 Office 转换工具。详见[安装、资料和模型设置](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/blob/a63bfdc72a4d428220f33d5c106d246ffa7d6840/docs/teacher/getting-started.md)。
+**先走一条不需要 AI 的流程。** 查找已有题目、本地成绩统计、手动教学环节编辑和课堂工具不需要 API。生成 AI 初稿或建议才需配置模型并确认发送；实际试卷分页需本机 Office 转换工具。详见[安装、资料和模型设置](docs/teacher/getting-started.md)。
 
 <a id="preparation"></a><a id="lesson-design"></a><a id="templates"></a>
 ## 场景一：明天要讲一节新课
@@ -40,7 +40,7 @@
 
 **完成标志：** 草稿能重开，三类成品都能打开，学生学习单中没有教师答案。PPT 的讲者备注可能含答案，不宜直接发给学生。
 
-[按步骤备课与检查成品](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/blob/a63bfdc72a4d428220f33d5c106d246ffa7d6840/docs/teacher/lesson-and-paper.md#lesson)
+[按步骤备课与检查成品](docs/teacher/lesson-and-paper.md#lesson)
 
 <a id="library"></a><a id="paper"></a>
 ## 场景二：给班级出一份练习卷
@@ -51,7 +51,7 @@
 
 **完成标志：** 两版题号对应，公共材料、图像和作答区域完整，学生版没有答案，导出的 DOCX 和 PDF 都能打开。扫描图内部的旧题号及跨题引用仍需逐项核对。
 
-[选题、编号与打印前核对](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/blob/a63bfdc72a4d428220f33d5c106d246ffa7d6840/docs/teacher/lesson-and-paper.md#paper)
+[选题、编号与打印前核对](docs/teacher/lesson-and-paper.md#paper)
 
 <a id="student"></a>
 ## 场景三：复核一份作答或一批作业
@@ -62,7 +62,7 @@
 
 **完成标志：** 正式评分已记录，未完成输入已暂存，缺页、未作答等实际情况单独记明。AI 建议和暂存输入都不等于教师正式评分。
 
-[单份复核、批次暂存与正式评分](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/blob/a63bfdc72a4d428220f33d5c106d246ffa7d6840/docs/teacher/assessment.md#grading)
+[单份复核、批次暂存与正式评分](docs/teacher/assessment.md#grading)
 
 <a id="exam"></a>
 ## 场景四：月考后决定先讲什么
@@ -73,7 +73,7 @@
 
 **完成标志：** 统计范围与有效人数正确，结论能回到原题和原作答核实；保存分析并导出离线报告。分数只能帮助确定复核顺序，不能直接证明粗心、态度差或已经掌握。
 
-[整理成绩表、读图表与形成讲评安排](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/blob/a63bfdc72a4d428220f33d5c106d246ffa7d6840/docs/teacher/assessment.md#exam)
+[整理成绩表、读图表与形成讲评安排](docs/teacher/assessment.md#exam)
 
 <a id="closure"></a>
 ## 场景五：给几名学生安排复练，并记录实际结果
@@ -84,14 +84,14 @@
 
 **完成标志：** 能重开任务并找到实际复测记录，而不是只生成了一份练习卷。不同卷的分数不要直接相减当成提分效果。
 
-[复练、改分后重核与版本区别](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/blob/a63bfdc72a4d428220f33d5c106d246ffa7d6840/docs/teacher/assessment.md#followup)
+[复练、改分后重核与版本区别](docs/teacher/assessment.md#followup)
 
 <a id="classroom"></a>
 ## 课堂上：计时、分组与记录反馈
 
 在 **课堂工具** 使用倒计时、点名、随机分组或随堂反馈。课堂反馈可追加回备课材料，追加后记得保存。动态平衡演示是简化模型，不是实测数据。
 
-[课中使用与课后整理](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/blob/a63bfdc72a4d428220f33d5c106d246ffa7d6840/docs/teacher/lesson-and-paper.md#classroom)
+[课中使用与课后整理](docs/teacher/lesson-and-paper.md#classroom)
 
 <a id="works"></a>
 ## 场景六：下次接着做，或把成果交给同事
@@ -102,18 +102,18 @@
 
 **准备迁移：** 在备份窗口检查所选范围和缺失清单。备课 ZIP 不是整机备份，**不包含学生作答／批次／批改暂存，也不包含原 Word／公众号完整题库**；这些原资料须另外妥善保存。先在独立目录恢复核对，不覆盖唯一原件。
 
-[保存、交付、备份与恢复清单](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/blob/a63bfdc72a4d428220f33d5c106d246ffa7d6840/docs/teacher/save-and-support.md#save)
+[保存、交付、备份与恢复清单](docs/teacher/save-and-support.md#save)
 
 <a id="faq"></a>
 ## 卡住时，先看这里
 
 “没有题目”先查实际资料与筛选；“无法分页”先查本机 Office；“建议已过期”先核对发生变化的成绩或材料。不要通过清空资料或反复调用模型来排错。
 
-[按现象排查问题](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/blob/a63bfdc72a4d428220f33d5c106d246ffa7d6840/docs/teacher/save-and-support.md#problems) · [哪些材料会发送给模型](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/blob/a63bfdc72a4d428220f33d5c106d246ffa7d6840/docs/teacher/getting-started.md#privacy)
+[按现象排查问题](docs/teacher/save-and-support.md#problems) · [哪些材料会发送给模型](docs/teacher/getting-started.md#privacy)
 
 <a id="verification"></a><a id="workflow-status"></a><a id="visual-composition"></a><a id="documentation"></a>
 ## 版本与维护信息
 
 当前试用包不包含后来维护源码的全部按钮；Excel 对比重导和自由拖拽画布仍不能按已发布功能使用。帮助中心改版也需使用包含该改动的源码。
 
-**main 仅同步本说明，应用源码仍须使用明确的维护分支或版本标签。** 教师不需要阅读提交号或测试日志来完成以上操作。开发运行方式、功能适用版本、未完成项与验收证据统一放在[维护者入口](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/blob/a63bfdc72a4d428220f33d5c106d246ffa7d6840/docs/maintainer/README.md)。
+教师不需要阅读提交号或测试日志来完成以上操作。开发运行方式、功能适用版本、未完成项与验收证据统一放在[维护者入口](docs/maintainer/README.md)。

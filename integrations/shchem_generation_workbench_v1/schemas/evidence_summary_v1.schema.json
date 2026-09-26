@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:shchem:generation-evidence-summary:v1",
+  "title": "Structured generation evidence summary v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_id",
+    "evidence_level",
+    "independence_group_id",
+    "formal_question_reviewed",
+    "human_chemistry_reviewed",
+    "independent_solution_status",
+    "independent_machine_review_status",
+    "originality_check_status",
+    "current_style_eligible"
+  ],
+  "properties": {
+    "record_id": {"$ref": "#/$defs/recordId"},
+    "evidence_level": {
+      "enum": [
+        "L1_OFFICIAL_COURSE_STANDARD",
+        "L1_OFFICIAL_COMMENTARY",
+        "L1_OFFICIAL_EXAM_SCHEDULE",
+        "L1_LOCAL_TEXTBOOK",
+        "L2_PAGE_VERIFIED_SHANGHAI_EXAM",
+        "L2_RECALLED_LEVEL_EXAM_NONOFFICIAL",
+        "L3_QUALIFIED_TEACHING_EXPERIENCE",
+        "L3_USER_PROVIDED_TEACHING_MATERIAL_REVIEWED"
+      ]
+    },
+    "independence_group_id": {"$ref": "#/$defs/recordId"},
+    "formal_question_reviewed": {"type": "boolean"},
+    "human_chemistry_reviewed": {"type": "boolean"},
+    "independent_solution_status": {"enum": ["passed", "failed", "missing"]},
+    "independent_machine_review_status": {"enum": ["passed", "failed", "missing"]},
+    "originality_check_status": {"enum": ["passed", "failed", "missing"]},
+    "current_style_eligible": {"type": "boolean"}
+  },
+  "$defs": {
+    "recordId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$"
+    }
+  }
+}

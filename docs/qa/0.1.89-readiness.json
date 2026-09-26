@@ -1,0 +1,110 @@
+{
+  "version": "0.1.89",
+  "source_commit": "93eb43cf6a6e09625acdee3e51dbdfb97a4ba519",
+  "platform": "Windows-2025Server-10.0.26100-SP0",
+  "python": "3.12.10",
+  "qt": "6.11.2",
+  "routes_opened": [
+    "home",
+    "library",
+    "paper",
+    "student",
+    "preparation",
+    "templates",
+    "classroom",
+    "mywork"
+  ],
+  "screenshots": [
+    {
+      "file": "settings-basic.png",
+      "sha256": "50faa5da9038a80c46fab2d115020858dec456cfdbeebae4c1647c442454ed4f"
+    },
+    {
+      "file": "settings-advanced.png",
+      "sha256": "8717c49c9a88a8854323e766eece4431096112dbdb20c7fdf986904e1b0e3f5f"
+    },
+    {
+      "file": "settings-compact.png",
+      "sha256": "c0bed678487723fb4b90847f1503edce8a7c742ad86d020804950702c271d60f"
+    },
+    {
+      "file": "environment.png",
+      "sha256": "784cd29d070a9b2a3b53e1807296c132b74e44ba7d1d0b2ee2424ce0fcb58661"
+    },
+    {
+      "file": "source-work-current.png",
+      "sha256": "3d7e373be26e11c642441f66aa5124ac0db8de2730e90baca389180a93fe4315"
+    },
+    {
+      "file": "source-work-archived.png",
+      "sha256": "062a323056b27f941923191e6a0fb88993ee8c5da865f57bcc6e73eb6ef92d53"
+    },
+    {
+      "file": "source-work-trash.png",
+      "sha256": "ee2822e0a1d5df32b918dfcaa617e31320d5929c1824c08d3be023d8c896be42"
+    },
+    {
+      "file": "source-work-original-search.png",
+      "sha256": "a9853af00b5b8dc1d3401fdcb094267448effc5ef7d5467e6e38a2b183aecc0c"
+    },
+    {
+      "file": "source-work-compact.png",
+      "sha256": "0bfd276c5a7acbbb2131821332c0f5b6aa17bbe85d72b864deb3da3eebc5c738"
+    },
+    {
+      "file": "source-backup-plan.png",
+      "sha256": "468b7f260662534e599db9e2029dbcbc9a6e8398c1f0154e8531d855527f79c5"
+    },
+    {
+      "file": "source-backup-checked.png",
+      "sha256": "28968cb3663f6a95f5c01a18dcb2b729137d55edfe21eac684a33cb0bb679665"
+    },
+    {
+      "file": "source-backup-restored.png",
+      "sha256": "fec5e89f59b17b03c999806fb3c4dcfd61dca0aa85d2b174a86db9b95ac416da"
+    },
+    {
+      "file": "source-backup-compact.png",
+      "sha256": "28c837f94f6ba7069dd25838891749fc0cfc17c85295227d3b98e4cc622d724e"
+    },
+    {
+      "file": "source-backup-opened.png",
+      "sha256": "e6658e161858ca330a3dedc07ec61f8f62b94290f22899ea468cacc5ac5cc28d"
+    },
+    {
+      "file": "source-backup-missing-image.png",
+      "sha256": "f21b37b42a08fc57aaf657e5e5d76d620535fb0ddca0999c7a8ebcf3a6e3496c"
+    }
+  ],
+  "uncaught_errors": [],
+  "work_organization": {
+    "draft_lifecycle": true,
+    "task_lifecycle": true,
+    "original_drafts_unchanged": true,
+    "task_files_unchanged": true,
+    "unsaved_editor_preserved": true,
+    "recovery_file_unchanged": true,
+    "original_topic_search": true,
+    "model_calls": 0
+  },
+  "lesson_backup": {
+    "backup_created": true,
+    "restore_checked": true,
+    "source_records_unchanged": true,
+    "original_artifacts_equal": true,
+    "shelves_preserved": true,
+    "recovery_restored": true,
+    "image_reconnected": true,
+    "restored_production_export": true,
+    "restored_profile": "备课恢复-20260914-091135-19ea71",
+    "model_calls": 0
+  },
+  "scope": "Native source work organization, settings and local dependency checks, isolated empty state. No real API, private teaching material, packaged EXE or classroom acceptance.",
+  "tests": {
+    "tests": 395,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "workflow_run": "34826334740"
+}

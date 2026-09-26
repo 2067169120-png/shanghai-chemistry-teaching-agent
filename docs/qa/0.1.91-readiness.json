@@ -1,0 +1,186 @@
+{
+  "version": "0.1.91",
+  "source_commit": "3fcc6a81d3225ca87eaaf8773627dc4c85a1574e",
+  "platform": "Windows-2025Server-10.0.26100-SP0",
+  "python": "3.12.10",
+  "qt": "6.11.2",
+  "routes_opened": [
+    "home",
+    "library",
+    "paper",
+    "student",
+    "preparation",
+    "templates",
+    "classroom",
+    "mywork"
+  ],
+  "screenshots": [
+    {
+      "file": "settings-basic.png",
+      "sha256": "25632a735ef4f029c3b4386b9c029b3de6714dabc54937a824e37cd479ddcc9e"
+    },
+    {
+      "file": "settings-advanced.png",
+      "sha256": "e09dae2e5114ef466641a7f5c973359b62d7757e084d1b1c302c1e7fd3af3e05"
+    },
+    {
+      "file": "settings-compact.png",
+      "sha256": "f2ed5909ef232a18dcf38d5662a0992f9a41ad62f2680ff30fe0a51ed46a0db5"
+    },
+    {
+      "file": "environment.png",
+      "sha256": "082d2f5d3207bfcedb4ffe281f1af861ff0cfc7325e53041692d4ae9d6dfcb3c"
+    },
+    {
+      "file": "source-work-current.png",
+      "sha256": "171a6b1cff9e4104af7f6f3012587bdd92e54a8dc385542b6f036f69ec5f28d9"
+    },
+    {
+      "file": "source-work-archived.png",
+      "sha256": "9774ff2945d3100e344aaf50fb9e77d27b6f3203936948a6f287315b86ef99cb"
+    },
+    {
+      "file": "source-work-trash.png",
+      "sha256": "1e5f63fbac355d6a7dce41d6550efce8c1fd3df25f919265d3b71044cb452f19"
+    },
+    {
+      "file": "source-work-original-search.png",
+      "sha256": "3b770422fa1405d25d1cf234e9346cb77df0afe59d7058da8bd94f5d0164d087"
+    },
+    {
+      "file": "source-work-compact.png",
+      "sha256": "3f94c17e042306f6d220d44b478ea5619eb0e35e4f49a00d73b1b1423e34620f"
+    },
+    {
+      "file": "source-backup-plan.png",
+      "sha256": "468b7f260662534e599db9e2029dbcbc9a6e8398c1f0154e8531d855527f79c5"
+    },
+    {
+      "file": "source-backup-checked.png",
+      "sha256": "28968cb3663f6a95f5c01a18dcb2b729137d55edfe21eac684a33cb0bb679665"
+    },
+    {
+      "file": "source-backup-restored.png",
+      "sha256": "5b2f5c70ff1a34eb60987796d3b43a6ff7229966292eed7848778abb3324a104"
+    },
+    {
+      "file": "source-backup-compact.png",
+      "sha256": "28c837f94f6ba7069dd25838891749fc0cfc17c85295227d3b98e4cc622d724e"
+    },
+    {
+      "file": "source-backup-opened.png",
+      "sha256": "1a9e0ea11921c286bbcead238185f86906cd4c6740760b76f6d9681adb06e242"
+    },
+    {
+      "file": "source-backup-missing-image.png",
+      "sha256": "f21b37b42a08fc57aaf657e5e5d76d620535fb0ddca0999c7a8ebcf3a6e3496c"
+    },
+    {
+      "file": "source-home-current.png",
+      "sha256": "9f026d9d628c109253e960c4c15d2325b1bf9788e5859bbfb833f61b186caa5b"
+    },
+    {
+      "file": "source-home-compact.png",
+      "sha256": "06d1b742487b2ea37b1091437669bcd7ab5c51dc9970c89c7b89b40eaa617df4"
+    },
+    {
+      "file": "source-works-pinned-actions.png",
+      "sha256": "a5c2e744e9ff6d9fb7d36095be92fb5e934e198320408fe0e720205916551ae7"
+    },
+    {
+      "file": "source-desk-page-home.png",
+      "sha256": "9f026d9d628c109253e960c4c15d2325b1bf9788e5859bbfb833f61b186caa5b"
+    },
+    {
+      "file": "source-desk-page-library.png",
+      "sha256": "1ac2178932c1005f12426319e521bff5ea4ca4ed4c0a5630cfd54ccc3db23da2"
+    },
+    {
+      "file": "source-desk-page-paper.png",
+      "sha256": "93c324ce5a26bdc9ca5e3db8abd0706450ee699b4bc5f6485e57075588069ead"
+    },
+    {
+      "file": "source-desk-page-student.png",
+      "sha256": "64f3360b67bf2ae22185111104449906528d03124aa0b64cc663558d7a7eda67"
+    },
+    {
+      "file": "source-desk-page-preparation.png",
+      "sha256": "a1cc014f0d961ce1b3d3da564e1815e1a1cf8dc73e972a62820b74027df853da"
+    },
+    {
+      "file": "source-desk-page-templates.png",
+      "sha256": "088628b312c6716e006d6e521353f3f5d774f7e6b23cd8d441bb65bee005a9f6"
+    },
+    {
+      "file": "source-desk-page-classroom.png",
+      "sha256": "7f75832c3cf78602f0e919a8ad5f1e5c07b7a9d15f7dddd89dcb708f89036f97"
+    },
+    {
+      "file": "source-desk-page-mywork.png",
+      "sha256": "7075ee1014520eebba99e0f3e91331b43f138193a367cacff54463dad7e7c402"
+    },
+    {
+      "file": "source-preparation-fixed-actions.png",
+      "sha256": "c0befeab581a1180cab9d052c069f3f1b5fdbaa2decfc0d0893c3d292e42100b"
+    },
+    {
+      "file": "source-preparation-materials.png",
+      "sha256": "11104c67efba0c4e2a6e88266cf903c9264add9d3cc271e78caf8ab060dd2042"
+    },
+    {
+      "file": "source-chinese-confirmation.png",
+      "sha256": "833df344f6757e239cde6452c1ef5ead3184368449eb12e1339dc58613953554"
+    }
+  ],
+  "uncaught_errors": [],
+  "work_organization": {
+    "draft_lifecycle": true,
+    "task_lifecycle": true,
+    "original_drafts_unchanged": true,
+    "task_files_unchanged": true,
+    "unsaved_editor_preserved": true,
+    "recovery_file_unchanged": true,
+    "original_topic_search": true,
+    "model_calls": 0
+  },
+  "lesson_backup": {
+    "backup_created": true,
+    "restore_checked": true,
+    "source_records_unchanged": true,
+    "original_artifacts_equal": true,
+    "shelves_preserved": true,
+    "recovery_restored": true,
+    "image_reconnected": true,
+    "restored_production_export": true,
+    "restored_profile": "备课恢复-20260914-133004-16a148",
+    "model_calls": 0
+  },
+  "teacher_desk": {
+    "recent_current_five": true,
+    "real_word_basket": true,
+    "resume_preserved_editor": true,
+    "home_did_not_write_state": true,
+    "collapsed_diagnostics": true,
+    "actions_visible_800x700": true,
+    "model_calls": 0
+  },
+  "paper_numbering": {
+    "real_word_import": true,
+    "reordered_student_and_teacher": true,
+    "source_bytes_unchanged": true,
+    "reference_numbers_updated": true,
+    "fixed_actions_800x700": true,
+    "chinese_standard_buttons": true,
+    "actual_pdf_pages": null,
+    "raster_numbers_auto_rewritten": false,
+    "model_calls": 0
+  },
+  "scope": "Native source work organization, settings and local dependency checks, isolated empty state. No real API, private teaching material, packaged EXE or classroom acceptance.",
+  "tests": {
+    "tests": 923,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "workflow_run": "34849013205"
+}

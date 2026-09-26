@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.sh-chem.invalid/generation_v2/prefreeze_invalidation.schema.json",
+  "title": "Append-only R18 prefreeze independent-audit invalidation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "record_type", "version_id", "status", "audit",
+    "reason", "failed_artifacts", "archive", "replacement_contract",
+    "authority_boundary", "self_hash_algorithm", "self_hash"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "record_type": {"const": "generation_v2_prefreeze_invalidation"},
+    "version_id": {"const": "SHCHEM-GEN-V2-DEMO-20260813-R18"},
+    "status": {"const": "invalidated_after_independent_prefreeze_audit_before_formal_freeze"},
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["audit_thread_id", "audit_turn_id", "disposition"],
+      "properties": {
+        "audit_thread_id": {"type": "string", "pattern": "^[0-9a-f-]{16,}$"},
+        "audit_turn_id": {"type": "string", "pattern": "^[0-9a-f-]{16,}$"},
+        "disposition": {"const": "NO_GO"}
+      }
+    },
+    "reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reason_code", "only_substantive_blocker", "missing_occurrence_counts", "required_coverage"],
+      "properties": {
+        "reason_code": {"const": "R18_PREFREEZE_REQUIRED_CONTENT_METADATA_MISSING"},
+        "only_substantive_blocker": {"const": true},
+        "missing_occurrence_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["page_span", "page_anchor", "textbook_chapter_mapping", "task_card_required_fields"],
+          "properties": {
+            "page_span": {"const": 0},
+            "page_anchor": {"const": 0},
+            "textbook_chapter_mapping": {"const": 0},
+            "task_card_required_fields": {"const": 0}
+          }
+        },
+        "required_coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["theme_page_span", "printed_page_anchor", "atomic_page_anchor", "atomic_textbook_mapping", "task_card_contract"],
+          "properties": {
+            "theme_page_span": {"const": 5},
+            "printed_page_anchor": {"const": 30},
+            "atomic_page_anchor": {"const": 36},
+            "atomic_textbook_mapping": {"const": 36},
+            "task_card_contract": {"const": "complete_and_recomputed"}
+          }
+        }
+      }
+    },
+    "failed_artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inventory", "handoff", "double_clean", "generator_metadata", "controlled_file_count", "controlled_tree_sha256"],
+      "properties": {
+        "inventory": {"$ref": "#/$defs/file_ref"},
+        "handoff": {"$ref": "#/$defs/file_ref"},
+        "double_clean": {"$ref": "#/$defs/file_ref"},
+        "generator_metadata": {"$ref": "#/$defs/file_ref"},
+        "controlled_file_count": {"const": 40},
+        "controlled_tree_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "archive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "controlled_files_rehashed_after_move", "failed_evidence_rehashed_after_move", "source_paths_absent_after_move"],
+      "properties": {
+        "root": {"$ref": "#/$defs/safe_path"},
+        "controlled_files_rehashed_after_move": {"const": 40},
+        "failed_evidence_rehashed_after_move": {"const": 3},
+        "source_paths_absent_after_move": {"const": true}
+      }
+    },
+    "replacement_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["new_generator_turn_required", "superseded_generator_turn_id", "replacement_generator_turn_id", "content_metadata_rebuild_required", "double_clean_required"],
+      "properties": {
+        "new_generator_turn_required": {"const": true},
+        "superseded_generator_turn_id": {"const": "01a020d7-6391-7801-90f1-f7ec541051a6"},
+        "replacement_generator_turn_id": {"const": "01a0211c-b76b-7023-9762-d180180a7df0"},
+        "content_metadata_rebuild_required": {"const": true},
+        "double_clean_required": {"const": true}
+      }
+    },
+    "authority_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["formal_freeze", "phase1_dispatch", "reviews", "adversarial", "chain", "registration", "publication", "delivery", "exports"],
+      "properties": {
+        "formal_freeze": {"const": false},
+        "phase1_dispatch": {"const": false},
+        "reviews": {"const": false},
+        "adversarial": {"const": false},
+        "chain": {"const": false},
+        "registration": {"const": false},
+        "publication": {"const": false},
+        "delivery": {"const": false},
+        "exports": {"const": false}
+      }
+    },
+    "self_hash_algorithm": {"const": "sha256_canonical_json_without_self_hash_v1"},
+    "self_hash": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "safe_path": {"type": "string", "pattern": "^(?![A-Za-z]:)(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+"},
+    "file_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "bytes"],
+      "properties": {
+        "path": {"$ref": "#/$defs/safe_path"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

@@ -1,0 +1,69 @@
+﻿param(
+    [string]$Python = "python",
+    [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')]
+    [string]$BuildTag,
+    [switch]$OneFile
+)
+$ErrorActionPreference = "Stop"
+$RuntimeRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+$WorkspaceRoot = (Resolve-Path (Join-Path $RuntimeRoot "..\..")).Path
+$EntryPoint = Join-Path $RuntimeRoot "desktop_teacher_workbench.pyw"
+$DistRoot = Join-Path $RuntimeRoot "desktop_dist"
+$WorkRoot = Join-Path $RuntimeRoot "desktop_build"
+$SpecRoot = Join-Path $RuntimeRoot "desktop_spec"
+if ($BuildTag) {
+    $DistRoot = Join-Path $RuntimeRoot "desktop_dist_$BuildTag"
+    $WorkRoot = Join-Path $RuntimeRoot "desktop_build_$BuildTag"
+    $SpecRoot = Join-Path $RuntimeRoot "desktop_spec_$BuildTag"
+}
+foreach ($BuildOutputPath in @($DistRoot, $WorkRoot, $SpecRoot)) {
+    if (Test-Path -LiteralPath $BuildOutputPath) {
+        throw "Build output already exists. Choose a fresh -BuildTag; existing files were not changed."
+    }
+}
+$OriginalSearchPath = $env:Path
+$BuildSearchPathEntries = @(
+    $OriginalSearchPath -split [IO.Path]::PathSeparator |
+        Where-Object {
+            $entry = $_.Trim()
+            $entry -and $entry -notmatch '(?i)[\\/]\.cache[\\/]codex-runtimes[\\/].*[\\/]dependencies[\\/]native([\\/]|$)'
+        }
+)
+try {
+    $env:Path = [string]::Join([IO.Path]::PathSeparator, $BuildSearchPathEntries)
+    & $Python -c "import PySide6, PyInstaller, jsonschema, PIL, docx, pptx, pypdf, pypdfium2; from PySide6 import QtPdf, QtPdfWidgets"
+    if ($LASTEXITCODE -ne 0) { throw "Desktop build dependencies are unavailable." }
+    $ResourceScript = Join-Path $RuntimeRoot "package_resources.py"
+    $ResourceJson = & $Python $ResourceScript --arguments
+    if ($LASTEXITCODE -ne 0) { throw "Declared software resources are incomplete." }
+    $ResourceArguments = @($ResourceJson | ConvertFrom-Json)
+    $Arguments = @(
+        "-m", "PyInstaller", "--windowed", "--noupx",
+        "--name", "沪上化学智研台", "--paths", $WorkspaceRoot,
+        "--distpath", $DistRoot, "--workpath", $WorkRoot, "--specpath", $SpecRoot,
+        "--hidden-import", "PySide6.QtSvg",
+        "--hidden-import", "PySide6.QtPdf",
+        "--hidden-import", "PySide6.QtPdfWidgets",
+        "--hidden-import", "pypdfium2",
+        "--exclude-module", "integrations.deeptutor_shchem_v1.service",
+        "--exclude-module", "integrations.deeptutor_shchem_v1.http_app",
+        "--exclude-module", "integrations.deeptutor_shchem_v1.launcher",
+        "--exclude-module", "PySide6.QtWebEngineCore",
+        "--exclude-module", "PySide6.QtWebEngineWidgets"
+    )
+    $Arguments += $ResourceArguments
+    if ($OneFile) { $Arguments += "--onefile" }
+    $Arguments += $EntryPoint
+    & $Python @Arguments
+    if ($LASTEXITCODE -ne 0) { throw "Desktop build failed." }
+}
+finally { $env:Path = $OriginalSearchPath }
+if (-not $OneFile) {
+    $InternalRoot = Join-Path $DistRoot "沪上化学智研台\_internal"
+    $UnexpectedIcu = @(
+        Get-ChildItem -LiteralPath $InternalRoot -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -eq "icuuc.dll" -or $_.Name -like "icudt*.dll" }
+    )
+    if ($UnexpectedIcu.Count -gt 0) { throw "Unexpected external ICU DLL in package." }
+}
+Write-Host "Build completed: $DistRoot"

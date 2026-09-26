@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0.0",
+  "standard_version": "1.0.0",
+  "profile_id": "OSV1-PROVISIONAL-FIXTURE",
+  "profile_version": "1.0.0",
+  "profile_status": "machine_observed_limited",
+  "title": "生成任务 provisional fixture（不得最终晋级）",
+  "material_family": "level_exam_recall_nonofficial",
+  "applicability": {
+    "exact_source_only": true,
+    "global_template_claim_allowed": false,
+    "target_year": 2026,
+    "target_identity": "provisional_fixture_only"
+  },
+  "evidence_manifest": {
+    "manifest_id": "OSV1-EV-PROVISIONAL-FIXTURE",
+    "path": "integrations/shchem_generation_v2/fixtures/observed_profile_provisional.evidence_manifest.json",
+    "sha256": "b83885766918fdf4826cda02d93be37a252fe35f4e06478f6c1fcab45c405a2f"
+  },
+  "hierarchy": {
+    "required_path": ["paper", "theme_big_question", "printed_question", "atomic_part"],
+    "standalone_choice_section_allowed": false,
+    "response_modes_location": "inside_theme_big_question"
+  },
+  "organization": {
+    "theme_count": {"value": 5, "value_status": "project_template", "evidence_refs": []},
+    "numbering_mode": {"value": "continuous_across_paper", "value_status": "project_template", "evidence_refs": []},
+    "total_score": {"value": 100, "value_status": "project_template", "evidence_refs": []},
+    "duration_minutes": {"value": 60, "value_status": "project_template", "evidence_refs": []},
+    "standalone_choice_section": {"value": false, "value_status": "evidence", "evidence_refs": ["local-style-rulebook"]},
+    "selection_rule": {"value": "project_template_single_choice_4_points", "value_status": "project_template", "evidence_refs": []},
+    "themes": [
+      {"order": 1, "title": "fixture", "score": {"value": 20, "value_status": "project_template", "evidence_refs": []}, "page_span": null}
+    ]
+  },
+  "rules": {"policy_id": "OSV1-POLICY-ALLOW-PROHIBIT", "policy_path": "fixture", "allowed": ["local_fixture_testing"], "prohibited": ["final_promotion"]},
+  "gates": {
+    "read_only_style_profile_consumption_allowed": true,
+    "question_retrieval_allowed": false,
+    "unattended_generation_allowed": false,
+    "official_claim_allowed": false,
+    "human_reviewed": false,
+    "publication_allowed": false,
+    "release_allowed": false
+  },
+  "review": {"mode": "machine_only", "machine_validation": "required", "human_review_claimed": false},
+  "rights": {"local_evidence_use_only": true, "redistribution_allowed": false, "source_page_republication_allowed": false},
+  "limitations": ["This is a provisional integration fixture and cannot unlock final candidate promotion."]
+}

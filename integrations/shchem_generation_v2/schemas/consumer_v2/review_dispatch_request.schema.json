@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.sh-chem.invalid/generation_v2/consumer_v2/review_dispatch_request.schema.json",
+  "title": "R18 exact phase-1 A/B dispatch with blocked phase-2 plan",
+  "type": "object", "additionalProperties": false,
+  "required": [
+    "schema_version", "record_type", "dispatch_id", "review_protocol", "review_attempt_id", "version_id", "paper_id", "generator_thread_id",
+    "root_dispatch_id", "phase1_activation_path", "formal_freeze", "formal_freeze_sidecar", "formal_freeze_payload",
+    "generator_reconciliation", "root_phase1_authorization", "immutable_inputs", "schemas", "policy_inputs", "protocol_policy_digest", "prompts",
+    "requested_tasks", "independence_contract", "coverage_contract", "authority", "human_reviewed",
+    "official_claim_allowed", "output_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": "3.0.0-r18"},
+    "record_type": {"const": "independent_review_dispatch_request"},
+    "dispatch_id": {"type": "string", "pattern": "^DISPATCH-.+-[0-9a-f]{16}$"},
+    "review_protocol": {"const": "R18-PHASE1-TWO-STAGE-REVIEW-V2"},
+    "review_attempt_id": {"type": "string", "pattern": "^R18-REVIEW-ATTEMPT-[0-9a-f]{32}$"},
+    "version_id": {"type": "string", "pattern": "-R18$"},
+    "paper_id": {"type": "string", "minLength": 1},
+    "generator_thread_id": {"type": "string", "format": "uuid"},
+    "root_dispatch_id": {"type": "string", "format": "uuid"},
+    "phase1_activation_path": {"$ref": "#/$defs/relpath"},
+    "formal_freeze": {"$ref": "#/$defs/file_ref"}, "formal_freeze_sidecar": {"$ref": "#/$defs/file_ref"},
+    "formal_freeze_payload": {"$ref": "#/$defs/payload_binding"}, "generator_reconciliation": {"$ref": "#/$defs/file_ref"},
+    "root_phase1_authorization": {"$ref": "#/$defs/file_ref"},
+    "policy_inputs": {"$ref": "#/$defs/policy_inputs"},
+    "protocol_policy_digest": {"$ref": "#/$defs/sha256"},
+    "immutable_inputs": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "paper", "task_card", "question_subject", "answer_subject",
+        "deterministic_request", "deterministic_report", "coverage_matrix",
+        "deterministic_atomic_scope", "figure_svg", "figure_png", "figure_spec",
+        "component_registry", "figure_visual_qa", "figure_topology_mutations",
+        "observed_profile", "evidence_manifest", "project_generation_authorization",
+        "prefreeze_receipt", "r18_producer_receipt", "sol_generator_receipt",
+        "generator_provenance_receipt", "formal_freeze", "formal_freeze_sidecar",
+        "generator_reconciliation", "root_phase1_authorization"
+      ],
+      "properties": {
+        "paper": {"$ref": "#/$defs/file_ref"}, "task_card": {"$ref": "#/$defs/file_ref"}, "question_subject": {"$ref": "#/$defs/file_ref"},
+        "answer_subject": {"$ref": "#/$defs/file_ref"}, "deterministic_request": {"$ref": "#/$defs/file_ref"}, "deterministic_report": {"$ref": "#/$defs/file_ref"},
+        "coverage_matrix": {"$ref": "#/$defs/file_ref"}, "deterministic_atomic_scope": {"$ref": "#/$defs/file_ref"},
+        "figure_svg": {"$ref": "#/$defs/file_ref"}, "figure_png": {"$ref": "#/$defs/file_ref"}, "figure_spec": {"$ref": "#/$defs/file_ref"},
+        "component_registry": {"$ref": "#/$defs/file_ref"}, "figure_visual_qa": {"$ref": "#/$defs/file_ref"}, "figure_topology_mutations": {"$ref": "#/$defs/file_ref"},
+        "observed_profile": {"$ref": "#/$defs/file_ref"}, "evidence_manifest": {"$ref": "#/$defs/file_ref"},
+        "project_generation_authorization": {"$ref": "#/$defs/file_ref"}, "prefreeze_receipt": {"$ref": "#/$defs/file_ref"},
+        "r18_producer_receipt": {"$ref": "#/$defs/file_ref"}, "sol_generator_receipt": {"$ref": "#/$defs/file_ref"},
+        "generator_provenance_receipt": {"$ref": "#/$defs/file_ref"}, "formal_freeze": {"$ref": "#/$defs/file_ref"},
+        "formal_freeze_sidecar": {"$ref": "#/$defs/file_ref"}, "generator_reconciliation": {"$ref": "#/$defs/file_ref"},
+        "root_phase1_authorization": {"$ref": "#/$defs/file_ref"}
+      }
+    },
+    "schemas": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "paper_candidate", "component_registry", "deterministic_check_request",
+        "deterministic_check_report", "project_generation_authorization",
+        "r18_producer_receipt", "sol_generator_receipt", "generator_provenance_receipt",
+        "formal_freeze_receipt", "formal_freeze_sidecar",
+        "root_provenance_reconciliation", "review_phase1_authorization",
+        "review_task_creation_attestation", "codex_metadata_observation", "machine_review_record",
+        "adversarial_check_record", "review_dispatch_request",
+        "phase1_review_dispatch_activation", "adversarial_phase2_dispatch"
+      ],
+      "properties": {
+        "paper_candidate": {"$ref": "#/$defs/file_ref"}, "component_registry": {"$ref": "#/$defs/file_ref"},
+        "deterministic_check_request": {"$ref": "#/$defs/file_ref"}, "deterministic_check_report": {"$ref": "#/$defs/file_ref"},
+        "project_generation_authorization": {"$ref": "#/$defs/file_ref"}, "r18_producer_receipt": {"$ref": "#/$defs/file_ref"},
+        "sol_generator_receipt": {"$ref": "#/$defs/file_ref"}, "generator_provenance_receipt": {"$ref": "#/$defs/file_ref"},
+        "formal_freeze_receipt": {"$ref": "#/$defs/file_ref"}, "formal_freeze_sidecar": {"$ref": "#/$defs/file_ref"},
+        "root_provenance_reconciliation": {"$ref": "#/$defs/file_ref"}, "review_phase1_authorization": {"$ref": "#/$defs/file_ref"},
+        "review_task_creation_attestation": {"$ref": "#/$defs/file_ref"},
+        "machine_review_record": {"$ref": "#/$defs/file_ref"}, "adversarial_check_record": {"$ref": "#/$defs/file_ref"},
+        "review_dispatch_request": {"$ref": "#/$defs/file_ref"}, "phase1_review_dispatch_activation": {"$ref": "#/$defs/file_ref"},
+        "codex_metadata_observation": {"$ref": "#/$defs/file_ref"}, "adversarial_phase2_dispatch": {"$ref": "#/$defs/file_ref"}
+      }
+    },
+    "prompts": {
+      "type": "object", "additionalProperties": false, "required": ["sol_review_a", "sol_review_b"],
+      "properties": {"sol_review_a": {"$ref": "#/$defs/file_ref"}, "sol_review_b": {"$ref": "#/$defs/file_ref"}}
+    },
+    "requested_tasks": {
+      "type": "array", "prefixItems": [{"$ref": "#/$defs/task_a"}, {"$ref": "#/$defs/task_b"}, {"$ref": "#/$defs/task_adversarial"}],
+      "items": false, "minItems": 3, "maxItems": 3
+    },
+    "independence_contract": {
+      "type": "object", "additionalProperties": false,
+      "required": ["required_engine", "required_reasoning_effort", "distinct_non_generator_thread_count", "run_id_only_is_not_isolation", "root_observation_required_each", "generation_task_may_validate_but_must_not_author_or_modify_receipts"],
+      "properties": {
+        "required_engine": {"const": "gpt-5.6-sol"}, "required_reasoning_effort": {"const": "xhigh"}, "distinct_non_generator_thread_count": {"const": 3},
+        "run_id_only_is_not_isolation": {"const": true}, "root_observation_required_each": {"const": true},
+        "generation_task_may_validate_but_must_not_author_or_modify_receipts": {"const": true}
+      }
+    },
+    "coverage_contract": {
+      "type": "object", "additionalProperties": false,
+      "required": ["expected_atomic_part_ids", "review_finding_count_each", "required_checks_exact_order", "adversarial_item_coverage_count", "coverage_matrix_review_required"],
+      "properties": {
+        "expected_atomic_part_ids": {"$ref": "#/$defs/p01_p36"}, "review_finding_count_each": {"const": 36},
+        "required_checks_exact_order": {"type": "array", "prefixItems": [{"const": "chemistry"}, {"const": "answer"}, {"const": "rubric"}, {"const": "shanghai_style"}, {"const": "ambiguity"}], "items": false, "minItems": 5, "maxItems": 5},
+        "adversarial_item_coverage_count": {"const": 36}, "coverage_matrix_review_required": {"const": true}
+      }
+    },
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["phase1_ab_dispatch_authorized", "adversarial_dispatch_authorized", "tasks_created", "reviews_authored", "chain_creation_authorized", "controller_registration_authorized", "batch_registration_authorized", "publication_authorized", "delivery_authorized", "external_delivery_authorized"],
+      "properties": {
+        "phase1_ab_dispatch_authorized": {"const": true}, "adversarial_dispatch_authorized": {"const": false}, "tasks_created": {"const": false}, "reviews_authored": {"const": false},
+        "chain_creation_authorized": {"const": false}, "controller_registration_authorized": {"const": false}, "batch_registration_authorized": {"const": false},
+        "publication_authorized": {"const": false}, "delivery_authorized": {"const": false}, "external_delivery_authorized": {"const": false}
+      }
+    },
+    "human_reviewed": {"const": false}, "official_claim_allowed": {"const": false}, "output_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "relpath": {
+      "type": "string", "minLength": 1,
+      "allOf": [
+        {"pattern": "^[^/]+(?:/[^/]+)*$"},
+        {"not": {"pattern": "[\\\\:\\u0000]"}},
+        {"not": {"pattern": "(^|/)\\.{1,2}(/|$)"}}
+      ]
+    },
+    "file_ref": {"type": "object", "additionalProperties": false, "required": ["path", "sha256", "bytes"], "properties": {"path": {"$ref": "#/$defs/relpath"}, "sha256": {"$ref": "#/$defs/sha256"}, "bytes": {"type": "integer", "minimum": 1}}},
+    "host_path": {"type": "string", "pattern": "^[A-Za-z]:/[^\\\\:\\u0000]+(?:/[^\\\\:\\u0000]+)*$", "not": {"pattern": "(^|/)\\.{1,2}(/|$)"}},
+    "host_file_ref": {"type": "object", "additionalProperties": false, "required": ["path", "sha256", "bytes"], "properties": {"path": {"$ref": "#/$defs/host_path"}, "sha256": {"$ref": "#/$defs/sha256"}, "bytes": {"type": "integer", "minimum": 1}}},
+    "policy_inputs": {
+      "type": "object", "additionalProperties": false,
+      "required": ["profile_id", "purpose", "inputs", "canonical_sha256", "canonical_bytes"],
+      "properties": {
+        "profile_id": {"const": "shanghai_project_local_v1"}, "purpose": {"const": "mandatory_instruction_only_not_review_evidence"},
+        "inputs": {"type": "object", "additionalProperties": false, "required": ["global_agents", "project_agents", "obsidian_skill", "shchem_skill", "kb_index", "kb_project_note", "task_routes", "evidence_contract"], "properties": {"global_agents": {"$ref": "#/$defs/host_file_ref"}, "project_agents": {"$ref": "#/$defs/host_file_ref"}, "obsidian_skill": {"$ref": "#/$defs/host_file_ref"}, "shchem_skill": {"$ref": "#/$defs/host_file_ref"}, "kb_index": {"$ref": "#/$defs/host_file_ref"}, "kb_project_note": {"$ref": "#/$defs/host_file_ref"}, "task_routes": {"$ref": "#/$defs/host_file_ref"}, "evidence_contract": {"$ref": "#/$defs/host_file_ref"}}},
+        "canonical_sha256": {"$ref": "#/$defs/sha256"}, "canonical_bytes": {"type": "integer", "minimum": 2}
+      }
+    },
+    "payload_binding": {"type": "object", "additionalProperties": false, "required": ["json_pointer", "canonical_sha256", "canonical_bytes"], "properties": {"json_pointer": {"const": "#/freeze_payload"}, "canonical_sha256": {"$ref": "#/$defs/sha256"}, "canonical_bytes": {"type": "integer", "minimum": 2}}},
+    "p01_p36": {"type": "array", "prefixItems": [
+      {"const":"P01"},{"const":"P02"},{"const":"P03"},{"const":"P04"},{"const":"P05"},{"const":"P06"},{"const":"P07"},{"const":"P08"},{"const":"P09"},{"const":"P10"},{"const":"P11"},{"const":"P12"},
+      {"const":"P13"},{"const":"P14"},{"const":"P15"},{"const":"P16"},{"const":"P17"},{"const":"P18"},{"const":"P19"},{"const":"P20"},{"const":"P21"},{"const":"P22"},{"const":"P23"},{"const":"P24"},
+      {"const":"P25"},{"const":"P26"},{"const":"P27"},{"const":"P28"},{"const":"P29"},{"const":"P30"},{"const":"P31"},{"const":"P32"},{"const":"P33"},{"const":"P34"},{"const":"P35"},{"const":"P36"}
+    ], "items": false, "minItems": 36, "maxItems": 36},
+    "task_common": {
+      "type": "object", "additionalProperties": false,
+      "required": ["slot", "phase", "dispatch_now", "new_task_required", "distinct_new_task_required", "prompt", "output_path", "exclusive_output", "must_not_read", "may_write_only"],
+      "properties": {
+        "slot": {"type": "string"}, "phase": {"type": "integer"}, "dispatch_now": {"type": "boolean"}, "new_task_required": {"const": true}, "distinct_new_task_required": {"const": true},
+        "prompt": {"$ref": "#/$defs/file_ref"}, "output_path": {"$ref": "#/$defs/relpath"}, "exclusive_output": {"const": true},
+        "must_not_read": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": {"$ref": "#/$defs/relpath"}},
+        "may_write_only": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"$ref": "#/$defs/relpath"}}
+      }
+    },
+    "task_a": {"allOf": [{"$ref": "#/$defs/task_common"}, {"properties": {"slot": {"const": "sol_review_a"}, "phase": {"const": 1}, "dispatch_now": {"const": true}}}]},
+    "task_b": {"allOf": [{"$ref": "#/$defs/task_common"}, {"properties": {"slot": {"const": "sol_review_b"}, "phase": {"const": 1}, "dispatch_now": {"const": true}}}]},
+    "task_adversarial": {
+      "type": "object", "additionalProperties": false,
+      "required": ["slot", "phase", "dispatch_now", "new_task_required", "distinct_new_task_required", "dispatch_after", "prompt_absent_until_phase2", "output_path", "exclusive_output", "may_write_only"],
+      "properties": {
+        "slot": {"const": "adversarial_check"}, "phase": {"const": 2}, "dispatch_now": {"const": false}, "new_task_required": {"const": true}, "distinct_new_task_required": {"const": true},
+        "dispatch_after": {"type": "array", "prefixItems": [{"const": "sol_review_a"}, {"const": "sol_review_b"}], "items": false, "minItems": 2, "maxItems": 2},
+        "prompt_absent_until_phase2": {"const": true}, "output_path": {"$ref": "#/$defs/relpath"}, "exclusive_output": {"const": true},
+        "may_write_only": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"$ref": "#/$defs/relpath"}}
+      }
+    }
+  }
+}

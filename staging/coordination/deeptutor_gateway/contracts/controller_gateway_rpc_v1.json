@@ -1,0 +1,44 @@
+{
+  "adapter_contract_version": "shchem.controller_cli_adapter.v1",
+  "controller_contract_version": "2.0.0",
+  "transport": "local_process_json_stdout",
+  "controller_path": "sh-chem-db/scripts/sh_chem_agent.py",
+  "supported_commands": {
+    "status": ["python", "sh_chem_agent.py", "status", "--root", "SH_CHEM_DB_ROOT"],
+    "validate": ["python", "sh_chem_agent.py", "validate", "--root", "SH_CHEM_DB_ROOT"],
+    "query": ["python", "sh_chem_agent.py", "query", "--root", "SH_CHEM_DB_ROOT", "--text", "TEXT", "--limit", "LIMIT"],
+    "preflight": ["python", "sh_chem_agent.py", "preflight", "--root", "SH_CHEM_DB_ROOT", "--mode", "MODE"],
+    "diagnosis-receipt-verify": ["python", "sh_chem_agent.py", "diagnosis-receipt-verify", "--root", "SH_CHEM_DB_ROOT", "--input", "INPUT", "--receipt", "RECEIPT"]
+  },
+  "preflight_mode_enum": [
+    "ingest",
+    "diagnose_synthetic",
+    "diagnose",
+    "generate",
+    "figure",
+    "publish_smoke",
+    "publish"
+  ],
+  "response": {
+    "required": ["contract_version", "command", "ok"],
+    "contract_version_const": "2.0.0",
+    "stable_json_stdout_required": true,
+    "exit_code_preserved_as": "controller_exit_code",
+    "nonzero_preflight_or_validate_is_a_valid_fail_closed_result": true
+  },
+  "controller_role": "status validate query and preflight gates only",
+  "domain_routing": {
+    "student.diagnosis": "synthetic uses diagnose_synthetic gate; real uses student prepare -> internal live controller issue -> internal live receipt verify -> execute without Gateway duplicate preflight",
+    "handout.candidate": "same student three-stage flow followed by build_week_bundle(prepare_id)",
+    "generation.candidate": "generation domain prepares staged candidate and governance chain before controller generate post-preflight",
+    "figure.get": "shchem.generation_domain_adapter.v1 after figure preflight",
+    "publication.preflight": "controller publish preflight combined with generation domain candidate status"
+  },
+  "environment": {
+    "oauth_tokens_passed": false,
+    "provider_secrets_passed": false,
+    "minimal_runtime_environment_only": true
+  },
+  "central_state_rule": "live status/validate only; historical reports never substitute",
+  "write_scope": "controller-owned paths only"
+}

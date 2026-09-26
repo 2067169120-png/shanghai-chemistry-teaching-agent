@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/shchem-generation-v2/gateway-response.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["api_version", "ok", "operation", "http_status", "data", "error"],
+  "properties": {
+    "api_version": {"const": "generation-gateway/1.0.0"},
+    "ok": {"type": "boolean"},
+    "operation": {"type": "string", "minLength": 1},
+    "http_status": {"type": "integer", "minimum": 100},
+    "data": {"type": ["object", "null"]},
+    "error": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "message", "details"],
+          "properties": {
+            "code": {"pattern": "^GEN_V2_E_"},
+            "message": {"type": "string", "minLength": 1},
+            "details": {}
+          }
+        }
+      ]
+    }
+  }
+}

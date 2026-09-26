@@ -1,0 +1,401 @@
+{
+  "version": "0.1.91",
+  "frozen": true,
+  "module_origin": "bundle",
+  "platform": "Windows-2025Server-10.0.26100-SP0",
+  "python": "3.12.10",
+  "qt": "6.11.2",
+  "qt_platform": "offscreen",
+  "routes_opened": [
+    "home",
+    "library",
+    "paper",
+    "student",
+    "preparation",
+    "templates",
+    "classroom",
+    "mywork"
+  ],
+  "local_draft_saved": true,
+  "work_organization": {
+    "draft_lifecycle": true,
+    "task_lifecycle": true,
+    "original_drafts_unchanged": true,
+    "task_files_unchanged": true,
+    "unsaved_editor_preserved": true,
+    "recovery_file_unchanged": true,
+    "original_topic_search": true,
+    "model_calls": 0
+  },
+  "lesson_backup": {
+    "backup_created": true,
+    "restore_checked": true,
+    "source_records_unchanged": true,
+    "original_artifacts_equal": true,
+    "shelves_preserved": true,
+    "recovery_restored": true,
+    "image_reconnected": true,
+    "restored_production_export": true,
+    "restored_profile": "备课恢复-20260914-133504-11dc34",
+    "model_calls": 0,
+    "native_restored_cli_start_and_close": true
+  },
+  "teacher_desk": {
+    "recent_current_five": true,
+    "real_word_basket": true,
+    "resume_preserved_editor": true,
+    "home_did_not_write_state": true,
+    "collapsed_diagnostics": true,
+    "actions_visible_800x700": true,
+    "model_calls": 0
+  },
+  "paper_numbering": {
+    "real_word_import": true,
+    "reordered_student_and_teacher": true,
+    "source_bytes_unchanged": true,
+    "reference_numbers_updated": true,
+    "fixed_actions_800x700": true,
+    "chinese_standard_buttons": true,
+    "actual_pdf_pages": {
+      "student": 1,
+      "teacher": 1
+    },
+    "raster_numbers_auto_rewritten": false,
+    "model_calls": 0
+  },
+  "editable_pptx_slides": 5,
+  "lesson_docx_created": true,
+  "pdf_pages": 2,
+  "environment": {
+    "schema_version": "shchem.environment.v1",
+    "version": "0.1.91",
+    "execution_mode": "packaged",
+    "platform": "Windows",
+    "python": "3.12.10",
+    "checks": [
+      {
+        "key": "python",
+        "title": "运行解释器",
+        "status": "ready",
+        "detail": "Python 3.12.10",
+        "affects": "应用运行",
+        "action": "源码推荐 Python 3.12；打包版使用随包解释器。"
+      },
+      {
+        "key": "qt_widgets",
+        "title": "原生桌面",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "打开桌面页面",
+        "action": ""
+      },
+      {
+        "key": "qt_svg",
+        "title": "SVG 图标",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "图标与 SVG 显示",
+        "action": ""
+      },
+      {
+        "key": "qt_pdf",
+        "title": "原生 PDF 组件",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "导入与教材 PDF 预览",
+        "action": ""
+      },
+      {
+        "key": "qt_pdf_widgets",
+        "title": "原生 PDF 视图",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "原页 PDF 查看窗口",
+        "action": ""
+      },
+      {
+        "key": "docx",
+        "title": "Word 文件支持",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "Word 导入与 DOCX 输出",
+        "action": ""
+      },
+      {
+        "key": "pptx",
+        "title": "PowerPoint 文件支持",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "PPTX 文件输出",
+        "action": ""
+      },
+      {
+        "key": "pillow",
+        "title": "图片处理",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "缩略图与图片处理",
+        "action": ""
+      },
+      {
+        "key": "pdfium",
+        "title": "PDF 页图支持",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "试卷分页和 PDF 预览",
+        "action": ""
+      },
+      {
+        "key": "pypdf",
+        "title": "PDF 读取",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "PDF 页面与文本读取",
+        "action": ""
+      },
+      {
+        "key": "jsonschema",
+        "title": "结构化结果校验",
+        "status": "ready",
+        "detail": "组件可在当前进程加载。",
+        "affects": "模型结果格式检查",
+        "action": ""
+      },
+      {
+        "key": "state",
+        "title": "个人数据目录",
+        "status": "ready",
+        "detail": "临时写入与清理成功。",
+        "affects": "草稿、题篮、恢复副本及个人设置",
+        "action": ""
+      },
+      {
+        "key": "icons",
+        "title": "输入控件图标资源",
+        "status": "ready",
+        "detail": "五项 SVG 资源存在。",
+        "affects": "下拉框、复选框和数值输入箭头",
+        "action": ""
+      },
+      {
+        "key": "resources",
+        "title": "已声明的软件资源",
+        "status": "ready",
+        "detail": "清单共 55 项，缺少 0 项。仅检查存在，不验证教学内容或全部动态脚本。",
+        "affects": "清单内的图标、JSON 约束与简明知识索引",
+        "action": ""
+      },
+      {
+        "key": "office",
+        "title": "Office 排版转换",
+        "status": "detected",
+        "detail": "发现 LibreOffice；尚未执行文档转换验证。",
+        "affects": "DOCX → PDF 真实试卷分页",
+        "action": "选一份小试卷运行“预览试卷排版”，确认本机实际转换效果。"
+      },
+      {
+        "key": "library",
+        "title": "题库目录",
+        "status": "empty",
+        "detail": "当前题库目录为空，不妨碍打开桌面或保存备课。",
+        "affects": "本机题目与教材检索",
+        "action": "从“导入资料”加入文件，或连接原工作区。"
+      }
+    ],
+    "network_requests": 0,
+    "scope": "本机组件加载、图标存在、目录可写与安装发现；不是模型能力、化学正确性或成品排版验收。报告不含本机路径、题目正文或模型配置。"
+  },
+  "screenshots": [
+    {
+      "file": "packaged-home.png",
+      "sha256": "315f479cc3d907f8063f15516e25b33b9f4d2b60801b85ef5f7b2903941c6d99"
+    },
+    {
+      "file": "packaged-library.png",
+      "sha256": "15906a648eafeb558fbea1c6d064ef811a4d4dbb110a4e0783517894d217a242"
+    },
+    {
+      "file": "packaged-paper.png",
+      "sha256": "1c175db0ef6764ff99bffb21277e7986b1bb3ee6a54d722a0a34780a0d66a3ff"
+    },
+    {
+      "file": "packaged-student.png",
+      "sha256": "7d5587ef3c4f60ad1ff5570db74152ff6e2317e0e4c24a7eca82b6c0a28aae4a"
+    },
+    {
+      "file": "packaged-preparation.png",
+      "sha256": "18892ccf6faee9b45bd950a0ea10019df46db174667f3a35adf57310931d2e28"
+    },
+    {
+      "file": "packaged-templates.png",
+      "sha256": "f406e52d0d38ea29aa44e95c7c01f6e24307299ab8e63378191112025e5468bd"
+    },
+    {
+      "file": "packaged-classroom.png",
+      "sha256": "74226334ad43a03be171cbafb1fc1c4ca4bdf21ca45ada73898f3d9c72167b8e"
+    },
+    {
+      "file": "packaged-mywork.png",
+      "sha256": "14ba2899666648a0593e5cfb6f2959f4379adc58c583d46452ed5db35502898f"
+    },
+    {
+      "file": "packaged-settings.png",
+      "sha256": "25632a735ef4f029c3b4386b9c029b3de6714dabc54937a824e37cd479ddcc9e"
+    },
+    {
+      "file": "work-current.png",
+      "sha256": "b995246b3a5102d058f567bf5cd8d162f01b85cffbec2655605fac2432e18d00"
+    },
+    {
+      "file": "work-archived.png",
+      "sha256": "75db55fdbd3f61fc00bc06b4894a2af99001a3db3ebe3cb98c57118a2bca366f"
+    },
+    {
+      "file": "work-trash.png",
+      "sha256": "eb2684f147a06bfe487ccf4a9c844dd65bc462124be44e3cb45e6eb989f3aecf"
+    },
+    {
+      "file": "work-original-search.png",
+      "sha256": "9eda1f3db9c73e7b2b20e9e671ba9713cbbe8f11cd66c7b948b058097eeb87e3"
+    },
+    {
+      "file": "work-compact.png",
+      "sha256": "d58656361114d7f5d7f92a50a75edc65af85f36ad4f02da8904a267c32d4de11"
+    },
+    {
+      "file": "backup-plan.png",
+      "sha256": "5863cae18d40d96ed8732d7b251b03450af0e486890d45c2b6e5512b9c80eb83"
+    },
+    {
+      "file": "backup-checked.png",
+      "sha256": "236522d23c880a476f62cb50dbfeb7552610f437d9e39719d5263f905a243a80"
+    },
+    {
+      "file": "backup-restored.png",
+      "sha256": "17eef6c2df2907f50c43ede367a8da9ed42c3ed1b39127e2a1ab03e4e5bc8b63"
+    },
+    {
+      "file": "backup-compact.png",
+      "sha256": "7a2a50e2570d74d68142e420c47a1cbcd0fa30308e030690d80bf67429c01aaf"
+    },
+    {
+      "file": "backup-opened.png",
+      "sha256": "e03faf21edafc7f8e6badecf7aa927ec44d79886fdbdba1b3b5caaf9215d1e4c"
+    },
+    {
+      "file": "backup-missing-image.png",
+      "sha256": "f21b37b42a08fc57aaf657e5e5d76d620535fb0ddca0999c7a8ebcf3a6e3496c"
+    },
+    {
+      "file": "home-current.png",
+      "sha256": "ae329c2ab5e2a3cb0d682026a35bc4dfc15603506ee7bc7ee91eaaa4a5a48b6f"
+    },
+    {
+      "file": "home-compact.png",
+      "sha256": "ea509089c61274df723e26c051a6acc10524948a68cc3514e9f11ef25060f2b2"
+    },
+    {
+      "file": "works-pinned-actions.png",
+      "sha256": "e7fdbb3d3a30e8b0c55149f84b5a055e1033d324e7f68bd2e22ae29a55408e45"
+    },
+    {
+      "file": "desk-page-home.png",
+      "sha256": "ae329c2ab5e2a3cb0d682026a35bc4dfc15603506ee7bc7ee91eaaa4a5a48b6f"
+    },
+    {
+      "file": "desk-page-library.png",
+      "sha256": "d406c82439f9c281ff932024018befb1c0352c6f052a45141ec37dfaecdf1a41"
+    },
+    {
+      "file": "desk-page-paper.png",
+      "sha256": "c7826e897b590af9eea33d5bd33ff561ab8c6a4dc643fd108f5bb9241183da1b"
+    },
+    {
+      "file": "desk-page-student.png",
+      "sha256": "86d9327c2a5c79e021f106cf877a37ccb1af9fd6f173c61c28ec9ad63918fcec"
+    },
+    {
+      "file": "desk-page-preparation.png",
+      "sha256": "feab8a6e164a54378b49af945a94be6b3c7d7217e63d22904858d675b4e41bac"
+    },
+    {
+      "file": "desk-page-templates.png",
+      "sha256": "1594deb8b36739e74aebccd5ef0528b81449915ae6a9aff32de05ca75d9c27ca"
+    },
+    {
+      "file": "desk-page-classroom.png",
+      "sha256": "993b0858fcc6a55c9a7baabc5b80e6786107533d89f044f5bc32440fc3dc9e29"
+    },
+    {
+      "file": "desk-page-mywork.png",
+      "sha256": "44db422375a38f2b24b27418143a72f358c3b590aeec8c725ea926875ad118ed"
+    },
+    {
+      "file": "preparation-fixed-actions.png",
+      "sha256": "835c76bc01ddc224d4f9dccf371ff7f0baa76c5a17762049dfe539da23769c2b"
+    },
+    {
+      "file": "preparation-materials.png",
+      "sha256": "d2c61148304389198fa49141ae9f1c7f5c52b4bed8b7739feb33fc909d364084"
+    },
+    {
+      "file": "chinese-confirmation.png",
+      "sha256": "833df344f6757e239cde6452c1ef5ead3184368449eb12e1339dc58613953554"
+    },
+    {
+      "file": "paper-renumbered-student.png",
+      "sha256": "d652e1d9f151e802bbd7f375c6627bb5bd961757924246d6f0226fe9d124e374"
+    },
+    {
+      "file": "paper-renumbered-teacher.png",
+      "sha256": "8d06267064a2f98a51aa583e47c938d9709827b5048a762595e54cdf34a03451"
+    }
+  ],
+  "output_files": [
+    {
+      "artifact_id": "candidate_json",
+      "filename": "candidate.json",
+      "size": 2868,
+      "sha256": "0d337e1e2650c22c9cc6d9f4e0b46f306e78213fb5b7d5f24f6f3e53ee596a5a"
+    },
+    {
+      "artifact_id": "deck_json",
+      "filename": "deck.json",
+      "size": 6298,
+      "sha256": "a22cabb0967394b1a859323b72b1998506592ac02d20930c0f7b70bd63252c5a"
+    },
+    {
+      "artifact_id": "pptx",
+      "filename": "lesson_presentation.pptx",
+      "size": 43775,
+      "sha256": "ee28aa29d4c3366e6d4a4b185f0445b2f3f615237ecb23dde14b9f4c628ee64a"
+    },
+    {
+      "artifact_id": "preview_montage",
+      "filename": "rendered_montage.png",
+      "size": 73135,
+      "sha256": "56b8c7ba481378fc219ffe7f6d96595ebc70a74d60cb803b606b368d8f6e56e2"
+    },
+    {
+      "artifact_id": "lesson_plan_docx",
+      "filename": "lesson_plan.docx",
+      "size": 37852,
+      "sha256": "7979354de9767d5d28a836b45730b10dbc619b8cf9d6f814b3646b6f9adbdebd"
+    },
+    {
+      "artifact_id": "qa_report",
+      "filename": "qa_report.json",
+      "size": 5777,
+      "sha256": "c08e9269ad547a10bac4b6f05fa46b764f1ec266b0944c95fb8a9fb30b5fac45"
+    }
+  ],
+  "uncaught_errors": [],
+  "scope": "Isolated native bundle navigation, settings, saved draft and production renderer DOCX/PPTX creation. Not live API, Office-PPTX visual parity, original library or classroom acceptance.",
+  "source_commit": "3fcc6a81d3225ca87eaaf8773627dc4c85a1574e",
+  "workflow_run": "34849013205",
+  "executable_sha256": "d59766fd6c8b819c92185dbbd63a273dbfa6fafc8616d617774b976f82de35cb",
+  "normal_native_start_and_close": true,
+  "detached_directory": true,
+  "cleared_python_and_workspace_environment": true,
+  "system_fonts_bundled": false
+}

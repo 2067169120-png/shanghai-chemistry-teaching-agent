@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.sh-chem.invalid/student_learning_v1/generation_content_provider_v1.json",
+  "title": "Student learning generation content provider v1",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "provider_contract",
+    "profile_id",
+    "cycle_index",
+    "diagnosis_sha256",
+    "plan_sha256",
+    "claim_scope",
+    "content_completeness_status",
+    "human_reviewed",
+    "official",
+    "knowledge_handout",
+    "training_tasks",
+    "training_answers",
+    "retest_day7",
+    "retest_day7_answers",
+    "retest_day14",
+    "retest_day14_answers",
+    "sources",
+    "rendered_documents",
+    "document_parity"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "student_learning_generation_content_provider_v1"
+    },
+    "provider_contract": {
+      "type": "object",
+      "required": [
+        "contract_version",
+        "provider_id",
+        "provider_mode",
+        "production_ready",
+        "fixture_only",
+        "generated_from",
+        "generator_receipt",
+        "root_external_reconciliation",
+        "document_style"
+      ],
+      "properties": {
+        "contract_version": {
+          "const": "student_learning_generation_content_provider_v1"
+        },
+        "provider_mode": {
+          "enum": ["production", "governed_contract_fixture"]
+        },
+        "production_ready": {"type": "boolean"},
+        "fixture_only": {"type": "boolean"},
+        "generated_from": {
+          "type": "object",
+          "required": [
+            "diagnosis_sha256",
+            "plan_sha256",
+            "anonymous_profile_only"
+          ]
+        },
+        "generator_receipt": {
+          "type": "object",
+          "required": ["provenance_status", "receipt_sha256", "receipt_path"],
+          "properties": {
+            "provenance_status": {"const": "self_reported"},
+            "receipt_sha256": {"pattern": "^[0-9a-f]{64}$"},
+            "receipt_path": {"type": "string", "minLength": 1}
+          }
+        },
+        "root_external_reconciliation": {
+          "type": "object",
+          "required": [
+            "record_type",
+            "status",
+            "attestation_sha256",
+            "root_scoped",
+            "reconciles_generator_receipt_sha256",
+            "attestation_path"
+          ],
+          "properties": {
+            "record_type": {"const": "root_external_reconciliation_attestation_v1"},
+            "status": {"const": "verified"},
+            "attestation_sha256": {"pattern": "^[0-9a-f]{64}$"},
+            "root_scoped": {"const": true},
+            "reconciles_generator_receipt_sha256": {"pattern": "^[0-9a-f]{64}$"},
+            "attestation_path": {"type": "string", "minLength": 1}
+          }
+        },
+        "document_style": {
+          "type": "object",
+          "required": [
+            "base_preset",
+            "named_override",
+            "page_size",
+            "body_font_east_asia",
+            "heading_font_east_asia",
+            "black_white_readable",
+            "real_numbering",
+            "fixed_dxa_tables",
+            "page_numbers",
+            "nonofficial_label",
+            "suggested_scoring_points_label"
+          ]
+        }
+      }
+    },
+    "profile_id": {"type": "string", "format": "uuid"},
+    "cycle_index": {"type": "integer", "minimum": 1},
+    "diagnosis_sha256": {"pattern": "^[0-9a-f]{64}$"},
+    "plan_sha256": {"pattern": "^[0-9a-f]{64}$"},
+    "human_reviewed": {"const": false},
+    "official": {"const": false},
+    "rendered_documents": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "path",
+          "sha256",
+          "media_type",
+          "semantic_role",
+          "content_payload_sha256",
+          "extracted_text_sha256",
+          "render_qa",
+          "sidecar_path",
+          "sidecar_sha256"
+        ]
+      }
+    },
+    "document_parity": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4
+    }
+  },
+  "additionalProperties": true
+}

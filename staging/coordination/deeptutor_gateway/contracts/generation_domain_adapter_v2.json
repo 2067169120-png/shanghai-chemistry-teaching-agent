@@ -1,0 +1,61 @@
+{
+  "adapter_contract_version": "shchem.generation_domain_adapter.v2",
+  "required_domain_version": "2.0.0",
+  "required_gateway_api_version": "generation-gateway/1.0.0",
+  "required_content_provider_version": "shchem-content-provider/2.0.0",
+  "transport": "in_process_public_python_api",
+  "public_modules_only": [
+    "integrations.shchem_generation_v2.gateway_api",
+    "integrations.shchem_generation_v2.content_provider"
+  ],
+  "capabilities": {
+    "candidate_staging": {
+      "calls": ["gateway_api.build_generation_job"],
+      "controller_gate_ownership": "generation_domain",
+      "controller_gate_phase": "after_candidate_and_governance_chain_exist",
+      "gateway_duplicate_preflight_allowed": false,
+      "empty_or_pre_candidate_input_allowed": false
+    },
+    "content_provider": {
+      "calls": [
+        "content_provider.export_content_bundle",
+        "content_provider.select_plan"
+      ],
+      "candidate_binding_source": "content_provider.DEFAULT_PAPER",
+      "candidate_revision_source": "content_provider.VERSION_ID",
+      "required_hierarchy_contract": "shchem.candidate_subject_hierarchy.v1",
+      "counts": "derived_from_current_candidate_subject_hierarchy_never_constants",
+      "required_fields": [
+        "printed_count",
+        "atomic_count",
+        "printed_question_ids",
+        "atomic_part_ids",
+        "atomic_to_printed"
+      ],
+      "registry_gate": "registered atomic IDs must exactly equal the current candidate atomic_part_ids in order; duplicates, missing, extra, retired sets, and printed IDs used as atomic IDs are rejected",
+      "claim_scope": "content_only_no_delivery_claim"
+    },
+    "figure_candidate": {
+      "calls": ["gateway_api.get_figure"],
+      "controller_gate_ownership": "generation_domain_when_downloaded"
+    },
+    "teacher_managed_delivery": {
+      "calls": ["gateway_api.get_candidate_zip"],
+      "required_record_type": "external_teacher_managed_delivery_attestation",
+      "final_archive_hash_bound": true,
+      "sidecar_outside_archive": true,
+      "required_registry_binding": "exact current candidate atomic ID set and derived atomic_count",
+      "missing_or_mismatched_sidecar": "fail_closed"
+    },
+    "external_publication": {
+      "allowed": false,
+      "official_claim_allowed": false,
+      "human_reviewed": false
+    }
+  },
+  "dynamic_probe": true,
+  "failure_behavior": "fail_closed",
+  "machine_only": true,
+  "human_reviewed": false,
+  "publication_allowed": false
+}

@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.sh-chem-db/integrations/tagging-workbench/tag-patch-request-v1.json",
+  "title": "Atomic-part candidate tag patch request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "node_type",
+    "node_id",
+    "paper_id",
+    "base_index_manifest_sha256",
+    "target_record_sha256",
+    "taxonomy_sha256",
+    "changes",
+    "reason",
+    "evidence_binding_ids"
+  ],
+  "properties": {
+    "node_type": {"const": "atomic_part"},
+    "node_id": {"$ref": "#/$defs/opaqueId"},
+    "paper_id": {"$ref": "#/$defs/opaqueId"},
+    "base_index_manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "target_record_sha256": {"$ref": "#/$defs/sha256"},
+    "taxonomy_sha256": {"$ref": "#/$defs/sha256"},
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4000,
+      "pattern": "^(?!\\s)(?![\\s\\S]*\\s$)[^\\u0000]+$"
+    },
+    "evidence_binding_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/opaqueId"}
+    },
+    "changes": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "item_type": {
+          "enum": [
+            "embedded_single_choice",
+            "embedded_multiple_choice",
+            "embedded_indeterminate_choice",
+            "short_fill",
+            "chemical_equation_or_notation",
+            "organic_structure_or_route",
+            "quantitative_calculation",
+            "reasoned_explanation",
+            "graph_read_draw_complete",
+            "experiment_operation_apparatus_plan",
+            "process_flow_condition_choice",
+            "comparison_or_open_response"
+          ]
+        },
+        "selection_rule": {
+          "enum": ["single", "multiple", "indeterminate", "not_applicable", "unknown"]
+        },
+        "primary_knowledge_K": {"$ref": "#/$defs/kId"},
+        "supporting_knowledge_K": {"$ref": "#/$defs/kIds"},
+        "ability_A": {"$ref": "#/$defs/aIds"},
+        "context_C": {"$ref": "#/$defs/cIds"},
+        "response_R": {"$ref": "#/$defs/rId"},
+        "representation_RP": {"$ref": "#/$defs/rpIds"},
+        "cognitive_prelabel": {
+          "oneOf": [{"enum": ["D1", "D2", "D3", "D4", "D5"]}, {"type": "null"}]
+        },
+        "difficulty_factors": {"$ref": "#/$defs/difficultyFactors"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["cognitive_prelabel"],
+            "properties": {"cognitive_prelabel": {"type": "string"}}
+          },
+          "then": {"required": ["difficulty_factors"]}
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "opaqueId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "kId": {"type": "string", "pattern": "^K[0-9][A-Za-z0-9_.-]*$"},
+    "aId": {"type": "string", "pattern": "^A[0-9][A-Za-z0-9_.-]*$"},
+    "cId": {"type": "string", "pattern": "^C[0-9][A-Za-z0-9_.-]*$"},
+    "rId": {"type": "string", "pattern": "^R[0-9][A-Za-z0-9_.-]*$"},
+    "rpId": {"type": "string", "pattern": "^RP[0-9][A-Za-z0-9_.-]*$"},
+    "kIds": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/kId"}
+    },
+    "aIds": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/aId"}
+    },
+    "cIds": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/cId"}
+    },
+    "rpIds": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/rpId"}
+    },
+    "factorValue": {
+      "anyOf": [
+        {"type": "number", "minimum": 0},
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^(?!\\s)(?![\\s\\S]*\\s$)[^\\u0000]+$",
+          "not": {"enum": ["unknown", "blocked_pending_review"]}
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["value"],
+          "properties": {"value": {"$ref": "#/$defs/factorValue"}}
+        }
+      ]
+    },
+    "difficultyFactors": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "information_transformations",
+        "reasoning_chain_steps",
+        "knowledge_module_span",
+        "representation_switches",
+        "calculation_load",
+        "experiment_load",
+        "openness",
+        "unfamiliarity",
+        "language_load",
+        "dependency_on_prior_parts"
+      ],
+      "properties": {
+        "information_transformations": {"$ref": "#/$defs/factorValue"},
+        "reasoning_chain_steps": {"$ref": "#/$defs/factorValue"},
+        "knowledge_module_span": {"$ref": "#/$defs/factorValue"},
+        "representation_switches": {"$ref": "#/$defs/factorValue"},
+        "calculation_load": {"$ref": "#/$defs/factorValue"},
+        "experiment_load": {"$ref": "#/$defs/factorValue"},
+        "openness": {"$ref": "#/$defs/factorValue"},
+        "unfamiliarity": {"$ref": "#/$defs/factorValue"},
+        "language_load": {"$ref": "#/$defs/factorValue"},
+        "dependency_on_prior_parts": {"$ref": "#/$defs/factorValue"}
+      }
+    }
+  }
+}

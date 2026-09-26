@@ -1,0 +1,732 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.shchem.invalid/schemas/one_time_model_api_v1.schema.json",
+  "title": "一次配置模型 API 与结构化候选合同 v1",
+  "oneOf": [
+    {"$ref": "#/$defs/configuration"},
+    {"$ref": "#/$defs/requestPreview"},
+    {"$ref": "#/$defs/usageHint"},
+    {"$ref": "#/$defs/candidateOutput"}
+  ],
+  "$defs": {
+    "modelId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,239}$",
+      "not": {"pattern": "(?:\\.\\.|//|[/:]$)"}
+    },
+    "capabilityEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declared", "catalog", "probed", "unknown"],
+      "properties": {
+        "declared": {"type": "array", "uniqueItems": true, "items": {"enum": ["text", "vision", "structured_output"]}},
+        "catalog": {"type": "array", "uniqueItems": true, "items": {"enum": ["text", "vision", "structured_output"]}},
+        "probed": {"type": "array", "uniqueItems": true, "items": {"enum": ["text", "structured_output"]}},
+        "unknown": {"type": "array", "uniqueItems": true, "items": {"enum": ["text", "vision", "structured_output"]}}
+      }
+    },
+    "declaredRouteCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_id", "capabilities"],
+      "properties": {
+        "model_id": {"anyOf": [{"$ref": "#/$defs/modelId"}, {"type": "null"}]},
+        "capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"enum": ["text", "vision", "structured_output"]}
+        }
+      }
+    },
+    "route": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ui_label_zh",
+        "model_id",
+        "enabled",
+        "disabled_reason_zh",
+        "required_capabilities",
+        "declared_capabilities",
+        "effective_capabilities",
+        "capability_evidence",
+        "credential_ref"
+      ],
+      "properties": {
+        "ui_label_zh": {"type": "string", "minLength": 1},
+        "model_id": {"anyOf": [{"$ref": "#/$defs/modelId"}, {"type": "null"}]},
+        "enabled": {"type": "boolean"},
+        "disabled_reason_zh": {"type": ["string", "null"]},
+        "required_capabilities": {
+          "type": "array",
+          "minItems": 2,
+          "items": {"enum": ["text", "vision", "structured_output"]}
+        },
+        "declared_capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"enum": ["text", "vision", "structured_output"]}
+        },
+        "effective_capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"enum": ["text", "vision", "structured_output"]}
+        },
+        "capability_evidence": {"$ref": "#/$defs/capabilityEvidence"},
+        "credential_ref": {
+          "type": "string",
+          "pattern": "^ShanghaiChemWorkbench/model-provider/[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
+        }
+      }
+    },
+    "usageHint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "contract_kind", "usage", "estimated_cost", "message_zh"],
+      "properties": {
+        "schema_version": {"const": "shchem.one-time-model-api.v1"},
+        "contract_kind": {"const": "usage_cost_hint"},
+        "usage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["input_tokens", "output_tokens", "total_tokens"],
+          "properties": {
+            "input_tokens": {"type": ["integer", "null"], "minimum": 0},
+            "output_tokens": {"type": ["integer", "null"], "minimum": 0},
+            "total_tokens": {"type": ["integer", "null"], "minimum": 0}
+          }
+        },
+        "estimated_cost": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["amount", "currency", "status"],
+          "properties": {
+            "amount": {"type": "null"},
+            "currency": {"type": "null"},
+            "status": {"const": "not_estimated_without_pinned_price"}
+          }
+        },
+        "message_zh": {"type": "string", "minLength": 1}
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "contract_kind",
+        "profile_id",
+        "profile_revision",
+        "provider_kind",
+        "provider_id",
+        "provider_display_name",
+        "base_url_policy",
+        "resolved_base_url",
+        "api_style",
+        "local_endpoint_policy",
+        "credential_ref",
+        "credential_state",
+        "probe_model_id",
+        "model_status",
+        "routes",
+        "allowed_data_classes",
+        "image_egress",
+        "connection_test",
+        "capability_probe",
+        "usage_cost_hint",
+        "secret_storage",
+        "offline_workbench_available",
+        "production_invocation_enabled",
+        "teacher_message_zh",
+        "configuration_digest"
+      ],
+      "properties": {
+        "schema_version": {"const": "shchem.one-time-model-api.v1"},
+        "contract_kind": {"const": "one_time_api_configuration"},
+        "profile_id": {"type": "string", "minLength": 1},
+        "profile_revision": {"type": "string", "pattern": "^rev_[0-9a-f]{32}$"},
+        "provider_kind": {"enum": ["preset", "openai_compatible"]},
+        "provider_id": {"enum": ["openai", "deepseek", "openai_compatible"]},
+        "provider_display_name": {"type": "string", "minLength": 1, "maxLength": 80},
+        "base_url_policy": {
+          "enum": [
+            "openai_official_https_v1",
+            "deepseek_official_https_v1",
+            "openai_compatible_public_https_v1",
+            "openai_compatible_loopback_v1"
+          ]
+        },
+        "resolved_base_url": {"type": "string", "format": "uri"},
+        "api_style": {"enum": ["responses", "chat_completions"]},
+        "local_endpoint_policy": {"enum": ["deny", "allow_loopback_http"]},
+        "credential_ref": {
+          "type": "string",
+          "pattern": "^ShanghaiChemWorkbench/model-provider/[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
+        },
+        "credential_state": {"enum": ["configured", "not_configured"]},
+        "probe_model_id": {"$ref": "#/$defs/modelId"},
+        "model_status": {"enum": ["catalog_model", "unverified_custom_model"]},
+        "routes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "student_analysis",
+            "question_classification",
+            "theme_question_generation",
+            "visual_understanding"
+          ],
+          "properties": {
+            "student_analysis": {"$ref": "#/$defs/route"},
+            "question_classification": {"$ref": "#/$defs/route"},
+            "theme_question_generation": {"$ref": "#/$defs/route"},
+            "visual_understanding": {"$ref": "#/$defs/route"}
+          }
+        },
+        "allowed_data_classes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "contains": {"const": "synthetic_only"},
+          "items": {
+            "enum": [
+              "synthetic_only",
+              "question_text_redacted",
+              "question_image_redacted",
+              "deidentified_student_text"
+            ]
+          }
+        },
+        "image_egress": {"enum": ["deny", "redacted_question_only"]},
+        "connection_test": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "connection_state",
+            "checked_at",
+            "error_code",
+            "model_invoked",
+            "probe_run_id",
+            "receipt_id",
+            "receipt_sha256",
+            "latency_ms",
+            "usage"
+          ],
+          "properties": {
+            "status": {
+              "enum": ["never", "ready_not_invoked", "succeeded", "failed", "cancelled", "stale"]
+            },
+            "connection_state": {
+              "enum": ["not_started", "connected", "failed", "cancelled", "stale"]
+            },
+            "checked_at": {"type": ["string", "null"]},
+            "error_code": {"type": ["string", "null"]},
+            "model_invoked": {"type": "boolean"},
+            "probe_run_id": {"type": ["string", "null"]},
+            "receipt_id": {"type": ["string", "null"]},
+            "receipt_sha256": {
+              "anyOf": [
+                {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                {"type": "null"}
+              ]
+            },
+            "latency_ms": {"type": ["integer", "null"], "minimum": 0},
+            "usage": {
+              "anyOf": [
+                {"$ref": "#/$defs/usageHint/properties/usage"},
+                {"type": "null"}
+              ]
+            }
+          }
+        },
+        "capability_probe": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["declared_policy_only", "evidence_by_route", "observed", "probe_binding", "message_zh"],
+          "properties": {
+            "declared_policy_only": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["student_analysis", "question_classification", "theme_question_generation", "visual_understanding"],
+              "properties": {
+                "student_analysis": {"$ref": "#/$defs/declaredRouteCapability"},
+                "question_classification": {"$ref": "#/$defs/declaredRouteCapability"},
+                "theme_question_generation": {"$ref": "#/$defs/declaredRouteCapability"},
+                "visual_understanding": {"$ref": "#/$defs/declaredRouteCapability"}
+              }
+            },
+            "evidence_by_route": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["student_analysis", "question_classification", "theme_question_generation", "visual_understanding"],
+              "properties": {
+                "student_analysis": {"$ref": "#/$defs/capabilityEvidence"},
+                "question_classification": {"$ref": "#/$defs/capabilityEvidence"},
+                "theme_question_generation": {"$ref": "#/$defs/capabilityEvidence"},
+                "visual_understanding": {"$ref": "#/$defs/capabilityEvidence"}
+              }
+            },
+            "observed": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["connectivity", "minimal_structured_output", "vision", "route_task_quality"],
+              "properties": {
+                "connectivity": {"enum": ["not_observed", "succeeded_on_probe_model"]},
+                "minimal_structured_output": {"enum": ["not_observed", "succeeded_on_probe_model"]},
+                "vision": {"const": "not_tested"},
+                "route_task_quality": {"const": "not_tested"}
+              }
+            },
+            "probe_binding": {
+              "anyOf": [
+                {"type": "null"},
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["profile_id", "profile_revision", "provider_id", "model_id", "probe_run_id", "receipt_id", "receipt_sha256"],
+                  "properties": {
+                    "profile_id": {"type": "string", "minLength": 1},
+                    "profile_revision": {"type": "string", "pattern": "^rev_[0-9a-f]{32}$"},
+                    "provider_id": {"enum": ["openai", "deepseek", "openai_compatible"]},
+                    "model_id": {"$ref": "#/$defs/modelId"},
+                    "probe_run_id": {"type": "string", "pattern": "^probe_[0-9a-f]{32}$"},
+                    "receipt_id": {"type": "string", "pattern": "^probe-receipt-[0-9a-f]{32}$"},
+                    "receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+                  }
+                }
+              ]
+            },
+            "message_zh": {"type": "string", "minLength": 1}
+          }
+        },
+        "usage_cost_hint": {"$ref": "#/$defs/usageHint"},
+        "secret_storage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "current_backend",
+            "allowed_backend_family",
+            "browser_storage",
+            "project_file_storage",
+            "url_storage",
+            "log_storage",
+            "export_storage",
+            "secret_values_exposed"
+          ],
+          "properties": {
+            "current_backend": {"const": "windows_credential_manager_current_user"},
+            "allowed_backend_family": {
+              "const": ["windows_credential_manager", "dpapi_protected_store"]
+            },
+            "browser_storage": {"const": false},
+            "project_file_storage": {"const": false},
+            "url_storage": {"const": false},
+            "log_storage": {"const": false},
+            "export_storage": {"const": false},
+            "secret_values_exposed": {"const": false}
+          }
+        },
+        "offline_workbench_available": {"const": true},
+        "production_invocation_enabled": {"const": false},
+        "teacher_message_zh": {"type": "string", "minLength": 1},
+        "configuration_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"provider_id": {"const": "openai"}}},
+          "then": {
+            "properties": {
+              "provider_kind": {"const": "preset"},
+              "base_url_policy": {"const": "openai_official_https_v1"},
+              "resolved_base_url": {"const": "https://api.openai.com/v1"},
+              "api_style": {"const": "responses"},
+              "local_endpoint_policy": {"const": "deny"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"provider_id": {"const": "deepseek"}}},
+          "then": {
+            "properties": {
+              "provider_kind": {"const": "preset"},
+              "base_url_policy": {"const": "deepseek_official_https_v1"},
+              "resolved_base_url": {"const": "https://api.deepseek.com"},
+              "api_style": {"const": "chat_completions"},
+              "local_endpoint_policy": {"const": "deny"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"provider_id": {"const": "openai_compatible"}}},
+          "then": {
+            "properties": {
+              "provider_kind": {"const": "openai_compatible"},
+              "base_url_policy": {"enum": ["openai_compatible_public_https_v1", "openai_compatible_loopback_v1"]}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"base_url_policy": {"const": "openai_compatible_public_https_v1"}}},
+          "then": {
+            "properties": {
+              "resolved_base_url": {"type": "string", "pattern": "^https://(?!(?:localhost(?::|/|$)|127\\.|10\\.|192\\.168\\.|169\\.254\\.|172\\.(?:1[6-9]|2[0-9]|3[01])\\.|\\[::1\\](?::|/|$)))(?:[A-Za-z0-9.-]+|\\[[0-9A-Fa-f:]+\\])(?::[0-9]+)?(?:/[A-Za-z0-9._~-]+)*$"},
+              "local_endpoint_policy": {"const": "deny"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"base_url_policy": {"const": "openai_compatible_loopback_v1"}}},
+          "then": {
+            "properties": {
+              "resolved_base_url": {"type": "string", "pattern": "^https?://(?:localhost|127\\.0\\.0\\.1|\\[::1\\])(?::[0-9]+)?(?:/[A-Za-z0-9._~-]+)*$"},
+              "local_endpoint_policy": {"const": "allow_loopback_http"}
+            }
+          }
+        }
+      ]
+    },
+    "requestPreview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "contract_kind",
+        "request_id",
+        "request_kind",
+        "task_route",
+        "task_route_label_zh",
+        "provider_id",
+        "base_url_policy",
+        "model_id",
+        "method",
+        "resolved_endpoint",
+        "request_body_sha256",
+        "request_body_bytes",
+        "credential_ref",
+        "authorization_value_exposed",
+        "request_body_exposed",
+        "data_classes",
+        "output_schema_id",
+        "requires_teacher_confirmation",
+        "execution_allowed",
+        "candidate_only",
+        "offline_workbench_available"
+      ],
+      "properties": {
+        "schema_version": {"const": "shchem.one-time-model-api.v1"},
+        "contract_kind": {"const": "prepared_provider_request_preview"},
+        "request_id": {"type": "string", "pattern": "^(probe|request)_[0-9a-f]{32}$"},
+        "request_kind": {"enum": ["synthetic_connection_test", "structured_candidate"]},
+        "task_route": {
+          "enum": [
+            "connection_test",
+            "student_analysis",
+            "question_classification",
+            "theme_question_generation",
+            "visual_understanding"
+          ]
+        },
+        "task_route_label_zh": {"type": "string", "minLength": 1},
+        "provider_id": {"enum": ["openai", "deepseek", "openai_compatible"]},
+        "base_url_policy": {
+          "enum": [
+            "openai_official_https_v1",
+            "deepseek_official_https_v1",
+            "openai_compatible_public_https_v1",
+            "openai_compatible_loopback_v1"
+          ]
+        },
+        "model_id": {"$ref": "#/$defs/modelId"},
+        "method": {"const": "POST"},
+        "resolved_endpoint": {"type": "string", "format": "uri"},
+        "request_body_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "request_body_bytes": {"type": "integer", "minimum": 1},
+        "credential_ref": {"type": "string", "minLength": 1},
+        "authorization_value_exposed": {"const": false},
+        "request_body_exposed": {"const": false},
+        "data_classes": {"type": "array", "minItems": 1, "uniqueItems": true},
+        "output_schema_id": {"type": "string", "minLength": 1},
+        "requires_teacher_confirmation": {"const": true},
+        "execution_allowed": {"type": "boolean"},
+        "candidate_only": {"type": "boolean"},
+        "offline_workbench_available": {"const": true}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"provider_id": {"const": "openai"}}},
+          "then": {
+            "properties": {
+              "base_url_policy": {"const": "openai_official_https_v1"},
+              "resolved_endpoint": {"const": "https://api.openai.com/v1/responses"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"provider_id": {"const": "deepseek"}}},
+          "then": {
+            "properties": {
+              "base_url_policy": {"const": "deepseek_official_https_v1"},
+              "resolved_endpoint": {"const": "https://api.deepseek.com/chat/completions"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"base_url_policy": {"const": "openai_compatible_public_https_v1"}}},
+          "then": {
+            "properties": {
+              "provider_id": {"const": "openai_compatible"},
+              "resolved_endpoint": {"type": "string", "pattern": "^https://(?!(?:localhost(?::|/|$)|127\\.|10\\.|192\\.168\\.|169\\.254\\.|172\\.(?:1[6-9]|2[0-9]|3[01])\\.|\\[::1\\](?::|/|$)))(?:[A-Za-z0-9.-]+|\\[[0-9A-Fa-f:]+\\])(?::[0-9]+)?(?:/[A-Za-z0-9._~-]+)*/(?:responses|chat/completions)$"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"base_url_policy": {"const": "openai_compatible_loopback_v1"}}},
+          "then": {
+            "properties": {
+              "provider_id": {"const": "openai_compatible"},
+              "resolved_endpoint": {"type": "string", "pattern": "^https?://(?:localhost|127\\.0\\.0\\.1|\\[::1\\])(?::[0-9]+)?(?:/[A-Za-z0-9._~-]+)*/(?:responses|chat/completions)$"}
+            }
+          }
+        }
+      ]
+    },
+    "authorityBoundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "may_change_answer_authority",
+        "may_change_source_provenance",
+        "may_write_central_registry",
+        "may_unlock_usage_eligibility",
+        "may_claim_human_review"
+      ],
+      "properties": {
+        "may_change_answer_authority": {"const": false},
+        "may_change_source_provenance": {"const": false},
+        "may_write_central_registry": {"const": false},
+        "may_unlock_usage_eligibility": {"const": false},
+        "may_claim_human_review": {"const": false}
+      }
+    },
+    "stringArray": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1}
+    },
+    "studentCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observations_zh",
+        "error_cause_candidates",
+        "counterevidence_zh",
+        "recommendation_candidates"
+      ],
+      "properties": {
+        "observations_zh": {
+          "allOf": [{"$ref": "#/$defs/stringArray"}, {"minItems": 1}]
+        },
+        "error_cause_candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["label_zh", "evidence_refs", "counterevidence_refs", "confidence"],
+            "properties": {
+              "label_zh": {"type": "string", "minLength": 1},
+              "evidence_refs": {
+                "allOf": [{"$ref": "#/$defs/stringArray"}, {"minItems": 1}]
+              },
+              "counterevidence_refs": {"$ref": "#/$defs/stringArray"},
+              "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+            }
+          }
+        },
+        "counterevidence_zh": {"$ref": "#/$defs/stringArray"},
+        "recommendation_candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title_zh", "reason_zh", "theme_or_dependency_closure_ref"],
+            "properties": {
+              "title_zh": {"type": "string", "minLength": 1},
+              "reason_zh": {"type": "string", "minLength": 1},
+              "theme_or_dependency_closure_ref": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    },
+    "classificationCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["atomic_part_id", "labels", "rationale_zh"],
+      "properties": {
+        "atomic_part_id": {"type": "string", "minLength": 1},
+        "labels": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "item_type",
+            "primary_knowledge_K",
+            "supporting_knowledge_K",
+            "ability_A",
+            "context_C",
+            "response_R",
+            "representation_RP",
+            "cognitive_prelabel"
+          ],
+          "properties": {
+            "item_type": {"type": ["string", "null"]},
+            "primary_knowledge_K": {"$ref": "#/$defs/stringArray"},
+            "supporting_knowledge_K": {"$ref": "#/$defs/stringArray"},
+            "ability_A": {"$ref": "#/$defs/stringArray"},
+            "context_C": {"$ref": "#/$defs/stringArray"},
+            "response_R": {"$ref": "#/$defs/stringArray"},
+            "representation_RP": {"$ref": "#/$defs/stringArray"},
+            "cognitive_prelabel": {"type": ["string", "null"]}
+          }
+        },
+        "rationale_zh": {
+          "allOf": [{"$ref": "#/$defs/stringArray"}, {"minItems": 1}]
+        }
+      }
+    },
+    "generationCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["top_level_unit", "standalone_choice_section_allowed", "themes"],
+      "properties": {
+        "top_level_unit": {"const": "theme_big_question"},
+        "standalone_choice_section_allowed": {"const": false},
+        "themes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["theme_title_zh", "shared_material_candidate_zh", "printed_questions"],
+            "properties": {
+              "theme_title_zh": {"type": "string", "minLength": 1},
+              "shared_material_candidate_zh": {"type": "string", "minLength": 1},
+              "printed_questions": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["printed_question_id", "atomic_parts"],
+                  "properties": {
+                    "printed_question_id": {"type": "string", "minLength": 1},
+                    "atomic_parts": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "atomic_part_id",
+                          "item_type",
+                          "prompt_candidate_zh",
+                          "suggested_answer_candidate_zh",
+                          "suggested_score"
+                        ],
+                        "properties": {
+                          "atomic_part_id": {"type": "string", "minLength": 1},
+                          "item_type": {"type": "string", "minLength": 1},
+                          "prompt_candidate_zh": {"type": "string", "minLength": 1},
+                          "suggested_answer_candidate_zh": {"type": "string", "minLength": 1},
+                          "suggested_score": {"type": "number", "exclusiveMinimum": 0}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "visualCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["visual_objects", "page_level_notes_zh"],
+      "properties": {
+        "visual_objects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "visual_type",
+              "description_zh",
+              "chemistry_objects_zh",
+              "uncertainties_zh",
+              "answer_content_detected"
+            ],
+            "properties": {
+              "visual_type": {"type": "string", "minLength": 1},
+              "description_zh": {"type": "string", "minLength": 1},
+              "chemistry_objects_zh": {"$ref": "#/$defs/stringArray"},
+              "uncertainties_zh": {"$ref": "#/$defs/stringArray"},
+              "answer_content_detected": {"type": "boolean"}
+            }
+          }
+        },
+        "page_level_notes_zh": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "candidateOutput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "candidate_status",
+        "task_route",
+        "source_snapshot_id",
+        "candidate",
+        "evidence_refs",
+        "uncertainties_zh",
+        "requires_teacher_review",
+        "authority_boundary"
+      ],
+      "properties": {
+        "schema_version": {"const": "shchem.model-candidate-output.v1"},
+        "candidate_status": {"const": "structured_candidate_only"},
+        "task_route": {
+          "enum": [
+            "student_analysis",
+            "question_classification",
+            "theme_question_generation",
+            "visual_understanding"
+          ]
+        },
+        "source_snapshot_id": {"type": "string", "minLength": 1},
+        "candidate": {"type": "object"},
+        "evidence_refs": {"type": "array", "items": {"type": "string"}},
+        "uncertainties_zh": {"type": "array", "items": {"type": "string"}},
+        "requires_teacher_review": {"const": true},
+        "authority_boundary": {"$ref": "#/$defs/authorityBoundary"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"task_route": {"const": "student_analysis"}}},
+          "then": {"properties": {"candidate": {"$ref": "#/$defs/studentCandidate"}}}
+        },
+        {
+          "if": {"properties": {"task_route": {"const": "question_classification"}}},
+          "then": {"properties": {"candidate": {"$ref": "#/$defs/classificationCandidate"}}}
+        },
+        {
+          "if": {"properties": {"task_route": {"const": "theme_question_generation"}}},
+          "then": {"properties": {"candidate": {"$ref": "#/$defs/generationCandidate"}}}
+        },
+        {
+          "if": {"properties": {"task_route": {"const": "visual_understanding"}}},
+          "then": {"properties": {"candidate": {"$ref": "#/$defs/visualCandidate"}}}
+        }
+      ]
+    }
+  }
+}
