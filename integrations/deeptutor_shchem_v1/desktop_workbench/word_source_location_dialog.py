@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import threading
+
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
@@ -25,9 +27,9 @@ def _label(text=""):
 
 
 class WordSourceLocationDialog(QDialog):
-    """Immutable source selection; stale image callbacks never change the view."""
+    """Source-bound viewing and cancellable native selection without stale UI updates."""
 
-    def __init__(self, load_locations, load_image, parent=None, *, tasks=None):
+    def __init__(self, load_locations, load_image, parent=None, *, tasks=None, select_native=None):
         super().__init__(parent)
         self.setObjectName("WordSourceLocationDialog")
         self.setWindowTitle("核对公式与对象的原文位置")
@@ -35,6 +37,19 @@ class WordSourceLocationDialog(QDialog):
         self.resize(1020, 790)
         self._load_locations = load_locations
         self._load_image = load_image
+        self._select_native = select_native
+        self._native_request = None
+        self._native_cancel_events = set()
+        # QObject destruction need not go through QDialog.done(). This closure
+        # owns only Python events, so it remains safe after the QWidget is gone.
+        native_cancel_events = self._native_cancel_events
+
+        def cancel_on_destroy(*_args):
+            for event in tuple(native_cancel_events):
+                event.set()
+            native_cancel_events.clear()
+
+        self.destroyed.connect(cancel_on_destroy)
         self._closed = False
         self._epoch = 0
         self._jobs = {}
@@ -96,7 +111,19 @@ class WordSourceLocationDialog(QDialog):
         detail.addWidget(self.position)
         self.notices = _label()
         self.notices.setObjectName("LocationNotice")
+        self.notices.hide()
         detail.addWidget(self.notices)
+        self.native_button = QPushButton("在 Word 中选中")
+        self.native_button.setEnabled(False)
+        self.native_button.clicked.connect(self._begin_native_selection)
+        detail.addWidget(self.native_button)
+        self.cancel_native_button = QPushButton("取消定位")
+        self.cancel_native_button.clicked.connect(self._cancel_native_selection)
+        self.cancel_native_button.hide()
+        detail.addWidget(self.cancel_native_button)
+        self.native_status = _label("先选择一处正文图片或原生公式。")
+        self.native_status.setAccessibleName("Word 选中状态")
+        detail.addWidget(self.native_status)
         detail.addWidget(_label("所在段落 / 单元格原文"))
         self.context = QPlainTextEdit()
         self.context.setReadOnly(True)
@@ -185,6 +212,7 @@ class WordSourceLocationDialog(QDialog):
         self.search.textChanged.connect(self._filter)
         self.location_list.currentItemChanged.connect(self._selected)
         self.asset_combo.currentIndexChanged.connect(self._asset_selected)
+        self._update_native_controls()
         QTimer.singleShot(0, self._begin)
 
     def _submit(self, operation, success, failure):
@@ -207,6 +235,7 @@ class WordSourceLocationDialog(QDialog):
                 self._jobs[token] = task
         except (RuntimeError, TypeError):
             done("本地定位暂时无法启动，请重新打开。", True)
+        return token
 
     def _begin(self):
         if not self._closed:
@@ -268,8 +297,10 @@ class WordSourceLocationDialog(QDialog):
             self._selected(None)
 
     def _selected(self, item, *_args):
+        self._stop_native_selection()
         self._epoch += 1
         self._current = item.data(Qt.ItemDataRole.UserRole) if item else None
+        self._update_native_controls()
         self._pixmap = None
         self.zoom_button.setEnabled(False)
         self.copy_button.setEnabled(bool(item))
@@ -281,12 +312,14 @@ class WordSourceLocationDialog(QDialog):
             self.position.setText("没有匹配的对象")
             self.context.clear()
             self.notices.clear()
+            self.notices.hide()
             self.technical.clear()
         else:
             loc = self._current
             self.position.setText(loc["position_text"])
             self.context.setPlainText(loc["context_text"])
             self.notices.setText("\n".join(loc["notices"]))
+            self.notices.setVisible(bool(loc["notices"]))
             self.technical.setPlainText(
                 loc["xml_locator"] + "\n来源 SHA-256：" + str(self._payload.get("source_sha256", ""))
             )
@@ -301,6 +334,100 @@ class WordSourceLocationDialog(QDialog):
                 "本对象没有可独立读取的原图。\n请按上方位置对照原 Word。"
                 if item else "尚未选择可定位的对象。"
             )
+
+    def _native_availability(self):
+        if not callable(self._select_native):
+            return False, "当前入口无法直接在 Word 中选中，可复制位置对照原文。"
+        location = self._current
+        if not location:
+            return False, "先选择一处正文图片或原生公式。"
+        if location.get("kind") not in {"image", "omml"}:
+            return False, "此类对象暂不能在 Word 中直接选中，可按上方位置核对。"
+        states = location.get("source_states")
+        if not isinstance(states, list):
+            return False, "对象的显示状态尚未核实，暂不能直接选中。"
+        if states:
+            return False, "此对象的隐藏、修订或兼容状态需要核对，暂不能直接选中。"
+        return True, "将以只读方式打开原件，并核对所选对象。"
+
+    def _update_native_controls(self, message=None):
+        pending = self._native_request is not None
+        available, hint = self._native_availability()
+        self.search.setEnabled(not pending and not self._closed)
+        self.location_list.setEnabled(not pending and not self._closed)
+        self.native_button.setEnabled(available and not pending and not self._closed)
+        self.cancel_native_button.setVisible(pending)
+        self.cancel_native_button.setEnabled(pending and not self._closed)
+        self.native_status.setText(message or (
+            "正在 Word 中定位所选对象…可取消。" if pending else hint
+        ))
+
+    def _stop_native_selection(self):
+        request = self._native_request
+        if request is None:
+            return False
+        request["cancelled"].set()
+        self._native_cancel_events.discard(request["cancelled"])
+        self._native_request = None
+        task_id = self._jobs.pop(request["task_token"], None)
+        if task_id is not None:
+            self.tasks.cancel(task_id)
+        return True
+
+    def _cancel_native_selection(self):
+        if self._stop_native_selection():
+            self._update_native_controls("已请求取消。Word 退出前可能仍占用原件；已打开的窗口需手动关闭。")
+
+    def _begin_native_selection(self):
+        if self._closed or self._native_request is not None or not self._native_availability()[0]:
+            return
+        # Snapshot every worker input on the UI thread. Neither the operation
+        # nor the callback receives a QWidget or consults mutable Qt selection.
+        location_id = self._current["location_id"]
+        select_native = self._select_native
+        cancelled = threading.Event()
+        request = {"cancelled": cancelled, "location_id": location_id, "task_token": None}
+        self._native_cancel_events.add(cancelled)
+        self._native_request = request
+        self._update_native_controls()
+
+        def reveal_cancel():
+            if not self._closed and isValid(self) and self._native_request is request:
+                # At the minimum height the details scroll; cancellation must
+                # come into view as soon as the operation starts.
+                self.detail_scroll.ensureWidgetVisible(self.cancel_native_button, 0, 0)
+                self.detail_scroll.ensureWidgetVisible(self.native_status, 0, 0)
+
+        QTimer.singleShot(0, reveal_cancel)
+
+        def operation():
+            if cancelled.is_set():
+                return {"status": "cancelled"}
+            return select_native(location_id, cancelled)
+
+        def finish(message):
+            if (self._native_request is not request or cancelled.is_set()
+                    or (self._current or {}).get("location_id") != location_id):
+                return
+            self._native_cancel_events.discard(cancelled)
+            self._native_request = None
+            self._update_native_controls(message)
+
+        def failed(message):
+            detail = message.strip() if isinstance(message, str) else ""
+            finish("未能确认在 Word 中选中此对象。" + (detail or "请核对原文件后重试。"))
+
+        def ready(result):
+            if (isinstance(result, dict) and result.get("status") == "selected"
+                    and result.get("selection_verified") is True
+                    and result.get("source_unchanged") is True):
+                finish("原件已只读打开，并已在 Word 中选中此对象。")
+            else:
+                failed(result.get("message_zh") if isinstance(result, dict) else None)
+
+        token = self._submit(operation, ready, failed)
+        if self._native_request is request:
+            request["task_token"] = token
 
     def _asset_selected(self, *_args):
         self._epoch += 1
@@ -376,6 +503,7 @@ class WordSourceLocationDialog(QDialog):
 
     def done(self, result):
         self._closed = True
+        self._stop_native_selection()
         self._epoch += 1
         for task_id in tuple(self._jobs.values()):
             if task_id is not None:

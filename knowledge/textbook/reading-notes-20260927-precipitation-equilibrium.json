@@ -1,0 +1,593 @@
+{
+  "schema_version": "shchem.textbook-page-reading-notes.v1",
+  "purpose": "选必一3.4 PDF81—86原页研读候选；主代理逐页查看并复核PKG-070关联原文、8个媒体引用与独立演算。保留温度、浓度近似、异源参数及未读公式限制；未人审，不代表全书蒸馏完成。",
+  "human_reviewed": false,
+  "candidate_only": true,
+  "original_source_redistribution": false,
+  "review_method": "page_images_read_by_model",
+  "source": {
+    "volume_id": "TB-E1",
+    "title": "普通高中教科书 化学 选择性必修1 化学反应原理",
+    "sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+    "pdf_pages_viewed": [
+      81,
+      82,
+      83,
+      84,
+      85,
+      86
+    ],
+    "printed_pages_viewed": [
+      75,
+      76,
+      77,
+      78,
+      79,
+      80
+    ],
+    "toc_pdf_pages_viewed": [],
+    "linked_pdf_pages": [
+      81,
+      82,
+      83,
+      84,
+      85,
+      86
+    ]
+  },
+  "notes": [
+    {
+      "id": "READ-TB-E1-20260927-PREC-01",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.4",
+      "title": "常数的表达式先保留计量系数",
+      "pdf_pages": [
+        81
+      ],
+      "printed_pages": [
+        75
+      ],
+      "source_anchors": [
+        "表3.4",
+        "资料库溶度积常数"
+      ],
+      "summary": "教材75页以AgCl说明动态平衡，并明确纯固体不列入Ksp。推广到Mg(OH)₂时，自由Mg²⁺与OH⁻按1∶2产生，在纯水近似中得到4s³；不能把1∶1盐的平方根公式直接移用。",
+      "classroom_check": "用表3.4的25℃Mg(OH)₂数值独算s及pH，列出水电离和活度近似。",
+      "lecture_package_id": "PKG-070",
+      "lecture_block_indices": [
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        172,
+        173
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-070/第08讲 沉淀溶解平衡（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "0a63621f88178f44c966ea55c3efd88f5c96233f5d27e569ab4b75294ac06340",
+      "source_preview_revision": "5a815aa5d621d615c48f7e199d470c17308fda7525f91bda4f4420f7319e30db",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 120,
+          "end": 128,
+          "start_xml_locator": "word/document.xml#/w:body/*[127]",
+          "end_xml_locator": "word/document.xml#/w:body/*[135]"
+        },
+        {
+          "start": 172,
+          "end": 173,
+          "start_xml_locator": "word/document.xml#/w:body/*[179]",
+          "end_xml_locator": "word/document.xml#/w:body/*[180]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.4",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          81
+        ],
+        "printed_pages": [
+          75
+        ],
+        "anchors": [
+          "表3.4",
+          "资料库溶度积常数"
+        ],
+        "support_role": "direct_page_reading_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "数据温度据表3.4；不恢复171/186旧公式或混合溶液初浓度。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-PREC-02",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.4",
+      "title": "离子积判据与固体存在条件",
+      "pdf_pages": [
+        82
+      ],
+      "printed_pages": [
+        76
+      ],
+      "source_anchors": [
+        "Q与Ksp的三种关系",
+        "图3.12"
+      ],
+      "summary": "教材76页区分离子浓度变化造成的平衡移动与Ksp的温度依赖；Q<Ksp说明不会析出沉淀，若已有固体则可能继续溶解。是否最终饱和仍取决于固体是否足量。图3.12的颜色是该页展示，不能单凭沉淀颜色核准未知样品组成。",
+      "classroom_check": "分别画出尚有固体和固体耗尽两种质量收支，再解释讲义43为何不能把浓度影响排除。",
+      "lecture_package_id": "PKG-070",
+      "lecture_block_indices": [
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-070/第08讲 沉淀溶解平衡（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "0a63621f88178f44c966ea55c3efd88f5c96233f5d27e569ab4b75294ac06340",
+      "source_preview_revision": "5a815aa5d621d615c48f7e199d470c17308fda7525f91bda4f4420f7319e30db",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 27,
+          "end": 43,
+          "start_xml_locator": "word/document.xml#/w:body/*[32]",
+          "end_xml_locator": "word/document.xml#/w:body/*[48]"
+        },
+        {
+          "start": 131,
+          "end": 138,
+          "start_xml_locator": "word/document.xml#/w:body/*[138]",
+          "end_xml_locator": "word/document.xml#/w:body/*[145]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.4",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          82
+        ],
+        "printed_pages": [
+          76
+        ],
+        "anchors": [
+          "Q与Ksp的三种关系",
+          "图3.12"
+        ],
+        "support_role": "direct_page_reading_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未进行沉淀鉴定实验；图示颜色不替代完整鉴定证据。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-PREC-03",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.4",
+      "title": "先排查过量试剂再论证沉淀转化",
+      "pdf_pages": [
+        83
+      ],
+      "printed_pages": [
+        77
+      ],
+      "source_anchors": [
+        "AgCl与AgI沉淀转化实验",
+        "待填实验记录表"
+      ],
+      "summary": "教材77页第一组要求加NaCl至不再生成白沉淀，再加KI；空白记录表不能当作本次观察结果。与讲义83图比较时，先算最初银和铬酸根的量；后者银过量，继续出现AgCl可能直接来自剩余银离子，不能单靠白色沉淀证明转化。",
+      "classroom_check": "从83原图读体积和浓度，算约4×10⁻⁶mol的银计量过量；说明还需怎样检查上清液或设计对照。",
+      "lecture_package_id": "PKG-070",
+      "lecture_block_indices": [
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-070/第08讲 沉淀溶解平衡（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "0a63621f88178f44c966ea55c3efd88f5c96233f5d27e569ab4b75294ac06340",
+      "source_preview_revision": "5a815aa5d621d615c48f7e199d470c17308fda7525f91bda4f4420f7319e30db",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 82,
+          "end": 89,
+          "start_xml_locator": "word/document.xml#/w:body/*[87]",
+          "end_xml_locator": "word/document.xml#/w:body/*[94]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.4",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          83
+        ],
+        "printed_pages": [
+          77
+        ],
+        "anchors": [
+          "AgCl与AgI沉淀转化实验",
+          "待填实验记录表"
+        ],
+        "support_role": "direct_page_reading_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "仅讨论证据能否排除过量试剂干扰，不补写任何真实实验记录。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-PREC-04",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.4",
+      "title": "耦合反应要同时守恒原子与电荷",
+      "pdf_pages": [
+        83,
+        84
+      ],
+      "printed_pages": [
+        77,
+        78
+      ],
+      "source_anchors": [
+        "CaCO3加酸的平衡网络",
+        "印刷78页羟基磷酸钙加酸式"
+      ],
+      "summary": "教材77页把CaCO₃溶解与碳酸根质子化、CO₂逸出联系起来；78页羟基磷酸钙加酸式中4H⁺对应3个磷酸根受质子及1个OH⁻成水。判断酸促溶应说明自由离子如何被消耗，并核对原子和电荷，不能只记“加酸溶解”。",
+      "classroom_check": "逐元素验算78页式子的5Ca、3P和净电荷；再对照讲义262与264两个明文式的守恒差异。",
+      "lecture_package_id": "PKG-070",
+      "lecture_block_indices": [
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        255,
+        256,
+        257,
+        258,
+        259,
+        260,
+        261,
+        262,
+        263,
+        264
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-070/第08讲 沉淀溶解平衡（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "0a63621f88178f44c966ea55c3efd88f5c96233f5d27e569ab4b75294ac06340",
+      "source_preview_revision": "5a815aa5d621d615c48f7e199d470c17308fda7525f91bda4f4420f7319e30db",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 96,
+          "end": 102,
+          "start_xml_locator": "word/document.xml#/w:body/*[103]",
+          "end_xml_locator": "word/document.xml#/w:body/*[109]"
+        },
+        {
+          "start": 255,
+          "end": 264,
+          "start_xml_locator": "word/document.xml#/w:body/*[272]",
+          "end_xml_locator": "word/document.xml#/w:body/*[281]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.4",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          83,
+          84
+        ],
+        "printed_pages": [
+          77,
+          78
+        ],
+        "anchors": [
+          "CaCO3加酸的平衡网络",
+          "印刷78页羟基磷酸钙加酸式"
+        ],
+        "support_role": "direct_page_reading_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "讲义96平衡箭头为未读旧式对象；本条反应计量直接来自已查看的教材原页，不据其答案倒推。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-PREC-05",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.4",
+      "title": "不同来源的溶度积参数分别保留",
+      "pdf_pages": [
+        84,
+        85
+      ],
+      "printed_pages": [
+        78,
+        79
+      ],
+      "source_anchors": [
+        "牙膏里的学问",
+        "图3.13"
+      ],
+      "summary": "教材79页给氟磷酸钙Ksp为1.0×10⁻⁶⁰，讲义96/102使用2.8×10⁻⁶¹；羟基磷酸钙均给6.8×10⁻³⁷。这些常数旁未充分交代同温与活度约定，宜分别保留来源。按各自题设求转化常数可得6.8×10²³与约2.43×10²⁴，不能把两值合并为一项实测数据。",
+      "classroom_check": "用79页可见转化式分别写两个Ksp之比，在每一列标记教材或讲义、温度未知及AI推导。",
+      "lecture_package_id": "PKG-070",
+      "lecture_block_indices": [
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-070/第08讲 沉淀溶解平衡（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "0a63621f88178f44c966ea55c3efd88f5c96233f5d27e569ab4b75294ac06340",
+      "source_preview_revision": "5a815aa5d621d615c48f7e199d470c17308fda7525f91bda4f4420f7319e30db",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 96,
+          "end": 102,
+          "start_xml_locator": "word/document.xml#/w:body/*[103]",
+          "end_xml_locator": "word/document.xml#/w:body/*[109]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.4",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          84,
+          85
+        ],
+        "printed_pages": [
+          78,
+          79
+        ],
+        "anchors": [
+          "牙膏里的学问",
+          "图3.13"
+        ],
+        "support_role": "direct_page_reading_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "不裁决哪个参数才是真值；不输出用药、诊断或牙膏使用建议。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-PREC-06",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.4",
+      "title": "洗涤损失比较明确自由离子近似",
+      "pdf_pages": [
+        86
+      ],
+      "printed_pages": [
+        80
+      ],
+      "source_anchors": [
+        "例题导引BaSO4洗涤"
+      ],
+      "summary": "教材80页用共同硫酸根抑制BaSO₄溶解。沿用其自由SO₄²⁻≈0.01mol/L的简化，纯水与共同离子洗液中钡浓度比约953，因而可粗略说约1000。相同洗液体积时，该浓度比才直接对应溶解损失比；硫酸分析浓度与自由硫酸根不能无条件画等号。",
+      "classroom_check": "分别列s²＝Ksp与s(0.01＋s)＝Ksp，比较精确二次方程和忽略s后的值；列出未考虑的酸电离。",
+      "lecture_package_id": "PKG-070",
+      "lecture_block_indices": [
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-070/第08讲 沉淀溶解平衡（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "0a63621f88178f44c966ea55c3efd88f5c96233f5d27e569ab4b75294ac06340",
+      "source_preview_revision": "5a815aa5d621d615c48f7e199d470c17308fda7525f91bda4f4420f7319e30db",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 27,
+          "end": 43,
+          "start_xml_locator": "word/document.xml#/w:body/*[32]",
+          "end_xml_locator": "word/document.xml#/w:body/*[48]"
+        },
+        {
+          "start": 75,
+          "end": 81,
+          "start_xml_locator": "word/document.xml#/w:body/*[80]",
+          "end_xml_locator": "word/document.xml#/w:body/*[86]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.4",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          86
+        ],
+        "printed_pages": [
+          80
+        ],
+        "anchors": [
+          "例题导引BaSO4洗涤"
+        ],
+        "support_role": "direct_page_reading_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "该二次方程只精确于指定简化模型；未测定实际洗涤损失。"
+      ]
+    },
+    {
+      "id": "READ-TB-E1-20260927-PREC-07",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.4",
+      "title": "同离子与坐标题先还原离子浓度",
+      "pdf_pages": [
+        86
+      ],
+      "printed_pages": [
+        80
+      ],
+      "source_anchors": [
+        "练习2 PbI2加KI",
+        "练习3四种介质中的AgCl"
+      ],
+      "summary": "教材80页的PbI₂与AgCl练习共同要求区分平衡常数、自由共同离子和沉淀量。读MgCl₂介质时先按计量转换氯离子浓度，读负对数图时先把坐标还原为浓度，最后用Q判定；不套“上方一定过饱和”的位置口诀。",
+      "classroom_check": "在教材的浓度近似中比较四种介质的自由Cl⁻，同时注明高氯浓度下未处理络合与活度；再用269图验证上移一个pX单位会使Q减为原来的十分之一。",
+      "lecture_package_id": "PKG-070",
+      "lecture_block_indices": [
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        206,
+        207,
+        208,
+        209,
+        265,
+        266,
+        267,
+        268,
+        269,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275,
+        276
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-070/第08讲 沉淀溶解平衡（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "0a63621f88178f44c966ea55c3efd88f5c96233f5d27e569ab4b75294ac06340",
+      "source_preview_revision": "5a815aa5d621d615c48f7e199d470c17308fda7525f91bda4f4420f7319e30db",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 33,
+          "end": 43,
+          "start_xml_locator": "word/document.xml#/w:body/*[38]",
+          "end_xml_locator": "word/document.xml#/w:body/*[48]"
+        },
+        {
+          "start": 206,
+          "end": 209,
+          "start_xml_locator": "word/document.xml#/w:body/*[215]",
+          "end_xml_locator": "word/document.xml#/w:body/*[218]"
+        },
+        {
+          "start": 265,
+          "end": 276,
+          "start_xml_locator": "word/document.xml#/w:body/*[282]",
+          "end_xml_locator": "word/document.xml#/w:body/*[293]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C3:3.4",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          86
+        ],
+        "printed_pages": [
+          80
+        ],
+        "anchors": [
+          "练习2 PbI2加KI",
+          "练习3四种介质中的AgCl"
+        ],
+        "support_role": "direct_page_reading_with_AI_application"
+      },
+      "human_reviewed": false,
+      "candidate_only": true,
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未把四种介质的课堂浓度模型当作高离子强度下的真实总溶解度规律；269温度数字未读。"
+      ]
+    }
+  ]
+}

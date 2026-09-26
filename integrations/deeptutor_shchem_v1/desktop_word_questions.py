@@ -516,6 +516,21 @@ class WordQuestionService:
             raise WordQuestionError("原图不属于当前题目的所选对象，请重新定位。")
         return self.facade.imported_word_location_image(*arguments, location_id, asset_id)
 
+    def select_native(self, key, revision, location_id, *, scope="question", cancelled=None):
+        row, preview, indices = self._location_selection(key, revision, scope)
+
+        def current():
+            current_row, current_preview, current_indices = self._location_selection(key, revision, scope)
+            if (current_row["source_sha256"] != row["source_sha256"]
+                    or current_preview["revision"] != preview["revision"] or current_indices != indices):
+                raise WordQuestionError("当前题目范围已经变化，请重新定位。")
+
+        return self.facade.imported_word_select_native(
+            row["batch_id"], row["archive_source_id"], row["source_sha256"],
+            preview["revision"], location_id, block_indices=indices,
+            cancelled=cancelled, revalidate=current,
+        )
+
     def attribute_options(self, key, revision):
         """Read current, source-bound labels without creating personal state."""
         rows, _ = self._resolve([{"key": key, "revision": revision}])

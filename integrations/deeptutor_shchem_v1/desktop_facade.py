@@ -2972,6 +2972,17 @@ class DesktopWorkbenchFacade:
             batch_id, source_id, source_sha256, expected_revision, location_id, asset_id
         )
 
+    def imported_word_select_native(
+        self, batch_id, source_id, source_sha256, expected_revision, location_id,
+        *, block_indices=None, cancelled=None, revalidate=None,
+    ):
+        from .desktop_word_source_locations import WordSourceLocationService
+
+        return WordSourceLocationService(self).select_native(
+            batch_id, source_id, source_sha256, expected_revision, location_id,
+            block_indices=block_indices, cancelled=cancelled, revalidate=revalidate,
+        )
+
     def imported_word_asset(self, batch_id: str, source_id: str, asset_id: str) -> dict[str, Any]:
         from .desktop_preparation_sources import (
             PreparationSourceError,
@@ -3122,6 +3133,11 @@ class DesktopWorkbenchFacade:
     def word_question_location_image(self, key, revision, location_id, asset_id, *, scope="question"):
         return self._word_questions().location_image(
             key, revision, location_id, asset_id, scope=scope
+        )
+
+    def word_question_select_native(self, key, revision, location_id, *, scope="question", cancelled=None):
+        return self._word_questions().select_native(
+            key, revision, location_id, scope=scope, cancelled=cancelled,
         )
 
     def word_question_image(self, key, revision, asset_id):

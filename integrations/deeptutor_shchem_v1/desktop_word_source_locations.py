@@ -460,6 +460,34 @@ class WordSourceLocationService:
     def preview(self, batch_id, source_id, source_sha256, expected_revision, block_indices=None):
         return self._compile(batch_id, source_id, source_sha256, expected_revision, block_indices)[0]
 
+    def select_native(self, batch_id, source_id, source_sha256, expected_revision,
+                      location_id, *, block_indices=None, cancelled=None, revalidate=None):
+        from .desktop_native_word_selection import select_original
+
+        if not isinstance(location_id, str) or re.fullmatch(r"word-location-[0-9a-f]{64}", location_id) is None:
+            raise PreparationSourceError("原 Word 定位标识不正确，请重新选择对象。")
+        arguments = (batch_id, source_id, source_sha256, expected_revision, block_indices)
+        projection, data = self._compile(*arguments)
+        location = next((entry for block in projection["blocks"] for entry in block["locations"]
+                         if entry["location_id"] == location_id), None)
+        if location is None or location["kind"] not in {"image", "omml"} or location["source_states"]:
+            raise PreparationSourceError("此对象暂不支持 Word 内自动选中，请按原文位置核对。")
+
+        def current():
+            if revalidate is not None:
+                revalidate()
+            latest, current_data = self._compile(*arguments)
+            match = next((entry for block in latest["blocks"] for entry in block["locations"]
+                          if entry["location_id"] == location_id), None)
+            if current_data != data or match != location:
+                raise PreparationSourceError("原文或所选范围已变化，请重新定位。")
+
+        result = select_original(
+            self.facade.imported_word_path(batch_id, source_id), data, location["xml_locator"],
+            cancelled=cancelled, revalidate=current,
+        )
+        return {**result, "location_id": location_id, "source_revision": expected_revision}
+
     def image(self, batch_id, source_id, source_sha256, expected_revision, location_id, asset_id):
         asset_match = re.fullmatch(r"word-b([1-9][0-9]*)-image[1-9][0-9]*", asset_id) if isinstance(asset_id, str) and len(asset_id) <= 128 else None
         if (not isinstance(location_id, str) or re.fullmatch(r"word-location-[0-9a-f]{64}", location_id) is None

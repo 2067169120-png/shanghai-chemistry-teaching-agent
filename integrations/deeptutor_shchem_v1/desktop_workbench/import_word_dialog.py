@@ -661,6 +661,9 @@ class ImportWordDialog(QDialog):
             lambda: facade.imported_word_source_locations(*arguments, selected),
             lambda location_id, asset_id: facade.imported_word_location_image(*arguments, location_id, asset_id),
             self,
+            select_native=(lambda location_id, cancelled: facade.imported_word_select_native(
+                *arguments, location_id, block_indices=selected, cancelled=cancelled,
+            )) if callable(getattr(facade, "imported_word_select_native", None)) else None,
         )
         try:
             dialog.exec()

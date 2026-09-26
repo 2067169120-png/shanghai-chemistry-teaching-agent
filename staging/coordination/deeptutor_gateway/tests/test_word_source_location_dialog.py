@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import threading
 from copy import deepcopy
 
 import pytest
@@ -152,7 +153,7 @@ def qt_app():
 def make_dialog(qt_app):
     dialogs = []
 
-    def make(payload=None, *, show=True):
+    def make(payload=None, *, show=True, select_native=None):
         source = synthetic_payload() if payload is None else deepcopy(payload)
         tasks = SyntheticTasks()
         calls = []
@@ -165,7 +166,9 @@ def make_dialog(qt_app):
             calls.append((location_id, asset_id))
             return {"bytes": synthetic_image(colors.get(location_id, "#628271")), "derived_preview": False}
 
-        dialog = WordSourceLocationDialog(lambda: deepcopy(source), image, tasks=tasks)
+        dialog = WordSourceLocationDialog(
+            lambda: deepcopy(source), image, tasks=tasks, select_native=select_native
+        )
         dialogs.append(dialog)
         if show:
             dialog.show()
@@ -175,8 +178,9 @@ def make_dialog(qt_app):
 
     yield make
     for dialog in dialogs:
-        dialog.close()
-        dialog.deleteLater()
+        if isValid(dialog):
+            dialog.close()
+            dialog.deleteLater()
     qt_app.processEvents()
 
 
@@ -460,6 +464,275 @@ def test_long_status_can_scroll_to_its_last_line_at_minimum_size(make_dialog, qt
         assert not button.visibleRegion().isEmpty()
 
 
+def native_payload():
+    source = synthetic_payload()
+    for block in source["blocks"][:2]:
+        block["locations"][0].update(kind="image", source_states=[])
+    source["blocks"][2]["locations"][0].update(kind="omml", source_states=[])
+    return source
+
+
+def native_success():
+    return {"status": "selected", "selection_verified": True, "source_unchanged": True}
+
+
+def test_native_entry_without_callback_or_selection_cannot_submit(make_dialog):
+    dialog, tasks, _calls = make_dialog(native_payload())
+    tasks.succeed(0)
+    count = len(tasks.jobs)
+    dialog.native_button.click()
+    dialog._begin_native_selection()
+    assert not dialog.native_button.isEnabled() and len(tasks.jobs) == count
+    assert "当前入口" in dialog.native_status.text()
+
+    calls = []
+    dialog, tasks, _calls = make_dialog(
+        native_payload(), select_native=lambda *args: calls.append(args)
+    )
+    tasks.succeed(0)
+    dialog.location_list.setCurrentRow(-1)
+    count = len(tasks.jobs)
+    dialog._begin_native_selection()
+    assert not dialog.native_button.isEnabled() and len(tasks.jobs) == count
+    assert "先选择" in dialog.native_status.text() and not calls
+
+
+@pytest.mark.parametrize("kind,states", [
+    ("ole_object", []), ("field_code", []), ("symbol", []), ("alt_chunk", []),
+    ("image", ["hidden"]), ("omml", ["deleted"]),
+    ("image", ["compatibility_choice"]), ("omml", ["compatibility_fallback"]),
+    ("image", None), ("image", ""), ("image", {}),
+])
+def test_native_unsupported_or_unconfirmed_state_is_inert(make_dialog, kind, states):
+    source = native_payload()
+    source["blocks"][0]["locations"][0].update(kind=kind, source_states=states)
+    calls = []
+    dialog, tasks, _calls = make_dialog(source, select_native=lambda *args: calls.append(args))
+    tasks.succeed(0)
+    count = len(tasks.jobs)
+    dialog.native_button.click()
+    dialog._begin_native_selection()
+    assert len(tasks.jobs) == count and not calls
+    assert not dialog.native_button.isEnabled()
+    assert "不能" in dialog.native_status.text()
+
+
+@pytest.mark.parametrize("row", [0, 1, 2])
+def test_native_click_freezes_current_occurrence_and_only_worker_inputs(make_dialog, row):
+    calls = []
+
+    def select(location_id, cancelled):
+        calls.append((location_id, cancelled, threading.get_ident()))
+        return native_success()
+
+    dialog, tasks, _calls = make_dialog(native_payload(), select_native=select)
+    tasks.succeed(0)
+    dialog.location_list.setCurrentRow(row)
+    expected_id = dialog._current["location_id"]
+    assert dialog.native_button.isEnabled()
+    dialog.native_button.click()
+    job = len(tasks.jobs) - 1
+    assert not calls and not dialog.location_list.isEnabled()
+    assert not dialog.search.isEnabled() and not dialog.native_button.isEnabled()
+    assert dialog.cancel_native_button.isVisible()
+    dialog._begin_native_selection()
+    assert len(tasks.jobs) == job + 1
+    values = []
+    worker = threading.Thread(target=lambda: values.append(tasks.jobs[job][0]()))
+    worker.start()
+    worker.join(2)
+    assert not worker.is_alive()
+    assert calls[0][0] == expected_id
+    assert isinstance(calls[0][1], threading.Event) and not calls[0][1].is_set()
+    assert calls[0][2] != threading.get_ident()
+    tasks.succeed(job, values[0])
+    assert "原件已只读打开" in dialog.native_status.text()
+    assert "已在 Word 中选中" in dialog.native_status.text()
+    assert dialog.location_list.isEnabled() and dialog.search.isEnabled()
+    assert dialog.native_button.isEnabled() and not dialog.cancel_native_button.isVisible()
+
+
+@pytest.mark.parametrize("result", [
+    None, {}, {"status": "selected"},
+    {"status": "failed", "selection_verified": True, "source_unchanged": True},
+    {"status": "selected", "selection_verified": False, "source_unchanged": True},
+    {"status": "selected", "selection_verified": True, "source_unchanged": False},
+    {"status": "selected", "selection_verified": 1, "source_unchanged": True},
+    {"status": "selected", "selection_verified": True, "source_unchanged": "true"},
+])
+def test_native_success_requires_both_verified_flags(make_dialog, result):
+    dialog, tasks, _calls = make_dialog(native_payload(), select_native=lambda *_args: result)
+    tasks.succeed(0)
+    dialog.native_button.click()
+    tasks.succeed(len(tasks.jobs) - 1)
+    assert "未能确认" in dialog.native_status.text()
+    assert "原件已只读打开" not in dialog.native_status.text()
+    assert dialog.search.isEnabled() and dialog.location_list.isEnabled()
+    assert dialog.native_button.isEnabled() and not dialog.cancel_native_button.isVisible()
+
+
+def test_native_cancel_signals_worker_and_late_results_cannot_replace_new_success(make_dialog):
+    calls = []
+
+    def select(location_id, cancelled):
+        calls.append((location_id, cancelled))
+        return native_success()
+
+    dialog, tasks, _calls = make_dialog(native_payload(), select_native=select)
+    tasks.succeed(0)
+    dialog.native_button.click()
+    old_job = len(tasks.jobs) - 1
+    old_event = dialog._native_request["cancelled"]
+    dialog.cancel_native_button.click()
+    assert old_event.is_set() and old_job in tasks.cancelled
+    assert "已请求取消" in dialog.native_status.text()
+    assert dialog.search.isEnabled() and dialog.location_list.isEnabled()
+    tasks.succeed(old_job)  # A queued cancelled operation must not call Word.
+    assert not calls
+    dialog.location_list.setCurrentRow(1)
+    dialog.native_button.click()
+    new_event = dialog._native_request["cancelled"]
+    assert new_event is not old_event and not new_event.is_set()
+    tasks.succeed(len(tasks.jobs) - 1)
+    before = dialog.native_status.text()
+    tasks.succeed(old_job, native_success())
+    tasks.fail(old_job, "旧位置迟到的失败")
+    assert dialog.native_status.text() == before
+    assert calls[0][0] == "synthetic-table-r2-c1-object-B"
+
+
+def test_native_cancel_reaches_an_already_running_operation(make_dialog):
+    started, finish = threading.Event(), threading.Event()
+    received = []
+
+    def select(_location_id, cancelled):
+        received.append(cancelled)
+        started.set()
+        assert finish.wait(2)
+        return native_success()
+
+    dialog, tasks, _calls = make_dialog(native_payload(), select_native=select)
+    tasks.succeed(0)
+    dialog.native_button.click()
+    job = len(tasks.jobs) - 1
+    values = []
+    worker = threading.Thread(target=lambda: values.append(tasks.jobs[job][0]()))
+    worker.start()
+    try:
+        assert started.wait(2)
+        dialog.cancel_native_button.click()
+        assert received[0].is_set()
+    finally:
+        finish.set()
+        worker.join(2)
+    tasks.succeed(job, values[0])
+    assert "已请求取消" in dialog.native_status.text()
+    assert dialog.search.isEnabled() and dialog.native_button.isEnabled()
+
+
+@pytest.mark.parametrize("closing", ["accept", "reject", "close", "destroy"])
+def test_native_close_or_direct_destruction_sets_cancellation_event(make_dialog, closing):
+    calls = []
+    dialog, tasks, _calls = make_dialog(native_payload(), select_native=lambda *args: calls.append(args))
+    tasks.succeed(0)
+    dialog.native_button.click()
+    job = len(tasks.jobs) - 1
+    event = dialog._native_request["cancelled"]
+    if closing == "destroy":
+        dialog.deleteLater()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+        assert not isValid(dialog)
+    else:
+        getattr(dialog, closing)()
+    assert event.is_set()
+    tasks.succeed(job)
+    tasks.succeed(job, native_success())
+    tasks.fail(job, "窗口结束后的迟到失败")
+    assert not calls
+
+
+def test_native_programmatic_selection_change_cancels_old_occurrence(make_dialog):
+    dialog, tasks, _calls = make_dialog(native_payload(), select_native=lambda *_args: native_success())
+    tasks.succeed(0)
+    dialog.native_button.click()
+    job = len(tasks.jobs) - 1
+    event = dialog._native_request["cancelled"]
+    dialog.location_list.setCurrentRow(1)
+    assert event.is_set()
+    assert dialog.search.isEnabled() and dialog.location_list.isEnabled()
+    assert dialog._current["location_id"] == "synthetic-table-r2-c1-object-B"
+    tasks.succeed(job, native_success())
+    assert "已在 Word 中选中" not in dialog.native_status.text()
+
+
+def test_native_and_image_callbacks_keep_independent_state(make_dialog):
+    dialog, tasks, _calls = make_dialog(native_payload(), select_native=lambda *_args: native_success())
+    tasks.succeed(0)
+    dialog.native_button.click()
+    job = len(tasks.jobs) - 1
+    tasks.succeed(1)
+    assert _image_color(dialog) == "#a34747"
+    assert "正在 Word" in dialog.native_status.text()
+    assert not dialog.search.isEnabled()
+    tasks.fail(job, "合成失败：原件修订已变化。")
+    assert _image_color(dialog) == "#a34747"
+    assert "修订已变化" in dialog.native_status.text()
+    assert dialog.search.isEnabled() and dialog.native_button.isEnabled()
+    dialog.native_button.click()
+    tasks.succeed(len(tasks.jobs) - 1)
+    before = dialog.native_status.text()
+    tasks.fail(1, "合成图像读取失败")
+    assert dialog.native_status.text() == before
+    assert "合成图像读取失败" in dialog.image_note.text()
+
+
+def test_native_task_start_failure_restores_controls(make_dialog, monkeypatch):
+    dialog, tasks, _calls = make_dialog(native_payload(), select_native=lambda *_args: native_success())
+    tasks.succeed(0)
+
+    def unavailable(*_args, **_kwargs):
+        raise RuntimeError("synthetic bridge closed")
+
+    monkeypatch.setattr(tasks, "submit", unavailable)
+    dialog.native_button.click()
+    assert "未能确认" in dialog.native_status.text()
+    assert dialog._native_request is None
+    assert dialog.search.isEnabled() and dialog.native_button.isEnabled()
+    assert not dialog.cancel_native_button.isVisible()
+
+
+@pytest.mark.parametrize("height", [790, 580])
+def test_native_pending_narrow_window_keeps_cancel_and_footer_reachable(make_dialog, qt_app, height):
+    dialog, tasks, _calls = make_dialog(native_payload(), select_native=lambda *_args: native_success())
+    tasks.succeed(0)
+    dialog.resize(420, height)
+    dialog.native_button.click()
+    qt_app.processEvents()
+    assert dialog.size().width() == 420 and dialog.size().height() == height
+    assert dialog.splitter.orientation() == Qt.Orientation.Vertical
+    assert not dialog.search.isEnabled() and not dialog.location_list.isEnabled()
+    viewport = dialog.detail_scroll.viewport()
+    assert viewport.rect().contains(
+        dialog.cancel_native_button.mapTo(viewport, dialog.cancel_native_button.rect().center())
+    )
+    for button in (dialog.native_button, dialog.cancel_native_button):
+        assert dialog.detail_scroll.isAncestorOf(button)
+        dialog.detail_scroll.ensureWidgetVisible(button)
+        qt_app.processEvents()
+        viewport = dialog.detail_scroll.viewport()
+        assert viewport.rect().contains(button.mapTo(viewport, button.rect().center()))
+        assert not button.visibleRegion().isEmpty()
+    assert dialog.detail_scroll.horizontalScrollBar().maximum() == 0
+    assert dialog.location_list.viewport().height() >= 30
+    for button in (dialog.copy_button, next(
+        b for b in dialog.findChildren(QPushButton) if b.text() == "完成核对"
+    )):
+        assert dialog.rect().contains(button.mapTo(dialog, button.rect().center()))
+        assert not button.visibleRegion().isEmpty()
+    dialog.cancel_native_button.click()
+    assert dialog.search.isEnabled() and dialog.location_list.isEnabled()
+
+
 def test_reader_location_action_is_explicit_and_old_generation_is_inert(qt_app):
     reader = WordLessonReader()
     selected, locations, images = [], [], []
@@ -524,7 +797,7 @@ def test_import_reader_location_and_range_button_preserve_preparation_range(qt_a
             return {"bytes": synthetic_image()}
 
     class InlineDialog:
-        def __init__(self, load, image, _parent):
+        def __init__(self, load, image, _parent, *, select_native=None):
             self.load, self.image = load, image
 
         def exec(self):

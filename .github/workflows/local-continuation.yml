@@ -73,6 +73,14 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_word_source_locations.py staging/coordination/deeptutor_gateway/tests/test_word_source_location_facade.py staging/coordination/deeptutor_gateway/tests/test_word_source_location_dialog.py staging/coordination/deeptutor_gateway/tests/test_word_lesson_reader.py staging/coordination/deeptutor_gateway/tests/test_word_table_preview.py staging/coordination/deeptutor_gateway/tests/test_word_native_text.py staging/coordination/deeptutor_gateway/tests/test_imported_word_sources.py staging/coordination/deeptutor_gateway/tests/test_import_word_dialog.py staging/coordination/deeptutor_gateway/tests/test_word_preview_cache.py --junitxml=local-continuation-qa/formula-locations.xml
+      - name: Check exact original Word selection and owned session lifecycle
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_native_word_mapping.py staging/coordination/deeptutor_gateway/tests/test_native_word_selection.py staging/coordination/deeptutor_gateway/tests/test_native_word_lifecycle.py --junitxml=local-continuation-qa/native-word.xml
+      - name: Capture native Word location states with synthetic callbacks
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/native_word_location_qa.py --output local-continuation-qa/native-word
       - uses: actions/upload-artifact@v4
         if: always()
         with:
