@@ -1,0 +1,112 @@
+{
+  "synthetic_only": true,
+  "source_documents_read": 0,
+  "word_started": false,
+  "network_calls": 0,
+  "native_callback_calls": [
+    {
+      "location_id": "synthetic-only-1",
+      "cancelled": false
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "docs\\qa\\screenshots\\2026-09-27-native-word\\native-word-desktop-ready.png",
+      "sha256": "81f0f6f3ece6f2f72b2e468d7f50b89372fca414762ae11a3ab34e5559827a0e",
+      "width": 1020,
+      "height": 790,
+      "native_status": "将以只读方式打开原件，并核对所选对象。",
+      "native_enabled": true,
+      "cancel_visible": false,
+      "list_enabled": true,
+      "search_enabled": true,
+      "vertical_layout": false,
+      "footer_reachable": true,
+      "native_controls_scroll_reachable": true
+    },
+    {
+      "path": "docs\\qa\\screenshots\\2026-09-27-native-word\\native-word-desktop-selected.png",
+      "sha256": "77933e378ab87cc2dabb30360f1b264df43539d15f324ccfd66a9de5a55eaebf",
+      "width": 1020,
+      "height": 790,
+      "native_status": "原件已只读打开，并已在 Word 中选中此对象。",
+      "native_enabled": true,
+      "cancel_visible": false,
+      "list_enabled": true,
+      "search_enabled": true,
+      "vertical_layout": false,
+      "footer_reachable": true,
+      "native_controls_scroll_reachable": true
+    },
+    {
+      "path": "docs\\qa\\screenshots\\2026-09-27-native-word\\native-word-narrow-pending.png",
+      "sha256": "8a2148b5c2df371a5b863d46a752da94001b0407b3a593308c9973d9de95f54d",
+      "width": 420,
+      "height": 790,
+      "native_status": "正在 Word 中定位所选对象…可取消。",
+      "native_enabled": false,
+      "cancel_visible": true,
+      "list_enabled": false,
+      "search_enabled": false,
+      "vertical_layout": true,
+      "footer_reachable": true,
+      "native_controls_scroll_reachable": true
+    },
+    {
+      "path": "docs\\qa\\screenshots\\2026-09-27-native-word\\native-word-narrow-failure.png",
+      "sha256": "4b7e97ab1eb145f8eeeee139e17460ce91f3b5e8fac796830240fb564a6cb533",
+      "width": 420,
+      "height": 790,
+      "native_status": "未能确认在 Word 中选中此对象。合成失败：无法唯一确认对象位置，请在原文中核对。",
+      "native_enabled": true,
+      "cancel_visible": false,
+      "list_enabled": true,
+      "search_enabled": true,
+      "vertical_layout": true,
+      "footer_reachable": true,
+      "native_controls_scroll_reachable": true
+    },
+    {
+      "path": "docs\\qa\\screenshots\\2026-09-27-native-word\\native-word-narrow-unsupported.png",
+      "sha256": "7e0133e268ff1dc8fbb3709f93c668069375a991a72319778c3993d0e89cbdc7",
+      "width": 420,
+      "height": 790,
+      "native_status": "此类对象暂不能在 Word 中直接选中，可按上方位置核对。",
+      "native_enabled": false,
+      "cancel_visible": false,
+      "list_enabled": true,
+      "search_enabled": true,
+      "vertical_layout": true,
+      "footer_reachable": true,
+      "native_controls_scroll_reachable": true
+    },
+    {
+      "path": "docs\\qa\\screenshots\\2026-09-27-native-word\\native-word-minimum-pending.png",
+      "sha256": "d730aec783ebcfa24065730bf52e522a07ae1869104c443a02ecfe094657bd8c",
+      "width": 420,
+      "height": 580,
+      "native_status": "正在 Word 中定位所选对象…可取消。",
+      "native_enabled": false,
+      "cancel_visible": true,
+      "list_enabled": false,
+      "search_enabled": false,
+      "vertical_layout": true,
+      "footer_reachable": true,
+      "native_controls_scroll_reachable": true
+    },
+    {
+      "path": "docs\\qa\\screenshots\\2026-09-27-native-word\\native-word-minimum-cancelled.png",
+      "sha256": "263e3b60e30fa6b91777722dc0c3b6be691c029e964d30569ead5c6a93ee04eb",
+      "width": 420,
+      "height": 580,
+      "native_status": "已请求取消。Word 退出前可能仍占用原件；已打开的窗口需手动关闭。",
+      "native_enabled": true,
+      "cancel_visible": false,
+      "list_enabled": true,
+      "search_enabled": true,
+      "vertical_layout": true,
+      "footer_reachable": true,
+      "native_controls_scroll_reachable": true
+    }
+  ]
+}

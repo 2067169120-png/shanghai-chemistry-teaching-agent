@@ -83,6 +83,7 @@ def test_same_paragraph_question_answer_cannot_borrow_each_others_objects(deskto
     for call in (
         lambda: facade.word_question_source_locations(row["key"], row["revision"], scope=scope),
         lambda: facade.word_question_location_image(row["key"], row["revision"], "forged", "forged", scope=scope),
+        lambda: facade.word_question_select_native(row["key"], row["revision"], "forged", scope=scope),
     ):
         with pytest.raises(WordQuestionError, match="共用原文区块"):
             call()
@@ -114,3 +115,38 @@ def test_lecture_location_enforces_source_revision_and_bounds(desktop_paths, tmp
     ):
         with pytest.raises(PreparationSourceError):
             facade.imported_word_source_locations(*args, digest, revision, indices)
+
+
+def test_native_selection_requires_current_question_scope_and_revalidates(desktop_paths, tmp_path, monkeypatch):
+    from integrations.deeptutor_shchem_v1 import desktop_native_word_selection as native
+
+    facade, _, provider = _import(desktop_paths, tmp_path, image=True)
+    first, second = facade.word_question_catalog()["items"]
+    located = facade.word_question_source_locations(first["key"], first["revision"])
+    loc = next(loc for b in located["blocks"] for loc in b["locations"] if loc["assets"])
+    calls = []
+
+    def select(path, data, locator, *, cancelled, revalidate):
+        calls.append((path, locator))
+        assert locator == loc["xml_locator"]
+        revalidate()
+        return {"status": "selected", "selection_verified": True, "source_unchanged": True}
+
+    monkeypatch.setattr(native, "select_original", select)
+    before = _state_bytes(desktop_paths.state_root)
+    result = facade.word_question_select_native(first["key"], first["revision"], loc["location_id"])
+    assert result["location_id"] == loc["location_id"] and len(calls) == 1
+    for key, rev, scope in [(second["key"], second["revision"], "question"), (first["key"], first["revision"], "answer")]:
+        with pytest.raises(PreparationSourceError):
+            facade.word_question_select_native(key, rev, loc["location_id"], scope=scope)
+    assert len(calls) == 1 and _state_bytes(desktop_paths.state_root) == before
+    assert provider.borrow_calls == 0
+
+    def changed(path, data, locator, *, cancelled, revalidate):
+        facade.word_question_update_range(first["key"], first["revision"], block_start=3, question_end=5, answer_start=6, block_end=6)
+        revalidate()
+        raise AssertionError("Changed question cannot reach native selection")
+
+    monkeypatch.setattr(native, "select_original", changed)
+    with pytest.raises(WordQuestionError, match="变化"):
+        facade.word_question_select_native(first["key"], first["revision"], loc["location_id"])

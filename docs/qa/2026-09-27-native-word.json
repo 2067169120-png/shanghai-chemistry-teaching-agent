@@ -1,0 +1,143 @@
+{
+  "schema_version": "shchem.public-qa-summary.v1",
+  "maintenance_source_only": true,
+  "release_rebuilt": false,
+  "base_commit": "99a84c823b52218b301a9e232b3cc817e2bc91c6",
+  "regression": {
+    "passed": 593,
+    "failed": 0,
+    "skipped": 0,
+    "test_files": 19
+  },
+  "real_word_service": {
+    "synthetic_only": true,
+    "version": "16.0",
+    "build": "16.0.20326",
+    "verified_targets": 6,
+    "source_sha256": "c69b0869a3b7a0870e7aca79e179f507798025dd472f48921a789ea51a8fedef",
+    "source_unchanged": true,
+    "word_remaining": 0,
+    "visible_handoff_tested": false,
+    "real_private_teaching_documents_opened": 0,
+    "ranges": [
+      {
+        "kind": "inline",
+        "start": 10,
+        "end": 11,
+        "prefix_mode": "exact_prefix"
+      },
+      {
+        "kind": "inline",
+        "start": 19,
+        "end": 20,
+        "prefix_mode": "exact_prefix"
+      },
+      {
+        "kind": "math",
+        "start": 35,
+        "end": 44,
+        "prefix_mode": "exact_prefix"
+      },
+      {
+        "kind": "inline",
+        "start": 58,
+        "end": 59,
+        "prefix_mode": "expanded_outer_table_unique_drawing"
+      },
+      {
+        "kind": "inline",
+        "start": 67,
+        "end": 68,
+        "prefix_mode": "expanded_outer_table_unique_drawing"
+      },
+      {
+        "kind": "inline",
+        "start": 76,
+        "end": 77,
+        "prefix_mode": "expanded_outer_table_unique_drawing"
+      }
+    ]
+  },
+  "synthetic_ui": {
+    "screenshots": 7,
+    "root_model_viewed": 7,
+    "human_reviewed": false,
+    "sizes": [
+      [
+        1020,
+        790
+      ],
+      [
+        420,
+        790
+      ],
+      [
+        420,
+        580
+      ]
+    ],
+    "actual_office_window_capture": false
+  },
+  "local_labels": {
+    "changed_questions": 24,
+    "primary_filled": 19,
+    "curriculum_filled": 16,
+    "unchanged_attribute_rows": 3660,
+    "old_history_rows_unchanged": 9248,
+    "new_history_rows": 24,
+    "human_reviewed": false
+  },
+  "current_review_queue": {
+    "sources": 98,
+    "current_questions": 3579,
+    "primary_known": 2858,
+    "curriculum_mapped": 2689,
+    "pending": 1121,
+    "pure_text": 277,
+    "requires_image": 785,
+    "scope_or_material": 56,
+    "protected": 3
+  },
+  "local_lecture": {
+    "new_claims": 13,
+    "reading_notes": 7,
+    "coverage": {
+      "knowledge": 283,
+      "methods": 134,
+      "pitfalls": 110,
+      "teaching_flow": 34
+    },
+    "lecture_count": 46,
+    "sources_with_flow": 17,
+    "sources_without_flow": 29,
+    "textbook_concepts": 383,
+    "other_cards_unchanged": 45,
+    "protected_files_unchanged": 770,
+    "original_word_files_unchanged": 196,
+    "private_state_files_unchanged": 488,
+    "catalog_rows_before": 115,
+    "catalog_rows_after": 116,
+    "candidate_only": true,
+    "human_reviewed": false
+  },
+  "new_lecture_actual_reader": {
+    "notes": 21,
+    "new_notes": 13,
+    "linked_existing_concepts": 3,
+    "missing_support_exclusion_cases": 13,
+    "stale_excluded": true,
+    "repeat_new_notes": 0
+  },
+  "provider_calls": 0,
+  "originals_or_databases_in_public_repository": false,
+  "limitations": [
+    "OLE/floating/revisions/hidden/compatibility branches/active or unknown packages unsupported",
+    "Table OMML unsupported; merged-cell native Word selection not live tested",
+    "Visible Word handoff and cancellation lifecycle covered with synthetic control-flow doubles",
+    "All chemistry/labels remain model candidates; 29 lectures still lack flows and 1121 label tasks remain"
+  ],
+  "documentation": {
+    "passed": 14,
+    "policy": "passed"
+  }
+}

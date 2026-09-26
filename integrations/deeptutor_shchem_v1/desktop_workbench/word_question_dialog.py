@@ -1758,6 +1758,9 @@ class WordQuestionDialog(QDialog):
                 key, revision, location_id, asset_id, scope=scope
             ),
             self, tasks=self.tasks,
+            select_native=(lambda location_id, cancelled: facade.word_question_select_native(
+                key, revision, location_id, scope=scope, cancelled=cancelled,
+            )) if callable(getattr(facade, "word_question_select_native", None)) else None,
         )
         try:
             dialog.exec()
