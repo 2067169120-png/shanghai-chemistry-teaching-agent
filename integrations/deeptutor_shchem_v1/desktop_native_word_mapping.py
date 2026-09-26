@@ -123,8 +123,17 @@ _MATH_NAMES = set((
 ).split())
 
 
+class NativeWordMappingError(PreparationSourceError):
+    """A stable reason code; details are diagnostic data, not UI instructions."""
+
+    def __init__(self, code: str, detail: str = ""):
+        super().__init__("无法验证原 Word 对象位置：" + code + ("；" + detail if detail else ""))
+        self.code = code
+        self.detail = detail
+
+
 def _fail(code, detail=""):
-    raise PreparationSourceError("无法验证原 Word 对象位置：" + code + ("；" + detail if detail else ""))
+    raise NativeWordMappingError(code, detail)
 
 
 def _sha(data):
@@ -135,7 +144,15 @@ def _json(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
-def _xml(data):
+def _document_root_comment(node):
+    """Only inert comments outside the body's original locator coordinate tree."""
+    parent = node.getparent()
+    return (isinstance(node, etree._Comment) and parent is not None
+            and parent.tag == W + "document"
+            and not any(ancestor.tag == W + "body" for ancestor in node.iterancestors()))
+
+
+def _xml(data, *, allow_word_flat_opc_prolog=False):
     if not isinstance(data, bytes) or len(data) > MAX_FLAT_BYTES:
         _fail("xml_budget")
     if re.search(br"<!\s*(?:DOCTYPE|ENTITY)\b", data, re.I):
@@ -149,7 +166,26 @@ def _xml(data):
         _fail("invalid_xml", str(exc).split("\n", 1)[0][:120])
     if root.getroottree().docinfo.doctype:
         _fail("xml_declaration_forbidden")
-    pending = [(root, 0)]
+    leading, trailing = [], []
+    previous, following = root.getprevious(), root.getnext()
+    while previous is not None:
+        leading.append(previous)
+        if len(leading) + 1 > MAX_XML_NODES:
+            _fail("xml_structure_budget")
+        previous = previous.getprevious()
+    while following is not None:
+        trailing.append(following)
+        if len(leading) + len(trailing) + 1 > MAX_XML_NODES:
+            _fail("xml_structure_budget")
+        following = following.getnext()
+    # Word's observed Flat OPC serialization has exactly this prolog PI. It is
+    # never allowed in source package parts, after the root or inside any tree.
+    prolog = leading[0] if len(leading) == 1 and not trailing else None
+    allowed_prolog = (prolog if allow_word_flat_opc_prolog and root.tag == PKG + "package"
+                      and isinstance(prolog, etree._ProcessingInstruction)
+                      and prolog.target == "mso-application"
+                      and prolog.text == 'progid="Word.Document"' else None)
+    pending = [(node, 0) for node in [*leading, root, *trailing]]
     count = 0
     while pending:
         node, depth = pending.pop()
@@ -157,8 +193,15 @@ def _xml(data):
         if count > MAX_XML_NODES or depth > MAX_XML_DEPTH:
             _fail("xml_structure_budget")
         if not isinstance(node.tag, str):
-            # Removing comments/PIs would renumber C04's actual-child XPath.
-            _fail("xml_non_element_node")
+            if node is allowed_prolog:
+                continue
+            # Keep the actual tree: deleting comments could change C04 XPath
+            # indices. Only document-root comments outside the body are inert
+            # at a location for which we have source evidence.
+            if not _document_root_comment(node):
+                _fail("xml_non_element_node")
+            if (node.tail or "").strip():
+                _fail("unexpected_story_tail")
         pending.extend((child, depth + 1) for child in node)
     return root
 
@@ -190,6 +233,12 @@ def _active_check(root):
     # Inspect every XML part, including headers/settings, before COM can open it.
     for node in root.iter():
         tag = node.tag
+        if not isinstance(tag, str):
+            if not _document_root_comment(node):
+                _fail("xml_non_element_node")
+            if (node.tail or "").strip():
+                _fail("unexpected_story_tail")
+            continue
         if tag.startswith(W):
             local = tag[len(W):]
             if local in _FORBIDDEN_W or local.endswith("Change"):
@@ -350,7 +399,7 @@ def _flat_package(flat_xml):
         raw = flat_xml.encode("utf-8")
     except UnicodeError:
         _fail("invalid_flat_xml_encoding")
-    root = _xml(raw)
+    root = _xml(raw, allow_word_flat_opc_prolog=True)
     if root.tag != PKG + "package":
         _fail("expected_flat_opc")
     parts, folded, total = {}, set(), 0
@@ -507,8 +556,16 @@ def _image(node, package):
 
 def _projection(package):
     body = package.document.find(W + "body")
-    if body is None or len(package.document) != 1:
+    children = [child for child in package.document if isinstance(child.tag, str)]
+    if body is None or len(children) != 1 or children[0] is not body:
         _fail("unsupported_document_structure")
+    if (package.document.text or "").strip():
+        _fail("unexpected_story_text")
+    for child in package.document:
+        if not isinstance(child.tag, str) and not _document_root_comment(child):
+            _fail("xml_non_element_node")
+        if (child.tail or "").strip():
+            _fail("unexpected_story_tail")
     events, objects, tables = [], [], []
     table_ends = {}
 
@@ -637,6 +694,20 @@ def _projection(package):
     return {"events": events, "objects": objects}
 
 
+def inspect_source(data: bytes) -> dict:
+    """Return bounded main-story structure after the same whole-package gates.
+
+    This is an offline preflight, not native Word validation. The result may
+    contain unsupported *targets* (for example table OMML), and text in events
+    is private source data that callers must not expose as diagnostic output.
+    """
+    package = _source_package(data)
+    result = {"schema": _SCHEMA, "source_sha256": _sha(data), **_projection(package)}
+    if len(_json(result)) > MAX_PLAN_BYTES:
+        _fail("plan_budget")
+    return result
+
+
 def build_source_plan(data: bytes, xml_locator: str) -> dict:
     """Preflight the whole DOCX and bind an exact C04 locator to one occurrence.
 
@@ -647,16 +718,14 @@ def build_source_plan(data: bytes, xml_locator: str) -> dict:
     match = _LOCATOR.fullmatch(xml_locator) if isinstance(xml_locator, str) else None
     if match is None or xml_locator.count("/*[") > MAX_XML_DEPTH:
         _fail("invalid_xml_locator")
-    package = _source_package(data)
-    projection = _projection(package)
+    projection = inspect_source(data)
     indices = [i for i, item in enumerate(projection["objects"]) if item["xml_locator"] == xml_locator]
     if len(indices) != 1:
         _fail("locator_is_not_supported_object")
     target = projection["objects"][indices[0]]
     if target["kind"] == "math" and target["table_start"] is not None:
         _fail("table_math_has_no_unique_range_identity")
-    plan = {"schema": _SCHEMA, "source_sha256": _sha(data), "xml_locator": xml_locator,
-            "target_index": indices[0], **projection}
+    plan = {**projection, "xml_locator": xml_locator, "target_index": indices[0]}
     payload = _json(plan)
     if len(payload) > MAX_PLAN_BYTES:
         _fail("plan_budget")

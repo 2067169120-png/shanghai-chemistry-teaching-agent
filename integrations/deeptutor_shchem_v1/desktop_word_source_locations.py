@@ -458,7 +458,10 @@ class WordSourceLocationService:
             raise PreparationSourceError("原Word结构暂时无法定位；原件未修改，请核对原文件。") from exc
 
     def preview(self, batch_id, source_id, source_sha256, expected_revision, block_indices=None):
-        return self._compile(batch_id, source_id, source_sha256, expected_revision, block_indices)[0]
+        from .desktop_native_word_compatibility import attach_native_selection_support
+
+        projection, data = self._compile(batch_id, source_id, source_sha256, expected_revision, block_indices)
+        return attach_native_selection_support(projection, data)
 
     def select_native(self, batch_id, source_id, source_sha256, expected_revision,
                       location_id, *, block_indices=None, cancelled=None, revalidate=None):

@@ -76,7 +76,7 @@ jobs:
       - name: Check exact original Word selection and owned session lifecycle
         env:
           QT_QPA_PLATFORM: offscreen
-        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_native_word_mapping.py staging/coordination/deeptutor_gateway/tests/test_native_word_selection.py staging/coordination/deeptutor_gateway/tests/test_native_word_lifecycle.py --junitxml=local-continuation-qa/native-word.xml
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_native_word_mapping.py staging/coordination/deeptutor_gateway/tests/test_native_word_selection.py staging/coordination/deeptutor_gateway/tests/test_native_word_lifecycle.py staging/coordination/deeptutor_gateway/tests/test_native_word_compatibility.py --junitxml=local-continuation-qa/native-word.xml
       - name: Capture native Word location states with synthetic callbacks
         env:
           QT_QPA_PLATFORM: offscreen

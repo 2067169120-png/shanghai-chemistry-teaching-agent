@@ -1,0 +1,163 @@
+{
+  "schema_version": "shchem.public-qa-summary.v1",
+  "maintenance_source_only": true,
+  "release_rebuilt": false,
+  "base_commit": "b3e165b87d42809b494c4c50c98efed7681460d7",
+  "regression": {
+    "tests": 638,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "documentation": {
+    "passed": 14,
+    "policy": "passed"
+  },
+  "current_library_preflight": {
+    "source_count": 98,
+    "supported_sources": 0,
+    "first_rejections": {
+      "unsupported_object_or_compatibility_branch": 50,
+      "unsupported_active_or_revision_content": 47,
+      "unsupported_legacy_drawing": 1
+    },
+    "root_comments_outside_body_verified_sources": 98,
+    "protected_inputs_unchanged": 204
+  },
+  "real_word_service": {
+    "synthetic_only": true,
+    "root_comment_in_document": true,
+    "verified_targets": 6,
+    "version": "16.0",
+    "build": "16.0.20326",
+    "source_sha256": "b752af218a372b0352c6ecfc9c20391fa538c7ab88ff55f7ba678b4a05297e29",
+    "source_unchanged": true,
+    "word_remaining": 0,
+    "visible_handoff_tested": false,
+    "original_teaching_documents_opened": 0,
+    "ranges": [
+      {
+        "kind": "inline",
+        "start": 10,
+        "end": 11,
+        "prefix_mode": "exact_prefix"
+      },
+      {
+        "kind": "inline",
+        "start": 19,
+        "end": 20,
+        "prefix_mode": "exact_prefix"
+      },
+      {
+        "kind": "math",
+        "start": 35,
+        "end": 44,
+        "prefix_mode": "exact_prefix"
+      },
+      {
+        "kind": "inline",
+        "start": 58,
+        "end": 59,
+        "prefix_mode": "expanded_outer_table_unique_drawing"
+      },
+      {
+        "kind": "inline",
+        "start": 67,
+        "end": 68,
+        "prefix_mode": "expanded_outer_table_unique_drawing"
+      },
+      {
+        "kind": "inline",
+        "start": 76,
+        "end": 77,
+        "prefix_mode": "expanded_outer_table_unique_drawing"
+      }
+    ]
+  },
+  "synthetic_ui": {
+    "screenshots": 10,
+    "root_model_viewed": 10,
+    "human_reviewed": false,
+    "sizes": [
+      [
+        1020,
+        790
+      ],
+      [
+        420,
+        790
+      ],
+      [
+        420,
+        580
+      ]
+    ],
+    "actual_office_window_capture": false
+  },
+  "local_labels": {
+    "changed_questions": 24,
+    "primary_filled": 15,
+    "curriculum_filled": 19,
+    "unchanged_attribute_rows": 3660,
+    "old_history_rows_unchanged": 9272,
+    "new_history_rows": 24,
+    "protected_input_count": 270,
+    "human_reviewed": false
+  },
+  "current_review_queue": {
+    "analysis_sources": 98,
+    "current_questions": 3579,
+    "current_primary_known": 2873,
+    "current_curriculum_mapped": 2708,
+    "pending_tasks": 1097,
+    "category_counts": {
+      "readable_pure_text": 253,
+      "requires_image": 785,
+      "scope_or_material_incomplete": 56,
+      "teacher_or_pinned_protected": 3
+    }
+  },
+  "local_lecture": {
+    "new_claims": 13,
+    "reading_notes": 7,
+    "coverage": {
+      "knowledge": 285,
+      "methods": 139,
+      "pitfalls": 114,
+      "teaching_flow": 36
+    },
+    "lecture_count": 46,
+    "sources_with_flow": 18,
+    "sources_without_flow": 28,
+    "textbook_concepts": 383,
+    "other_cards_unchanged": 45,
+    "protected_files_unchanged": 788,
+    "original_word_files_unchanged": 196,
+    "private_state_files_unchanged": 488,
+    "catalog_rows_before": 116,
+    "catalog_rows_after": 117,
+    "candidate_only": true,
+    "human_reviewed": false
+  },
+  "new_lecture_actual_reader": {
+    "notes": 21,
+    "new_notes": 13,
+    "linked_existing_concepts": 4,
+    "missing_support_exclusion_cases": 13,
+    "stale_excluded": true,
+    "repeat_new_notes": 0
+  },
+  "root_reading_scope": {
+    "textbook_pages": 11,
+    "word_blocks": 165,
+    "word_media_references": 14,
+    "full_word_visual_review": false
+  },
+  "provider_calls": 0,
+  "originals_or_databases_in_public_repository": false,
+  "limitations": [
+    "Current 98 handouts remain blocked by complex document structures.",
+    "Visible handoff is covered by control-flow doubles, not this live hidden Word run.",
+    "Candidate labels and knowledge require teacher review; 1097 label tasks and 28 lectures without flows remain."
+  ]
+}

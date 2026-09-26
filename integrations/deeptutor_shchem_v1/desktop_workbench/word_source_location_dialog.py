@@ -14,7 +14,68 @@ from PySide6.QtWidgets import (
 from shiboken6 import isValid
 
 from ..desktop_word_metafile_preview import can_attempt_metafile
+from ..desktop_native_word_compatibility import issue_message, location_availability
+from ..desktop_native_word_mapping import NativeWordMappingError
+from ..desktop_preparation_sources import PreparationSourceError
 from .tasks import DesktopTaskBridge
+
+
+def _display_notices(location):
+    """Summarize structured facts; raw source diagnostics belong in details."""
+    messages = []
+    state_messages = {
+        "deleted_or_moved_from": "这是修订中删除或移出的内容，不能视为当前可见正文。",
+        "inserted_or_moved_to": "这是修订中插入或移入的内容，请核对原文件的显示状态。",
+        "hidden": "原文件将此内容标记为隐藏，不能视为当前可见正文。",
+        "compatibility_choice": "文件保留了不同的显示方式，尚未确认 Word 当前使用哪一种。",
+        "compatibility_fallback": "文件保留了不同的显示方式，尚未确认 Word 当前使用哪一种。",
+        "compatibility_unresolved": "文件保留了不同的显示方式，尚未确认 Word 当前使用哪一种。",
+    }
+    states = location.get("source_states")
+    for state in states if isinstance(states, list) else []:
+        message = state_messages.get(state) if isinstance(state, str) else None
+        messages.append(message or "此对象的显示状态仍需在原文件中核对。")
+    kind = location.get("kind")
+    if kind == "image" and not location["assets"]:
+        messages.append("这处图片没有可对应读取的内部原图，请在原文件中核对。")
+    elif kind == "ole_object":
+        messages.append(
+            "这是旧式嵌入对象，可在下方查看它对应的原图并核对内容。"
+            if location["assets"] else "这是旧式嵌入对象，没有可对应读取的原图，请在原文件中核对。"
+        )
+    else:
+        message = {
+            "field_code": "此处是自动生成内容的一部分，尚未确认完整范围，请在原文件中核对。",
+            "symbol": "此符号需要结合原文件的字体核对实际字形。",
+            "alt_chunk": "此处引用了附加文档内容，请在原文件中核对。",
+            "omml": "这是原生公式，请在原文件中核对公式内容和排版。",
+            "compatibility_content": "此处保留了不同的显示方式，实际内容需在原文件中核对。",
+            "drawing_or_object": "此处包含图形或对象，内容仍需在原文件中核对。",
+            "special_object": "此处包含特殊对象，内容仍需在原文件中核对。",
+        }.get(kind)
+        if message:
+            messages.append(message)
+    if not messages and location["notices"]:
+        messages.append("此对象还有需要核对的信息，可展开文件内定位详情查看。")
+    return "\n".join(dict.fromkeys(messages))
+
+
+def _native_mapping_message(code):
+    """Translate typed proof failures without exposing source XML or paths."""
+    message = {
+        "document_semantics_changed": "Word 读取的内容与原文件不一致。",
+        "document_object_count_changed": "Word 读取的对象数量与原文件不一致。",
+        "native_object_type_mismatch": "Word 识别的对象类型与所选对象不一致。",
+        "range_object_mismatch": "Word 实际选区的内容与所选对象不一致。",
+        "range_occurrence_identity_mismatch": "Word 返回的对象位置与所选的出现位置不一致。",
+        "range_prefix_mismatch": "对象前后的内容与原文件不一致，无法确认位置。",
+        "range_prefix_identity_mismatch": "无法通过对象前后的内容唯一确认其出现位置。",
+        "range_is_not_one_object": "Word 选区没有恰好包含一个完整对象。",
+        "range_has_extra_content_or_containers": "Word 选区包含了所选对象以外的内容。",
+        "invalid_event_nesting": "Word 返回的段落或表格层次暂时无法可靠核对。",
+        "invalid_plan": "本次定位依据已失效。",
+    }.get(code)
+    return message + "请重新打开原文核对，也可继续查看原图。" if message else issue_message(code)
 
 
 def _label(text=""):
@@ -318,10 +379,13 @@ class WordSourceLocationDialog(QDialog):
             loc = self._current
             self.position.setText(loc["position_text"])
             self.context.setPlainText(loc["context_text"])
-            self.notices.setText("\n".join(loc["notices"]))
-            self.notices.setVisible(bool(loc["notices"]))
+            notices = _display_notices(loc)
+            self.notices.setText(notices)
+            self.notices.setVisible(bool(notices))
             self.technical.setPlainText(
                 loc["xml_locator"] + "\n来源 SHA-256：" + str(self._payload.get("source_sha256", ""))
+                + ("\n\n文件结构核对记录：\n" + "\n".join(str(note) for note in loc["notices"])
+                   if loc["notices"] else "")
             )
             for asset in loc["assets"]:
                 self.asset_combo.addItem(str(asset.get("label") or "对象原图"), asset)
@@ -348,7 +412,7 @@ class WordSourceLocationDialog(QDialog):
             return False, "对象的显示状态尚未核实，暂不能直接选中。"
         if states:
             return False, "此对象的隐藏、修订或兼容状态需要核对，暂不能直接选中。"
-        return True, "将以只读方式打开原件，并核对所选对象。"
+        return location_availability(self._payload, location)
 
     def _update_native_controls(self, message=None):
         pending = self._native_request is not None
@@ -403,7 +467,12 @@ class WordSourceLocationDialog(QDialog):
         def operation():
             if cancelled.is_set():
                 return {"status": "cancelled"}
-            return select_native(location_id, cancelled)
+            try:
+                return select_native(location_id, cancelled)
+            except NativeWordMappingError as exc:
+                # Translate before the task bridge turns exceptions into UI
+                # strings. The worker still never reads or mutates a QWidget.
+                raise PreparationSourceError(_native_mapping_message(exc.code)) from exc
 
         def finish(message):
             if (self._native_request is not request or cancelled.is_set()

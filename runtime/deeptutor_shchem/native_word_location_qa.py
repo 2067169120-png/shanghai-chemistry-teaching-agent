@@ -56,11 +56,19 @@ def synthetic_payload():
                         "mime_type": "image/png", "preview_supported": True}]
             if kind == "image" else [],
         })
-    return {
+    payload = {
         "source_name": "原创合成对象定位示例.docx", "source_sha256": "a" * 64,
         "source_revision": "synthetic-only-revision", "warnings": [],
         "blocks": [{"block_index": loc["block_index"], "locations": [loc]} for loc in locations],
     }
+    from integrations.deeptutor_shchem_v1.desktop_native_word_compatibility import SCHEMA
+    for location in locations:
+        location["native_selection"] = {
+            "schema": SCHEMA, "source_sha256": payload["source_sha256"],
+            "source_revision": payload["source_revision"], "xml_locator": location["xml_locator"],
+            "status": "available", "code": "source_preflight_passed",
+        }
+    return payload
 
 
 def synthetic_image():
@@ -110,10 +118,19 @@ def capture(output):
         native_calls.append({"location_id": location_id, "cancelled": cancelled.is_set()})
         return {"status": "selected", "selection_verified": True, "source_unchanged": True}
 
-    def make(width, height):
+    def make(width, height, *, blocked=False):
         tasks = SyntheticTasks()
+        payload = deepcopy(synthetic_payload())
+        if blocked:
+            from integrations.deeptutor_shchem_v1.desktop_native_word_compatibility import issue_message
+            for block in payload["blocks"]:
+                for location in block["locations"]:
+                    location["native_selection"].update(
+                        status="blocked", code="unsupported_active_or_revision_content",
+                        message_zh=issue_message("unsupported_active_or_revision_content", "pict"),
+                    )
         dialog = WordSourceLocationDialog(
-            lambda: deepcopy(synthetic_payload()), lambda *_args: {"bytes": raw},
+            lambda: payload, lambda *_args: {"bytes": raw},
             tasks=tasks, select_native=select_native,
         )
         dialog.resize(width, height)
@@ -188,6 +205,17 @@ def capture(output):
     dialog.cancel_native_button.click()
     save(dialog, "native-word-minimum-cancelled.png", (420, 580))
     close(dialog)
+    for width, height, name in (
+        (1020, 790, "native-word-desktop-preflight-blocked.png"),
+        (420, 790, "native-word-narrow-preflight-blocked.png"),
+        (420, 580, "native-word-minimum-preflight-blocked.png"),
+    ):
+        dialog, tasks = make(width, height, blocked=True)
+        assert not dialog.native_button.isEnabled()
+        assert dialog.copy_button.isEnabled() and dialog.zoom_button.isEnabled()
+        assert "旧式公式" in dialog.native_status.text()
+        save(dialog, name, (width, height))
+        close(dialog)
     report = {
         "synthetic_only": True, "source_documents_read": 0, "word_started": False,
         "network_calls": 0, "native_callback_calls": native_calls, "screenshots": screenshots,

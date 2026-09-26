@@ -1,0 +1,636 @@
+{
+  "schema_version": "shchem.textbook-page-reading-notes.v1",
+  "purpose": "选必一4.2 PDF95—105原页研读候选；主代理逐页查看，核对PKG-018相关165原生区块和14图像引用并独立配平、计算。保留题设近似、原解析差异和未读公式；未人审，不代表全书蒸馏完成。",
+  "human_reviewed": false,
+  "candidate_only": true,
+  "original_source_redistribution": false,
+  "review_method": "page_images_read_by_model",
+  "source": {
+    "volume_id": "TB-E1",
+    "title": "普通高中教科书 化学 选择性必修1 化学反应原理",
+    "sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+    "pdf_pages_viewed": [
+      95,
+      96,
+      97,
+      98,
+      99,
+      100,
+      101,
+      102,
+      103,
+      104,
+      105
+    ],
+    "printed_pages_viewed": [
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95,
+      96,
+      97,
+      98,
+      99
+    ],
+    "toc_pdf_pages_viewed": [],
+    "linked_pdf_pages": [
+      95,
+      96,
+      97,
+      98,
+      99,
+      100,
+      101,
+      102,
+      103,
+      104,
+      105
+    ]
+  },
+  "notes": [
+    {
+      "id": "READ-TB-E1-20260927-GALV-01",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.2",
+      "title": "能量路径与实验记录的边界",
+      "pdf_pages": [
+        95,
+        96
+      ],
+      "printed_pages": [
+        89,
+        90
+      ],
+      "source_anchors": [
+        "图4.1",
+        "图4.2",
+        "实验探究记录表"
+      ],
+      "summary": "锌粉与CuSO₄直接反应的温升曲线，与双液电池接通外电路后的电流现象，分别提供能量转化的不同证据。空白记录表不是本次实测记录，分开两侧反应也不意味着能量损耗为零。",
+      "classroom_check": "用39原图追踪电子通路，标出教材给定现象、AI解释与未测量的效率；订正40/52的绝对化表述。",
+      "lecture_package_id": "PKG-018",
+      "lecture_block_indices": [
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-018/第02讲 原电池 化学电源（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "503fe6db1c8771fce50fd38db833c4d7b8fdb07320e5a27fc4f30789225dc680",
+      "source_preview_revision": "da0c678d9ccaee2e251e852e013195336360d19f65c4c7652170891fc9ce463d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 36,
+          "end": 53,
+          "start_xml_locator": "word/document.xml#/w:body/*[43]",
+          "end_xml_locator": "word/document.xml#/w:body/*[60]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.2",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          95,
+          96
+        ],
+        "printed_pages": [
+          89,
+          90
+        ],
+        "anchors": [
+          "图4.1",
+          "图4.2",
+          "实验探究记录表"
+        ],
+        "support_role": "direct_page_reading_with_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未复现实验或读取仪器原始数据。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-GALV-02",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.2",
+      "title": "半电池包括反应物和离子通路",
+      "pdf_pages": [
+        97,
+        98
+      ],
+      "printed_pages": [
+        91,
+        92
+      ],
+      "source_anchors": [
+        "金属电极、惰性电极与气体电极",
+        "图4.3",
+        "图4.4"
+      ],
+      "summary": "教材把电极分为金属、惰性和气体类型；图4.3同时标出氢气压强和氢离子浓度。讲义59要求两侧溶液都含与电极材料相同的金属阳离子，只适合特定金属/金属离子装置，不能推广到惰性电极或气体电极。盐桥材料也需兼容两侧反应物。",
+      "classroom_check": "以69图双石墨电极为对照，分别写电极材料、实际得失电子物种、盐桥离子；保留图4.3未另给出的温度条件。",
+      "lecture_package_id": "PKG-018",
+      "lecture_block_indices": [
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-018/第02讲 原电池 化学电源（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "503fe6db1c8771fce50fd38db833c4d7b8fdb07320e5a27fc4f30789225dc680",
+      "source_preview_revision": "da0c678d9ccaee2e251e852e013195336360d19f65c4c7652170891fc9ce463d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 41,
+          "end": 59,
+          "start_xml_locator": "word/document.xml#/w:body/*[48]",
+          "end_xml_locator": "word/document.xml#/w:body/*[67]"
+        },
+        {
+          "start": 68,
+          "end": 77,
+          "start_xml_locator": "word/document.xml#/w:body/*[76]",
+          "end_xml_locator": "word/document.xml#/w:body/*[87]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.2",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          97,
+          98
+        ],
+        "printed_pages": [
+          91,
+          92
+        ],
+        "anchors": [
+          "金属电极、惰性电极与气体电极",
+          "图4.3",
+          "图4.4"
+        ],
+        "support_role": "direct_page_reading_with_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未渲染37工作原理图；此条具体电极分类直接据教材原页与69已读图。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-GALV-03",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.2",
+      "title": "电池类别与具体装置分别记录",
+      "pdf_pages": [
+        98,
+        99
+      ],
+      "printed_pages": [
+        92,
+        93
+      ],
+      "source_anchors": [
+        "化学电源——电池",
+        "图4.5"
+      ],
+      "summary": "教材将锌锰干电池、其所述锌银纽扣列为一次电池，把铅酸、锂离子列为二次电池。讲义202把锌银反应体系列入可充电表，需要保留装置差异；不能仅从相同化学名称或可逆书写形式推定一个具体电池的循环能力。",
+      "classroom_check": "把“来源所述类型”“电极反应模型”“是否有装置/材料证据”列成三栏，对照196/202，不填入未核验型号。",
+      "lecture_package_id": "PKG-018",
+      "lecture_block_indices": [
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-018/第02讲 原电池 化学电源（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "503fe6db1c8771fce50fd38db833c4d7b8fdb07320e5a27fc4f30789225dc680",
+      "source_preview_revision": "da0c678d9ccaee2e251e852e013195336360d19f65c4c7652170891fc9ce463d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 193,
+          "end": 202,
+          "start_xml_locator": "word/document.xml#/w:body/*[203]",
+          "end_xml_locator": "word/document.xml#/w:body/*[212]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.2",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          98,
+          99
+        ],
+        "printed_pages": [
+          92,
+          93
+        ],
+        "anchors": [
+          "化学电源——电池",
+          "图4.5"
+        ],
+        "support_role": "direct_page_reading_with_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "202旧式箭头未读；未测产品性能或进行反充操作。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-GALV-04",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.2",
+      "title": "铅酸两极同产物不等于同一反应",
+      "pdf_pages": [
+        99
+      ],
+      "printed_pages": [
+        93
+      ],
+      "source_anchors": [
+        "图4.6",
+        "铅酸蓄电池半反应与总反应"
+      ],
+      "summary": "铅酸电池放电时，两极均生成PbSO₄，但Pb失电子、PbO₂中的铅得电子。按原页两半式相加，每次总反应交换2mol电子、消耗2mol H₂SO₄并生成2mol水；充电在该模型中反向进行。不能只看同一产物或增重来命名两极。",
+      "classroom_check": "逐项核对硫酸根和氢离子的去留，再与375图的增重电极对照；不在未知体积下把物质的量变化直接写成浓度变化。",
+      "lecture_package_id": "PKG-018",
+      "lecture_block_indices": [
+        202,
+        203,
+        204,
+        205,
+        206,
+        374,
+        375,
+        376,
+        377,
+        378,
+        379,
+        380,
+        381
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-018/第02讲 原电池 化学电源（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "503fe6db1c8771fce50fd38db833c4d7b8fdb07320e5a27fc4f30789225dc680",
+      "source_preview_revision": "da0c678d9ccaee2e251e852e013195336360d19f65c4c7652170891fc9ce463d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 202,
+          "end": 206,
+          "start_xml_locator": "word/document.xml#/w:body/*[212]",
+          "end_xml_locator": "word/document.xml#/w:body/*[217]"
+        },
+        {
+          "start": 374,
+          "end": 381,
+          "start_xml_locator": "word/document.xml#/w:body/*[387]",
+          "end_xml_locator": "word/document.xml#/w:body/*[394]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.2",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          99
+        ],
+        "printed_pages": [
+          93
+        ],
+        "anchors": [
+          "图4.6",
+          "铅酸蓄电池半反应与总反应"
+        ],
+        "support_role": "direct_page_reading_with_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "计算直接据教材93页可见半式；不据202其他缺失下标还原整张表。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-GALV-05",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.2",
+      "title": "锂离子图同时跟踪电子与Li⁺",
+      "pdf_pages": [
+        100
+      ],
+      "printed_pages": [
+        94
+      ],
+      "source_anchors": [
+        "图4.7",
+        "充电与放电箭头"
+      ],
+      "summary": "教材图用两种箭头区分充电和放电，电子走外电路、Li⁺经过电解质和隔膜。应固定石墨材料的位置，再判断该时刻发生氧化还是还原；讲义257/261的0.1mol电子质量问题，还要注明一电子对应一锂离子和忽略副反应。",
+      "classroom_check": "以257图M/N材料为固定标签，分别写充电、放电两行，独算0.1×7≈0.7g并注明7g/mol为题设课堂近似。",
+      "lecture_package_id": "PKG-018",
+      "lecture_block_indices": [
+        255,
+        256,
+        257,
+        258,
+        259,
+        260,
+        261,
+        262,
+        263
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-018/第02讲 原电池 化学电源（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "503fe6db1c8771fce50fd38db833c4d7b8fdb07320e5a27fc4f30789225dc680",
+      "source_preview_revision": "da0c678d9ccaee2e251e852e013195336360d19f65c4c7652170891fc9ce463d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 255,
+          "end": 263,
+          "start_xml_locator": "word/document.xml#/w:body/*[268]",
+          "end_xml_locator": "word/document.xml#/w:body/*[276]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.2",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          100
+        ],
+        "printed_pages": [
+          94
+        ],
+        "anchors": [
+          "图4.7",
+          "充电与放电箭头"
+        ],
+        "support_role": "direct_page_reading_with_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "256总反应旧对象未读；不恢复其显示或解释未给的电池型号参数。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-GALV-06",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.2",
+      "title": "燃料电池按介质和每摩尔粒子配平",
+      "pdf_pages": [
+        101,
+        102,
+        103
+      ],
+      "printed_pages": [
+        95,
+        96,
+        97
+      ],
+      "source_anchors": [
+        "图4.8",
+        "图4.9",
+        "图4.10",
+        "铂表面的吸附与解离"
+      ],
+      "summary": "氢与甲醇质子交换膜电池都需把质子通道和外电路电子通道分开。教材甲醇例每mol燃料给6mol电子，正极相应消耗1.5mol O₂；若改用讲义120所示碱性介质，需重新检查碳产物与OH⁻净收支。催化电极不出现在总式，也不表示表面完全没有吸附或中间物种。",
+      "classroom_check": "核对甲醇两半式相加消去电子/H⁺，再与121碱性明文式比较；将电极反应物、催化材料、迁移离子分别标注。",
+      "lecture_package_id": "PKG-018",
+      "lecture_block_indices": [
+        118,
+        119,
+        120,
+        121,
+        122,
+        204,
+        205,
+        206,
+        207,
+        208,
+        209,
+        210,
+        211,
+        212
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-018/第02讲 原电池 化学电源（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "503fe6db1c8771fce50fd38db833c4d7b8fdb07320e5a27fc4f30789225dc680",
+      "source_preview_revision": "da0c678d9ccaee2e251e852e013195336360d19f65c4c7652170891fc9ce463d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 118,
+          "end": 122,
+          "start_xml_locator": "word/document.xml#/w:body/*[128]",
+          "end_xml_locator": "word/document.xml#/w:body/*[132]"
+        },
+        {
+          "start": 204,
+          "end": 212,
+          "start_xml_locator": "word/document.xml#/w:body/*[215]",
+          "end_xml_locator": "word/document.xml#/w:body/*[225]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.2",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          101,
+          102,
+          103
+        ],
+        "printed_pages": [
+          95,
+          96,
+          97
+        ],
+        "anchors": [
+          "图4.8",
+          "图4.9",
+          "图4.10",
+          "铂表面的吸附与解离"
+        ],
+        "support_role": "direct_page_reading_with_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "120只用可辨KOH标签；图4.9是教材实验示意，未实际执行；不将吸附中间物种当作净耗料。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-GALV-07",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.2",
+      "title": "练习图先确定物种和电子计量基准",
+      "pdf_pages": [
+        103,
+        104,
+        105
+      ],
+      "printed_pages": [
+        97,
+        98,
+        99
+      ],
+      "source_anchors": [
+        "练习1双碳电极",
+        "练习4酸性高锰酸钾/硫酸亚铁",
+        "练习5开放查阅题"
+      ],
+      "summary": "双碳电极不代表碳必定是反应物，酸性条件也不能在配平中省略。读完跨页题干和图后，再按每mol具体物种比较电子数；例如讲义346的NO₃⁻还原为N₂与氧还原为水，分别为5和4mol电子，不能把这个计量比较直接当成去除速率结论。",
+      "classroom_check": "圈出跨页图中的物种、电极材料和介质，再核对353的10电子半式；教材开放查阅的铝电池题，未提供或未查明的资料仍标unknown。",
+      "lecture_package_id": "PKG-018",
+      "lecture_block_indices": [
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        345,
+        346,
+        347,
+        348,
+        349,
+        350,
+        351,
+        352,
+        353,
+        354,
+        355,
+        356
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-018/第02讲 原电池 化学电源（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "503fe6db1c8771fce50fd38db833c4d7b8fdb07320e5a27fc4f30789225dc680",
+      "source_preview_revision": "da0c678d9ccaee2e251e852e013195336360d19f65c4c7652170891fc9ce463d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 87,
+          "end": 108,
+          "start_xml_locator": "word/document.xml#/w:body/*[97]",
+          "end_xml_locator": "word/document.xml#/w:body/*[118]"
+        },
+        {
+          "start": 345,
+          "end": 356,
+          "start_xml_locator": "word/document.xml#/w:body/*[358]",
+          "end_xml_locator": "word/document.xml#/w:body/*[369]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.2",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          103,
+          104,
+          105
+        ],
+        "printed_pages": [
+          97,
+          98,
+          99
+        ],
+        "anchors": [
+          "练习1双碳电极",
+          "练习4酸性高锰酸钾/硫酸亚铁",
+          "练习5开放查阅题"
+        ],
+        "support_role": "direct_page_reading_with_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未核准这些练习的全部选项、实验结论或任何官方采分点。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ]
+}
