@@ -435,6 +435,17 @@ class PersonalVisualQuestionService:
                 # Teaching labels are not recognition content. Seal the source
                 # projection before adding the independent local-label overlay.
                 item["revision"] = _digest(item)
+                # Navigation metadata comes from the validated CAS hierarchy.
+                # Add it after sealing the existing content projection so a UI
+                # upgrade alone never invalidates saved labels or selections.
+                item.update(
+                    theme_big_question_id=theme["theme_big_question_id"],
+                    theme_sequence=theme["sequence_in_paper"],
+                    printed_question_id=printed["printed_question_id"],
+                    printed_sequence=printed["sequence_in_theme"],
+                    sequence_source="candidate_cas",
+                    material_review_required=bool(scope_warnings),
+                )
                 stale_crop = any(crop_states[image["evidence_id"]]["stale"] for image in item["images"])
                 item["crop_warning"] = ("识别来源已变化，旧个人裁剪未套用；修订历史保留，请重新核对范围。" if stale_crop else "")
                 item["facets"]["teaching_use"] = [_UNKNOWN]
@@ -477,6 +488,7 @@ class PersonalVisualQuestionService:
 
     def catalog(self, batch_id=None):
         items, warnings = [], []
+        unavailable_batches = 0
         batches = [batch_id] if batch_id is not None else [
             value["batch_id"] for value in self.state.snapshot().get("drafts", {}).values()
             if isinstance(value, dict) and value.get("kind") == "desktop_visual_import_v2"
@@ -487,6 +499,7 @@ class PersonalVisualQuestionService:
                 snapshot, pages = self._batch(batch)
                 items.extend(self._rows(batch, snapshot, pages))
             except Exception as exc:  # noqa: BLE001 - isolate one unavailable saved batch
+                unavailable_batches += 1
                 warnings.append(getattr(exc, "message_zh", "一批已识别图片暂时无法读取；请到导入历史核对。"))
         options = {group: {} for group in _GROUPS}
         taxonomy = load_attribute_catalog(self.facade.paths.workspace_root)
@@ -541,6 +554,8 @@ class PersonalVisualQuestionService:
         if len(valid) != len(saved) and batch_id is None:
             warnings.append("部分旧选题的来源已变化或暂不可读，请重新打开后勾选。")
         return {"items": items, "warnings": list(dict.fromkeys(warnings)),
+                "unavailable_batches": unavailable_batches,
+                "attribute_catalog": attribute_catalog(taxonomy),
                 "selection": deepcopy(valid),
                 "filter_options": {group: list(pairs.values())
                                    for group, pairs in options.items()}}

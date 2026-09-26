@@ -20,7 +20,8 @@ def _import(desktop_paths, tmp_path, *, image=False, long=False):
     if image:
         doc.add_paragraph().add_run().add_picture(io.BytesIO(_png("blue")))
     if long:
-        doc.add_paragraph("需保留的必要条件" * 3000)
+        from integrations.deeptutor_shchem_v1.desktop_preparation_limits import MAX_MATERIALS
+        doc.add_paragraph("需保留的必要条件" * (MAX_MATERIALS // 8 + 1))
     doc.add_paragraph("【答案】B")
     doc.add_paragraph("【解析】氯化钠属于电解质。")
     doc.add_heading("知识点02 非电解质", 1)

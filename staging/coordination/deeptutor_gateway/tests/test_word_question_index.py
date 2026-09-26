@@ -569,3 +569,29 @@ def test_actual_scenario_and_subpart_blank_are_not_knowledge_headings(stem):
     data = preview(stem, "【待查看原文：图片或图形】", "（1）该变化的数值为       kJ/mol。", "【答案】原结果")
     (item,) = index_word_questions(data)
     assert item["block_start"] == 1 and item["answer_start"] == 4
+
+
+@pytest.mark.parametrize("answer", ["【答案】两性", "【参考答案】两性", "答案：两性"])
+def test_internal_blank_with_adjacent_key_does_not_enter_previous_answer(answer):
+    data = preview("1．选择相关性质？", "A．导电 B．耐热", "【答案】AB",
+                   "【解析】这是前一道题的解释。", "2．某物质属于       氧化物。",
+                   answer, "【解析】这是第二道题的解释。", "3．下一道问题？")
+    first, second, third = index_word_questions(data)
+    assert first["block_end"] == 4
+    assert [b["index"] for b in first["answer_blocks"]] == [3, 4]
+    assert second["block_start"] == 5 and second["answer_start"] == 6
+    assert second["block_end"] == 7 and third["block_start"] == 8
+
+
+@pytest.mark.parametrize("following", ["【解析】这只是笔记说明。", "这只是另一段笔记。", "【待查看原文：图片或图形】", ""])
+def test_internal_spacing_without_adjacent_explicit_key_is_not_a_new_question(following):
+    data = preview("【例1】原来的问题？", "【答案】甲", "【解析】解释如下。",
+                   "2．有关物质       相关说明。", following, "【答案】不能据此倒推前一段为题目")
+    (item,) = index_word_questions(data)
+    assert item["block_start"] == 1 and item["block_end"] == 6
+
+
+def test_numbered_knowledge_heading_stays_out_even_with_spacing_and_answer_tag():
+    data = preview("1．物质分类       的定义", "【答案】某讲义中的总结", "【例1】真实问题？")
+    (item,) = index_word_questions(data)
+    assert item["block_start"] == 3

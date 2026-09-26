@@ -14,6 +14,9 @@ import re
 from copy import deepcopy
 from typing import Any
 
+# Serialization contract, not the recognizer release date. Each row hashes its
+# exact ranges/content below; a local boundary fix invalidates affected rows
+# without discarding unrelated labels across the entire library.
 QUESTION_INDEX_REVISION = "20260910-word-answer-boundary-index-v4"
 BOUNDARY_REVIEW_REVISION = "20260912-explicit-source-boundary-review-v1"
 _REVIEWABLE_ISSUES = frozenset(
@@ -51,6 +54,8 @@ _OPTION = re.compile(r"(?:^|\n)\s*[A-HＡ-Ｈ]\s*[．.、]", re.MULTILINE)
 _ANSWER = re.compile(
     r"【\s*(?:参考答案|答案|解析|详解|解答|分析)\s*】|(?:^|\n)\s*(?:参考答案|答案|解析|详解|解答)\s*[:：]"
 )
+_EXPLICIT_KEY_START = re.compile(r"^(?:【\s*(?:参考答案|答案)\s*】|(?:参考答案|答案)\s*[:：])")
+_INTERNAL_BLANK = re.compile(r"(?<=\S)[ \t\u3000]{3,}(?=[\u3400-\u9fff])")
 _HEADING = re.compile(
     r"^(?:[►▶●■◆]\s*)?(?:知识点|考点|常见考法|必杀技|知识精讲|知识导学|"
     r"温馨提示|方法总结|规律总结|得分速记|思维建模|考向\s*\d+|题组[A-ZＡ-Ｚ一二三四五六七八九十]?|"
@@ -215,6 +220,13 @@ def _question_label(
         return None
     if _question_cue(match.group(2)):
         return match.group(1)
+    # Some source blanks occur before a noun ("属于       氧化物").
+    # Spacing alone also occurs in notes, so require an adjacent explicit key.
+    # Do not skip an image/object block or treat an explanation as that key.
+    if _INTERNAL_BLANK.search(match.group(2)) and position + 1 < len(blocks):
+        following = blocks[position + 1].get("text", "").strip()
+        if _EXPLICIT_KEY_START.match(following):
+            return match.group(1)
     # An introductory stem can continue in the following blocks. Do not let
     # the evidence of the next numbered question turn a knowledge list into one.
     for block in blocks[position + 1 : position + 65]:

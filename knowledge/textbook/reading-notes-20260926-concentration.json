@@ -1,0 +1,96 @@
+{
+  "schema_version": "shchem.textbook-page-reading-notes.v1",
+  "purpose": "补充既有383概念的教材原页研读与课堂应用，不新增概念。已核对1.3节完整范围及目录，六条笔记只聚焦浓度、配制与相关计量练习；与PKG-028同批讲义候选共同供备课复核，不自动附入原教材图，不生成原题官方答案。",
+  "human_reviewed": false,
+  "original_source_redistribution": false,
+  "review_method": "page_images_read_by_model",
+  "source": {
+    "volume_id": "TB-M1",
+    "title": "普通高中教科书 化学 必修 第一册",
+    "sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+    "pdf_pages_viewed": [27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38],
+    "printed_pages_viewed": [22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33],
+    "toc_pdf_pages_viewed": [4, 5],
+    "concentration_focus_pdf_pages": [34, 35, 36, 37]
+  },
+  "notes": [
+    {
+      "id": "READ-TB-M1-20260926-CONC-01",
+      "section_key": "TB-M1-C1:1.3",
+      "title": "先固定溶质与溶液体积",
+      "pdf_pages": [34, 35],
+      "printed_pages": [29, 30],
+      "source_anchors": ["配制一定物质的量浓度的溶液正文", "cB=nB/V定义式", "印刷30页两种氯化钠配制方式的比较"],
+      "summary": "浓度式的分母是配成的溶液体积，分子是指定溶质的物质的量。教材把“配成1 L溶液”与“溶于1 L水”并列供辨析，可用来检查学生是否只见到数字就相除。随后将标签浓度与取样总量分开记录。",
+      "classroom_check": "要求学生标注n、V各属于哪种对象，并说明改变取样体积时，哪些量改变、哪些量保持。",
+      "lecture_package_id": "PKG-028",
+      "lecture_block_indices": [39, 40, 41, 43, 44, 49, 50, 51, 52, 53, 54, 55, 70, 71, 72, 73, 74, 75, 76],
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-M1-20260926-CONC-02",
+      "section_key": "TB-M1-C1:1.3",
+      "title": "读清质量浓度和计量口径",
+      "pdf_pages": [34, 37],
+      "printed_pages": [29, 32],
+      "source_anchors": ["物质的量浓度定义及常用单位", "练习巩固第3题矿物质成分表", "表中硝酸盐以N计的标注"],
+      "summary": "矿泉水表用mg·L⁻¹，不能直接当作mol·L⁻¹或质量分数。换算前先明确该列按元素还是按离子计，再选相应摩尔质量；未明确的化学形态保留待核。讲义进一步用密度衔接溶液质量与体积，属于讲义补充推导，不冒称该教材页已印出换算公式。",
+      "classroom_check": "选一个计量对象明确的列，写出单位转换链；指出“以N计”对选用摩尔质量的影响，不编造未核对的全表答案。",
+      "lecture_package_id": "PKG-028",
+      "lecture_block_indices": [39, 40, 44, 46, 109, 110, 116, 145],
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-M1-20260926-CONC-03",
+      "section_key": "TB-M1-C1:1.3",
+      "title": "容量瓶规格、温度与称量精度",
+      "pdf_pages": [35, 36],
+      "printed_pages": [30, 31],
+      "source_anchors": ["图1.26不同规格的容量瓶", "容量瓶细颈和20℃标记的思考题", "100 mL 1.000 mol·L⁻¹氯化钠实验", "图1.27称量步骤"],
+      "summary": "教材列出多种容量瓶规格并讨论20℃标记；具体计算应使用所选瓶的配制容量。教材的氯化钠示例用电子天平称取5.850 g，与讲义托盘天平示例分开核对。读图时先找容量、标定温度和刻度，再讨论定量仪器与记录位数。",
+      "classroom_check": "学生从原图读出仪器信息，列出目标浓度、配制容量、称量值及相应仪器；遇讲义数值矛盾先标记再重算。",
+      "lecture_package_id": "PKG-028",
+      "lecture_block_indices": [180, 182, 183, 186, 189, 196, 197, 198, 204, 205, 206, 255],
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-M1-20260926-CONC-04",
+      "section_key": "TB-M1-C1:1.3",
+      "title": "定量转移与定容各控制什么",
+      "pdf_pages": [35, 36],
+      "printed_pages": [30, 31],
+      "source_anchors": ["氯化钠溶解与引流转移正文", "洗涤烧杯及玻璃棒2—3次的要求", "图1.27配制过程", "定容与洗液的思考题"],
+      "summary": "将烧杯溶解、玻璃棒引流、洗液全部转入、近刻度改滴管和盖塞摇匀逐项对应。洗涤转移关系到溶质是否完整进入容量瓶，定容关系到最终溶液体积。图中的简略步骤不能代替正文洗液要求；恢复室温的操作要求另由讲义195、199补充。",
+      "classroom_check": "让学生在原图旁标注每步器具与目的，并解释玻璃棒在溶解和转移时作用不同。",
+      "lecture_package_id": "PKG-028",
+      "lecture_block_indices": [190, 193, 195, 199, 200, 201, 202, 204, 255],
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-M1-20260926-CONC-05",
+      "section_key": "TB-M1-C1:1.3",
+      "title": "稀释守恒连接配制操作",
+      "pdf_pages": [35, 36],
+      "printed_pages": [30, 31],
+      "source_anchors": ["印刷31页浓溶液稀释正文", "c₁V₁=c₂V₂及符号说明", "图1.26和图1.27"],
+      "summary": "教材由稀释过程中溶质的物质的量保持不变引出c₁V₁=c₂V₂。课堂先声明不反应、不损失的边界，再区分原液体积、加水体积和最终溶液体积。浓硫酸在烧杯中稀释并冷却等细节来自讲义263、277，不能写成这一教材页已有的完整浓硫酸操作。",
+      "classroom_check": "让学生说明计算原液量所用的守恒量，再分别列量取原液和最终定容所需器具。",
+      "lecture_package_id": "PKG-028",
+      "lecture_block_indices": [43, 116, 121, 160, 161, 162, 163, 195, 199, 200, 201, 202, 263, 277],
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-M1-20260926-CONC-06",
+      "section_key": "TB-M1-C1:1.3",
+      "title": "用n和V检查误差的条件",
+      "pdf_pages": [34, 35, 36],
+      "printed_pages": [29, 30, 31],
+      "source_anchors": ["cB=nB/V定义式", "容量瓶20℃标记的思考题", "图1.27定容示意", "超过刻度线及洗液处理的思考题"],
+      "summary": "以浓度定义检查操作究竟改变n还是最终V，并区分热液转移与热态定容。教材提出超过刻度线如何处理等问题，但未在该页印出答案；本批把讲义中的对应解释作为待教师复核的候选，不给它们冠以教材答案或官方采分点。",
+      "classroom_check": "学生对一种误操作写“操作—受影响的量—比较条件—浓度方向”；若定容时温度等条件缺失，应先说明缺口。",
+      "lecture_package_id": "PKG-028",
+      "lecture_block_indices": [39, 41, 195, 199, 201, 202, 209, 210, 211, 270, 283, 290, 291, 299, 302, 303, 304, 306, 330],
+      "human_reviewed": false
+    }
+  ]
+}
