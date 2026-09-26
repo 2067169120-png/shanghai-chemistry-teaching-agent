@@ -1943,8 +1943,9 @@ class WordQuestionDialog(QDialog):
             updates = editor.updates
             expected = editor.expected_attribute_revision
             stored = editor.expected_stored_revision
+            reconfirm_range = editor.reconfirm_range
             editor.deleteLater()
-            if not accepted or not updates:
+            if not accepted or updates is None or (not updates and not reconfirm_range):
                 self._attributes_busy = False
                 self._update_actions()
                 set_status(self.status, "info", "已取消修改；教学标签未写入。")
@@ -1959,6 +1960,8 @@ class WordQuestionDialog(QDialog):
                     if self._items.get(key, {}).get("revision") != revision:
                         raise ValueError("changed question")
                     self._items[key]["attributes"] = row
+                    for field in ("attribute_stale", "attribute_protected", "attribute_warning"):
+                        self._items[key].pop(field, None)
                 except (KeyError, TypeError, ValueError):
                     failed("标签保存结果与当前题目不一致，请刷新后核对。")
                     return
@@ -1980,6 +1983,7 @@ class WordQuestionDialog(QDialog):
                     updates,
                     expected_attribute_revision=expected,
                     expected_stored_revision=stored,
+                    **({"reconfirm_range": True} if reconfirm_range else {}),
                 ),
                 saved,
                 failed,

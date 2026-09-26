@@ -2933,11 +2933,13 @@ class DesktopWorkbenchFacade:
     def word_question_save_attributes(
         self, key, revision, updates, *, expected_attribute_revision,
         expected_stored_revision=None,
+        reconfirm_range=False,
     ):
         return self._word_questions().save_attributes(
             key, revision, updates,
             expected_attribute_revision=expected_attribute_revision,
             expected_stored_revision=expected_stored_revision,
+            reconfirm_range=reconfirm_range,
         )
 
     def word_question_update_range(self, key, revision, **boundaries):

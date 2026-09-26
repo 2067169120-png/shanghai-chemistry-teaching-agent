@@ -1371,6 +1371,7 @@ class WordQuestionAttributeStore:
         curriculum_entries=None,
         initial_attributes=None,
         replacement_attributes=None,
+        reconfirm_range=False,
     ):
         initial = (
             validate_attributes(initial_attributes)
@@ -1388,6 +1389,8 @@ class WordQuestionAttributeStore:
         )
         if initial is not None and replacement is not None:
             raise WordQuestionAttributeError("初始标注与重新分题复核不能同时执行。")
+        if type(reconfirm_range) is not bool or (reconfirm_range and replacement is None):
+            raise WordQuestionAttributeError("范围重核必须绑定同一来源的新题目版本。")
         with self._lock, self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             row = self._existing(connection, key)
@@ -1417,9 +1420,19 @@ class WordQuestionAttributeStore:
                 baseline = _seal(
                     {**replacement, "edit_version": row["edit_version"] + 1}
                 )
-                edited = apply_teacher_edits(
-                    baseline, updates, curriculum_entries=curriculum_entries
-                )
+                if reconfirm_range and isinstance(updates, Mapping) and not updates:
+                    # Explicitly reviewed new ranges may retain every proposed
+                    # label. Do not manufacture a note or a changed field merely
+                    # to commit the new binding. Unknown fields stay unknown.
+                    edited = validate_attributes(_seal({
+                        **baseline,
+                        "edit_version": baseline["edit_version"] + 1,
+                        "annotation_source": "teacher_modified",
+                    }))
+                else:
+                    edited = apply_teacher_edits(
+                        baseline, updates, curriculum_entries=curriculum_entries
+                    )
                 self._write(connection, baseline)
             else:
                 edited = apply_teacher_edits(

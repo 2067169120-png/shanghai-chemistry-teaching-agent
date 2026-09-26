@@ -33,6 +33,22 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: python runtime/deeptutor_shchem/home_dashboard_qa.py --output local-continuation-qa/screenshots
+      - name: Check explicit range label review and native editor
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_word_range_label_reconfirmation.py staging/coordination/deeptutor_gateway/tests/test_word_question_dialog.py --junitxml=local-continuation-qa/range-review.xml
+      - name: Capture explicit range review with synthetic labels
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/range_label_review_qa.py --output local-continuation-qa/range-labels
+      - name: Check source page navigation and crop transactions
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_personal_visual_crop_review_ui.py staging/coordination/deeptutor_gateway/tests/test_personal_visual_crops_ui.py staging/coordination/deeptutor_gateway/tests/test_personal_visual_crops.py --junitxml=local-continuation-qa/crop-review.xml
+      - name: Capture source and crop review with synthetic pages
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/source_crop_review_qa.py --output local-continuation-qa/source-crops
       - name: Capture the native review list in temporary synthetic storage
         env:
           QT_QPA_PLATFORM: offscreen
