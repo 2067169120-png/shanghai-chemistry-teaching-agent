@@ -1,0 +1,155 @@
+{
+  "schema_version": "shchem.chapter-skill-behavioral-evaluation.v1",
+  "date": "2026-09-27",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "execution": "Independent subagent answered five synthetic prompts from an input-only file; root separately read answers against retained criteria.",
+  "respondent_model": "gpt-6-astra",
+  "respondent_reasoning": "max",
+  "evaluator": "root_model",
+  "criteria_count": 16,
+  "passed_cases": 5,
+  "total_cases": 5,
+  "passed_criteria": 16,
+  "provider_calls": 0,
+  "global_skill_installation": false,
+  "application_auto_routing": false,
+  "inputs_at_trial": [
+    {
+      "role": "skill",
+      "sha256": "8fc8a182587e2ea11cdc1fb9eda70f2c168e4cbc1eda3cba08aa717a6d5e973d"
+    },
+    {
+      "role": "decision_routes",
+      "sha256": "897fac8538bddcec0d814b2243deb676dbb5b7a404ccc7d1544e4eb1a5a44a84"
+    },
+    {
+      "role": "source_map",
+      "sha256": "3aeccbeeb41f9f398b7aea203ab2035532c1250d9f987bdd3b3e0d1968f4abe7"
+    },
+    {
+      "role": "input_cases",
+      "sha256": "705efba022b90004cabca67258341bcbfe1802727d274b74db4981c127d40a49"
+    }
+  ],
+  "private_response_file_sha256": "a69085583e91d7a882dc925c4fb0088feb9ca4e3ad62330c6b50a1414851c854",
+  "retained_evals_file_sha256_before_status_update": "dd88c2fd1787e25fc8420fd149ca0a00fae42aef5e1e0b281abb0506bb03565f",
+  "cases": [
+    {
+      "id": "evidence-insufficient",
+      "passed": true,
+      "acceptance": [
+        {
+          "criterion": "指出证据不足",
+          "met": true
+        },
+        {
+          "criterion": "区分溶液导电与酸的电离强弱",
+          "met": true
+        },
+        {
+          "criterion": "说明需要的条件，不猜测两瓶酸身份",
+          "met": true
+        }
+      ],
+      "root_assessment": "拒绝从石蕊和未控制的灯亮程度判定电离强弱，明确浓度、温度等缺失条件，没有补造酸身份。",
+      "response_conclusion": "不能仅凭这两个现象判断哪种酸是弱酸，也不能据灯更亮就判定其酸更强。"
+    },
+    {
+      "id": "dilution-and-temperature",
+      "passed": true,
+      "acceptance": [
+        {
+          "criterion": "用C=h-Kw/h计算分析浓度后再稀释",
+          "met": true
+        },
+        {
+          "criterion": "pH增幅小于1且仍是给定强酸",
+          "met": true
+        },
+        {
+          "criterion": "温度结论保留反应热效应条件",
+          "met": true
+        }
+      ],
+      "root_assessment": "先由电荷守恒扣除水贡献求分析浓度，稀释后再解二次式；用题定强酸给出小于1的pH增幅，温度结论保留热效应条件。",
+      "response_conclusion": "稀释后 pH≈6.8965，增幅约0.5965；该增幅不能单独证明弱酸。未知热效应时，也不能判断升温必使 Ka 增大。"
+    },
+    {
+      "id": "external-acid",
+      "passed": true,
+      "acceptance": [
+        {
+          "criterion": "混合后C=0.020mol/L",
+          "met": true
+        },
+        {
+          "criterion": "x=Ka*C/(h+Ka)",
+          "met": true
+        },
+        {
+          "criterion": "不令h=x",
+          "met": true
+        },
+        {
+          "criterion": "x约4.0e-8mol/L，电离比例约2.0e-6，标明近似和单位",
+          "met": true
+        }
+      ],
+      "root_assessment": "弱酸定容后的分析浓度为0.020 mol/L；使用题给实际平衡氢离子浓度，给出代数解、单位、守恒回代和近似误差。",
+      "response_conclusion": "c(X⁻)=3.999992000016×10⁻⁸ mol/L，按题给有效数字可写为4.0×10⁻⁸ mol/L；以 C−x≈C 求得的近似相对误差为0.0002%。"
+    },
+    {
+      "id": "source-conflict",
+      "passed": true,
+      "acceptance": [
+        {
+          "criterion": "分别保留两处数值与页码",
+          "met": true
+        },
+        {
+          "criterion": "说明不能凭本次模型研读选择官方纠错值",
+          "met": true
+        },
+        {
+          "criterion": "human_reviewed仍为false",
+          "met": true
+        }
+      ],
+      "root_assessment": "保留PDF71的4.8e-11与PDF72的4.7e-11及定位，不统一成官方纠错值，不把AI运行改成教师已审核。",
+      "response_conclusion": "保留 PDF71 表3.3：4.8×10⁻¹¹，PDF72 相应式：4.7×10⁻¹¹；暂不合并为一个“准确值”。本次状态继续为 candidate_only=true、human_reviewed=false，差异待核。"
+    },
+    {
+      "id": "changed-source",
+      "passed": true,
+      "acceptance": [
+        {
+          "criterion": "不继承旧区块依据",
+          "met": true
+        },
+        {
+          "criterion": "重新定位后再复用",
+          "met": true
+        },
+        {
+          "criterion": "说明旧区块231存在未完整提取的公式",
+          "met": true
+        }
+      ],
+      "root_assessment": "SHA与提取版本变化后拒绝沿用旧区块定位，并保留旧区块231原公式未完整提取的限制。",
+      "response_conclusion": "不能直接把旧区块231引用为新文件的已核验公式。当前应标为新版来源待重新定位与核验，并保持 candidate_only=true、human_reviewed=false。"
+    }
+  ],
+  "root_numeric_checks": {
+    "final_pH": 6.896484187455389,
+    "delta_pH": 0.5964841874553892,
+    "external_acid_anion_mol_L": 3.999992000016e-08,
+    "approximate_relative_error": 2e-06
+  },
+  "limitations": [
+    "五个合成案例、单次独立回答，没有无技能对照、重复抽样或真实课堂效果评测。",
+    "执行者未接触保留验收标准与既有结果，但仍为AI回答，由主代理作限定验收，不构成人工化学审核。",
+    "本次未重读原教材或完整讲义，也未运行book2skills上游外部模型优化脚本。",
+    "trial hashes bind the input skill before its verification-status paragraph was updated; source map and decision routes are unchanged."
+  ]
+}

@@ -110,6 +110,9 @@ _VISUAL_IMPORT_DRAFT_SCHEMA = "shchem.desktop-visual-import-draft.v1"
 _VISUAL_FAILURE_UNKNOWN_CODE = "unknown"
 _VISUAL_FAILURE_MAX_CODES = 8
 _VISUAL_FAILURE_MANIFEST_MAX_BYTES = 8 * 1024 * 1024
+# Full Word batches include native text/inspection records, beyond a failure
+# summary. Keep that read bounded without rejecting saved multi-document work.
+_VISUAL_BATCH_MANIFEST_MAX_BYTES = 128 * 1024 * 1024
 _VISUAL_BATCH_ID = re.compile(r"^DESKTOPBATCH-[0-9a-f]{32}$")
 _VISUAL_SOURCE_MANIFEST_FIELDS = (
     "source_file_id",
@@ -123,6 +126,22 @@ _VISUAL_SOURCE_MANIFEST_FIELDS = (
     "content_addressed",
 )
 _VISUAL_FAILURE_GUIDANCE = {
+    "visual_checkpoint_write_failed": (
+        "本次图片分片未能安全保存，处理已停止；此前保存的分片保留。",
+        "检查本机剩余空间和目录写入权限，再重新预览；未保存分片重新调用时可能再次计费。",
+    ),
+    "visual_checkpoint_invalid": (
+        "已保存的图片分片无法核验，本次没有继续使用该记录。",
+        "保留当前记录并检查本地文件，修复后重新预览；不要直接把记录标成通过。",
+    ),
+    "visual_checkpoint_stale": (
+        "图片分片进度与确认时不一致，本次处理已停止。",
+        "重新打开批次并预览当前发送范围，再明确确认。",
+    ),
+    "visual_checkpoint_scope_changed": (
+        "页面、模型或分片范围与已确认内容不一致。",
+        "重新预览页面和模型配置；当前范围不能沿用旧确认。",
+    ),
     "provider_rejected": (
         "服务端未接受本次视觉请求；当前信息不足以判断是密钥、模型能力还是权限原因。",
         "核对服务商提供的接口地址、接口格式和模型名称，确认后再手动重试。",
@@ -2446,8 +2465,8 @@ class DesktopWorkbenchFacade:
             if batches.is_symlink() or path.is_symlink():
                 raise ValueError("unsafe path")
             with path.open("rb") as handle:
-                raw = handle.read(_VISUAL_FAILURE_MANIFEST_MAX_BYTES + 1)
-            if len(raw) > _VISUAL_FAILURE_MANIFEST_MAX_BYTES:
+                raw = handle.read(_VISUAL_BATCH_MANIFEST_MAX_BYTES + 1)
+            if len(raw) > _VISUAL_BATCH_MANIFEST_MAX_BYTES:
                 raise ValueError("oversized manifest")
             value = _strict_json_loads(raw)
             if (
@@ -3231,12 +3250,13 @@ class DesktopWorkbenchFacade:
 
     def _visual_egress_call(self, method: str, *args, **kwargs):
         from .desktop_visual_egress import VisualEgressError
+        from .desktop_visual_checkpoints import VisualCheckpointError
 
         try:
             return getattr(self._visual_egress_service_instance(), method)(
                 *args, **kwargs
             )
-        except VisualEgressError as exc:
+        except (VisualEgressError, VisualCheckpointError) as exc:
             raise DesktopFacadeError(exc.code, exc.message_zh) from exc
         except DesktopFacadeError:
             raise
@@ -3290,22 +3310,39 @@ class DesktopWorkbenchFacade:
         progress_callback: Callable[[Mapping[str, Any]], None] | None = None,
         should_cancel: Callable[[], bool] | None = None,
     ) -> DesktopVisualImportReceipt:
-        """Run a saved batch only after exact teacher and profile confirmation."""
+        from .desktop_import_recovery import import_batch_lock
 
         if teacher_confirmed is not True:
-            raise DesktopFacadeError(
-                "teacher_confirmation_required", "发送原始页面前需要教师明确确认。"
-            )
-        if not (
-            isinstance(egress_preview_id, str)
-            and egress_preview_id.strip()
-            and isinstance(egress_revision, str)
-            and egress_revision.strip()
-        ):
-            raise DesktopFacadeError(
-                "visual_egress_preview_invalid",
-                "发送前图片预览不完整，请重新预览后确认。",
-            )
+            raise DesktopFacadeError("teacher_confirmation_required", "发送原始页面前需要教师明确确认。")
+        if not (isinstance(egress_preview_id, str) and egress_preview_id.strip()
+                and isinstance(egress_revision, str) and egress_revision.strip()):
+            raise DesktopFacadeError("visual_egress_preview_invalid", "发送前图片预览不完整，请重新预览后确认。")
+        try:
+            with import_batch_lock(self._visual_import_root, batch_id):
+                return self._run_saved_visual_import_batch_locked(
+                    batch_id=batch_id, profile_id=profile_id,
+                    expected_profile_revision=expected_profile_revision,
+                    teacher_confirmed=teacher_confirmed, egress_preview_id=egress_preview_id,
+                    egress_revision=egress_revision, progress_callback=progress_callback,
+                    should_cancel=should_cancel,
+                )
+        except DesktopImportBridgeError as exc:
+            raise DesktopFacadeError(exc.code, exc.message_zh) from exc
+
+    def _run_saved_visual_import_batch_locked(
+        self,
+        *,
+        batch_id: str,
+        profile_id: str,
+        expected_profile_revision: str,
+        teacher_confirmed: Literal[True],
+        egress_preview_id: str | None = None,
+        egress_revision: str | None = None,
+        progress_callback: Callable[[Mapping[str, Any]], None] | None = None,
+        should_cancel: Callable[[], bool] | None = None,
+    ) -> DesktopVisualImportReceipt:
+        """Run a saved batch only after exact teacher and profile confirmation."""
+
         descriptor = self._saved_visual_import_batch(batch_id)
         if self.import_batch_details(batch_id).visual_status in {"completed", "not_required"}:
             raise DesktopFacadeError(
@@ -3330,34 +3367,39 @@ class DesktopWorkbenchFacade:
             source_type=source_type,
         )
         borrow = getattr(self._providers, "borrow_invocation_context", None)
-        if not callable(borrow):
+        if frozen_renderer.pending_shards and not callable(borrow):
             raise DesktopFacadeError(
                 "visual_profile_unavailable", "视觉模型调用配置暂时不可用。"
             )
+        from .desktop_visual_checkpoints import ResumableVisualShardProvider
+
+        def process(provider=None):
+            resumable = ResumableVisualShardProvider(
+                frozen_renderer.checkpoints, provider,
+                progress_callback=progress_callback, should_cancel=should_cancel,
+            )
+            coordinator = self._visual_import_coordinator(
+                visual_provider=resumable, renderer=frozen_renderer
+            )
+            if coordinator.plan(request).batch_id != batch_id:
+                raise DesktopImportBridgeError(
+                    "visual_import_source_closure_changed",
+                    "已保存批次的来源集合无法核验。", 409,
+                )
+            return coordinator.process(
+                request, progress_callback=progress_callback,
+                should_cancel=should_cancel, visual_confirmation=True,
+            )
+
         try:
-            with borrow(
-                profile_id, expected_revision=expected_profile_revision
-            ) as context:
-                provider = StructuredVisualShardProviderAdapter(
-                    context,
-                    transport=self._visual_import_transport,
-                    should_cancel=should_cancel,
-                )
-                coordinator = self._visual_import_coordinator(
-                    visual_provider=provider, renderer=frozen_renderer
-                )
-                if coordinator.plan(request).batch_id != batch_id:
-                    raise DesktopImportBridgeError(
-                        "visual_import_source_closure_changed",
-                        "已保存批次的来源集合无法核验。",
-                        409,
-                    )
-                result = coordinator.process(
-                    request,
-                    progress_callback=progress_callback,
-                    should_cancel=should_cancel,
-                    visual_confirmation=True,
-                )
+            if not frozen_renderer.pending_shards:
+                result = process()  # All reviewed shards: no credentials or transport.
+            else:
+                with borrow(profile_id, expected_revision=expected_profile_revision) as context:
+                    result = process(StructuredVisualShardProviderAdapter(
+                        context, transport=self._visual_import_transport,
+                        should_cancel=should_cancel,
+                    ))
         except DesktopImportBridgeError as exc:
             raise DesktopFacadeError(exc.code, exc.message_zh) from exc
         except DesktopFacadeError:

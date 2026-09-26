@@ -61,6 +61,14 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: python runtime/deeptutor_shchem/import_batch_review_qa.py --output local-continuation-qa/import-retry
+      - name: Check visual shard recovery and exact outbound disclosure
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_visual_shard_resume.py staging/coordination/deeptutor_gateway/tests/test_visual_import_egress_dialog.py staging/coordination/deeptutor_gateway/tests/test_preparation_egress_dialog.py staging/coordination/deeptutor_gateway/tests/test_desktop_visual_failure_receipts.py --junitxml=local-continuation-qa/visual-resume.xml
+      - name: Capture partial and local-only visual recovery
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/visual_resume_qa.py --output local-continuation-qa/visual-resume
       - uses: actions/upload-artifact@v4
         if: always()
         with:

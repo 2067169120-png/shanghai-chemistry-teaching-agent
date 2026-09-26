@@ -48,6 +48,7 @@ class PreparationEgressDialog(QDialog):
         layout.setContentsMargins(20, 12, 20, 12)
         layout.setSpacing(6)
         heading = QLabel("发送前核对" if not local_only else "本地导出确认")
+        self.heading = heading
         heading.setObjectName("PageTitle")
         heading.setTextFormat(Qt.TextFormat.PlainText)
         heading.setWordWrap(True)
@@ -147,6 +148,7 @@ class PreparationEgressDialog(QDialog):
             "调用可能产生费用，重试可能再次计费。确认前不会调用模型；取消不会发送新请求。"
             if not local_only else '只使用已保存的初稿继续导出，不重新调用模型。'
         )
+        self.reminder = reminder
         reminder.setObjectName("MutedLabel")
         reminder.setWordWrap(True)
         layout.addWidget(reminder)

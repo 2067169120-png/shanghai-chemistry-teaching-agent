@@ -565,6 +565,13 @@ class ImportDialog(QDialog):
                 text = "第 2/2 步：正在逐页生成视觉候选"
             else:
                 text = "第 1/2 步：正在整理待视觉资料（不会发送给模型）"
+        elif stage == "visual_shard_completed":
+            complete, total = payload.get("completed_shards"), payload.get("total_shards")
+            if type(complete) is not int or type(total) is not int or not 1 <= complete <= total:
+                return
+            self.progress.setValue(2)
+            action = "已复用本机结果" if payload.get("reused") is True else "提取与裁片复核通过，已保存"
+            text = f"图片分片 {complete}/{total}：{action}"
         elif stage == "completed":
             self.progress.setValue(3)
             text = (

@@ -100,6 +100,11 @@ class _PreviewFacade:
         return self.renderer
 
 
+@pytest.fixture(autouse=True)
+def checkpoint_root(tmp_path, monkeypatch):
+    monkeypatch.setattr(_PreviewFacade, "_visual_import_root", tmp_path / "visual-import-v2", raising=False)
+
+
 def test_preview_freezes_rendered_pages_and_reader_returns_exact_bytes():
     facade = _PreviewFacade()
     service = DesktopVisualEgressService(facade)
@@ -397,8 +402,9 @@ def test_facade_preview_and_image_calls_use_safe_chinese_wrapper(monkeypatch):
     assert calls[2] == ("discard", ("p",), {})
 
 
-def test_run_saved_visual_import_batch_injects_frozen_renderer_before_provider():
+def test_run_saved_visual_import_batch_injects_frozen_renderer_before_provider(tmp_path):
     facade = DesktopWorkbenchFacade.__new__(DesktopWorkbenchFacade)
+    facade.paths = SimpleNamespace(state_root=tmp_path)
     source = DesktopSourceFile(
         role="question",
         order_index=1,
@@ -413,7 +419,7 @@ def test_run_saved_visual_import_batch_injects_frozen_renderer_before_provider()
         "status": "pending",
         "source_type": "合成批次",
     }
-    frozen = object()
+    frozen = SimpleNamespace(pending_shards=1, checkpoints=object())
     renderer_args: list[object] = []
     process_calls: list[dict[str, Any]] = []
 

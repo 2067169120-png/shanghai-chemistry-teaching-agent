@@ -10,8 +10,13 @@ import pytest
 
 import integrations.deeptutor_shchem_v1.desktop_facade as facade_module
 from integrations.deeptutor_shchem_v1.desktop_facade import (
+    DesktopFacadeError,
     DesktopVisualImportReceipt,
     DesktopWorkbenchFacade,
+)
+from integrations.deeptutor_shchem_v1.desktop_visual_import_v2 import (
+    DesktopImportPlan,
+    DesktopImportResult,
 )
 
 _BATCH_ID = "DESKTOPBATCH-" + "a" * 32
@@ -32,9 +37,10 @@ def _source_manifest() -> dict[str, Any]:
     }
 
 
-def _failed_result(code: str) -> SimpleNamespace:
+def _failed_result(code: str) -> DesktopImportResult:
     source = _source_manifest()
-    plan = SimpleNamespace(
+    plan = DesktopImportPlan(
+        batch_id=_BATCH_ID,
         source_import_states=(
             {
                 "source_file_id": source["source_file_id"],
@@ -44,12 +50,19 @@ def _failed_result(code: str) -> SimpleNamespace:
         sources=(source,),
         native_quick_count=0,
         visual_queue_count=1,
+        native_inspections=(),
+        visual_required=True,
+        visual_source_ids=(source["source_file_id"],),
     )
-    return SimpleNamespace(
+    return DesktopImportResult(
         batch_id=_BATCH_ID,
         source_type="合成教师资料",
         plan=plan,
         visual_status="failed",
+        native_records=(), native_import_receipt=None,
+        visual_candidate=None, visual_candidate_sha256=None,
+        visual_revision_token=None, visual_queue=(), pixel_pages=(),
+        manifest_path=None,
         blockers=(
             {
                 "code": code,
@@ -75,6 +88,10 @@ def _failed_result(code: str) -> SimpleNamespace:
         "visual_provider_output_invalid",
         "visual_candidate_schema_invalid",
         "candidate_parent_chain_invalid",
+        "visual_checkpoint_write_failed",
+        "visual_checkpoint_invalid",
+        "visual_checkpoint_stale",
+        "visual_checkpoint_scope_changed",
     ),
 )
 def test_failed_result_exposes_only_stable_teacher_guidance(code: str) -> None:
@@ -178,6 +195,7 @@ def _old_descriptor(*, source: dict[str, Any]) -> tuple[dict[str, Any], dict[str
     }
     manifest = {
         "batch_id": _BATCH_ID,
+        "source_type": "合成教师资料",
         "visual_status": "failed",
         "candidate_only": True,
         "central_question_bank_write": False,
@@ -237,24 +255,29 @@ def test_old_failed_descriptor_falls_back_unknown_when_manifest_source_changes(
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
     facade = _facade_for_saved_descriptor(tmp_path, descriptor)
 
-    receipts = facade.list_resumable_visual_import_batches()
-
-    assert receipts[0].failure_codes == ("unknown",)
-    assert "具体失败原因无法安全确认" in receipts[0].message_zh
-    assert _RAW_PROVIDER_DETAIL not in receipts[0].message_zh
+    # Legacy diagnostic reading reveals no unbound provider details; the
+    # current resume entry point must reject the changed source closure.
+    assert facade._visual_import_failure_codes_from_manifest(descriptor) == ()
+    with pytest.raises(DesktopFacadeError) as error:
+        facade.list_resumable_visual_import_batches()
+    assert error.value.code == "visual_import_state_invalid"
+    assert _RAW_PROVIDER_DETAIL not in str(error.value)
 
 
 def test_old_failed_descriptor_manifest_read_is_bounded_and_fail_closed(
-    tmp_path: Path,
+    tmp_path: Path, monkeypatch,
 ) -> None:
     source = _source_manifest()
     descriptor, _manifest = _old_descriptor(source=source)
     manifest_path = tmp_path / "visual-import-v2" / "batches" / f"{_BATCH_ID}.json"
     manifest_path.parent.mkdir(parents=True)
-    manifest_path.write_bytes(b"{" + b"x" * (facade_module._VISUAL_FAILURE_MANIFEST_MAX_BYTES + 1))
+    monkeypatch.setattr(facade_module, "_VISUAL_FAILURE_MANIFEST_MAX_BYTES", 1024)
+    monkeypatch.setattr(facade_module, "_VISUAL_BATCH_MANIFEST_MAX_BYTES", 2048)
+    manifest_path.write_bytes(b"{" + b"x" * 2049)
     facade = _facade_for_saved_descriptor(tmp_path, descriptor)
 
-    receipts = facade.list_resumable_visual_import_batches()
-
-    assert receipts[0].failure_codes == ("unknown",)
-    assert _RAW_PROVIDER_DETAIL not in receipts[0].message_zh
+    assert facade._visual_import_failure_codes_from_manifest(descriptor) == ()
+    with pytest.raises(DesktopFacadeError) as error:
+        facade.list_resumable_visual_import_batches()
+    assert error.value.code == "visual_import_state_invalid"
+    assert _RAW_PROVIDER_DETAIL not in str(error.value)

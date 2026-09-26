@@ -101,7 +101,7 @@ class ImportBatchDialog(QDialog):
         visual = {
             "not_required": "本批无需图片识别。",
             "completed": "图片候选已生成，等待逐页核对；此次Word重试不会替换它。",
-            "failed": "图片识别未完成，可返回选择模型后整批续做。",
+            "failed": "图片识别未完成。返回选择模型并预览，可核验已保存分片，从未完成部分继续。",
         }.get(receipt.visual_status, "图片已保存，待发送前预览与确认；返回后可继续。")
         self.visual_status.setText(visual)
         self.files.blockSignals(True)

@@ -114,6 +114,30 @@ def _close(dialog: VisualImportEgressDialog) -> None:
     dialog.close()
 
 
+@pytest.mark.parametrize("pending", [0, 1, 3])
+def test_resume_gallery_labels_cached_pages_and_local_only_action(app, pending):
+    plan, contents = _plan_for([
+        ("题目一.png", "question", (255, 255, 255), (64, 40)),
+        ("题目二.png", "question", (230, 230, 255), (64, 40)),
+        ("答案.png", "answer", (230, 255, 230), (64, 40)),
+    ])
+    for index, page in enumerate(plan["pages"]):
+        page["will_send"] = index >= 3 - pending
+    plan["confirmation_text"] = DesktopVisualEgressService._confirmation_text(plan["model_label"], plan["pages"], plan["request_policy"])
+    dialog, _calls = _dialog_for(plan, contents)
+    _flush(app, dialog)
+    assert dialog._valid_plan
+    assert sum("本机复用" in asset["caption"] for asset in dialog._assets) == 3 - pending
+    if pending == 0:
+        assert dialog.confirm_button.text() == "在本机汇总候选"
+        assert "不发送页面或调用模型" in dialog.summary.text()
+        assert "会离开本机" not in plan["confirmation_text"]
+    else:
+        assert f"{pending} 页本次发送" in dialog.summary.text()
+        assert f"{3 - pending} 页从本机复用" in dialog.summary.text()
+    _close(dialog)
+
+
 def test_gallery_is_open_by_default_and_displays_real_page_pixels(app):
     plan, contents = _plan_for(
         [("题目页.png", "question", (18, 52, 220), (64, 40))]
