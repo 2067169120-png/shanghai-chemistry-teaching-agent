@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import synthetic_visual_provider as _SUPPORT_TEST
 from PIL import Image
 
 from integrations.deeptutor_shchem_v1 import (
@@ -35,13 +36,6 @@ FIXTURE_PATH = (
     / "synthetic_multifile_theme.json"
 )
 FACADE_TEST_PATH = Path(__file__).with_name("test_desktop_visual_import_facade.py")
-SUPPORT_TEST_PATH = (
-    WORKSPACE_ROOT
-    / "parallel_outputs"
-    / "intake_batches_v2"
-    / "tests"
-    / "test_intake_batches_v2.py"
-)
 BATCH_ID = "DESKTOPBATCH-" + "a" * 32
 
 
@@ -55,7 +49,6 @@ def _load_module(path: Path, name: str):
 
 
 _FACADE_TEST = _load_module(FACADE_TEST_PATH, "personal_visual_facade_fixture")
-_SUPPORT_TEST = _load_module(SUPPORT_TEST_PATH, "personal_visual_intake_fixture")
 
 
 def _write_synthetic_catalog(workspace: Path) -> None:

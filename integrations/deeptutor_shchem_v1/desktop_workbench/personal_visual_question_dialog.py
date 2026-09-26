@@ -174,11 +174,18 @@ class PersonalVisualQuestionDialog(QDialog):
         tasks: Any,
         parent: QWidget | None = None,
         batch_id: str | None = None,
+        *,
+        initial_question_key: str | None = None,
+        initial_revision: str | None = None,
     ) -> None:
         super().__init__(parent)
         self.facade = facade
         self.tasks = tasks
         self.batch_id = batch_id
+        self._initial_question_key = initial_question_key
+        self._initial_revision = initial_revision
+        self._initial_location_pending = bool(initial_question_key)
+        self._location_blocked = bool(initial_question_key)
         self.preparation_reference: dict[str, Any] | None = None
         self.saved = False
         self._closed = False
@@ -497,6 +504,11 @@ class PersonalVisualQuestionDialog(QDialog):
                     selected[(batch, key, revision)] = {
                         "points": points if type(points) is int and 1 <= points <= 100 else 2,
                     }
+            if (self._initial_question_key and self._current_token is not None
+                    and self._current_token not in rows):
+                self._location_blocked = True
+                self._detail_busy = False
+                self._clear_current_detail()
             self._rows = rows
             self._selected = {
                 token: selection
@@ -529,7 +541,20 @@ class PersonalVisualQuestionDialog(QDialog):
             if warnings:
                 message += f" 另有 {len(warnings)} 条来源读取提醒。"
             set_status(self.status, "attention" if warnings else "success", message)
+            if self._initial_location_pending:
+                matches = [token for token in rows if token[1] == self._initial_question_key
+                           and (not self.batch_id or token[0] == self.batch_id)]
+                exact = [token for token in matches if token[2] == self._initial_revision]
+                self._location_blocked = len(matches) != 1 or len(exact) != 1
+                if self._location_blocked:
+                    self._clear_current_detail()
+                else:
+                    self._current_token = exact[0]
+                    self._initial_location_pending = False
             self._apply_filters()
+            if self._location_blocked:
+                set_status(self.status, "attention",
+                           "目标原题已移除或版本已变化；未选中其他题。请关闭并刷新待整理清单，再打开当前版本。")
         except (KeyError, TypeError, ValueError):
             self._catalog_failed(generation, "个人图文题目录暂时无法读取，请刷新或核对本地题库。")
 
@@ -624,7 +649,7 @@ class PersonalVisualQuestionDialog(QDialog):
         self._rendering_list = False
         if current is not None:
             self.question_list.setCurrentRow(self._visible_tokens.index(current))
-        elif self._visible_tokens:
+        elif self._visible_tokens and not self._location_blocked:
             self.question_list.setCurrentRow(0)
         else:
             self._clear_current_detail()
@@ -640,6 +665,9 @@ class PersonalVisualQuestionDialog(QDialog):
         if not isinstance(token, tuple) or len(token) != 3:
             self._clear_current_detail()
             return
+        # An explicit user selection is different from an automatic fallback.
+        self._location_blocked = False
+        self._initial_location_pending = False
         self._show_detail(tuple(str(item) for item in token))
 
     def _clear_current_detail(self) -> None:
@@ -1225,6 +1253,8 @@ class PersonalVisualQuestionDialog(QDialog):
             self._detail_failures.add(entry)
             self._rows[entry]["selection_ready"] = False
             self._rows[entry]["warnings"] = ["裁剪已修订；请刷新并重新核对题面。"]
+        if self._initial_question_key:
+            self._location_blocked = True
         self._clear_current_detail()
         try:
             if result["batch_id"] != token[0]:
@@ -1250,6 +1280,7 @@ class PersonalVisualQuestionDialog(QDialog):
             for row in rows:
                 self._rows[_row_token(row)] = row
             self._current_token = _row_token(row_map[token[1]])
+            self._location_blocked = False
         except (KeyError, TypeError, ValueError):
             self._apply_filters()
             set_status(self.status, "attention", "裁剪保存结果暂时无法完整核对。受影响题已取消选择，请刷新后重核；其他未保存选题仍保留。")
@@ -1267,7 +1298,7 @@ class PersonalVisualQuestionDialog(QDialog):
                 refresh_failed(None)
                 return
             self._catalog_ready(generation, {**value, "selection": selections})
-            if self.status.objectName() != "StatusError":
+            if self.status.objectName() != "StatusError" and not self._location_blocked:
                 set_status(self.status, "success", f"裁剪已保存，影响 {len(affected_keys)} 道题；其中 {removed} 道已取消勾选，请重新看图选用。旧标签保留待重核；其他选题保留。已带入备课的副本请重新带入。")
             self._update_actions()
 
@@ -1371,7 +1402,7 @@ class PersonalVisualQuestionDialog(QDialog):
             local_view = dict(value)
             local_view["selection"] = selections
             self._catalog_ready(generation, local_view)
-            if self.status.objectName() != "StatusError":
+            if self.status.objectName() != "StatusError" and not self._location_blocked:
                 set_status(self.status, "success", "本题个人标签已保存，筛选已刷新；原图、原档案与本窗口其他选题均未改动。")
             self._update_actions()
 

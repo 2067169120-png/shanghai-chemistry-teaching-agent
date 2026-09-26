@@ -117,3 +117,13 @@ def test_missing_directory_is_unknown_and_stale_teacher_tags_remain_protected():
     item["attributes"]["question_revision"] = "old"
     row = summarize_word_catalog(catalog(item))["rows"][0]
     assert row["protected"] and "stale" in row["todo_keys"]
+
+
+def test_service_stale_projection_is_pending_without_attaching_old_attributes():
+    item = sample()
+    item.pop("attributes")
+    item.update(attribute_stale=True, attribute_protected=True)
+    result = summarize_word_catalog(catalog(item))
+    assert result["counts"]["stale_labels"] == 1
+    assert result["rows"][0]["protected"] and "stale" in result["rows"][0]["todo_keys"]
+    assert result["counts"]["primary"] == 0

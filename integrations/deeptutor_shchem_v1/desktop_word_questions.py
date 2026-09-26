@@ -27,6 +27,7 @@ from .desktop_word_preview_cache import WordPreviewCache
 from .desktop_word_question_attributes import (
     WordQuestionAttributeError,
     WordQuestionAttributeStore,
+    automatic_tags_protected,
     complete_missing_attributes,
     load_attribute_catalog,
     suggest_attributes,
@@ -188,11 +189,16 @@ class WordQuestionService:
                 and saved["question_revision"] == row["revision"]
             ):
                 row["attributes"] = saved
-            elif saved and saved["annotation_source"] == "teacher_modified":
-                row["attribute_warning"] = (
-                    "题目范围已变化，原教师标签保存在历史中，请重新核对后保存。"
-                )
-                warnings.append(row["attribute_warning"])
+            elif saved:
+                # Keep stale automatic labels visible as review work without
+                # exposing them to filtering as current effective attributes.
+                row["attribute_stale"] = True
+                row["attribute_protected"] = automatic_tags_protected(saved)
+                if saved["annotation_source"] == "teacher_modified":
+                    row["attribute_warning"] = (
+                        "题目范围已变化，原教师标签保存在历史中，请重新核对后保存。"
+                    )
+                    warnings.append(row["attribute_warning"])
         # These are lookup locations, not trusted source contents. Every later
         # operation still verifies the saved descriptor and selected DOCX bytes.
         with self._lock:

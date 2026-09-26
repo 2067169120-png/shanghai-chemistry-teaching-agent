@@ -17,7 +17,7 @@ def catalog(monkeypatch):
     value = {"knowledge_points": [{"id": "K10", "name": "电离与离子反应"}], "nodes": []}
     monkeypatch.setattr(
         "integrations.deeptutor_shchem_v1.desktop_word_questions.load_attribute_catalog",
-        lambda _root: value,
+        lambda _root, *, allow_builtin=False: value,
     )
     return value
 
@@ -106,11 +106,33 @@ def test_changed_ranges_keep_old_teacher_history_until_explicit_reconfirmation(
     assert store.get(item["key"]) == old
     listing = facade.word_question_catalog()["items"][0]
     assert "attributes" not in listing and listing["attribute_warning"]
+    assert listing["attribute_stale"] and listing["attribute_protected"]
     saved = _save(facade, updated, new_options, teacher_note="已重新核对新范围")
     assert saved["question_revision"] == updated["revision"]
     assert [v["edit_version"] for v in store.history(item["key"])] == [1, 2, 3, 4]
     assert store.history(item["key"])[1]["teacher_note"] == "旧范围教师标注"
     assert facade.word_question_catalog()["items"][0]["attributes"] == saved
+
+
+def test_changed_ranges_surface_stale_automatic_labels_without_counting_or_rewriting_them(
+    desktop_paths, tmp_path
+):
+    facade, source, provider = _import(desktop_paths, tmp_path)
+    original_bytes = source.read_bytes()
+    item = facade.word_question_catalog()["items"][0]
+    options = facade.word_question_attribute_options(item["key"], item["revision"])
+    store = facade._word_questions().attribute_store
+    old = store.save_many([options["attributes"]])[0]
+    original_history = store.history(item["key"])
+    facade.word_question_update_range(item["key"], item["revision"],
+        block_start=3, question_end=4, answer_start=5, block_end=5)
+    listing = facade.word_question_catalog()["items"][0]
+    assert listing["attribute_stale"] is True
+    assert listing["attribute_protected"] is False
+    assert "attributes" not in listing and "attribute_warning" not in listing
+    assert store.get(item["key"]) == old
+    assert store.history(item["key"]) == original_history
+    assert source.read_bytes() == original_bytes and provider.borrow_calls == 0
 
 
 def test_stale_range_dialog_cannot_overwrite_intervening_old_label_edit(

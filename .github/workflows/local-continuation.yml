@@ -25,6 +25,10 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_home_dashboard_ui.py staging/coordination/deeptutor_gateway/tests/test_local_import_continuation.py staging/coordination/deeptutor_gateway/tests/test_maintenance_release_safety.py staging/coordination/deeptutor_gateway/tests/test_desktop_library_progress.py staging/coordination/deeptutor_gateway/tests/test_library_progress_dialog.py staging/coordination/deeptutor_gateway/tests/test_offline_word_label_review.py staging/coordination/deeptutor_gateway/tests/test_word_missing_attribute_merge.py staging/coordination/deeptutor_gateway/tests/test_word_semantic_tags.py staging/coordination/deeptutor_gateway/tests/test_extend_lecture_knowledge.py --junitxml=local-continuation-qa/pytest.xml
+      - name: Check visual repair navigation and source boundaries with synthetic data
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_library_progress_visual.py staging/coordination/deeptutor_gateway/tests/test_personal_visual_questions.py staging/coordination/deeptutor_gateway/tests/test_personal_visual_questions_ui.py staging/coordination/deeptutor_gateway/tests/test_personal_visual_attributes_ui.py staging/coordination/deeptutor_gateway/tests/test_word_question_index.py staging/coordination/deeptutor_gateway/tests/test_word_question_attribute_service.py staging/coordination/deeptutor_gateway/tests/test_word_questions_service.py staging/coordination/deeptutor_gateway/tests/test_lecture_library.py staging/coordination/deeptutor_gateway/tests/test_lecture_study_reference.py --junitxml=local-continuation-qa/visual-boundaries.xml
       - name: Capture the native dashboard in temporary synthetic storage
         env:
           QT_QPA_PLATFORM: offscreen
