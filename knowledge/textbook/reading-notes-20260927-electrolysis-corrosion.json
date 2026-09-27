@@ -1,0 +1,864 @@
+{
+  "schema_version": "shchem.textbook-page-reading-notes.v1",
+  "purpose": "选必一4.3—4.4 PDF106—117（印刷100—111）原页研读候选；主代理逐页查看并核对229个讲义区块、12个媒体引用，独立核算配平与理论量。未读对象、源答案矛盾及实际pH未知保留；未人审，不代表整书蒸馏完成。",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "original_source_redistribution": false,
+  "review_method": "page_images_read_by_model",
+  "source": {
+    "volume_id": "TB-E1",
+    "title": "普通高中教科书 化学 选择性必修1 化学反应原理",
+    "sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+    "pdf_pages_viewed": [
+      106,
+      107,
+      108,
+      109,
+      110,
+      111,
+      112,
+      113,
+      114,
+      115,
+      116,
+      117
+    ],
+    "printed_pages_viewed": [
+      100,
+      101,
+      102,
+      103,
+      104,
+      105,
+      106,
+      107,
+      108,
+      109,
+      110,
+      111
+    ],
+    "toc_pdf_pages_viewed": [],
+    "linked_pdf_pages": [
+      106,
+      107,
+      108,
+      109,
+      110,
+      111,
+      112,
+      113,
+      114,
+      115,
+      116,
+      117
+    ]
+  },
+  "notes": [
+    {
+      "id": "READ-TB-E1-20260927-ELECTRO-01",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.3",
+      "title": "氯化铜电解：现象、微粒路径与模型条件",
+      "pdf_pages": [
+        106,
+        107
+      ],
+      "printed_pages": [
+        100,
+        101
+      ],
+      "source_anchors": [
+        "图4.11",
+        "图4.12",
+        "0.4 mol/L氯化铜与石墨电极实验",
+        "两极反应及总反应"
+      ],
+      "summary": "教材以规定浓度和石墨电极组织氯化铜电解，产物标签与两极式共同支撑电子计量。外电路输送电子，溶液中离子迁移维持电荷收支；“电子从一极到另一极”不能解释成自由电子穿过水溶液。Cu²⁺/H⁺及Cl⁻/OH⁻的竞争叙述限该模型，空白记录表仍是待测。",
+      "classroom_check": "先标证据是文字给定、原图标签还是待观测，再写Cu²⁺+2e⁻→Cu、2Cl⁻→Cl₂+2e⁻；用119图说明载流粒子改为O²⁻时要重新建模。",
+      "lecture_package_id": "PKG-026",
+      "lecture_block_indices": [
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-026/第03讲 电解池 金属腐蚀与防护（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "1975ffc15f26a44beac1f146dce6163dc1380ce89eef835248667a058e9c17af",
+      "source_preview_revision": "16dfeda0b3364c61256b2638d76a36af9564ad887b44bba1cc1c3b1c06e78351",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 37,
+          "end": 72,
+          "start_xml_locator": "word/document.xml#/w:body/*[45]",
+          "end_xml_locator": "word/document.xml#/w:body/*[83]"
+        },
+        {
+          "start": 118,
+          "end": 129,
+          "start_xml_locator": "word/document.xml#/w:body/*[129]",
+          "end_xml_locator": "word/document.xml#/w:body/*[140]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          106,
+          107
+        ],
+        "printed_pages": [
+          100,
+          101
+        ],
+        "anchors": [
+          "图4.11",
+          "图4.12",
+          "0.4 mol/L氯化铜与石墨电极实验",
+          "两极反应及总反应"
+        ],
+        "support_role": "direct_page_reading_with_explicit_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未复现实验；不把原图的示意标签等同实际收集到的气体量。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-ELECTRO-02",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.3",
+      "title": "氯碱膜分室：把迁移与净反应放在同一张账上",
+      "pdf_pages": [
+        108,
+        109
+      ],
+      "printed_pages": [
+        102,
+        103
+      ],
+      "source_anchors": [
+        "图4.13",
+        "图4.14",
+        "电解饱和食盐水",
+        "离子交换膜示意"
+      ],
+      "summary": "图4.14中阳极放氯、阴极由水还原产氢和OH⁻，Na⁺从阳极室向阴极室迁移，膜限制OH⁻反向进入阳极室。迁移本身不是氧化还原；把两室反应与Na⁺通量合起来才能解释NaOH积累。膜的许可粒子和阻隔作用按本图保留，不能照搬到所有膜。",
+      "classroom_check": "画两室边界，分别列电极项和跨膜项，再检查总电荷；换成262的透H⁺膜时重新列账，不套用Na⁺通量。",
+      "lecture_package_id": "PKG-026",
+      "lecture_block_indices": [
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        261,
+        262,
+        263,
+        264,
+        265,
+        266,
+        267,
+        268
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-026/第03讲 电解池 金属腐蚀与防护（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "1975ffc15f26a44beac1f146dce6163dc1380ce89eef835248667a058e9c17af",
+      "source_preview_revision": "16dfeda0b3364c61256b2638d76a36af9564ad887b44bba1cc1c3b1c06e78351",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 75,
+          "end": 88,
+          "start_xml_locator": "word/document.xml#/w:body/*[86]",
+          "end_xml_locator": "word/document.xml#/w:body/*[99]"
+        },
+        {
+          "start": 261,
+          "end": 268,
+          "start_xml_locator": "word/document.xml#/w:body/*[277]",
+          "end_xml_locator": "word/document.xml#/w:body/*[284]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          108,
+          109
+        ],
+        "printed_pages": [
+          102,
+          103
+        ],
+        "anchors": [
+          "图4.13",
+          "图4.14",
+          "电解饱和食盐水",
+          "离子交换膜示意"
+        ],
+        "support_role": "direct_page_reading_with_explicit_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未测膜选择性或工业效率；108的应用概述不当作当前工艺普查。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-ELECTRO-03",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.3",
+      "title": "电镀要核对混合电解液与酸碱条件",
+      "pdf_pages": [
+        110,
+        112,
+        113
+      ],
+      "printed_pages": [
+        104,
+        106,
+        107
+      ],
+      "source_anchors": [
+        "图4.15",
+        "塑料表面镀镍讨论",
+        "镀镍装置练习",
+        "稀NaCl电解追问"
+      ],
+      "summary": "铜钥匙镀锌与导电化塑料镀镍共享还原沉积目标，但电极、电解液和pH条件各自不同。112把H⁺竞争还原与Ni(OH)₂沉淀作为酸碱边界；113的稀NaCl追问提醒浓度能改变竞争反应。讲义204原图还同时标ZnSO₄和NH₄Cl，不能简写成纯ZnSO₄后套固定排序。",
+      "classroom_check": "列材料—溶液物种—目标半反应—可能副反应四栏，用Ni²⁺+2e⁻→Ni检查电子，再明确酸度及沉淀条件仍需具体参数。",
+      "lecture_package_id": "PKG-026",
+      "lecture_block_indices": [
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        203,
+        204,
+        205,
+        206,
+        207,
+        208,
+        209,
+        210,
+        211,
+        212,
+        213,
+        214,
+        215,
+        216,
+        217,
+        240,
+        241,
+        242,
+        243,
+        244,
+        245,
+        246,
+        247,
+        248
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-026/第03讲 电解池 金属腐蚀与防护（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "1975ffc15f26a44beac1f146dce6163dc1380ce89eef835248667a058e9c17af",
+      "source_preview_revision": "16dfeda0b3364c61256b2638d76a36af9564ad887b44bba1cc1c3b1c06e78351",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 55,
+          "end": 72,
+          "start_xml_locator": "word/document.xml#/w:body/*[63]",
+          "end_xml_locator": "word/document.xml#/w:body/*[83]"
+        },
+        {
+          "start": 203,
+          "end": 217,
+          "start_xml_locator": "word/document.xml#/w:body/*[217]",
+          "end_xml_locator": "word/document.xml#/w:body/*[231]"
+        },
+        {
+          "start": 240,
+          "end": 248,
+          "start_xml_locator": "word/document.xml#/w:body/*[254]",
+          "end_xml_locator": "word/document.xml#/w:body/*[262]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          110,
+          112,
+          113
+        ],
+        "printed_pages": [
+          104,
+          106,
+          107
+        ],
+        "anchors": [
+          "图4.15",
+          "塑料表面镀镍讨论",
+          "镀镍装置练习",
+          "稀NaCl电解追问"
+        ],
+        "support_role": "direct_page_reading_with_explicit_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未给镀层质量、浴液优化或实际沉积效率；不从练习选项推测实测产物。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-ELECTRO-04",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.3",
+      "title": "电镀、精炼与熔盐制备须分别核算",
+      "pdf_pages": [
+        111,
+        112
+      ],
+      "printed_pages": [
+        105,
+        106
+      ],
+      "source_anchors": [
+        "图4.16",
+        "图4.17",
+        "熔融NaCl电解式",
+        "电极材料改变的练习"
+      ],
+      "summary": "图4.16的粗铜阳极、纯铜阴极与杂质去向，和图4.17的熔盐制钠、分隔引出产物属于不同物料模型。精炼时不能把阴极析铜质量等同粗阳极总失重；金属制备还须先辨水溶液还是熔融介质。教材的纯度数字、混合盐温度和还原法难易均保留在原文适用范围内。",
+      "classroom_check": "先分清阳极哪些物质进入溶液、哪些成泥，再列电子来源；用88阳极成膜模型检查“增重必是阴极”的失效条件。",
+      "lecture_package_id": "PKG-026",
+      "lecture_block_indices": [
+        84,
+        85,
+        86,
+        87,
+        88,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-026/第03讲 电解池 金属腐蚀与防护（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "1975ffc15f26a44beac1f146dce6163dc1380ce89eef835248667a058e9c17af",
+      "source_preview_revision": "16dfeda0b3364c61256b2638d76a36af9564ad887b44bba1cc1c3b1c06e78351",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 84,
+          "end": 88,
+          "start_xml_locator": "word/document.xml#/w:body/*[95]",
+          "end_xml_locator": "word/document.xml#/w:body/*[99]"
+        },
+        {
+          "start": 184,
+          "end": 190,
+          "start_xml_locator": "word/document.xml#/w:body/*[197]",
+          "end_xml_locator": "word/document.xml#/w:body/*[203]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          111,
+          112
+        ],
+        "printed_pages": [
+          105,
+          106
+        ],
+        "anchors": [
+          "图4.16",
+          "图4.17",
+          "熔融NaCl电解式",
+          "电极材料改变的练习"
+        ],
+        "support_role": "direct_page_reading_with_explicit_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未读讲义188图片，因此本笔记工艺图证据只用教材111—112；不补充当前工业纯度或能耗结论。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-ELECTRO-05",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.4",
+      "title": "钢铁腐蚀：先给介质与接触条件",
+      "pdf_pages": [
+        114,
+        115
+      ],
+      "printed_pages": [
+        108,
+        109
+      ],
+      "source_anchors": [
+        "铁与铁/碳接触的稀硫酸探究",
+        "图4.18",
+        "析氢腐蚀与吸氧腐蚀"
+      ],
+      "summary": "114的探究改变铁与碳的接触情况，观察表未填。115将铁的阳极过程与水膜中不同阴极过程分开：铁先成为Fe²⁺，而阴极反应须结合酸度及溶氧判断。常见析氢、吸氧模型可用于说明机理，不能脱离表面层、介质与供氧条件绝对排序快慢。",
+      "classroom_check": "给同一铁试样分别添加“酸性且可析氢”“有溶氧的近中性水膜”等条件，再配半反应；列出仍未测得的速率信息。",
+      "lecture_package_id": "PKG-026",
+      "lecture_block_indices": [
+        282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        324,
+        325,
+        326,
+        327,
+        328,
+        329,
+        330,
+        331,
+        332,
+        333
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-026/第03讲 电解池 金属腐蚀与防护（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "1975ffc15f26a44beac1f146dce6163dc1380ce89eef835248667a058e9c17af",
+      "source_preview_revision": "16dfeda0b3364c61256b2638d76a36af9564ad887b44bba1cc1c3b1c06e78351",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 282,
+          "end": 291,
+          "start_xml_locator": "word/document.xml#/w:body/*[299]",
+          "end_xml_locator": "word/document.xml#/w:body/*[308]"
+        },
+        {
+          "start": 324,
+          "end": 333,
+          "start_xml_locator": "word/document.xml#/w:body/*[344]",
+          "end_xml_locator": "word/document.xml#/w:body/*[353]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.4",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          114,
+          115
+        ],
+        "printed_pages": [
+          108,
+          109
+        ],
+        "anchors": [
+          "铁与铁/碳接触的稀硫酸探究",
+          "图4.18",
+          "析氢腐蚀与吸氧腐蚀"
+        ],
+        "support_role": "direct_page_reading_with_explicit_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "没有完成教材实验；不把含碳越多、越活泼或外加电流等单因素转成无条件速度结论。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-ELECTRO-06",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.4",
+      "title": "成锈与气体观测提供不同层次的证据",
+      "pdf_pages": [
+        115
+      ],
+      "printed_pages": [
+        109
+      ],
+      "source_anchors": [
+        "Fe(OH)₂生成与进一步氧化",
+        "图4.18氧气还原"
+      ],
+      "summary": "Fe²⁺与OH⁻生成Fe(OH)₂，后续被氧化并形成含水氧化物等锈层，不能由最终锈中Fe(III)直接反推阳极先生成Fe³⁺。与讲义331连通双管对照，液位是相对压差证据，耗氧和产氢贡献须分开，不能把位移直接当单侧耗氧量。",
+      "classroom_check": "分别标出电极反应、沉淀、后续氧化三层；给331画两侧气体账，并写出恒温、密闭、有效容积和溶解等假设。",
+      "lecture_package_id": "PKG-026",
+      "lecture_block_indices": [
+        282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        330,
+        331,
+        332,
+        333
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-026/第03讲 电解池 金属腐蚀与防护（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "1975ffc15f26a44beac1f146dce6163dc1380ce89eef835248667a058e9c17af",
+      "source_preview_revision": "16dfeda0b3364c61256b2638d76a36af9564ad887b44bba1cc1c3b1c06e78351",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 282,
+          "end": 291,
+          "start_xml_locator": "word/document.xml#/w:body/*[299]",
+          "end_xml_locator": "word/document.xml#/w:body/*[308]"
+        },
+        {
+          "start": 330,
+          "end": 333,
+          "start_xml_locator": "word/document.xml#/w:body/*[350]",
+          "end_xml_locator": "word/document.xml#/w:body/*[353]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.4",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          115
+        ],
+        "printed_pages": [
+          109
+        ],
+        "anchors": [
+          "Fe(OH)₂生成与进一步氧化",
+          "图4.18氧气还原"
+        ],
+        "support_role": "direct_page_reading_with_explicit_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "不据示意液位计算氧含量或实际腐蚀速率；教材化学式是课堂模型，不等同所有实物锈的唯一成分。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-ELECTRO-07",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.4",
+      "title": "两种阴极保护：跟着接线找电子来源",
+      "pdf_pages": [
+        116,
+        117
+      ],
+      "printed_pages": [
+        110,
+        111
+      ],
+      "source_anchors": [
+        "图4.19",
+        "图4.20",
+        "电化学防护练习"
+      ],
+      "summary": "管道连镁棒的电子来自牺牲金属氧化；钢闸门接外电源负极时电子由电源供给，另设辅助阳极。两种方法被保护体均作阴极，但原电池正极与外加电流负端不能混称。讲义365开关M/N改变供电路径，需重新判X和Fe角色。",
+      "classroom_check": "将365的M与N分别重画，标被保护铁、供电子者、牺牲/辅助电极和离子通路；说明M用Zn与N可用碳棒的条件差异。",
+      "lecture_package_id": "PKG-026",
+      "lecture_block_indices": [
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        308,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363,
+        364,
+        365,
+        366,
+        367,
+        368,
+        369,
+        370,
+        371,
+        372,
+        373,
+        374,
+        375,
+        376
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-026/第03讲 电解池 金属腐蚀与防护（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "1975ffc15f26a44beac1f146dce6163dc1380ce89eef835248667a058e9c17af",
+      "source_preview_revision": "16dfeda0b3364c61256b2638d76a36af9564ad887b44bba1cc1c3b1c06e78351",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 293,
+          "end": 308,
+          "start_xml_locator": "word/document.xml#/w:body/*[311]",
+          "end_xml_locator": "word/document.xml#/w:body/*[328]"
+        },
+        {
+          "start": 358,
+          "end": 376,
+          "start_xml_locator": "word/document.xml#/w:body/*[378]",
+          "end_xml_locator": "word/document.xml#/w:body/*[396]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.4",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          116,
+          117
+        ],
+        "printed_pages": [
+          110,
+          111
+        ],
+        "anchors": [
+          "图4.19",
+          "图4.20",
+          "电化学防护练习"
+        ],
+        "support_role": "direct_page_reading_with_explicit_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未确定实际保护电流或寿命；防护效果需环境和运行条件，不能保证任何局部氧化均被排除。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-ELECTRO-08",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.4",
+      "title": "覆盖层破损与材料相容性",
+      "pdf_pages": [
+        117
+      ],
+      "printed_pages": [
+        111
+      ],
+      "source_anchors": [
+        "镀锌铁与镀锡铁的划伤比较",
+        "牺牲电极材料选择",
+        "异种金属接触练习"
+      ],
+      "summary": "完整覆盖层先提供隔离作用；出现划伤后才进一步检查裸露基体与覆盖金属是否电接触并形成微电池。评价牺牲阳极也要检查水环境反应和持续供流，不能只据金属活动性选Na。335青铜图中的多孔层还提醒“已有氧化物/盐层”不等于致密有效保护。",
+      "classroom_check": "为镀锌/镀锡各画完整与破损两种情形；区分题面给定材料与还需知道的介质、接触及孔隙信息。最后将22.4mL换为L做腐蚀计量出口题。",
+      "lecture_package_id": "PKG-026",
+      "lecture_block_indices": [
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        308,
+        334,
+        335,
+        336,
+        337,
+        338,
+        339,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363,
+        364,
+        365,
+        366,
+        367,
+        368,
+        369,
+        370,
+        371,
+        372,
+        373,
+        374,
+        375,
+        376,
+        428,
+        429,
+        430,
+        431,
+        432,
+        433,
+        434
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-026/第03讲 电解池 金属腐蚀与防护（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "1975ffc15f26a44beac1f146dce6163dc1380ce89eef835248667a058e9c17af",
+      "source_preview_revision": "16dfeda0b3364c61256b2638d76a36af9564ad887b44bba1cc1c3b1c06e78351",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 293,
+          "end": 308,
+          "start_xml_locator": "word/document.xml#/w:body/*[311]",
+          "end_xml_locator": "word/document.xml#/w:body/*[328]"
+        },
+        {
+          "start": 334,
+          "end": 339,
+          "start_xml_locator": "word/document.xml#/w:body/*[354]",
+          "end_xml_locator": "word/document.xml#/w:body/*[359]"
+        },
+        {
+          "start": 358,
+          "end": 376,
+          "start_xml_locator": "word/document.xml#/w:body/*[378]",
+          "end_xml_locator": "word/document.xml#/w:body/*[396]"
+        },
+        {
+          "start": 428,
+          "end": 434,
+          "start_xml_locator": "word/document.xml#/w:body/*[451]",
+          "end_xml_locator": "word/document.xml#/w:body/*[457]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C4:4.4",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          117
+        ],
+        "printed_pages": [
+          111
+        ],
+        "anchors": [
+          "镀锌铁与镀锡铁的划伤比较",
+          "牺牲电极材料选择",
+          "异种金属接触练习"
+        ],
+        "support_role": "direct_page_reading_with_explicit_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未验证涂层寿命或提出工程处方；432/434的十倍量值错误保留，不能照搬原唯一答案。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ],
+  "page_number_convention": "摘要中的教材数字页码均为PDF页序；对应印刷页码见textbook_links。讲义数字均为原生区块编号，不是原卷题号或排版页码。"
+}

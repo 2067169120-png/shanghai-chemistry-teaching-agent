@@ -33,6 +33,14 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: python runtime/deeptutor_shchem/home_dashboard_qa.py --output local-continuation-qa/screenshots
+      - name: Check automatic tag comparison and selected save states
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_word_semantic_recheck.py staging/coordination/deeptutor_gateway/tests/test_word_semantic_tags_dialog.py staging/coordination/deeptutor_gateway/tests/test_word_semantic_recheck_dialog.py staging/coordination/deeptutor_gateway/tests/test_word_semantic_changes_dialog.py --junitxml=local-continuation-qa/tag-changes.xml
+      - name: Capture tag comparison and interrupted analysis with synthetic data
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python runtime/deeptutor_shchem/word_semantic_changes_qa.py --output local-continuation-qa/tag-changes
       - name: Check explicit range label review and native editor
         env:
           QT_QPA_PLATFORM: offscreen
