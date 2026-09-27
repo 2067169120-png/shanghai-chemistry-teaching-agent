@@ -2,6 +2,8 @@
 from copy import deepcopy
 from pathlib import Path
 import os
+import json
+import tempfile
 from types import SimpleNamespace
 import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -11,37 +13,68 @@ from PySide6.QtWidgets import QApplication, QBoxLayout, QLabel, QPushButton
 from integrations.deeptutor_shchem_v1.desktop_workbench.explorer_basket import ExplorerBasketDialog
 from integrations.deeptutor_shchem_v1.desktop_workbench.question_explorer_page import QuestionExplorerPage
 from integrations.deeptutor_shchem_v1.desktop_workbench.studio_style import WORKBENCH_STYLE
+from integrations.deeptutor_shchem_v1.desktop_state import DesktopStateStore
+
+
+class ProbeStore(DesktopStateStore):
+    read_error = False
+    write_error = False
+    writes = 0
+
+    def _read_unlocked(self):
+        if self.read_error:
+            raise OSError("private-path-must-not-appear")
+        return super()._read_unlocked()
+
+    def _write_unlocked(self, value, **kwargs):
+        if self.write_error:
+            raise OSError("private-path-must-not-appear")
+        super()._write_unlocked(value, **kwargs)
+        self.writes += 1
 
 
 class BasketFacade:
     def __init__(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="basket-recovery-test-")
+        self.store = ProbeStore(self.temporary.name)
         self.rows = [{"key": key, "title_zh": "合成验收题 " + key,
                       "source_zh": "自编测试材料", "item_kind": "core_theme"}
                      for key in ("a", "b", "c")]
-        self.read_error = False
-        self.write_error = False
-        self.writes = 0
+        self.store.writes = 0
+
+    @property
+    def rows(self):
+        return self.store.basket()
+
+    @rows.setter
+    def rows(self, rows):
+        self.store._update(lambda value: value.__setitem__("basket", deepcopy(rows)), basket_write=True)
+
+    @property
+    def read_error(self):
+        return self.store.read_error
+
+    @read_error.setter
+    def read_error(self, value):
+        self.store.read_error = value
+
+    @property
+    def write_error(self):
+        return self.store.write_error
+
+    @write_error.setter
+    def write_error(self, value):
+        self.store.write_error = value
+
+    @property
+    def writes(self):
+        return self.store.writes
+
+    def open_basket_session(self):
+        return self.store.open_basket_session()
 
     def basket(self):
-        if self.read_error:
-            raise OSError("private-path-must-not-appear")
-        return deepcopy(self.rows)
-
-    def remove_basket_item(self, key):
-        if self.write_error:
-            raise OSError("private-path-must-not-appear")
-        self.writes += 1
-        self.rows = [row for row in self.rows if row["key"] != key]
-        return len(self.rows)
-
-    def move_basket_item(self, key, delta):
-        if self.write_error:
-            raise OSError("private-path-must-not-appear")
-        self.writes += 1
-        index = next(i for i, row in enumerate(self.rows) if row["key"] == key)
-        target = max(0, min(index + delta, len(self.rows) - 1))
-        self.rows[index], self.rows[target] = self.rows[target], self.rows[index]
-        return len(self.rows)
+        return self.store.basket()
 
 
 @pytest.fixture
@@ -159,7 +192,9 @@ def test_narrow_actions_stack_and_wide_actions_return(dialog, app):
 
 def test_bad_row_does_not_partially_replace_last_view(dialog):
     value, facade = dialog
-    facade.rows.append({"title_zh": "缺少稳定身份"})
+    corrupt = facade.store.snapshot()
+    corrupt["basket"].append({"title_zh": "缺少稳定身份"})
+    facade.store.path.write_text(json.dumps(corrupt), encoding="utf-8")
     assert value.refresh() is False and value.list.count() == 3
     assert not value.preview.isEnabled()
 

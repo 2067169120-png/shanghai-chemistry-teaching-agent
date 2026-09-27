@@ -287,6 +287,7 @@ def test_three_word_entrypoints_forward_basket_signal_to_paper_page(
 
     opened = []
     counts = []
+    stored_basket = []
 
     class QuestionChoice(QObject):
         basket_changed = Signal(int)
@@ -298,6 +299,7 @@ def test_three_word_entrypoints_forward_basket_signal_to_paper_page(
             opened.append(kwargs)
 
         def exec(self):
+            stored_basket[:] = [{"key": f"synthetic-selected-{index}"} for index in range(7)]
             self.basket_changed.emit(7)
             return self.DialogCode.Rejected  # Added questions survive closing the reader.
 
@@ -321,11 +323,15 @@ def test_three_word_entrypoints_forward_basket_signal_to_paper_page(
     monkeypatch.setattr(workflow_pages.PaperPage, "update_basket_count", lambda self, count=None: counts.append(count))
     # A real native window and signal wiring, but no worker or real state reads.
     monkeypatch.setattr(DesktopTaskBridge, "submit", lambda *args, **kwargs: "synthetic-task")
-    window = main_window.TeacherWorkbenchWindow(WindowFacade())
+    facade = WindowFacade()
+    facade.basket = lambda: list(stored_basket)
+    window = main_window.TeacherWorkbenchWindow(facade)
     try:
         counts.clear()
         if entry == "library":
-            window.library_page._open_word_questions()
+            # The current explorer re-reads durable selection after closing the
+            # advanced reader, including its Rejected/close path.
+            window.library_page.advanced_button.click()
         elif entry == "preparation":
             window.preparation_page.topic.setText("合成课题")
             window.preparation_page._import_word_questions()

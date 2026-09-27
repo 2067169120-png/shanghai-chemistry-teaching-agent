@@ -1706,6 +1706,10 @@ class DesktopWorkbenchFacade:
     def basket(self) -> tuple[dict[str, Any], ...]:
         return tuple(self._state.basket())
 
+    def open_basket_session(self):
+        """A window-local undo history backed by the shared durable basket CAS."""
+        return self._state.open_basket_session()
+
     def _mixed_paper_call(self, method: str, *args: Any) -> Any:
         from .desktop_mixed_paper_pagination import MixedPaperPaginationError
         from .desktop_mixed_paper_service import MixedPaperError, MixedPaperService

@@ -1,0 +1,276 @@
+{
+  "date": "2026-09-27",
+  "base_main_commit": "83d6218607a1d151558c9e02278dbb6e5ca7d324",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "release_exe_rebuilt": false,
+  "release_baseline": "v0.1.101",
+  "tests": {
+    "basket_results": [
+      {
+        "id": "broad-first",
+        "command": "python -m pytest staging/coordination/deeptutor_gateway/tests/test_desktop_basket_undo.py staging/coordination/deeptutor_gateway/tests/test_explorer_basket_undo_ui.py staging/coordination/deeptutor_gateway/tests/test_explorer_basket_recovery_ui.py staging/coordination/deeptutor_gateway/tests/test_desktop_state_corruption.py staging/coordination/deeptutor_gateway/tests/test_question_explorer.py staging/coordination/deeptutor_gateway/tests/test_question_explorer_ui.py staging/coordination/deeptutor_gateway/tests/test_desktop_mixed_paper_service.py staging/coordination/deeptutor_gateway/tests/test_desktop_mixed_paper_ui.py staging/coordination/deeptutor_gateway/tests/test_visual_mixed_paper_integration.py staging/coordination/deeptutor_gateway/tests/test_personal_visual_theme_basket_ui.py staging/coordination/deeptutor_gateway/tests/test_mixed_basket_entrypoints.py staging/coordination/deeptutor_gateway/tests/test_mixed_paper_export.py -q --disable-warnings --maxfail=3",
+        "result": "249 passed, 1 failed in 185.72s",
+        "kind": "actual pytest result"
+      },
+      {
+        "id": "qt-2x-final-layout",
+        "command": "python -m pytest staging/coordination/deeptutor_gateway/tests/test_explorer_basket_undo_ui.py staging/coordination/deeptutor_gateway/tests/test_explorer_basket_recovery_ui.py -q --disable-warnings",
+        "result": "36 passed in 3.70s",
+        "kind": "actual pytest result"
+      },
+      {
+        "id": "entrypoints-corrected",
+        "command": "python -m pytest staging/coordination/deeptutor_gateway/tests/test_mixed_basket_entrypoints.py -q --disable-warnings",
+        "result": "21 passed in 3.41s",
+        "kind": "actual pytest result"
+      },
+      {
+        "id": "final-state-and-export",
+        "command": "python -m pytest staging/coordination/deeptutor_gateway/tests/test_desktop_basket_undo.py staging/coordination/deeptutor_gateway/tests/test_desktop_mixed_paper_service.py staging/coordination/deeptutor_gateway/tests/test_visual_mixed_paper_integration.py -q --disable-warnings",
+        "result": "99 passed in 28.41s",
+        "kind": "actual pytest result"
+      },
+      {
+        "id": "postcommit-count-correction",
+        "command": "python -m pytest staging/coordination/deeptutor_gateway/tests/test_explorer_basket_undo_ui.py -q --disable-warnings -k 'saved_undo or postcommit or conflict'",
+        "result": "6 passed, 18 deselected in 2.19s",
+        "kind": "actual pytest result"
+      },
+      {
+        "id": "current-collection",
+        "command": "python -m pytest staging/coordination/deeptutor_gateway/tests/test_desktop_basket_undo.py staging/coordination/deeptutor_gateway/tests/test_explorer_basket_undo_ui.py staging/coordination/deeptutor_gateway/tests/test_explorer_basket_recovery_ui.py staging/coordination/deeptutor_gateway/tests/test_desktop_state_corruption.py staging/coordination/deeptutor_gateway/tests/test_question_explorer.py staging/coordination/deeptutor_gateway/tests/test_question_explorer_ui.py staging/coordination/deeptutor_gateway/tests/test_desktop_mixed_paper_service.py staging/coordination/deeptutor_gateway/tests/test_desktop_mixed_paper_ui.py staging/coordination/deeptutor_gateway/tests/test_visual_mixed_paper_integration.py staging/coordination/deeptutor_gateway/tests/test_personal_visual_theme_basket_ui.py staging/coordination/deeptutor_gateway/tests/test_mixed_basket_entrypoints.py staging/coordination/deeptutor_gateway/tests/test_mixed_paper_export.py -q --disable-warnings --collect-only",
+        "result": "251 tests collected in 2.53s",
+        "kind": "collection only, not execution"
+      }
+    ],
+    "basket_coverage_note": "Current 251 collected cases have successful coverage across the broad run and focused reruns. This is not a claimed single 251-pass run; the broad run first exposed one baseline test failure, then its full 21-case file passed after correction. The later add-noop refinement was checked in the final 99-case run. The final list-wrap UI was checked in the 36-case 2x run. The final postcommit count correction was checked in the 6-case 2x rerun.",
+    "knowledge_passed": 100,
+    "all_46_source_hashes_and_block_versions_verified": true,
+    "documentation_passed": 14,
+    "documentation_policy_passed": true
+  },
+  "synthetic_ui": {
+    "qt_version": "6.11.2",
+    "scale_factor": 2,
+    "screenshot_count": 10,
+    "root_actually_viewed": [
+      "mixed-top-360x520.png",
+      "removed-bottom-360x520.png",
+      "restored-top-360x520.png",
+      "empty-undo-bottom-360x520.png",
+      "conflict-bottom-360x520.png",
+      "write-failure-bottom-360x520.png",
+      "restored-bottom-420x520.png",
+      "mixed-wide-900x650.png"
+    ],
+    "public_images": [
+      "removed-bottom-360x520.png",
+      "restored-bottom-420x520.png",
+      "conflict-bottom-360x520.png"
+    ],
+    "all_status_and_continue_checks_passed": true,
+    "personal_state_used": false
+  },
+  "local_labels": {
+    "read_questions": 24,
+    "question_blocks": 107,
+    "answer_blocks": 64,
+    "native_tables": 1,
+    "adopted_distinct_questions": 23,
+    "held_questions": 1,
+    "primary_filled": 5,
+    "curriculum_filled": 22,
+    "chapter_links_added": 26,
+    "primary_rechecked_and_replaced": 8,
+    "promoted_supporting_tags_deduplicated": 2,
+    "old_history_preserved": 9371,
+    "new_history_rows": 31,
+    "history_after": 9402,
+    "repeat_changes": [
+      0,
+      0
+    ],
+    "protected_inputs_per_phase": 775,
+    "changed_input_type": "personal label database only"
+  },
+  "current_library": {
+    "analysis_sources": 98,
+    "inventory_rows": 196,
+    "current_questions": 3579,
+    "selectable_questions": 3576,
+    "current_primary_known": 2910,
+    "current_curriculum_mapped": 2776,
+    "missing_field_counts": {
+      "curriculum_mapping": 803,
+      "primary_knowledge": 669
+    },
+    "pending_tasks": 1010,
+    "category_counts": {
+      "readable_pure_text": 166,
+      "requires_image": 785,
+      "scope_or_material_incomplete": 56,
+      "teacher_or_pinned_protected": 3
+    },
+    "duplicate_source_sha256": 0,
+    "duplicate_current_question_keys": 0
+  },
+  "energy_distillation": {
+    "new_claims": 14,
+    "new_claim_counts": {
+      "knowledge": 3,
+      "methods": 6,
+      "pitfalls": 2,
+      "teaching_flow": 3
+    },
+    "reading_notes": 9,
+    "native_blocks_read": 597,
+    "textbook_pdf_pages": [
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26
+    ],
+    "textbook_printed_pages": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "word_image_references_viewed": 39,
+    "word_image_references_total": 298,
+    "word_image_references_unviewed": 259,
+    "wmf_renderings_viewed": 23,
+    "additional_native_media_pairs_unviewed": 2,
+    "ole_binaries_unread": 205,
+    "full_word_visual_review_completed": false,
+    "partial_separator_glyph_gap_retained": true,
+    "source_issues_reviewed": 25,
+    "root_private_HBr_misread_explicitly_corrected": true,
+    "actual_reader": {
+      "new_claims_in_actual_reader": 14,
+      "total_notes_in_actual_reader": 22,
+      "textbook_concepts_linked": 10,
+      "stale_reference_excluded": true,
+      "removed_support_cases": [
+        {
+          "removed": 295,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 574,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 275,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 63,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 164,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 237,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 403,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 461,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 220,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 295,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 46,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 46,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 295,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 188,
+          "dependent_claim_excluded": true
+        }
+      ],
+      "repeat_new_notes": 0
+    },
+    "coverage": {
+      "knowledge": 297,
+      "methods": 167,
+      "pitfalls": 125,
+      "teaching_flow": 50
+    },
+    "sources_with_flow": 23,
+    "sources_without_flow": 23,
+    "textbook_concepts_unchanged": 383,
+    "other_cards_unchanged": 45,
+    "protected_inputs_unchanged": 906,
+    "protected_files_unchanged": 904,
+    "absent_paths_unchanged": 2,
+    "private_state_files_unchanged": 488,
+    "original_word_files_unchanged": 196,
+    "catalog_rows_before": 121,
+    "catalog_rows_after": 122
+  },
+  "next_batch": {
+    "metadata_only": true,
+    "questions": 24,
+    "sources": 13,
+    "question_bodies_read": 0,
+    "labels_applied": 0
+  },
+  "network_scope": {
+    "wechat_searches": 0,
+    "new_papers_collected": 0,
+    "real_model_provider_calls": 0,
+    "generic_chemistry_queries": 2,
+    "nist_pages_opened": 3,
+    "github_network_operations_separate": true
+  }
+}
