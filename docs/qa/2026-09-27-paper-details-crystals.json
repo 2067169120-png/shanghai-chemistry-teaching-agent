@@ -1,0 +1,396 @@
+{
+  "date": "2026-09-27",
+  "base_main_commit": "94869ee3eeef7fbeb69a1a2d1284488742d8c68c",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "release_exe_rebuilt": false,
+  "release_baseline": "v0.1.101",
+  "tests": {
+    "paper_details_and_regressions": {
+      "passed": 421,
+      "failed": 0,
+      "junit_sha256": "1858bdb8c5b8be461f5ae86cd021f21a6c83ebdd1b53e6fbe5eb79856404fa33",
+      "test_modules": [
+        "staging.coordination.deeptutor_gateway.tests.test_desktop_composer_alias_units",
+        "staging.coordination.deeptutor_gateway.tests.test_desktop_mixed_paper_service",
+        "staging.coordination.deeptutor_gateway.tests.test_desktop_mixed_paper_ui",
+        "staging.coordination.deeptutor_gateway.tests.test_desktop_ui",
+        "staging.coordination.deeptutor_gateway.tests.test_exam_practice_set",
+        "staging.coordination.deeptutor_gateway.tests.test_exam_practice_set_ui",
+        "staging.coordination.deeptutor_gateway.tests.test_mixed_basket_entrypoints",
+        "staging.coordination.deeptutor_gateway.tests.test_mixed_paper_draft_undo",
+        "staging.coordination.deeptutor_gateway.tests.test_mixed_paper_draft_undo_ui",
+        "staging.coordination.deeptutor_gateway.tests.test_mixed_paper_export",
+        "staging.coordination.deeptutor_gateway.tests.test_mixed_paper_pagination",
+        "staging.coordination.deeptutor_gateway.tests.test_paper_details",
+        "staging.coordination.deeptutor_gateway.tests.test_paper_details_ui",
+        "staging.coordination.deeptutor_gateway.tests.test_paper_preparation_bridge",
+        "staging.coordination.deeptutor_gateway.tests.test_visual_mixed_paper_integration",
+        "staging.coordination.deeptutor_gateway.tests.test_visual_mixed_paper_ui"
+      ]
+    },
+    "qt_2x_overlap": {
+      "passed": 28,
+      "failed": 0,
+      "junit_sha256": "0c179423511f7f60e7f9410c816a129e1fa2524c0185b06814448670730e2ebb",
+      "test_modules": [
+        "staging.coordination.deeptutor_gateway.tests.test_paper_details_ui"
+      ]
+    },
+    "knowledge_and_labels": {
+      "passed": 363,
+      "failed": 0,
+      "junit_sha256": "34521d4dc95e2c7f81fea4feaf6e3a34d1c6e82692990856bf70be28feb140c9",
+      "test_modules": [
+        "staging.coordination.deeptutor_gateway.tests.test_extend_lecture_knowledge",
+        "staging.coordination.deeptutor_gateway.tests.test_lecture_library",
+        "staging.coordination.deeptutor_gateway.tests.test_lecture_study_reference",
+        "staging.coordination.deeptutor_gateway.tests.test_lecture_teaching_flow",
+        "staging.coordination.deeptutor_gateway.tests.test_lecture_textbook_links",
+        "staging.coordination.deeptutor_gateway.tests.test_offline_word_label_review",
+        "staging.coordination.deeptutor_gateway.tests.test_word_missing_attribute_merge",
+        "staging.coordination.deeptutor_gateway.tests.test_word_semantic_recheck",
+        "staging.coordination.deeptutor_gateway.tests.test_word_semantic_tags"
+      ]
+    },
+    "documentation": {
+      "passed": 34,
+      "failed": 0,
+      "junit_sha256": "6c2acfbf7955c2f58b18d019cc5426d1d5081654009d171ef7d77dca0a33ef06",
+      "test_modules": [
+        "staging.coordination.deeptutor_gateway.tests.test_complete_readme",
+        "staging.coordination.deeptutor_gateway.tests.test_maintenance_release_safety"
+      ],
+      "final_maintainer_link_update_rerun_passed": 14,
+      "final_guide_junit_sha256": "f54cc9d2dfbf0fe43a1c09c6412f4cb5556658db699e1cf828cbc976f1335a0d",
+      "rerun_is_overlap": true
+    },
+    "distinct_passed": 818,
+    "qt_2x_is_overlap_not_added": true,
+    "documentation_policy_passed": true,
+    "note": "421 UI/service cases, 363 knowledge/label cases and 34 documentation cases were separate runs; 28 double-scaling cases overlap."
+  },
+  "synthetic_ui": {
+    "qt_version": "6.11.2",
+    "scale_factor": 2,
+    "screenshot_count": 11,
+    "root_actually_viewed": [
+      "mixed-overview-360x520.png",
+      "partial-score-420x520.png",
+      "mixed-wide-900x650.png",
+      "word-detail-360x520.png",
+      "word-identity-360x520.png",
+      "all-known-900x650.png",
+      "empty-360x520.png",
+      "removed-420x520.png",
+      "undo-restored-420x520.png",
+      "source-stale-360x520.png",
+      "read-failure-420x520.png"
+    ],
+    "public_images": [
+      {
+        "file": "partial-score-420x520.png",
+        "sha256": "1226b2d153536cdc1f92c542d39c82a0eef1aeb7b6265c39aff9d554f6c013dc",
+        "scenario": "mixed",
+        "logical_size": [
+          420,
+          520
+        ],
+        "pixel_size": [
+          840,
+          1040
+        ],
+        "device_pixel_ratio": 2.0,
+        "geometry": {
+          "fixed_actions_visible": true,
+          "status_complete": true,
+          "horizontal_scroll": false,
+          "status_required_height": 19
+        }
+      },
+      {
+        "file": "mixed-wide-900x650.png",
+        "sha256": "52740d03e0e58307f11e905caa2544f2aed9a4083ee48f36331c2040bd72dcd1",
+        "scenario": "mixed",
+        "logical_size": [
+          900,
+          650
+        ],
+        "pixel_size": [
+          1800,
+          1300
+        ],
+        "device_pixel_ratio": 2.0,
+        "geometry": {
+          "fixed_actions_visible": true,
+          "status_complete": true,
+          "horizontal_scroll": false,
+          "status_required_height": 19
+        }
+      },
+      {
+        "file": "word-detail-360x520.png",
+        "sha256": "1c5ab4314305a7a1aeca5ce8afb28a0543f9bcb7e52485182bee39600321f3e7",
+        "scenario": "word",
+        "logical_size": [
+          360,
+          520
+        ],
+        "pixel_size": [
+          720,
+          1040
+        ],
+        "device_pixel_ratio": 2.0,
+        "geometry": {
+          "fixed_actions_visible": true,
+          "status_complete": true,
+          "horizontal_scroll": false,
+          "status_required_height": 19
+        }
+      }
+    ],
+    "personal_state_used": false,
+    "original_screenshots_unedited": true,
+    "final_format_only_change": {
+      "file": "runtime/deeptutor_shchem/paper_details_fixture.py",
+      "tested_sha256": "fae267cc15712443e35bcb493d31755fe55f5c8978461c0cbfe74bc975d3675e",
+      "final_sha256": "b86019f8738f2352fea119a8f57cba0899bbd71ae439c51c7de16ecb7a17b793",
+      "bytes": 2504,
+      "change": "Remove extra blank line at EOF only",
+      "ast_unchanged": true,
+      "test_rerun_needed": false
+    },
+    "accepted_source_files": [
+      {
+        "file": "integrations/deeptutor_shchem_v1/desktop_paper_details.py",
+        "sha256": "26ff3ad172c142d4671a47ed7fe6ea6609f91b6ab9f08c05ac86df6dba0e4139",
+        "bytes": 9778
+      },
+      {
+        "file": "integrations/deeptutor_shchem_v1/desktop_workbench/paper_details_dialog.py",
+        "sha256": "79d5882c9c6eff62e6ec4ff1edf47d4ce517fb51a657ea4c268c66c80c36f195",
+        "bytes": 11078
+      },
+      {
+        "file": "integrations/deeptutor_shchem_v1/desktop_workbench/assembly_page.py",
+        "sha256": "9e7de2c8ba0114fa5219ce36ede3394a888213d82aa68ebadb17aff168711b31",
+        "bytes": 174886
+      },
+      {
+        "file": "integrations/deeptutor_shchem_v1/desktop_workbench/paper_composer.py",
+        "sha256": "3a9a8bd96a5282d22b98c1caed6c09efa1c9f43b1d5852bb8a6be6a8da2011dd",
+        "bytes": 60798
+      },
+      {
+        "file": "staging/coordination/deeptutor_gateway/tests/test_paper_details.py",
+        "sha256": "9d63bc0499d4f0745f71bbfcbb05ccfe6d2b507c1c3ce042496989fa309ca55a",
+        "bytes": 8878
+      },
+      {
+        "file": "staging/coordination/deeptutor_gateway/tests/test_paper_details_ui.py",
+        "sha256": "9f64d5b16ca8d3de47a6e771ecfc3b0266de47f6154300c4f390419ecad808ab",
+        "bytes": 13985
+      },
+      {
+        "file": "runtime/deeptutor_shchem/paper_details_qa.py",
+        "sha256": "82a93bdd5636c0a2e444edb7ef83c91c504f54bef1a275e4b4bb31cad93288b1",
+        "bytes": 8000
+      },
+      {
+        "file": "runtime/deeptutor_shchem/paper_details_fixture.py",
+        "sha256": "b86019f8738f2352fea119a8f57cba0899bbd71ae439c51c7de16ecb7a17b793",
+        "bytes": 2504,
+        "tested_sha256": "fae267cc15712443e35bcb493d31755fe55f5c8978461c0cbfe74bc975d3675e",
+        "ast_unchanged": true
+      }
+    ]
+  },
+  "paper_details": {
+    "tabs": [
+      "全卷总览",
+      "逐项细目",
+      "来源追溯"
+    ],
+    "explicit_hierarchy_only": true,
+    "word_block_coordinates_one_based_not_printed_numbers": true,
+    "core_alias_projection_shared_with_export": true,
+    "unknown_scores_not_zero": true,
+    "original_and_current_scores_separate": true,
+    "current_duration_is_not_item_time_estimate": true,
+    "target_coverage_computed": false,
+    "source_rechecked_on_open_and_refresh": true,
+    "continuous_source_monitoring": false,
+    "stale_or_failure_clears_statistics": true,
+    "refresh_uses_existing_draft_load_and_may_save_draft": true,
+    "old_full_themes_preserve_order_exclusions_scores_duration": true,
+    "old_partial_or_reordered_theme_atoms_blocked_before_new_draft_save": true,
+    "existing_unified_draft_requires_explicit_choice": true
+  },
+  "local_labels": {
+    "read_questions": 24,
+    "question_blocks": 100,
+    "answer_blocks": 48,
+    "native_tables": 1,
+    "native_table_cells": 15,
+    "adopted_distinct_questions": 19,
+    "held_questions": 5,
+    "primary_filled": 10,
+    "curriculum_filled": 14,
+    "chapter_links_added": 17,
+    "primary_replaced": 3,
+    "curriculum_replaced": 1,
+    "original_attribute_rows_unchanged": 3665,
+    "old_history_preserved": 9425,
+    "new_history_rows": 23,
+    "history_after": 9448,
+    "repeat_changes": [
+      0,
+      0
+    ],
+    "protected_inputs_per_phase": [
+      798,
+      800
+    ]
+  },
+  "current_library": {
+    "analysis_sources": 98,
+    "inventory_rows": 196,
+    "current_questions": 3579,
+    "selectable_questions": 3576,
+    "current_primary_known": 2929,
+    "current_curriculum_mapped": 2808,
+    "missing_field_counts": {
+      "curriculum_mapping": 771,
+      "primary_knowledge": 650
+    },
+    "pending_tasks": 971,
+    "category_counts": {
+      "readable_pure_text": 127,
+      "requires_image": 785,
+      "scope_or_material_incomplete": 56,
+      "teacher_or_pinned_protected": 3
+    },
+    "duplicate_source_sha256": 0,
+    "duplicate_current_question_keys": 0,
+    "attribute_binding_counts": {
+      "current": 3567,
+      "missing": 6,
+      "stale": 6
+    },
+    "active_attribute_rows": 3573,
+    "database_attribute_rows": 3684,
+    "surplus_attribute_rows_not_counted_as_questions": 111,
+    "original_exam_known": 837,
+    "original_exam_unknown": 2742,
+    "geography_filter_applied": false
+  },
+  "crystals_distillation": {
+    "new_claims": 13,
+    "claim_counts": {
+      "knowledge": 3,
+      "methods": 5,
+      "pitfalls": 2,
+      "teaching_flow": 3
+    },
+    "reading_notes": 7,
+    "existing_claims_explicitly_corrected": 1,
+    "other_old_references_preserved": 7,
+    "native_blocks_read": 410,
+    "textbook_pdf_pages": [
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83,
+      96
+    ],
+    "textbook_printed_pages": [
+      71,
+      72,
+      73,
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      92
+    ],
+    "cached_asset_references": 179,
+    "root_viewed_asset_references": 47,
+    "root_wmf_views": 26,
+    "root_raster_references": 21,
+    "cached_asset_references_unread": 132,
+    "ole_binaries_unread": 85,
+    "extra_native_svg_references_unread": 2,
+    "external_image_links_unaccessed": 1,
+    "whole_word_visual_review_complete": false,
+    "native_field_and_ruby_visual_renders_reviewed": false,
+    "actual_reader_total_notes": 21,
+    "actual_reader_new_notes": 13,
+    "actual_reader_textbook_concepts": 10,
+    "formal_reader_range_count": 14,
+    "formal_reader_selected_blocks": 212,
+    "formal_reader_characters": 35520,
+    "full_410_block_request_rejected_by_40000_character_limit": true,
+    "final_projection_capacity_checked_before_writes": true,
+    "reference_automatically_committed": false,
+    "missing_evidence_cases_passed": 13,
+    "source_revision_name_mismatch_cases_passed": 3,
+    "repeat_new_notes": 0,
+    "other_lecture_cards_unchanged": 45
+  },
+  "knowledge_totals": {
+    "lectures": 46,
+    "knowledge": 303,
+    "methods": 176,
+    "pitfalls": 129,
+    "teaching_flow": 55,
+    "with_flow": 25,
+    "without_flow": 21,
+    "textbook_concepts": 383,
+    "catalog_rows": 124
+  },
+  "next_metadata_only": {
+    "route_count": 12,
+    "source_count": 12,
+    "image_object_cases": 8,
+    "scope_cases": 4,
+    "past_read_identities_excluded": 334,
+    "past_held_identities_excluded": 38,
+    "queued_only_not_read_identities": 4,
+    "question_bodies_read": 0,
+    "labels_applied": 0,
+    "new_ordinary_text_batch_created": false,
+    "remaining_unread_pure_text_tasks": 88,
+    "range_tasks_still_blocked": true
+  },
+  "protection": {
+    "initial_files": 764,
+    "initial_files_unchanged": 760,
+    "authorized_changed_categories": [
+      "label_database",
+      "lecture_part_c",
+      "coverage",
+      "catalog"
+    ],
+    "original_word_files_unchanged": 196,
+    "state_file_membership": 488,
+    "knowledge_sync_inputs_unchanged": 837,
+    "unexpected_changes": 0,
+    "data_git_head_unchanged": true,
+    "data_git_status_added_only_two_new_knowledge_files": true,
+    "metadata_refresh_catalog_snapshot_before_sync": 123
+  },
+  "activity": {
+    "wechat_article_searches": 0,
+    "new_papers_collected": 0,
+    "provider_calls": 0,
+    "public_chemical_reference_verification": true,
+    "github_network_operations": true
+  }
+}
