@@ -1,0 +1,157 @@
+{
+  "schema_version": "shchem.public-qa-summary.v1",
+  "maintenance_source_only": true,
+  "release_rebuilt": false,
+  "base_commit": "bcb0e460b4ac45a72d444b9684ec416451946298",
+  "regression": {
+    "backend": 356,
+    "ui": 37,
+    "distinct_total": 393,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "documentation": {
+    "passed": 14,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "policy": "passed"
+  },
+  "synthetic_ui": {
+    "screenshots": 9,
+    "root_model_viewed": 9,
+    "human_reviewed": false,
+    "provider_requests": 0,
+    "personal_db_operations": 0,
+    "original_source_images": 0,
+    "sizes": [
+      [
+        900,
+        820
+      ],
+      [
+        420,
+        720
+      ],
+      [
+        360,
+        520
+      ],
+      [
+        420,
+        600
+      ]
+    ],
+    "capture_manifest": "screenshots/2026-09-27-tag-changes/capture-report.json"
+  },
+  "local_labels": {
+    "changed_questions": 4,
+    "primary_replaced": 2,
+    "curriculum_replaced": 2,
+    "primary_filled": 0,
+    "curriculum_filled": 0,
+    "unchanged_attribute_rows": 3680,
+    "old_history_rows_unchanged": 9296,
+    "new_history_rows": 4,
+    "protected_inputs": 578,
+    "only_database_changed": true,
+    "previously_absent_still_absent": 2,
+    "candidate_only": true,
+    "human_reviewed": false,
+    "provider_calls": 0,
+    "coverage_count_not_increased": true,
+    "repeat_changes": 0,
+    "label_mode": "recheck_automatic",
+    "answer_text_used_as_label_quote": false
+  },
+  "current_queue": {
+    "sources": 98,
+    "questions": 3579,
+    "primary_known": 2873,
+    "curriculum_mapped": 2708,
+    "pending": 1097,
+    "text": 253,
+    "image": 785,
+    "range_or_material": 56,
+    "protected": 3,
+    "counts_changed_by_recheck": false
+  },
+  "distillation": {
+    "new_claims": 14,
+    "reading_notes": 8,
+    "coverage": {
+      "knowledge": 287,
+      "methods": 144,
+      "pitfalls": 118,
+      "teaching_flow": 39
+    },
+    "lecture_count": 46,
+    "sources_with_flow": 19,
+    "sources_without_flow": 27,
+    "textbook_concepts": 383,
+    "other_cards_unchanged": 45,
+    "protected_inputs_unchanged": 796,
+    "protected_files_unchanged": 794,
+    "absent_inputs_still_absent": 2,
+    "original_word_files_unchanged": 196,
+    "private_state_files_unchanged": 488,
+    "provider_calls": 0,
+    "article_search_count": 0,
+    "new_papers_collected": 0,
+    "catalog_rows_before": 117,
+    "catalog_rows_after": 118,
+    "candidate_only": true,
+    "human_reviewed": false,
+    "reading_scope": {
+      "delegated_native_text_blocks": 434,
+      "root_native_text_blocks": 229,
+      "textbook_pdf_pages": [
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117
+      ],
+      "printed_pages": [
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111
+      ],
+      "word_media_references_viewed": 12,
+      "cached_word_media_references_total": 121,
+      "cached_word_media_references_unread": 109,
+      "unread_wmf_references_subset": 27,
+      "additional_unread_svg_alternatives": 5,
+      "unread_ole_objects": 26,
+      "field_instructions_inventoried_only": 96,
+      "special_font_symbols_inventoried_only": 2,
+      "full_word_visual_review": false,
+      "root_independent_balance_checks": 16
+    },
+    "reader_validation": {
+      "new_claims": 14,
+      "total_claims": 22,
+      "linked_existing_concepts": 8,
+      "stale_excluded": true,
+      "missing_support_exclusions": 14,
+      "repeat_new_notes": 0
+    }
+  }
+}

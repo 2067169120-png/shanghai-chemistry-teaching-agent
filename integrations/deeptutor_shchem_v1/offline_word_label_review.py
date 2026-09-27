@@ -1,8 +1,9 @@
 """Source-bound current-session label candidates, without provider invocation.
 
-This narrow service fills missing personal Word labels. A candidate is never a
-teacher confirmation, and a valid quote is evidence of source grounding, not a
-claim that an automatic chemistry judgement has been independently verified.
+This service fills missing labels or explicitly rechecks automatic labels.
+A candidate is never a teacher confirmation, and a valid quote is evidence of
+source grounding, not a claim that an automatic chemistry judgement has been
+independently verified.
 The public preview and receipt contain metadata only, never question text.
 """
 
@@ -10,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from copy import deepcopy
 
 from jsonschema import Draft202012Validator
@@ -23,10 +25,28 @@ from .desktop_word_question_attributes import (
 from .desktop_word_semantic_tags import OUTPUT_SCHEMA, merge_response
 
 CANDIDATE_SCHEMA_VERSION = "shchem.offline-word-label-candidates.v1"
-PLAN_SCHEMA_VERSION = "shchem.offline-word-label-plan.v1"
-RECEIPT_SCHEMA_VERSION = "shchem.offline-word-label-receipt.v1"
+PLAN_SCHEMA_VERSION = "shchem.offline-word-label-plan.v2"
+RECEIPT_SCHEMA_VERSION = "shchem.offline-word-label-receipt.v2"
 RULE_REVISION = "codex-offline-reviewed-20260926-v1"
+RECHECK_RULE_REVISION = "codex-offline-recheck-20260927-v1"
+LABEL_MODES = ("missing_only", "recheck_automatic")
+READING_POLICY_REVISIONS = {
+    "missing_only": "complete-question-text-v1",
+    "recheck_automatic": "complete-question-answer-text-v2",
+}
 PROVENANCE = "codex_current_session"
+
+_ANSWER_LABEL = re.compile(
+    r"【\s*(?:参考答案|答案|解析|详解|解答|分析)\s*】|"
+    r"^\s*(?:参考答案|答案|解析|详解|解答|分析)\s*[:：]"
+)
+_ANSWER_PART_NUMBER = re.compile(r"^(?:[（(]\s*\d+\s*[）)]\s*)+")
+_TABLE_DISPLAY_LINE = re.compile(
+    r"【表格(?:开始：按原行列顺序(?:；未标合并即未合并)?|结束)】|"
+    r"〔第\d+行(?:·第\d+(?:—\d+)?列"
+    r"(?:；(?:横向合并(?:\d+列)?|纵向合并(?:起点|续接上方)|原纵向合并标记：[^〕\r\n]*))*"
+    r"|：(?:行首省略\d+列(?:；行尾省略\d+列)?|行尾省略\d+列|无单元格))〕"
+)
 
 
 def _object(properties):
@@ -79,6 +99,14 @@ def _require(condition, code, message):
         raise OfflineWordLabelReviewError(code, message)
 
 
+def validate_label_mode(mode):
+    _require(
+        isinstance(mode, str) and mode in LABEL_MODES,
+        "invalid_label_mode", "请选择只补缺失标签或重新核对自动标签。",
+    )
+    return mode
+
+
 def _digest(value):
     return hashlib.sha256(
         json.dumps(
@@ -109,7 +137,22 @@ def validate_candidate_batch(value):
     return copied
 
 
-def _source_blocks(row, attributes, preview):
+def _has_substantive_answer_text(blocks):
+    # Empty native cells (including vertical-merge continuations) legitimately
+    # use this placeholder. Strip presentation only for this presence check;
+    # keep every original character in source evidence and the reading digest.
+    for block in blocks:
+        for line in block["text"].splitlines():
+            if _TABLE_DISPLAY_LINE.fullmatch(line.strip()):
+                continue
+            content = _ANSWER_LABEL.sub("", line).replace("【未提取到文字】", "")
+            content = _ANSWER_PART_NUMBER.sub("", content.strip(" \t\u3000:：;；,，.。"))
+            if content.strip(" \t\u3000:：;；,，.。"):  # Short answers such as 0, D or √ remain valid.
+                return True
+    return False
+
+
+def _source_blocks(row, attributes, preview, *, mode):
     """Admit complete, unambiguous text ranges; answers never enter the unit."""
     _require(
         row.get("selection_ready") is True
@@ -135,6 +178,16 @@ def _source_blocks(row, attributes, preview):
         not material["question_image_count"],
         "image_not_supported", "此离线流程仅接受题干与公共材料完整的纯文字题面。",
     )
+    recheck = mode == "recheck_automatic"
+    if recheck:
+        _require(
+            bool(row.get("answer_blocks")),
+            "answer_range_required", "重新核对自动标签须完整读取题目与答案，当前答案范围缺失。",
+        )
+        _require(
+            not material["answer_image_count"],
+            "image_not_supported", "重新核对自动标签须有完整的纯文字题目与答案。",
+        )
     full = preview.get("blocks")
     _require(isinstance(full, list), "source_blocks_missing", "原文件区块无法核对。")
     source_by_index = {block["index"]: block for block in full}
@@ -173,10 +226,9 @@ def _source_blocks(row, attributes, preview):
                 and not block.get("text_range"),
                 "range_content_mismatch", "题目区块与完整原文不一致，未应用离线标签。",
             )
-            if group == "answer_blocks":
-                # Answers are bound for identity, but never used for labels.
-                # Their images or formula gaps do not make a complete text
-                # question unreadable and must not be interpreted here.
+            if group == "answer_blocks" and not recheck:
+                # Missing-only keeps its existing question-only readability
+                # policy. Neither mode admits answer text as label evidence.
                 continue
             _require(
                 not block.get("assets") and not origin.get("assets")
@@ -190,18 +242,46 @@ def _source_blocks(row, attributes, preview):
                 and not block.get("gaps"),
                 "unsupported_source_content", "原文含未读取的对象或区块警告，未应用离线标签。",
             )
+            if recheck:
+                _require(
+                    not origin.get("unsupported_assets") and not origin.get("gaps")
+                    and not origin.get("display_only_split") and not origin.get("text_range"),
+                    "unsupported_source_content", "完整原文含未读取或截取的内容，未重新核对自动标签。",
+                )
         groups[group] = blocks
     _require(
         (row["answer_start"] == row["question_end"] + 1)
         if groups["answer_blocks"] else (row["question_end"] == row["block_end"]),
         "range_gap", "题目与答案范围之间存在未归属区块，未应用离线标签。",
     )
+    if recheck:
+        _require(
+            _has_substantive_answer_text(groups["answer_blocks"]),
+            "answer_range_required", "重新核对自动标签须读到答案正文，当前答案仅有空白、标记或未提取占位。",
+        )
     # Keep every question option and every attached context block, in full.
     return [
         {"index": block["index"], "kind": kind, "text": block["text"], "image_sha256s": []}
         for group, kind in (("context_blocks", "shared_context"), ("question_blocks", "question_text"))
         for block in groups[group]
     ]
+
+
+def _review_scope_sha256(row):
+    """Bind all readable question/answer blocks, without claiming human review."""
+    return _digest({
+        "identity": {name: row[name] for name in (
+            "key", "source_sha256", "source_revision", "index_revision",
+            "extraction_revision", "revision",
+        )},
+        "ranges": {name: row.get(name) for name in (
+            "block_start", "question_end", "answer_start", "block_end",
+            "context_start", "context_end", "origin_block_start",
+        )},
+        "blocks": {group: row[group] for group in (
+            "context_blocks", "question_blocks", "answer_blocks",
+        )},
+    })
 
 
 def _coverage(rows):
@@ -242,14 +322,16 @@ class OfflineWordLabelReviewService:
             for entry in entries if entry["source_sha256"] in locations
         })
 
-    def _compile(self, batch):
+    def _compile(self, batch, *, mode):
+        rule_revision = RECHECK_RULE_REVISION if mode == "recheck_automatic" else RULE_REVISION
+        reading_policy = READING_POLICY_REVISIONS[mode]
         entries = batch["entries"]
         try:
             self._prime_locations(entries)
             rows, inventory = self.words._resolve([
                 {"key": entry["key"], "revision": entry["question_revision"]}
                 for entry in entries
-            ])
+            ], read_only=True)
             catalog = self.words._read_attribute_catalog()
             stored = self.words.attribute_store.get_many([entry["key"] for entry in entries])
         except (OSError, ValueError, TypeError, KeyError) as exc:
@@ -299,9 +381,10 @@ class OfflineWordLabelReviewService:
                 and preview.get("extraction_revision") == row["extraction_revision"],
                 "source_identity_changed", "完整原文件或解析版本与候选绑定不一致。",
             )
-            blocks = _source_blocks(row, old, preview)
+            blocks = _source_blocks(row, old, preview, mode=mode)
+            review_sha = _review_scope_sha256(row) if mode == "recheck_automatic" else None
             unit = {
-                "mode": "missing_only", "attributes": old, "images": [],
+                "mode": mode, "attributes": old, "images": [],
                 "input": {"blocks": blocks, "source_sha256": row["source_sha256"]},
             }
             try:
@@ -319,16 +402,16 @@ class OfflineWordLabelReviewService:
                 == {key: value for key, value in old.items() if key not in allowed}
                 and new["supporting_knowledge"] == [
                     tag for tag in old["supporting_knowledge"]
-                    if old["primary_knowledge"]["id"] != "unknown"
+                    if old["primary_knowledge"]["id"] == new["primary_knowledge"]["id"]
                     or new["primary_knowledge"]["id"] == "unknown"
                     or tag["id"] != new["primary_knowledge"]["id"]
                 ],
-                "unexpected_merge_change", "合并超出缺失标签范围，未应用离线候选。",
+                "unexpected_merge_change", "合并超出本次标签操作范围，未应用离线候选。",
             )
             changed = new != old
             if changed:
                 new = validate_attributes(_seal({
-                    **new, "rule_revision": RULE_REVISION,
+                    **new, "rule_revision": rule_revision,
                     "edit_version": old["edit_version"] + 1,
                 }))
             old_rows.append(old)
@@ -339,6 +422,7 @@ class OfflineWordLabelReviewService:
                 "question_sha256": _digest(row),
                 "stored_attribute_revision": old["revision"],
                 "planned_attribute_revision": new["revision"],
+                "review_scope_sha256": review_sha,
             })
             metadata.append({
                 "key": row["key"], "source_sha256": row["source_sha256"],
@@ -347,6 +431,7 @@ class OfflineWordLabelReviewService:
                 "new_attribute_revision": new["revision"],
                 "old_edit_version": old["edit_version"], "new_edit_version": new["edit_version"],
                 "changed": changed,
+                "review_scope_sha256": review_sha,
                 "old_primary": old["primary_knowledge"]["id"],
                 "new_primary": new["primary_knowledge"]["id"],
                 "old_sections": [node["section_key"] for node in old["curriculum_candidates"]],
@@ -356,12 +441,14 @@ class OfflineWordLabelReviewService:
         catalog_sha = _digest(catalog)
         candidate_sha = _digest(batch)
         plan_sha = _digest({
-            "schema_version": PLAN_SCHEMA_VERSION, "rule_revision": RULE_REVISION,
+            "schema_version": PLAN_SCHEMA_VERSION, "rule_revision": rule_revision,
+            "label_mode": mode, "reading_policy_revision": reading_policy,
             "candidates": batch, "catalog_sha256": catalog_sha, "bindings": bindings,
         })
         changed_count = sum(entry["changed"] for entry in metadata)
         report = {
-            "schema_version": PLAN_SCHEMA_VERSION, "rule_revision": RULE_REVISION,
+            "schema_version": PLAN_SCHEMA_VERSION, "rule_revision": rule_revision,
+            "label_mode": mode, "reading_policy_revision": reading_policy,
             "provenance": PROVENANCE, "candidate_only": True, "human_review": False,
             "provider_invoked": False, "teacher_confirmed": False,
             "plan_sha256": plan_sha, "candidate_sha256": candidate_sha,
@@ -371,17 +458,26 @@ class OfflineWordLabelReviewService:
             "unchanged_question_count": len(entries) - changed_count,
             "primary_filled_count": sum(entry["old_primary"] == "unknown" and entry["new_primary"] != "unknown" for entry in metadata),
             "curriculum_filled_count": sum(not entry["old_sections"] and bool(entry["new_sections"]) for entry in metadata),
+            "primary_replaced_count": sum(
+                entry["old_primary"] != "unknown" and entry["new_primary"] != "unknown"
+                and entry["old_primary"] != entry["new_primary"] for entry in metadata
+            ),
+            "curriculum_replaced_count": sum(
+                bool(entry["old_sections"]) and bool(entry["new_sections"])
+                and set(entry["old_sections"]) != set(entry["new_sections"]) for entry in metadata
+            ),
             "before": _coverage(old_rows), "after_proposed": _coverage(planned),
             "entries": metadata,
         }
         return report, planned, {row["key"]: row["revision"] for row in old_rows}
 
-    def preview(self, candidates):
+    def preview(self, candidates, *, mode="missing_only"):
+        mode = validate_label_mode(mode)
         batch = validate_candidate_batch(candidates)
         with self.words._lock:
-            return self._compile(batch)[0]
+            return self._compile(batch, mode=mode)[0]
 
-    def apply(self, candidates, *, expected_plan_sha256):
+    def apply(self, candidates, *, expected_plan_sha256, mode="missing_only"):
         valid_digest = (
             isinstance(expected_plan_sha256, str) and len(expected_plan_sha256) == 64
             and all(char in "0123456789abcdef" for char in expected_plan_sha256)
@@ -391,19 +487,21 @@ class OfflineWordLabelReviewService:
             "commit_status": "not_attempted", "readback_verified": False,
             "plan_sha256": expected_plan_sha256 if valid_digest else None,
             "expected_plan_sha256": expected_plan_sha256 if valid_digest else None,
+            "label_mode": mode if isinstance(mode, str) and mode in LABEL_MODES else None,
         }
         try:
+            mode = validate_label_mode(mode)
             batch = validate_candidate_batch(candidates)
             _require(
                 valid_digest, "expected_plan_required", "应用候选须提供已核对预览的完整摘要。",
             )
             with self.words._lock:
                 operation["stage"] = "plan_validation"
-                report, planned, expected = self._compile(batch)
+                report, planned, expected = self._compile(batch, mode=mode)
                 operation["plan_sha256"] = report["plan_sha256"]
                 _require(
                     report["plan_sha256"] == expected_plan_sha256,
-                    "plan_changed", "候选、来源、范围、目录或已有标签与预览不同，未应用。",
+                    "plan_changed", "标签模式、候选、来源、范围、目录或已有标签与预览不同，未应用。",
                 )
                 if report["changed_question_count"]:
                     operation.update(

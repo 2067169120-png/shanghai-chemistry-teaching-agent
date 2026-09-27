@@ -18,8 +18,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from integrations.deeptutor_shchem_v1.offline_word_label_review import (
+    LABEL_MODES,
     OfflineWordLabelReviewError,
     OfflineWordLabelReviewService,
+    validate_label_mode,
 )
 
 
@@ -73,6 +75,7 @@ def _report_path(value, *, workspace, state, candidate_path):
 
 
 def _operation_metadata(args):
+    label_mode = getattr(args, "label_mode", "missing_only")
     expected = args.expected_plan_sha256
     if not (
         isinstance(expected, str) and len(expected) == 64
@@ -81,6 +84,7 @@ def _operation_metadata(args):
         expected = None
     return {
         "mode": "apply" if args.apply else "preview", "stage": "preflight",
+        "label_mode": label_mode if isinstance(label_mode, str) and label_mode in LABEL_MODES else None,
         "attribute_write_attempted": False, "commit_status": "not_attempted",
         "readback_verified": False, "plan_sha256": expected,
         "expected_plan_sha256": expected,
@@ -185,6 +189,7 @@ def run(args, *, service_factory=None):
     operation = _operation_metadata(args)
     stream = None
     try:
+        label_mode = validate_label_mode(getattr(args, "label_mode", "missing_only"))
         workspace, state = _directory(args.workspace), _directory(args.state)
         _require(
             not args.apply or bool(args.expected_plan_sha256),
@@ -218,8 +223,8 @@ def run(args, *, service_factory=None):
             service = OfflineWordLabelReviewService(words)
             operation["stage"] = "apply" if args.apply else "preview"
             outcome = (
-                service.apply(candidates, expected_plan_sha256=args.expected_plan_sha256)
-                if args.apply else service.preview(candidates)
+                service.apply(candidates, expected_plan_sha256=args.expected_plan_sha256, mode=label_mode)
+                if args.apply else service.preview(candidates, mode=label_mode)
             )
             operation = {**operation, **outcome}
         report = {
@@ -245,6 +250,8 @@ def main(argv=None):
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--apply", action="store_true")
     parser.add_argument("--expected-plan-sha256")
+    parser.add_argument("--label-mode", choices=LABEL_MODES, default="missing_only",
+                        help="只补缺失标签（默认），或显式重新核对已有自动标签。")
     args = parser.parse_args(argv)
     try:
         report = run(args)

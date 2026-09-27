@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 from copy import deepcopy
@@ -19,6 +20,7 @@ from integrations.deeptutor_shchem_v1.desktop_word_question_attributes import (
 )
 from integrations.deeptutor_shchem_v1.offline_word_label_review import (
     CANDIDATE_SCHEMA_VERSION,
+    RECHECK_RULE_REVISION,
     PROVENANCE,
     RULE_REVISION,
     OfflineWordLabelReviewError,
@@ -84,13 +86,14 @@ def _rewrite(corpus, position, **changes):
     return row
 
 
-def test_preview_is_metadata_only_stable_and_does_not_change_attributes(corpus):
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+def test_preview_is_metadata_only_stable_and_does_not_change_attributes(corpus, mode):
     histories = _history(corpus)
     state = corpus.words.state.snapshot()
     source = corpus.source.read_bytes()
     batch = deepcopy(corpus.batch)
-    result = corpus.service.preview(batch)
-    assert result == corpus.service.preview(batch)
+    result = corpus.service.preview(batch, mode=mode)
+    assert result == corpus.service.preview(batch, mode=mode)
     assert result["entry_count"] == result["changed_question_count"] == 2
     assert result["primary_filled_count"] == result["curriculum_filled_count"] == 2
     assert result["source_count"] == 1 and result["unchanged_question_count"] == 0
@@ -167,7 +170,8 @@ def test_existing_nonempty_labels_remain_and_only_the_delta_is_stamped(corpus):
     assert corpus.words.attribute_store.history(corpus.stored[0]["key"]) == before[corpus.stored[0]["key"]]
 
 
-def test_full_question_options_and_attached_context_are_available_as_evidence(corpus):
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+def test_full_question_options_and_attached_context_are_available_as_evidence(corpus, mode):
     row = corpus.rows[0]
     changed = corpus.words.update_range(
         row["key"], row["revision"], block_start=row["block_start"],
@@ -187,7 +191,7 @@ def test_full_question_options_and_attached_context_are_available_as_evidence(co
     context = current["context_blocks"][0]
     decoded["primary"]["evidence"] = [{"block_index": last_question["index"], "quote": last_question["text"], "image_sha256": ""}]
     decoded["curriculum"][0]["evidence"] = [{"block_index": context["index"], "quote": context["text"], "image_sha256": ""}]
-    assert corpus.service.preview(batch)["changed_question_count"] == 1
+    assert corpus.service.preview(batch, mode=mode)["changed_question_count"] == 1
 
 
 @pytest.mark.parametrize("kind", ["image", "formula_gap"])
@@ -210,6 +214,9 @@ def test_answer_assets_or_formula_gaps_do_not_block_a_complete_text_question(cor
     assert attr["material_status"]["answer_image_count"] == (1 if kind == "image" else 0)
     saved = corpus.words.attribute_store.save_many([_seal(attr)])[0]
     batch = {**deepcopy(corpus.batch), "entries": [_entry(row, saved)]}
+    with pytest.raises(OfflineWordLabelReviewError) as error:
+        corpus.service.preview(batch, mode="recheck_automatic")
+    assert error.value.code in {"image_not_supported", "unsupported_source_content"}
     preview = corpus.service.preview(batch)
     assert preview["changed_question_count"] == 1
     receipt = corpus.service.apply(batch, expected_plan_sha256=preview["plan_sha256"])
@@ -239,7 +246,8 @@ def test_candidate_contract_rejects_missing_fake_or_unbounded_metadata(corpus, c
 
 
 @pytest.mark.parametrize("case", ["bad_quote", "answer", "image", "bad_primary", "bad_section", "missing_evidence", "unknown_with_evidence"])
-def test_invalid_ids_or_non_question_evidence_reject_entire_batch(corpus, case):
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+def test_invalid_ids_or_non_question_evidence_reject_entire_batch(corpus, case, mode):
     value = corpus.batch["entries"][1]["decoded"]
     if case == "bad_quote":
         value["primary"]["evidence"][0]["quote"] = "原文中不存在的杜撰说明"
@@ -258,13 +266,14 @@ def test_invalid_ids_or_non_question_evidence_reject_entire_batch(corpus, case):
         value["primary"]["id"] = "unknown"
     before = _history(corpus)
     with pytest.raises(OfflineWordLabelReviewError) as error:
-        corpus.service.preview(corpus.batch)
+        corpus.service.preview(corpus.batch, mode=mode)
     assert error.value.code == "invalid_candidate_evidence"
     assert _history(corpus) == before
 
 
 @pytest.mark.parametrize("case", ["teacher", "pinned", "primary", "supporting", "curriculum_status", "mapping"])
-def test_protected_automatic_or_teacher_rows_are_rejected(corpus, case):
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+def test_protected_automatic_or_teacher_rows_are_rejected(corpus, case, mode):
     changes = {}
     if case == "teacher":
         changes["annotation_source"] = "teacher_modified"
@@ -282,12 +291,13 @@ def test_protected_automatic_or_teacher_rows_are_rejected(corpus, case):
         changes["primary_knowledge" if case == "primary" else "supporting_knowledge"] = tag if case == "primary" else [tag]
     _rewrite(corpus, 0, **changes)
     with pytest.raises(OfflineWordLabelReviewError) as error:
-        corpus.service.preview(corpus.batch)
+        corpus.service.preview(corpus.batch, mode=mode)
     assert error.value.code == "protected_attributes"
 
 
 @pytest.mark.parametrize("field", ["source_sha256", "question_revision", "source_revision", "index_revision", "extraction_revision"])
-def test_stale_stored_identity_is_rejected(corpus, field, tmp_path):
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+def test_stale_stored_identity_is_rejected(corpus, field, tmp_path, mode):
     if field == "source_sha256":
         # Simulate a pre-existing legacy row; the real store correctly refuses
         # changing a current row's source digest through its write interface.
@@ -299,19 +309,21 @@ def test_stale_stored_identity_is_rejected(corpus, field, tmp_path):
     else:
         _rewrite(corpus, 0, **{field: "changed-version"})
     with pytest.raises(OfflineWordLabelReviewError):
-        corpus.service.preview(corpus.batch)
+        corpus.service.preview(corpus.batch, mode=mode)
 
 
-def test_missing_stored_row_is_never_created(corpus, tmp_path):
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+def test_missing_stored_row_is_never_created(corpus, tmp_path, mode):
     corpus.words.attribute_store = WordQuestionAttributeStore(tmp_path / "empty")
     with pytest.raises(OfflineWordLabelReviewError) as error:
-        corpus.service.preview(corpus.batch)
+        corpus.service.preview(corpus.batch, mode=mode)
     assert error.value.code == "stored_attributes_missing"
     assert not corpus.words.attribute_store.path.exists()
 
 
 @pytest.mark.parametrize("case", ["not_ready", "boundary", "gap", "image", "unsupported", "source_issue", "sharing_unknown", "missing_context", "missing_visual"])
-def test_incomplete_or_unsupported_sources_are_rejected(corpus, monkeypatch, case):
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+def test_incomplete_or_unsupported_sources_are_rejected(corpus, monkeypatch, case, mode):
     if case in {"missing_context", "missing_visual"}:
         _rewrite(corpus, 0, material_status={**corpus.stored[0]["material_status"], case: True})
     else:
@@ -339,13 +351,14 @@ def test_incomplete_or_unsupported_sources_are_rejected(corpus, monkeypatch, cas
         monkeypatch.setattr(corpus.words, "_resolve", resolve)
     before = _history(corpus)
     with pytest.raises(OfflineWordLabelReviewError):
-        corpus.service.preview(corpus.batch)
+        corpus.service.preview(corpus.batch, mode=mode)
     assert _history(corpus) == before
 
 
 @pytest.mark.parametrize("changed", ["source", "range", "catalog", "proposal", "attributes", "unselected_preview_block"])
-def test_apply_rebuild_rejects_changed_preview_bindings(corpus, monkeypatch, changed):
-    preview = corpus.service.preview(corpus.batch)
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+def test_apply_rebuild_rejects_changed_preview_bindings(corpus, monkeypatch, changed, mode):
+    preview = corpus.service.preview(corpus.batch, mode=mode)
     before = _history(corpus)
     if changed == "source":
         corpus.source.write_bytes(corpus.source.read_bytes() + b"changed")
@@ -375,27 +388,34 @@ def test_apply_rebuild_rejects_changed_preview_bindings(corpus, monkeypatch, cha
 
         monkeypatch.setattr(corpus.words, "_resolve", changed_preview)
     with pytest.raises(OfflineWordLabelReviewError):
-        corpus.service.apply(corpus.batch, expected_plan_sha256=preview["plan_sha256"])
+        corpus.service.apply(corpus.batch, expected_plan_sha256=preview["plan_sha256"], mode=mode)
     assert _history(corpus) == before
 
 
-def test_cas_conflict_rolls_back_earlier_rows_in_same_transaction(corpus, monkeypatch):
-    preview = corpus.service.preview(corpus.batch)
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+@pytest.mark.parametrize("teacher", [False, True])
+def test_cas_conflict_rolls_back_earlier_rows_in_same_transaction(corpus, monkeypatch, mode, teacher):
+    preview = corpus.service.preview(corpus.batch, mode=mode)
     histories = _history(corpus)
     real_save = corpus.words.attribute_store.save_many
 
     def conflicting_save(rows, *, expected_revisions):
-        real_save([_seal({**corpus.stored[1], "teacher_note": "合成并发修改"})])
+        concurrent = {**corpus.stored[1], "teacher_note": "合成并发修改"}
+        if teacher:
+            concurrent["annotation_source"] = "teacher_modified"
+        real_save([_seal(concurrent)])
         return real_save(rows, expected_revisions=expected_revisions)
 
     monkeypatch.setattr(corpus.words.attribute_store, "save_many", conflicting_save)
     with pytest.raises(OfflineWordLabelReviewError) as error:
-        corpus.service.apply(corpus.batch, expected_plan_sha256=preview["plan_sha256"])
+        corpus.service.apply(corpus.batch, expected_plan_sha256=preview["plan_sha256"], mode=mode)
     assert error.value.code == "attribute_write_conflict"
     assert corpus.words.attribute_store.get(corpus.stored[0]["key"]) == corpus.stored[0]
     assert corpus.words.attribute_store.history(corpus.stored[0]["key"]) == histories[corpus.stored[0]["key"]]
     other = corpus.words.attribute_store.get(corpus.stored[1]["key"])
     assert other["teacher_note"] == "合成并发修改" and other["primary_knowledge"]["id"] == "unknown"
+    if teacher:
+        assert other["annotation_source"] == "teacher_modified"
 
 
 def _args(corpus, tmp_path, **changes):
@@ -406,7 +426,7 @@ def _args(corpus, tmp_path, **changes):
             "workspace": corpus.facade.paths.workspace_root,
             "state": corpus.facade.paths.state_root,
             "candidates": candidates, "report": tmp_path / "report.json",
-            "apply": False, "expected_plan_sha256": None,
+            "apply": False, "expected_plan_sha256": None, "label_mode": "missing_only",
             **changes,
         }
     )
@@ -518,12 +538,14 @@ def test_report_reserved_paths_are_rejected_before_mkdir_or_open(corpus, tmp_pat
 
 
 @pytest.mark.parametrize("mismatch", [False, True])
-def test_service_readback_failure_keeps_confirmed_commit_and_plan(corpus, monkeypatch, mismatch):
-    preview = corpus.service.preview(corpus.batch)
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+def test_service_readback_failure_keeps_confirmed_commit_and_plan(corpus, monkeypatch, mismatch, mode):
+    preview = corpus.service.preview(corpus.batch, mode=mode)
     real_get = _fail_readback_after_commit(corpus, monkeypatch, mismatch=mismatch)
     with pytest.raises(OfflineWordLabelReviewError) as error:
-        corpus.service.apply(corpus.batch, expected_plan_sha256=preview["plan_sha256"])
+        corpus.service.apply(corpus.batch, expected_plan_sha256=preview["plan_sha256"], mode=mode)
     receipt = error.value.operation
+    assert receipt["label_mode"] == mode
     assert receipt["stage"] == "attribute_readback"
     assert receipt["attribute_write_attempted"] is True
     assert receipt["commit_status"] == "committed"
@@ -536,8 +558,9 @@ def test_service_readback_failure_keeps_confirmed_commit_and_plan(corpus, monkey
 
 
 @pytest.mark.parametrize("after_commit", [False, True])
-def test_save_exception_reports_unknown_instead_of_claiming_no_write(corpus, monkeypatch, after_commit):
-    preview = corpus.service.preview(corpus.batch)
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+def test_save_exception_reports_unknown_instead_of_claiming_no_write(corpus, monkeypatch, after_commit, mode):
+    preview = corpus.service.preview(corpus.batch, mode=mode)
     real_save = corpus.words.attribute_store.save_many
 
     def broken_save(rows, *, expected_revisions):
@@ -547,8 +570,9 @@ def test_save_exception_reports_unknown_instead_of_claiming_no_write(corpus, mon
 
     monkeypatch.setattr(corpus.words.attribute_store, "save_many", broken_save)
     with pytest.raises(OfflineWordLabelReviewError) as error:
-        corpus.service.apply(corpus.batch, expected_plan_sha256=preview["plan_sha256"])
+        corpus.service.apply(corpus.batch, expected_plan_sha256=preview["plan_sha256"], mode=mode)
     receipt = error.value.operation
+    assert receipt["label_mode"] == mode
     assert receipt["stage"] == "attribute_write"
     assert receipt["attribute_write_attempted"] is True
     assert receipt["commit_status"] == "unknown"
@@ -586,22 +610,412 @@ def _argv(args):
     result = [
         "--workspace", str(args.workspace), "--state", str(args.state),
         "--candidates", str(args.candidates), "--report", str(args.report),
+        "--label-mode", args.label_mode,
     ]
     if args.apply:
         result.extend(["--apply", "--expected-plan-sha256", args.expected_plan_sha256])
     return result
 
 
-def test_cli_readback_failure_writes_and_prints_committed_receipt(corpus, tmp_path, monkeypatch, capsys):
+@pytest.fixture
+def automatic_corpus(corpus):
+    """An existing automatic primary, mapping and unrelated supporting tag."""
+    taxonomy = corpus.facade.paths.workspace_root / "sh-chem-db/kb/knowledge_taxonomy.json"
+    data = json.loads(taxonomy.read_text(encoding="utf-8"))
+    data["dimensions"]["knowledge_points"].extend([
+        {"id": "K05", "name": "合成旧主标签"},
+        {"id": "K10", "name": "合成辅助标签"},
+    ])
+    taxonomy.write_text(json.dumps(data), encoding="utf-8")
+    data = json.loads(corpus.directory.read_text(encoding="utf-8"))
+    for identifier in ("S2", "S3"):
+        data["nodes"].append({**data["nodes"][0], "node_key": identifier,
+                              "section_title": "合成旧教材节" + identifier})
+    corpus.directory.write_text(json.dumps(data), encoding="utf-8")
+    for position in range(len(corpus.rows)):
+        _rewrite(corpus, position,
+                 primary_knowledge=_tag("K05"),
+                 supporting_knowledge=[_tag("K11"), _tag("K10")],
+                 curriculum_candidates=[_mapping("S2")], curriculum_status="auto_suggested")
+    return corpus
+
+
+def _tag(identifier):
+    return {"id": identifier, "label": "合成已有标签", "status": "auto_suggested", "evidence": []}
+
+
+def _mapping(identifier):
+    return {"section_key": identifier, "chapter_id": "C1", "volume_id": "V1",
+            "label": "合成已有教材节", "status": "auto_suggested", "evidence": []}
+
+
+def test_explicit_recheck_replaces_existing_labels_once_and_preserves_other_fields(automatic_corpus):
+    corpus = automatic_corpus
+    before = _history(corpus)
+    default = corpus.service.preview(corpus.batch)
+    assert default["label_mode"] == "missing_only" and default["changed_question_count"] == 0
+    preview = corpus.service.preview(corpus.batch, mode="recheck_automatic")
+    assert preview["label_mode"] == "recheck_automatic"
+    assert preview["rule_revision"] == RECHECK_RULE_REVISION
+    assert preview["primary_replaced_count"] == preview["curriculum_replaced_count"] == 2
+    assert preview["primary_filled_count"] == preview["curriculum_filled_count"] == 0
+    assert preview["plan_sha256"] != default["plan_sha256"]
+    result = corpus.service.apply(corpus.batch, expected_plan_sha256=preview["plan_sha256"], mode="recheck_automatic")
+    assert result["applied"] and result["readback_verified"]
+    assert result["after_actual"] == preview["after_proposed"]
+    allowed = {"primary_knowledge", "supporting_knowledge", "curriculum_candidates",
+               "curriculum_status", "rule_revision", "revision", "edit_version"}
+    for old, metadata in zip(corpus.stored, preview["entries"], strict=True):
+        actual = corpus.words.attribute_store.get(old["key"])
+        assert actual["primary_knowledge"]["id"] == "K11"
+        assert actual["primary_knowledge"]["status"] == "auto_suggested"
+        assert actual["supporting_knowledge"] == [old["supporting_knowledge"][1]]
+        assert [row["section_key"] for row in actual["curriculum_candidates"]] == ["S1"]
+        assert actual["curriculum_status"] == "auto_suggested"
+        assert actual["rule_revision"] == RECHECK_RULE_REVISION
+        assert actual["edit_version"] == old["edit_version"] + 1
+        assert actual["revision"] == metadata["new_attribute_revision"]
+        assert metadata["removed_supporting_duplicates"] == 1
+        assert len(metadata["review_scope_sha256"]) == 64
+        assert {k: v for k, v in actual.items() if k not in allowed} == {
+            k: v for k, v in old.items() if k not in allowed}
+        assert corpus.words.attribute_store.history(old["key"]) == [*before[old["key"]], actual]
+    with pytest.raises(OfflineWordLabelReviewError, match="已有标签版本已变化"):
+        corpus.service.apply(corpus.batch, expected_plan_sha256=preview["plan_sha256"], mode="recheck_automatic")
+
+
+@pytest.mark.parametrize("case", ["uncertain", "same", "reordered_sections"])
+def test_recheck_uncertain_or_same_ids_keep_full_rows_and_history(automatic_corpus, monkeypatch, case):
+    corpus = automatic_corpus
+    for position, entry in enumerate(corpus.batch["entries"]):
+        evidence = deepcopy(entry["decoded"]["primary"]["evidence"])
+        decoded = entry["decoded"]
+        if case == "uncertain":
+            decoded.update(primary={"id": "unknown", "evidence": []}, curriculum=[])
+        else:
+            decoded["primary"] = {"id": "K05", "evidence": evidence}
+            sections = ["S2"]
+            if case == "reordered_sections":
+                _rewrite(corpus, position, curriculum_candidates=[_mapping("S2"), _mapping("S3")])
+                sections = ["S3", "S2"]
+            decoded["curriculum"] = [{"section_key": key, "evidence": evidence} for key in sections]
+    before = _history(corpus)
+    monkeypatch.setattr(corpus.words.attribute_store, "save_many", lambda *_a, **_k: pytest.fail("no-op must not save"))
+    preview = corpus.service.preview(corpus.batch, mode="recheck_automatic")
+    assert preview["changed_question_count"] == preview["primary_replaced_count"] == preview["curriculum_replaced_count"] == 0
+    result = corpus.service.apply(corpus.batch, expected_plan_sha256=preview["plan_sha256"], mode="recheck_automatic")
+    assert result["readback_verified"] and not result["attribute_write_attempted"]
+    assert _history(corpus) == before
+
+
+@pytest.mark.parametrize("field", ["primary", "curriculum"])
+def test_recheck_one_field_leaves_the_other_field_and_its_evidence_unchanged(automatic_corpus, field):
+    corpus = automatic_corpus
+    for entry in corpus.batch["entries"]:
+        if field == "primary":
+            entry["decoded"]["curriculum"] = []
+        else:
+            entry["decoded"]["primary"] = {"id": "unknown", "evidence": []}
+    preview = corpus.service.preview(corpus.batch, mode="recheck_automatic")
+    assert preview[field + "_replaced_count"] == 2
+    other = "curriculum" if field == "primary" else "primary"
+    assert preview[other + "_replaced_count"] == 0
+    corpus.service.apply(corpus.batch, expected_plan_sha256=preview["plan_sha256"], mode="recheck_automatic")
+    for old in corpus.stored:
+        actual = corpus.words.attribute_store.get(old["key"])
+        untouched = ("curriculum_candidates", "curriculum_status") if field == "primary" else ("primary_knowledge", "supporting_knowledge")
+        assert all(actual[name] == old[name] for name in untouched)
+
+
+def test_recheck_counts_fills_and_replacements_separately(automatic_corpus):
+    corpus = automatic_corpus
+    _rewrite(corpus, 1, primary_knowledge={"id": "unknown", "label": "待确认", "status": "unknown", "evidence": []},
+             curriculum_candidates=[], curriculum_status="pending_mapping")
+    preview = corpus.service.preview(corpus.batch, mode="recheck_automatic")
+    assert preview["primary_filled_count"] == preview["curriculum_filled_count"] == 1
+    assert preview["primary_replaced_count"] == preview["curriculum_replaced_count"] == 1
+    assert preview["changed_question_count"] == 2
+
+
+@pytest.mark.parametrize("mode", [None, False, 1, [], {}, "", "recheck", "RECHECK_AUTOMATIC"])
+def test_invalid_mode_is_rejected_before_source_reads_or_cli_initialisation(corpus, tmp_path, monkeypatch, mode):
+    monkeypatch.setattr(corpus.words, "_resolve", lambda *_a, **_k: pytest.fail("invalid mode must not read sources"))
+    for apply in (False, True):
+        with pytest.raises(OfflineWordLabelReviewError) as error:
+            if apply:
+                corpus.service.apply(corpus.batch, expected_plan_sha256="a" * 64, mode=mode)
+            else:
+                corpus.service.preview(corpus.batch, mode=mode)
+        assert error.value.code == "invalid_label_mode"
+        if apply:
+            assert not error.value.operation["attribute_write_attempted"]
+            assert error.value.operation["label_mode"] is None
+    args = _args(corpus, tmp_path, label_mode=mode)
+    with pytest.raises(OfflineWordLabelReviewError) as error:
+        cli.run(args, service_factory=lambda *_: pytest.fail("invalid mode must not initialise"))
+    assert error.value.code == "invalid_label_mode" and not args.report.exists()
+
+
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+def test_plan_mode_is_bound_even_when_both_modes_are_noops(automatic_corpus, mode):
+    corpus = automatic_corpus
+    for entry in corpus.batch["entries"]:
+        entry["decoded"].update(primary={"id": "unknown", "evidence": []}, curriculum=[])
+    preview = corpus.service.preview(corpus.batch, mode=mode)
+    other = "missing_only" if mode == "recheck_automatic" else "recheck_automatic"
+    other_preview = corpus.service.preview(corpus.batch, mode=other)
+    assert preview["candidate_sha256"] == other_preview["candidate_sha256"]
+    assert preview["plan_sha256"] != other_preview["plan_sha256"]
+    before = _history(corpus)
+    with pytest.raises(OfflineWordLabelReviewError) as error:
+        corpus.service.apply(corpus.batch, expected_plan_sha256=preview["plan_sha256"], mode=other)
+    assert error.value.code == "plan_changed"
+    assert not error.value.operation["attribute_write_attempted"]
+    assert _history(corpus) == before
+
+
+@pytest.mark.parametrize("case", ["missing", "blank", "truncated", "mismatch", "warning", "gaps",
+                                  "origin_gaps", "origin_unsupported", "split", "preview_asset", "image_count"])
+def test_recheck_requires_complete_readable_answer_range(corpus, monkeypatch, case):
+    original = corpus.words._resolve
+
+    def resolve(*args, **kwargs):
+        rows, inventory = original(*args, **kwargs)
+        inventory = deepcopy(inventory)
+        row = rows[0]
+        block = row["answer_blocks"][0]
+        preview = inventory[row["source_id"]][2]
+        origin = next(item for item in preview["blocks"] if item["index"] == block["index"])
+        if case == "missing":
+            row.update(answer_blocks=[], answer_start=None, block_end=row["question_end"])
+        elif case == "blank":
+            block["text"] = origin["text"] = " "
+        elif case == "truncated":
+            row["block_end"] += 1
+        elif case == "mismatch":
+            block["text"] += "不属于原文的补写"
+        elif case == "warning":
+            origin["warnings"] = ["合成答案读取警告"]
+        elif case == "gaps":
+            block["gaps"] = ["unread"]
+        elif case == "origin_gaps":
+            origin["gaps"] = ["unread"]
+        elif case == "origin_unsupported":
+            origin["unsupported_assets"] = ["unread"]
+        elif case == "split":
+            origin["text_range"] = [0, 1]
+        elif case == "preview_asset":
+            preview.setdefault("assets", []).append({"block_index": block["index"], "sha256": "a" * 64})
+        return rows, inventory
+
+    if case == "image_count":
+        _rewrite(corpus, 0, material_status={**corpus.stored[0]["material_status"], "answer_image_count": 1})
+    monkeypatch.setattr(corpus.words, "_resolve", resolve)
+    before = _history(corpus)
+    with pytest.raises(OfflineWordLabelReviewError):
+        corpus.service.preview(corpus.batch, mode="recheck_automatic")
+    assert _history(corpus) == before
+
+
+@pytest.mark.parametrize("changed", ["answer", "question", "rule", "reading_policy", "plan_version"])
+def test_recheck_plan_binds_complete_reading_and_actual_policy(corpus, monkeypatch, changed):
+    from integrations.deeptutor_shchem_v1 import offline_word_label_review as module
+
+    preview = corpus.service.preview(corpus.batch, mode="recheck_automatic")
+    before = _history(corpus)
+    if changed in {"answer", "question"}:
+        original = corpus.words._resolve
+
+        def resolve(*args, **kwargs):
+            rows, inventory = original(*args, **kwargs)
+            inventory = deepcopy(inventory)
+            row = rows[0]
+            block = row[changed + "_blocks"][0]
+            origin = next(item for item in inventory[row["source_id"]][2]["blocks"] if item["index"] == block["index"])
+            block["text"] += "合成投影变更"
+            origin["text"] = block["text"]
+            return rows, inventory
+
+        monkeypatch.setattr(corpus.words, "_resolve", resolve)
+    elif changed == "rule":
+        monkeypatch.setattr(module, "RECHECK_RULE_REVISION", "synthetic-new-recheck-rule")
+    elif changed == "reading_policy":
+        monkeypatch.setitem(module.READING_POLICY_REVISIONS, "recheck_automatic", "synthetic-new-reading-policy")
+    else:
+        monkeypatch.setattr(module, "PLAN_SCHEMA_VERSION", "synthetic-new-plan-version")
+    fresh = corpus.service.preview(corpus.batch, mode="recheck_automatic")
+    assert fresh["plan_sha256"] != preview["plan_sha256"]
+    if changed in {"answer", "question"}:
+        assert fresh["entries"][0]["review_scope_sha256"] != preview["entries"][0]["review_scope_sha256"]
+        assert fresh["entries"][1]["review_scope_sha256"] == preview["entries"][1]["review_scope_sha256"]
+    with pytest.raises(OfflineWordLabelReviewError) as error:
+        corpus.service.apply(corpus.batch, expected_plan_sha256=preview["plan_sha256"], mode="recheck_automatic")
+    assert error.value.code == "plan_changed" and not error.value.operation["attribute_write_attempted"]
+    assert _history(corpus) == before
+
+
+@pytest.mark.parametrize("case", ["teacher_note", "annotation_source", "material_status", "extra_support", "drop_support", "old_primary_support"])
+def test_recheck_rejects_merge_changes_outside_the_exact_field_boundary(automatic_corpus, monkeypatch, case):
+    from integrations.deeptutor_shchem_v1 import offline_word_label_review as module
+
+    corpus = automatic_corpus
+    merge = module.merge_response
+
+    def wrong_merge(*args):
+        value = merge(*args)
+        if case == "teacher_note":
+            value["teacher_note"] = "不允许修改"
+        elif case == "annotation_source":
+            value["annotation_source"] = "teacher_modified"
+        elif case == "material_status":
+            value["material_status"]["missing_visual"] = True
+        elif case == "drop_support":
+            value["supporting_knowledge"] = []
+        else:
+            value["supporting_knowledge"].append(_tag("K05" if case == "old_primary_support" else "K11"))
+        return value
+
+    monkeypatch.setattr(module, "merge_response", wrong_merge)
+    before = _history(corpus)
+    with pytest.raises(OfflineWordLabelReviewError) as error:
+        corpus.service.preview(corpus.batch, mode="recheck_automatic")
+    assert error.value.code == "unexpected_merge_change"
+    assert _history(corpus) == before
+
+
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+def test_cli_label_mode_is_distinct_from_preview_apply_and_survives_receipts(automatic_corpus, tmp_path, monkeypatch, capsys, mode):
     pytest.importorskip("PySide6")
-    preview = corpus.service.preview(corpus.batch)
-    args = _args(corpus, tmp_path, apply=True, expected_plan_sha256=preview["plan_sha256"])
+    corpus = automatic_corpus
+    args = _args(corpus, tmp_path, label_mode=mode)
+    monkeypatch.setattr(cli, "read_side_service", lambda *_: corpus.words)
+    assert cli.main(_argv(args)) == 0
+    preview_stdout = json.loads(capsys.readouterr().out)
+    preview = json.loads(args.report.read_text(encoding="utf-8"))
+    assert preview["label_mode"] == preview_stdout["label_mode"] == mode
+    assert preview["mode"] == "preview"
+    args.apply, args.expected_plan_sha256 = True, preview["plan_sha256"]
+    args.report = tmp_path / "applied.json"
+    assert cli.main(_argv(args)) == 0
+    receipt = json.loads(capsys.readouterr().out)
+    assert receipt["mode"] == "apply" and receipt["label_mode"] == mode
+    assert receipt["readback_verified"]
+    assert receipt["primary_replaced_count"] == (2 if mode == "recheck_automatic" else 0)
+
+
+def test_formal_read_side_recheck_uses_archives_without_provider_or_persistent_writes(corpus, monkeypatch):
+    from test_desktop_visual_import_facade import FakeProviderStore, FakeVisualTransport, _facade
+    from integrations.deeptutor_shchem_v1.desktop_facade import DesktopWorkbenchFacade
+    from integrations.deeptutor_shchem_v1.desktop_paths import DesktopPaths
+    from integrations.deeptutor_shchem_v1.desktop_word_semantic_tags import WordSemanticTagService
+
+    paths = DesktopPaths.from_workspace(corpus.facade.paths.workspace_root, state_root=corpus.facade.paths.state_root)
+    provider, transport = FakeProviderStore(), FakeVisualTransport()
+    facade = _facade(paths, provider, transport=transport)
+    facade.save_visual_import_batch(question_files=(corpus.source,), source_type="合成测试")
+    monkeypatch.setattr(DesktopWorkbenchFacade, "__init__", lambda *_a, **_k: pytest.fail("full facade init forbidden"))
+    monkeypatch.setattr(WordSemanticTagService, "__init__", lambda *_a, **_k: pytest.fail("provider service forbidden"))
+    words = cli.read_side_service(paths.workspace_root, paths.state_root)
+    rows = words.catalog()["items"]
+    stored = words.attribute_store.get_many([row["key"] for row in rows])
+    batch = {**corpus.batch, "entries": [_entry(row, stored[row["key"]]) for row in rows]}
+    assert len(batch["entries"]) == 2
+    words._cache.clear()
+    words._locations.clear()
+    monkeypatch.setattr(words.preview_cache, "save", lambda *_a, **_k: pytest.fail("cache writes forbidden"))
+    resolve = words._resolve
+    calls = []
+
+    def readonly(*args, **kwargs):
+        assert kwargs.get("read_only") is True
+        calls.append(1)
+        return resolve(*args, **kwargs)
+
+    monkeypatch.setattr(words, "_resolve", readonly)
+    def snapshot():
+        return {str(p): hashlib.sha256(p.read_bytes()).hexdigest()
+                for root in (paths.workspace_root, paths.state_root) for p in root.rglob("*") if p.is_file()}
+    before = snapshot()
+    preview = OfflineWordLabelReviewService(words).preview(batch, mode="recheck_automatic")
+    assert preview["entry_count"] == 2 and preview["provider_invoked"] is False
+    assert calls == [1] and provider.borrow_calls == transport.calls == 0
+    assert snapshot() == before
+
+
+def test_recheck_reads_native_table_all_options_context_and_multiblock_answer(corpus, monkeypatch):
+    from integrations.deeptutor_shchem_v1 import offline_word_label_review as module
+
+    document = Document()
+    document.add_paragraph("共享背景：合成表格的全部条件均需保留。")
+    document.add_paragraph("【即学即练3】依据完整表格判断各项合成条件。")
+    table = document.add_table(rows=4, cols=2)
+    for number, letter in enumerate("ABCD"):
+        table.cell(number, 0).text = letter
+        table.cell(number, 1).text = letter + "项完整条件"
+    document.add_paragraph("【答案】合成答案。")
+    document.add_paragraph("【解析】最后一段解析也属于完整阅读范围。")
+    stream = io.BytesIO()
+    document.save(stream)
+    source = corpus.facade.add("B2", stream.getvalue(), name="synthetic-table.docx", source_id="SOURCE2")
+    row = next(item for item in corpus.words.catalog()["items"] if item["batch_id"] == "B2")
+    changed = corpus.words.update_range(
+        row["key"], row["revision"], block_start=row["block_start"], question_end=row["question_end"],
+        answer_start=row["answer_start"], block_end=row["block_end"], context_start=1, context_end=1,
+    )
+    row = corpus.words._resolve([{"key": row["key"], "revision": changed["revision"]}], read_only=True)[0][0]
+    attr = suggest_attributes(row, {"source_name": row["source_name"]}, corpus.words._read_attribute_catalog())
+    saved = corpus.words.attribute_store.save_many([_seal({
+        **attr, "primary_knowledge": deepcopy(corpus.stored[0]["primary_knowledge"]),
+        "curriculum_candidates": [], "curriculum_status": "pending_mapping",
+    })])[0]
+    batch = {**corpus.batch, "entries": [_entry(row, saved)]}
+    table_block = row["question_blocks"][-1]
+    assert len(row["answer_blocks"]) == 2
+    batch["entries"][0]["decoded"]["primary"]["evidence"] = [
+        {"block_index": table_block["index"], "quote": "D项完整条件", "image_sha256": ""}]
+    merge = module.merge_response
+    seen = []
+
+    def merging(decoded, unit, catalog):
+        seen.append(deepcopy(unit))
+        return merge(decoded, unit, catalog)
+
+    monkeypatch.setattr(module, "merge_response", merging)
+    before = source.read_bytes(), corpus.words.attribute_store.path.read_bytes()
+    preview = corpus.service.preview(batch, mode="recheck_automatic")
+    texts = [block["text"] for block in seen[0]["input"]["blocks"]]
+    assert texts[0] == row["context_blocks"][0]["text"]
+    assert texts[-1] == table_block["text"]
+    assert all(letter + "项完整条件" in texts[-1] for letter in "ABCD")
+    assert not any(block["text"] in texts for block in row["answer_blocks"])
+    assert len(preview["entries"][0]["review_scope_sha256"]) == 64
+    assert (source.read_bytes(), corpus.words.attribute_store.path.read_bytes()) == before
+    resolve = corpus.words._resolve
+
+    def truncated(*args, **kwargs):
+        rows, inventory = resolve(*args, **kwargs)
+        rows[0]["answer_blocks"].pop()
+        return rows, inventory
+
+    monkeypatch.setattr(corpus.words, "_resolve", truncated)
+    with pytest.raises(OfflineWordLabelReviewError) as error:
+        corpus.service.apply(batch, expected_plan_sha256=preview["plan_sha256"], mode="recheck_automatic")
+    assert error.value.code == "range_gap" and not error.value.operation["attribute_write_attempted"]
+    assert (source.read_bytes(), corpus.words.attribute_store.path.read_bytes()) == before
+
+
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+def test_cli_readback_failure_writes_and_prints_committed_receipt(corpus, tmp_path, monkeypatch, capsys, mode):
+    pytest.importorskip("PySide6")
+    preview = corpus.service.preview(corpus.batch, mode=mode)
+    args = _args(corpus, tmp_path, apply=True, expected_plan_sha256=preview["plan_sha256"], label_mode=mode)
     _fail_readback_after_commit(corpus, monkeypatch)
     monkeypatch.setattr(cli, "read_side_service", lambda *_: corpus.words)
     assert cli.main(_argv(args)) == 1
     stdout = json.loads(capsys.readouterr().out)
     report = json.loads(args.report.read_text(encoding="utf-8"))
     for receipt in (stdout, report):
+        assert receipt["label_mode"] == mode
         assert receipt["commit_status"] == "committed"
         assert receipt["stage"] == "attribute_readback"
         assert receipt["attribute_write_attempted"] is True
@@ -611,10 +1025,11 @@ def test_cli_readback_failure_writes_and_prints_committed_receipt(corpus, tmp_pa
 
 
 @pytest.mark.parametrize("fault", ["write", "flush", "close", "write_and_close"])
-def test_cli_report_persistence_failure_keeps_commit_facts_in_stdout(corpus, tmp_path, monkeypatch, capsys, fault):
+@pytest.mark.parametrize("mode", ["missing_only", "recheck_automatic"])
+def test_cli_report_persistence_failure_keeps_commit_facts_in_stdout(corpus, tmp_path, monkeypatch, capsys, fault, mode):
     pytest.importorskip("PySide6")
-    preview = corpus.service.preview(corpus.batch)
-    args = _args(corpus, tmp_path, apply=True, expected_plan_sha256=preview["plan_sha256"])
+    preview = corpus.service.preview(corpus.batch, mode=mode)
+    args = _args(corpus, tmp_path, apply=True, expected_plan_sha256=preview["plan_sha256"], label_mode=mode)
     close_calls = []
     real_open = Path.open
 
@@ -646,6 +1061,7 @@ def test_cli_report_persistence_failure_keeps_commit_facts_in_stdout(corpus, tmp
     monkeypatch.setattr(cli, "read_side_service", lambda *_: corpus.words)
     assert cli.main(_argv(args)) == 1
     receipt = json.loads(capsys.readouterr().out)
+    assert receipt["label_mode"] == mode
     stage = "report_write" if fault == "write_and_close" else "report_" + fault
     assert receipt["stage"] == stage
     assert receipt["error_code"] == stage + "_failed"
@@ -662,6 +1078,79 @@ def test_cli_report_persistence_failure_keeps_commit_facts_in_stdout(corpus, tmp
         assert actual["edit_version"] == old["edit_version"] + 1
         assert len(corpus.words.attribute_store.history(old["key"])) == 2
     assert not (args.state / ".desktop-workbench.lock").exists()
+
+
+@pytest.mark.parametrize("case", ["placeholder", "label_placeholder", "split_placeholder", "numbered_placeholder",
+                                  "label_only", "empty_table", "merged_table", "short_zero", "short_checkmark"])
+def test_recheck_answer_needs_source_content_beyond_placeholders_and_table_layout(corpus, case):
+    document = Document()
+    document.add_paragraph("【即学即练4】判断合成测试条件。")
+    lines = {
+        "placeholder": ["【未提取到文字】"],
+        "label_placeholder": ["【答案】【未提取到文字】"],
+        "split_placeholder": ["【答案】", "【未提取到文字】", "【解析】"],
+        "numbered_placeholder": ["【答案】：（1）【未提取到文字】", "【解析】(1)【未提取到文字】"],
+        "label_only": ["【参考答案】", "解析："],
+        "empty_table": ["【答案】"], "merged_table": ["【答案】"],
+        "short_zero": ["【答案】0"], "short_checkmark": ["【答案】√"],
+    }[case]
+    for text in lines:
+        document.add_paragraph(text)
+    if case in {"empty_table", "merged_table"}:
+        table = document.add_table(rows=2, cols=2)
+        table.cell(0, 0).merge(table.cell(1, 0))
+        if case == "merged_table":
+            table.cell(0, 0).text = "D"
+    stream = io.BytesIO()
+    document.save(stream)
+    source = corpus.facade.add("B2", stream.getvalue(), name="synthetic-answer-presence.docx", source_id="SOURCE2")
+    row = next(item for item in corpus.words.catalog()["items"] if item["batch_id"] == "B2")
+    changed = corpus.words.update_range(
+        row["key"], row["revision"], block_start=row["block_start"], question_end=row["block_start"],
+        answer_start=row["block_start"] + 1, block_end=row["block_end"],
+    )
+    row = corpus.words._resolve([{"key": row["key"], "revision": changed["revision"]}], read_only=True)[0][0]
+    attr = suggest_attributes(row, {"source_name": row["source_name"]}, corpus.words._read_attribute_catalog())
+    saved = corpus.words.attribute_store.save_many([_seal({
+        **attr, "primary_knowledge": deepcopy(corpus.stored[0]["primary_knowledge"]),
+        "curriculum_candidates": [], "curriculum_status": "pending_mapping",
+    })])[0]
+    batch = {**corpus.batch, "entries": [_entry(row, saved)]}
+    # The real parser/index/attribute gates admit even placeholder-only answers.
+    assert row["export_ready"] and row["warnings"] == []
+    assert saved["answer_status"]["value"] == "present_nonofficial_unverified"
+    assert all(not block.get("warnings") and not block.get("gaps") for block in row["answer_blocks"])
+    if case in {"empty_table", "merged_table"}:
+        text = row["answer_blocks"][-1]["text"]
+        assert "纵向合并续接上方" in text and "【未提取到文字】" in text
+    before = source.read_bytes(), corpus.words.attribute_store.path.read_bytes()
+    assert corpus.service.preview(batch)["changed_question_count"] == 1
+    if case in {"merged_table", "short_zero", "short_checkmark"}:
+        result = corpus.service.preview(batch, mode="recheck_automatic")
+        assert result["changed_question_count"] == 1
+        assert result["reading_policy_revision"] == "complete-question-answer-text-v2"
+    else:
+        with pytest.raises(OfflineWordLabelReviewError) as error:
+            corpus.service.preview(batch, mode="recheck_automatic")
+        assert error.value.code == "answer_range_required"
+    assert (source.read_bytes(), corpus.words.attribute_store.path.read_bytes()) == before
+
+
+def test_substantive_answer_policy_invalidates_previously_reviewed_recheck_plan(corpus, monkeypatch):
+    from integrations.deeptutor_shchem_v1 import offline_word_label_review as module
+
+    with monkeypatch.context() as old_policy:
+        old_policy.setitem(module.READING_POLICY_REVISIONS, "recheck_automatic", "complete-question-answer-text-v1")
+        old = corpus.service.preview(corpus.batch, mode="recheck_automatic")
+    fresh = corpus.service.preview(corpus.batch, mode="recheck_automatic")
+    assert old["candidate_sha256"] == fresh["candidate_sha256"]
+    assert old["entries"] == fresh["entries"]
+    assert old["plan_sha256"] != fresh["plan_sha256"]
+    before = _history(corpus)
+    with pytest.raises(OfflineWordLabelReviewError) as error:
+        corpus.service.apply(corpus.batch, expected_plan_sha256=old["plan_sha256"], mode="recheck_automatic")
+    assert error.value.code == "plan_changed" and not error.value.operation["attribute_write_attempted"]
+    assert _history(corpus) == before
 
 
 def test_failed_readback_and_failed_report_close_keep_both_failures(corpus, tmp_path, monkeypatch, capsys):
