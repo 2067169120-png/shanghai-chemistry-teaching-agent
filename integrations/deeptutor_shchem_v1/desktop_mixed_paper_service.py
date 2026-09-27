@@ -347,6 +347,26 @@ class MixedPaperService:
             ],
         }
 
+    def open_draft_session(self):
+        from .desktop_mixed_paper_drafts import MixedPaperDraftSession
+        return MixedPaperDraftSession(self.state)
+
+    def _save_preview_records(self, records, snapshot, *, expected_hash=None, expected_record=None):
+        """Final draft/preview gates share the state writer's OS transaction."""
+        from .desktop_mixed_paper_drafts import check_binding_value
+        def operation(value):
+            check_binding_value(value, snapshot.get("draft_binding"))
+            if _digest(value["basket"]) != snapshot["basket_sha256"]:
+                raise MixedPaperError("保存预览期间题篮已变化，请重新预览。", "paper_preview_stale")
+            if expected_hash is not None and value["drafts"].get(_ACTIVE) != {
+                "preview_id": snapshot["preview_id"], "preview_hash": expected_hash,
+            }:
+                raise MixedPaperError("当前预览已变化，请重新预览。", "paper_preview_stale")
+            if expected_record is not None and value["drafts"].get(snapshot["preview_id"]) != expected_record:
+                raise MixedPaperError("预览核对记录已变化，请重新读取。", "paper_preview_stale")
+            value["drafts"].update(deepcopy(records))
+        self.state._update(operation)
+
     def _core_context(self):
         readers = snapshot_reader_graph(
             (
@@ -446,6 +466,7 @@ class MixedPaperService:
             "basket_sha256",
             "section_order",
             "settings_by_key",
+            "draft_binding",
         }
         if (
             not isinstance(payload, Mapping)
@@ -453,6 +474,8 @@ class MixedPaperService:
             or payload.get("schema_version") != REQUEST_SCHEMA
         ):
             raise MixedPaperError("统一组卷预览请求版本或字段不正确。")
+        from .desktop_mixed_paper_drafts import check_binding_value
+        check_binding_value(self.state.snapshot(), payload.get("draft_binding"), payload)
         title, subtitle = payload.get("title"), payload.get("subtitle", "")
         duration, show = (
             payload.get("duration_minutes", 40),
@@ -699,6 +722,7 @@ class MixedPaperService:
             "preview_model": model,
             "sections": manifest,
             "images": images,
+            "draft_binding": deepcopy(payload.get("draft_binding")),
         }
         snapshot_bytes = _json_bytes(snapshot)
         (folder / "snapshot.json").write_bytes(snapshot_bytes)
@@ -715,10 +739,9 @@ class MixedPaperService:
             "approval": None,
             "created_at": utc_now(),
         }
-        self.state.save_draft(preview_id, record)
-        self.state.save_draft(
-            _ACTIVE, {"preview_id": preview_id, "preview_hash": preview_hash}
-        )
+        self._save_preview_records({preview_id: record, _ACTIVE: {
+            "preview_id": preview_id, "preview_hash": preview_hash,
+        }}, snapshot)
         from .desktop_facade import PaperPreview
 
         return PaperPreview(
@@ -969,6 +992,9 @@ class MixedPaperService:
             raise MixedPaperError(
                 "题篮或当前预览已变化，请重新确认。", "paper_preview_stale"
             )
+        if require_current:
+            from .desktop_mixed_paper_drafts import check_binding_value
+            check_binding_value(self.state.snapshot(), snapshot.get("draft_binding"))
         return folder, record, snapshot
 
     def image(self, preview_id, image_id):
@@ -987,8 +1013,10 @@ class MixedPaperService:
                 _, record, current = self._load(preview_id, require_current=True)
                 if current["preview_hash"] != snapshot["preview_hash"]:
                     raise MixedPaperError("分页已变化，请重新预览。", "paper_preview_stale")
+                expected_record = deepcopy(record)
                 record["pages_read"] = sorted(set(record.get("pages_read", [])) | {image_id})
-                self.state.save_draft(preview_id, record)
+                self._save_preview_records({preview_id: record}, current,
+                    expected_hash=current["preview_hash"], expected_record=expected_record)
         return {
             "data": data,
             "content_type": image["content_type"],
@@ -1014,12 +1042,14 @@ class MixedPaperService:
             if current["preview_hash"] != preview_hash:
                 raise MixedPaperError("确认期间预览已变化，请重新预览。", "paper_preview_stale")
             check_read_cancelled()
+            expected_record = deepcopy(record)
             record["approval"] = {
                 "status": "approved",
                 "preview_hash": preview_hash,
                 "approved_at": utc_now(),
             }
-            self.state.save_draft(preview_id, record)
+            self._save_preview_records({preview_id: record}, current,
+                expected_hash=preview_hash, expected_record=expected_record)
         return {
             "status": "approved",
             "message_zh": "本次实际分页已确认，可以导出同一份学生和教师 DOCX/PDF。",
@@ -1171,8 +1201,9 @@ class MixedPaperService:
             check_read_cancelled()
             record.update(preview_hash=snapshot["preview_hash"], snapshot_file=filename,
                           snapshot_sha256=_sha(data), approval=None, pages_read=[])
-            self.state.save_draft(preview_id, record)
-            self.state.save_draft(_ACTIVE, {"preview_id": preview_id, "preview_hash": snapshot["preview_hash"]})
+            self._save_preview_records({preview_id: record, _ACTIVE: {
+                "preview_id": preview_id, "preview_hash": snapshot["preview_hash"],
+            }}, snapshot, expected_hash=preview_hash, expected_record=current)
         from .desktop_facade import PaperPreview
 
         return PaperPreview(preview_id=preview_id, title_zh=model["title"],

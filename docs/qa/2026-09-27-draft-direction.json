@@ -1,0 +1,255 @@
+{
+  "date": "2026-09-27",
+  "base_main_commit": "9c0504a29b4a28526a6ee37bd2a69f54ba4567c9",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "release_exe_rebuilt": false,
+  "release_baseline": "v0.1.101",
+  "tests": {
+    "initial_verification": {
+      "mixed_draft_and_regressions": {
+        "passed": 377,
+        "failed": 0,
+        "test_modules": [
+          "staging.coordination.deeptutor_gateway.tests.test_desktop_basket_undo",
+          "staging.coordination.deeptutor_gateway.tests.test_desktop_composer_alias_units",
+          "staging.coordination.deeptutor_gateway.tests.test_desktop_mixed_paper_service",
+          "staging.coordination.deeptutor_gateway.tests.test_desktop_mixed_paper_ui",
+          "staging.coordination.deeptutor_gateway.tests.test_desktop_state_corruption",
+          "staging.coordination.deeptutor_gateway.tests.test_explorer_basket_recovery_ui",
+          "staging.coordination.deeptutor_gateway.tests.test_explorer_basket_undo_ui",
+          "staging.coordination.deeptutor_gateway.tests.test_mixed_basket_entrypoints",
+          "staging.coordination.deeptutor_gateway.tests.test_mixed_paper_draft_undo",
+          "staging.coordination.deeptutor_gateway.tests.test_mixed_paper_draft_undo_ui",
+          "staging.coordination.deeptutor_gateway.tests.test_mixed_paper_export",
+          "staging.coordination.deeptutor_gateway.tests.test_mixed_paper_pagination",
+          "staging.coordination.deeptutor_gateway.tests.test_visual_mixed_paper_integration",
+          "staging.coordination.deeptutor_gateway.tests.test_visual_mixed_paper_ui"
+        ],
+        "junit_sha256": "17d8b2d0fa8928bdff858cee87929384486965f7ed25c961febb14da9d64153d"
+      },
+      "qt_2x_ui_overlap": {
+        "passed": 30,
+        "failed": 0,
+        "test_modules": [
+          "staging.coordination.deeptutor_gateway.tests.test_mixed_paper_draft_undo_ui"
+        ],
+        "junit_sha256": "23532d2cc16ac7064718726d612e6539ca072115a2fb0b6d2e48f541c6dd85bc"
+      },
+      "knowledge_and_labels": {
+        "passed": 324,
+        "failed": 0,
+        "test_modules": [
+          "staging.coordination.deeptutor_gateway.tests.test_extend_lecture_knowledge",
+          "staging.coordination.deeptutor_gateway.tests.test_lecture_library",
+          "staging.coordination.deeptutor_gateway.tests.test_lecture_study_reference",
+          "staging.coordination.deeptutor_gateway.tests.test_offline_word_label_review",
+          "staging.coordination.deeptutor_gateway.tests.test_word_missing_attribute_merge",
+          "staging.coordination.deeptutor_gateway.tests.test_word_semantic_recheck"
+        ],
+        "junit_sha256": "4be02a3ae2bb6432354569be6605f03dce713cbb2f17062778722748495af3a3"
+      },
+      "documentation": {
+        "passed": 34,
+        "failed": 0,
+        "policy_passed": true,
+        "junit_sha256": "3f9c4dabb0917cb57860440f262fe7692421c27c822b8d3755128c38e1ae4759"
+      },
+      "distinct_passed_across_three_suites": 735,
+      "qt_2x_is_overlap_not_added": true
+    },
+    "task_adapter_fix": {
+      "first_ci_failure": {
+        "head_sha": "7552be2bc128220fd62ba6c9d3a6ad918ca692c8",
+        "failed_workflows": 2,
+        "same_failed_cases_in_each": 3,
+        "cause": "missing scoped transaction adapter"
+      },
+      "combined_26_files_passed": 605,
+      "affected_7_files_passed_after_ui_guard": 131,
+      "distinct_cases_in_union": 608,
+      "unmodified_initial_ui_source_files": 9,
+      "legacy_task_requires_explicit_saved_set_only_when_public_draft_exists": true,
+      "state_read_failure_clears_stale_approval": true,
+      "unowned_legacy_previews_retained_but_require_new_preview": true
+    },
+    "knowledge_and_labels_passed": 324,
+    "distinct_current_cases_covered": 932,
+    "coverage_note": "605-case combined run plus 131-case targeted UI rerun cover 608 distinct current cases; separate unchanged knowledge tests add 324. This is not one single 932-case run. The 30 Qt 2x cases overlap unchanged mixed UI tests.",
+    "documentation_policy_passed": true,
+    "qt_2x_overlap_passed": 30
+  },
+  "synthetic_ui": {
+    "qt_version": "6.11.2",
+    "scale_factor": 2,
+    "screenshot_count": 10,
+    "root_actually_viewed": [
+      "removed-list-360x520.png",
+      "undo-restored-list-360x520.png",
+      "score-layout-bottom-420x520.png",
+      "source-restart-bottom-360x520.png",
+      "restarted-bottom-420x520.png",
+      "write-failure-bottom-360x520.png",
+      "empty-bottom-360x520.png",
+      "ready-wide-900x650.png"
+    ],
+    "public_images": [
+      "removed-list-360x520.png",
+      "score-layout-bottom-420x520.png",
+      "source-restart-bottom-360x520.png"
+    ],
+    "all_status_undo_return_checks_passed": true,
+    "personal_state_used": false
+  },
+  "draft_undo": {
+    "history_limit": 30,
+    "scope": "current workbench session",
+    "shortcut": "Ctrl+Alt+Z",
+    "persistent_undo_history": false,
+    "draft_revision_cas": true,
+    "preview_bound_to_draft": true,
+    "incompatible_draft_restart_requires_explicit_confirmation": true,
+    "restart_retains_old_record": true,
+    "rechecks_projection_after_confirmation": true,
+    "does_not_rehash_all_source_files_on_each_undo": true,
+    "independent_from_global_basket": false,
+    "legacy_core_only_editor_in_scope": false,
+    "archived_old_record_browser_available": false
+  },
+  "local_labels": {
+    "read_questions": 24,
+    "question_blocks": 92,
+    "answer_blocks": 48,
+    "native_tables": 2,
+    "adopted_distinct_questions": 20,
+    "held_questions": 4,
+    "primary_filled": 9,
+    "curriculum_filled": 18,
+    "chapter_links_added": 21,
+    "primary_rechecked_and_replaced": 3,
+    "old_history_preserved": 9402,
+    "new_history_rows": 23,
+    "history_after": 9425,
+    "repeat_changes": [
+      0,
+      0
+    ],
+    "protected_inputs_per_phase": 765
+  },
+  "current_library": {
+    "analysis_sources": 98,
+    "inventory_rows": 196,
+    "current_questions": 3579,
+    "selectable_questions": 3576,
+    "current_primary_known": 2919,
+    "current_curriculum_mapped": 2794,
+    "missing_field_counts": {
+      "primary_knowledge": 660,
+      "curriculum_mapping": 785
+    },
+    "pending_tasks": 990,
+    "category_counts": {
+      "readable_pure_text": 146,
+      "requires_image": 785,
+      "scope_or_material_incomplete": 56,
+      "teacher_or_pinned_protected": 3
+    },
+    "duplicate_source_sha256": 0,
+    "duplicate_current_question_keys": 0,
+    "geography_filter_applied": false
+  },
+  "reaction_direction_distillation": {
+    "new_claims": 11,
+    "new_claim_counts": {
+      "knowledge": 3,
+      "methods": 4,
+      "pitfalls": 2,
+      "teaching_flow": 2
+    },
+    "reading_notes": 5,
+    "native_blocks_read": 245,
+    "textbook_pdf_pages": [
+      33,
+      34,
+      35,
+      36,
+      37,
+      121
+    ],
+    "textbook_printed_pages": [
+      27,
+      28,
+      29,
+      30,
+      31,
+      115
+    ],
+    "cached_asset_references": 88,
+    "root_viewed_asset_references": 30,
+    "root_wmf_views": 17,
+    "cached_asset_references_unread": 58,
+    "ole_binaries_unread": 41,
+    "extra_native_media_pairs_unread": 1,
+    "whole_word_visual_review_complete": false,
+    "actual_reader_total_notes": 18,
+    "actual_reader_new_notes": 11,
+    "actual_reader_textbook_concepts": 3,
+    "missing_evidence_cases_passed": 11,
+    "stale_source_excluded": true,
+    "repeat_new_notes": 0,
+    "other_lecture_cards_unchanged": 45
+  },
+  "knowledge_totals": {
+    "lectures": 46,
+    "knowledge": 300,
+    "methods": 171,
+    "pitfalls": 127,
+    "teaching_flow": 52,
+    "with_flow": 24,
+    "without_flow": 22,
+    "textbook_concepts": 383,
+    "catalog_rows": 123
+  },
+  "next_metadata_only": {
+    "question_count": 24,
+    "source_count": 4,
+    "reused_queued_only": 7,
+    "past_read_identities": 310,
+    "past_queued_only_identities": 11,
+    "question_bodies_read": 0,
+    "labels_applied": 0,
+    "chapter": "PKG-078",
+    "chapter_body_blocks_read": 0,
+    "chapter_existing_counts": {
+      "knowledge": 5,
+      "methods": 1,
+      "pitfalls": 2,
+      "teaching_flow": 0
+    },
+    "planned_textbook_pdf_pages": [
+      75,
+      83
+    ]
+  },
+  "protection": {
+    "initial_files": 761,
+    "initial_files_unchanged": 757,
+    "authorized_changed_categories": [
+      "label_database",
+      "lecture_part_c",
+      "coverage",
+      "catalog"
+    ],
+    "original_word_files_unchanged": 196,
+    "state_file_membership": 488,
+    "knowledge_sync_inputs_unchanged": 812,
+    "unexpected_changes": 0
+  },
+  "activity": {
+    "wechat_article_searches": 0,
+    "new_papers_collected": 0,
+    "provider_calls": 0,
+    "public_web_searches": 0,
+    "github_network_operations": true
+  }
+}

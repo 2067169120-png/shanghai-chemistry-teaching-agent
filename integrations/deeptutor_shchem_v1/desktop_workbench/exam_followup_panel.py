@@ -226,6 +226,21 @@ class _ExamFollowupPanelBase(QWidget):
         if not task:return
         try:self.current_for(task,require_fresh=True)
         except ExamError as error:self.d.status.setText(error.message_zh);return
+        if 'practice_set' not in task:
+            # Legacy basket links still use the global paper service. Do not
+            # send an unrelated task request through an existing saved draft.
+            from ..desktop_mixed_paper_drafts import DRAFT_ID
+            try:
+                drafts = self.d.facade.state_store.snapshot()['drafts']
+            except Exception:
+                self.preview=None;self.approved=False;self.show_task()
+                self.d.status.setText('公共草稿状态暂不能读取，未生成预览；请核对后重试。')
+                return
+            if DRAFT_ID in drafts:
+                self.preview=None;self.approved=False;self.show_task()
+                self.d.status.setText('已有公共组卷草稿。请先点击“保存本任务题集”，明确选择并保存后再预览；公共草稿不改动。')
+                self.link.setFocus()
+                return
         self.preview=None;self.approved=False;self.preview_task_id=task['id']
         self.preview_revision=request_revision(task);self.show_task()
         def prepare(report,cancelled):

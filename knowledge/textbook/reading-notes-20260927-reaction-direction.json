@@ -1,0 +1,379 @@
+{
+  "schema_version": "shchem.textbook-page-reading-notes.v1",
+  "purpose": "选必一2.1五页的模型研读候选；附录一页仅作来源数据冲突核对。",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "original_source_redistribution": false,
+  "review_method": "page_images_read_by_model",
+  "root_review_completed": true,
+  "root_model_review_completed": true,
+  "sources": [
+    {
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.1",
+      "sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "pdf_pages_viewed": [
+        33,
+        34,
+        35,
+        36,
+        37
+      ],
+      "printed_pages_viewed": [
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "page_number_convention": "数字页码为PDF文件页序，印刷页另列。"
+    }
+  ],
+  "notes": [
+    {
+      "id": "READ-TB-E1-20260927-DIRECTION-01",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.1",
+      "title": "焓判据必须读到反例",
+      "pdf_pages": [
+        33,
+        34
+      ],
+      "printed_pages": [
+        27,
+        28
+      ],
+      "source_anchors": [
+        "吸热自发反例",
+        "焓变因素"
+      ],
+      "summary": "PDF33介绍以焓判断方向的历史思路，PDF34紧接吸热过程的反例。教学不能截取“放热有利”写成充分条件；还要比较熵项，并说明温压、物态及所指过程。",
+      "classroom_check": "让学生说明一个吸热过程为何不与复合判据矛盾，不从吸热事实补出未知温度或熵数值。",
+      "lecture_package_id": "PKG-082",
+      "lecture_block_indices": [
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "source_sha256": "8634fdfeac1207bcb84eb294eb050a4ebae8a0a9a05abd56fc18f50d03ca7ce3",
+      "source_preview_revision": "5305b616d008de161bddeb0667da89c8abb97b98e53c51fdcbd96b423bfd4fc2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          33,
+          34
+        ],
+        "printed_pages": [
+          27,
+          28
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitations": "历史性介绍不是现代普适判据；不同来源Fe(OH)2氧化/CaCO3分解数据不混表。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-DIRECTION-02",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.1",
+      "title": "熵的定性线索与比较基准",
+      "pdf_pages": [
+        34,
+        35
+      ],
+      "printed_pages": [
+        28,
+        29
+      ],
+      "source_anchors": [
+        "熵",
+        "相态",
+        "反应熵变"
+      ],
+      "summary": "教材以相态和分散介绍熵。比较前统一物质、数量和条件；生成气体常是熵增线索，但不是任意反应的符号证明。电解质溶解还涉及溶剂重排，不能只数新增离子。",
+      "classroom_check": "判断一条熵大小比较究竟改变了物质种类、数量、温度、压力还是相态；指出还缺哪些数据。",
+      "lecture_package_id": "PKG-082",
+      "lecture_block_indices": [
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        229,
+        230,
+        231,
+        232,
+        233
+      ],
+      "source_sha256": "8634fdfeac1207bcb84eb294eb050a4ebae8a0a9a05abd56fc18f50d03ca7ce3",
+      "source_preview_revision": "5305b616d008de161bddeb0667da89c8abb97b98e53c51fdcbd96b423bfd4fc2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          34,
+          35
+        ],
+        "printed_pages": [
+          28,
+          29
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitations": "PDF35水分解ΔS=57与附录逆反应数据冲突，不采用该数值练习；统计含义不简化为肉眼杂乱。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-DIRECTION-03",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.1",
+      "title": "判据的条件和等号",
+      "pdf_pages": [
+        35
+      ],
+      "printed_pages": [
+        29
+      ],
+      "source_anchors": [
+        "非体积功为0",
+        "焓熵复合判据",
+        "温度与方向"
+      ],
+      "summary": "本页明确恒温恒压、非体积功为0。ΔH−TΔS<0、=0、>0必须分别处理；温度分界值处不是严格正向自发区。高低温分类只在指定物态和ΔH、ΔS近似有效范围内使用。",
+      "classroom_check": "解不等式前写T>0、单位和近似；ΔS=0时直接判ΔH，不机械除以ΔS。",
+      "lecture_package_id": "PKG-082",
+      "lecture_block_indices": [
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193
+      ],
+      "source_sha256": "8634fdfeac1207bcb84eb294eb050a4ebae8a0a9a05abd56fc18f50d03ca7ce3",
+      "source_preview_revision": "5305b616d008de161bddeb0667da89c8abb97b98e53c51fdcbd96b423bfd4fc2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          35
+        ],
+        "printed_pages": [
+          29
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitations": "没有实际组成信息时，不推实际平衡转化率或任意混合物方向。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-DIRECTION-04",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.1",
+      "title": "合成氨计算与近似范围",
+      "pdf_pages": [
+        36
+      ],
+      "printed_pages": [
+        30
+      ],
+      "source_anchors": [
+        "合成氨ΔH−TΔS例题"
+      ],
+      "summary": "按教材−92kJ·mol⁻¹和−198J·mol⁻¹·K⁻¹，298K得到−32.996kJ·mol⁻¹；常量模型临界温度约464.65K。先说明所写氮气、氢气生成氨气的计量基准，再解释负号，不把临界值当工业温度上限。",
+      "classroom_check": "保留未舍入数值，分别解释焓项、熵项与总量的符号；列出模型没有回答的速率和产率问题。",
+      "lecture_package_id": "PKG-082",
+      "lecture_block_indices": [
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        199,
+        200,
+        201,
+        202
+      ],
+      "source_sha256": "8634fdfeac1207bcb84eb294eb050a4ebae8a0a9a05abd56fc18f50d03ca7ce3",
+      "source_preview_revision": "5305b616d008de161bddeb0667da89c8abb97b98e53c51fdcbd96b423bfd4fc2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          36
+        ],
+        "printed_pages": [
+          30
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitations": "教材例题数据不与附录−91.9/−198.1混用；只核题给近似。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-DIRECTION-05",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.1",
+      "title": "从条件分类回到可检验的论证",
+      "pdf_pages": [
+        35,
+        36,
+        37
+      ],
+      "printed_pages": [
+        29,
+        30,
+        31
+      ],
+      "source_anchors": [
+        "焓熵符号分类",
+        "综合练习",
+        "方向与条件"
+      ],
+      "summary": "分类表和图象应转写为带条件的不等式：正截距负斜率仅在ΔH、ΔS近似不变时表示吸热熵增模型；无刻度图不能给数值。方向有利不代表迅速发生、马上损坏，也不能单凭持续加热判断非自发。",
+      "classroom_check": "读图注明坐标与适用范围；对旧公式先核单位和数值，再决定是否足以支持物性结论。",
+      "lecture_package_id": "PKG-082",
+      "lecture_block_indices": [
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        204,
+        205,
+        206,
+        207,
+        208,
+        209,
+        210,
+        211,
+        212,
+        213,
+        214,
+        215,
+        216,
+        217,
+        218,
+        219,
+        220
+      ],
+      "source_sha256": "8634fdfeac1207bcb84eb294eb050a4ebae8a0a9a05abd56fc18f50d03ca7ce3",
+      "source_preview_revision": "5305b616d008de161bddeb0667da89c8abb97b98e53c51fdcbd96b423bfd4fc2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          35,
+          36,
+          37
+        ],
+        "printed_pages": [
+          29,
+          30,
+          31
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitations": "NO例183/25按常量模型临界7320K，教材汽车段未给足条件，不用于真实发动机结论。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    }
+  ]
+}

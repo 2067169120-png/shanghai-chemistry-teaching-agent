@@ -56,6 +56,8 @@ jobs:
               'test_desktop_state_corruption.py', 'test_explorer_basket_recovery_ui.py',
               'test_desktop_basket_undo.py', 'test_explorer_basket_undo_ui.py',
               'test_mixed_basket_entrypoints.py',
+              'test_mixed_paper_draft_undo.py', 'test_mixed_paper_draft_undo_ui.py',
+              'test_desktop_mixed_paper_ui.py',
               'test_complete_readme.py', 'test_maintenance_release_safety.py',
           ]
           out = pathlib.Path('candidate-qa'); out.mkdir(exist_ok=True)
@@ -75,6 +77,15 @@ jobs:
           python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_explorer_basket_undo_ui.py staging/coordination/deeptutor_gateway/tests/test_explorer_basket_recovery_ui.py --junitxml=candidate-qa/basket-undo-2x.xml
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python runtime/deeptutor_shchem/basket_undo_qa.py --output candidate-qa/basket-undo-2x
+          exit $LASTEXITCODE
+      - name: Mixed paper draft undo at double scaling with synthetic screenshots
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_SCALE_FACTOR: '2'
+        run: |
+          python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_mixed_paper_draft_undo_ui.py --junitxml=candidate-qa/draft-undo-2x.xml
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python runtime/deeptutor_shchem/mixed_paper_draft_undo_qa.py --output candidate-qa/draft-undo-2x
           exit $LASTEXITCODE
       - uses: actions/upload-artifact@v4
         if: always()
