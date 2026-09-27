@@ -1,0 +1,334 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-27",
+  "scope": "Local visual checkpoint repair, local label completion and reaction-rate reading candidates",
+  "base_commit": "a82c3b7b3dd390e1d0694dc3a22e41312ad0dbb7",
+  "release": {
+    "executable_version": "v0.1.101",
+    "executable_rebuilt": false
+  },
+  "publication": {
+    "contents": [
+      "maintenance source",
+      "synthetic tests and captures",
+      "source-bound paraphrased candidates",
+      "aggregate verification"
+    ],
+    "private_material_uploaded": false,
+    "provider_calls": 0,
+    "new_article_search_results": 0,
+    "new_exam_papers": 0
+  },
+  "repair": {
+    "supported": [
+      "missing or unparseable scope.json",
+      "unparseable active-attempts.json",
+      "missing active-attempts.json with orphan attempt records",
+      "unfinished repair fence"
+    ],
+    "workflow": [
+      "read-only inspection",
+      "explicit record selection for each shard",
+      "read-only scope preview",
+      "explicit confirmation",
+      "locked commit with final compare-and-swap",
+      "return to ordinary import preview"
+    ],
+    "safeguards": [
+      "no date-based automatic selection",
+      "exact metadata backups and retained old records",
+      "durable fence across both metadata replacements",
+      "source, pixel, profile, rule, schema, request and record binding verification",
+      "saved machine-pass crop status required",
+      "unselected shards remain pending",
+      "separate confirmation before sending missing pages"
+    ],
+    "blocked": [
+      "parseable scope identity conflicts or invalid active structure",
+      "duplicate JSON keys",
+      "links or junctions",
+      "unexpected nested paths",
+      "file-count or byte-budget overrun",
+      "changed source or selected record"
+    ],
+    "limitations": [
+      "Immutable aggregate candidate history corruption is not repaired",
+      "Record preview is bounded to four stems of at most 500 characters each plus counts",
+      "Cross-shard and candidate-history conflicts can still block ordinary merging",
+      "Chemical semantic and question-hierarchy repair remains pending"
+    ],
+    "roadmap_C02": "partial"
+  },
+  "labels": {
+    "source_questions_read": 24,
+    "question_blocks_read": 94,
+    "answer_blocks_read": 57,
+    "unique_question_identities_changed": 22,
+    "held_for_source_answer_review": 2,
+    "primary_labels_filled": 11,
+    "questions_with_curriculum_mappings_added": 17,
+    "curriculum_links_added": 20,
+    "explicit_primary_rechecks_within_same_22_questions": 2,
+    "history_versions_added": 24,
+    "existing_history_preserved": 9300,
+    "history_versions_after": 9324,
+    "repeat_preview_changes": [
+      0,
+      0
+    ],
+    "fill_transaction": {
+      "protected_inputs": 673,
+      "only_database_changed": true,
+      "non_target_attribute_rows_unchanged": 3662
+    },
+    "recheck_transaction": {
+      "protected_inputs": 525,
+      "only_database_changed": true,
+      "non_target_attribute_rows_unchanged": 3682
+    },
+    "candidate_only": true,
+    "human_reviewed": false,
+    "private_receipt": "outputs/offline-label-review-20260927-batch9/combined-root-receipt.json"
+  },
+  "queue": {
+    "analysis_sources": 98,
+    "current_questions": 3579,
+    "selectable_questions": 3576,
+    "primary_labelled": 2884,
+    "curriculum_mapped": 2725,
+    "missing_primary": 695,
+    "missing_curriculum": 854,
+    "pending_distinct_questions": 1075,
+    "pending_categories": {
+      "readable_pure_text": 231,
+      "requires_image": 785,
+      "scope_or_material_incomplete": 56,
+      "protected": 3
+    },
+    "source_files_changed": 0,
+    "label_writes_during_inventory": 0,
+    "private_receipt": "outputs/local-import-continuation-20260927-run7/summary.json"
+  },
+  "reaction_rates": {
+    "lecture_id": "PKG-088",
+    "new_references": {
+      "knowledge": 2,
+      "methods": 5,
+      "pitfalls": 2,
+      "flows": 2,
+      "total": 11
+    },
+    "new_reading_notes": 5,
+    "flow_minutes_each": 40,
+    "source_reading": {
+      "native_text_blocks": 511,
+      "textbook_pdf_pages": [
+        47,
+        48,
+        49,
+        50,
+        51
+      ],
+      "textbook_printed_pages": [
+        41,
+        42,
+        43,
+        44,
+        45
+      ],
+      "cached_word_image_references_viewed": 13,
+      "cached_word_image_references_unviewed": 276,
+      "extra_native_alternatives_unviewed": 3,
+      "OLE_objects_unread": 124,
+      "OMML_objects_unread": 3,
+      "full_word_visual_audit": false
+    },
+    "actual_study_reference": {
+      "references": 19,
+      "new_references": 11,
+      "existing_textbook_concepts": 4
+    },
+    "evidence_checks": {
+      "missing_required_block_exclusion_cases_passed": 11,
+      "source_revision_mismatch_excludes_references": true,
+      "repeat_merge_additions": 0
+    },
+    "unchanged": {
+      "other_lectures": 45,
+      "existing_textbook_concepts": 383
+    },
+    "sync_protection": {
+      "inputs": 804,
+      "existing_files": 802,
+      "absent_paths": 2,
+      "original_word_files_and_copies": 196,
+      "state_files": 488,
+      "all_unchanged_during_knowledge_sync": true,
+      "earlier_authorized_label_transactions_verified_separately": true
+    },
+    "catalog_rows": {
+      "before": 118,
+      "after": 119,
+      "prior_rows_preserved": true
+    },
+    "lecture_totals": {
+      "lectures": 46,
+      "knowledge": 289,
+      "methods": 149,
+      "pitfalls": 120,
+      "flows": 41,
+      "lectures_with_flow": 20,
+      "lectures_without_flow": 26
+    },
+    "candidate_only": true,
+    "human_reviewed": false,
+    "root_model_review_completed": true,
+    "private_receipt": "outputs/reaction-rates-distillation-20260927/local-sync-receipt.json"
+  },
+  "validation": {
+    "functional_tests_distinct": 222,
+    "visual_import": {
+      "passed": 144,
+      "seconds": 33.47,
+      "exit_code": 0,
+      "qt_platform": "offscreen",
+      "qt_scale_factor": 1,
+      "modules": [
+        "test_visual_checkpoint_repair.py",
+        "test_visual_checkpoint_repair_ui.py",
+        "test_visual_shard_resume.py",
+        "test_visual_shard_reprocess.py",
+        "test_visual_import_egress_dialog.py",
+        "test_desktop_visual_import_ui.py"
+      ]
+    },
+    "knowledge": {
+      "passed": 78,
+      "seconds": 7.58,
+      "exit_code": 0,
+      "modules": [
+        "test_extend_lecture_knowledge.py",
+        "test_lecture_library.py",
+        "test_lecture_study_reference.py"
+      ]
+    },
+    "repair_ui_scale_2": {
+      "passed": 13,
+      "seconds": 1.52,
+      "exit_code": 0,
+      "overlaps_visual_import_total": true
+    },
+    "documentation": {
+      "status": "passed",
+      "policy": "Teacher scenarios, compact README, chapters, images, history and version boundaries: OK",
+      "tests_passed": 14,
+      "exit_code": 0
+    },
+    "optional_scale_2_combined_diagnostic": {
+      "result": "two existing default-wide-summary assertions failed",
+      "tests": [
+        "test_request_budget_is_visible_alongside_image_not_only_in_fee_tab",
+        "test_default_gallery_discloses_additional_review_cost_and_uncreated_crops"
+      ],
+      "context": "The offscreen available logical width at scale 2 selected the existing compact summary; full details remain in their tab. This diagnostic group is not reported as passing."
+    },
+    "ci": {
+      "new_repair_tests_configured": true,
+      "synthetic_capture_step_configured": true,
+      "remote_result": "pending PR"
+    },
+    "verified_implementation_files": [
+      {
+        "path": "integrations/deeptutor_shchem_v1/desktop_visual_checkpoint_repair.py",
+        "sha256": "90e1a162acebfe7f3629168c8c1ab2fe223f6d1e2fce0b4d25f2f5aef992be94"
+      },
+      {
+        "path": "integrations/deeptutor_shchem_v1/desktop_visual_checkpoints.py",
+        "sha256": "e993f746ca298525d07e141ef31100f4cc226599579b6f5cf0fd4873034a80aa"
+      },
+      {
+        "path": "integrations/deeptutor_shchem_v1/desktop_visual_egress.py",
+        "sha256": "e245fb1a4d53eaa9ca753187507e6cde3549dfd662a6c00883852bd82ae433c3"
+      },
+      {
+        "path": "integrations/deeptutor_shchem_v1/desktop_facade.py",
+        "sha256": "47e4bc8a0a63265c9d654f64069a8c88924479da50a47f83b86e487588eb5c58"
+      },
+      {
+        "path": "integrations/deeptutor_shchem_v1/desktop_workbench/visual_import_egress_dialog.py",
+        "sha256": "a9502f654d98e87662ae42891e88d894108498e38691ee08d79ed9b2ad9ec494"
+      },
+      {
+        "path": "integrations/deeptutor_shchem_v1/desktop_workbench/dialogs.py",
+        "sha256": "32365afd35a15a642fc7ac7c51e2e32028dc50441b088bc95f5cb7c4797cc0b6"
+      },
+      {
+        "path": "staging/coordination/deeptutor_gateway/tests/test_visual_checkpoint_repair.py",
+        "sha256": "12c971b76c4bdc1b890a8003d95097a7288ecd924044b89bcc1f3829d78141e1"
+      },
+      {
+        "path": "staging/coordination/deeptutor_gateway/tests/test_visual_checkpoint_repair_ui.py",
+        "sha256": "fab75a5a67f4dea169fe0427633e7b26c3a0e9a947c4683d4b5a20c4b0851b16"
+      },
+      {
+        "path": "runtime/deeptutor_shchem/visual_repair_qa.py",
+        "sha256": "60fb72bca0faf104715120aabfe2cd1760971ca142708edc1ea5b3434885fc9e"
+      }
+    ],
+    "implementation_hash_basis": "Working-tree file bytes verified against final test delivery; Git may normalize line endings."
+  },
+  "visual_review": {
+    "synthetic_only": true,
+    "generated_captures": 16,
+    "root_model_viewed": 7,
+    "public_captures": 5,
+    "device_pixel_ratio": 2,
+    "human_reviewed": false,
+    "native_executable_acceptance": false,
+    "logical_sizes": [
+      "360x520",
+      "360x900",
+      "420x900",
+      "900x820"
+    ],
+    "images": [
+      {
+        "path": "docs/qa/screenshots/2026-09-27-visual-repair/repair-revised-360x520-bottom.png",
+        "sha256": "fb0b190912131d1c0f17b43e73f409d8d54f52eeca841010abafdffe40d2b5a4",
+        "root_model_viewed": true,
+        "human_reviewed": false
+      },
+      {
+        "path": "docs/qa/screenshots/2026-09-27-visual-repair/repair-ordinary-360x900-whole.png",
+        "sha256": "096120db73a4a545102034c8acbba69251d6c66a8529b8f118745a7f75059b84",
+        "root_model_viewed": true,
+        "human_reviewed": false
+      },
+      {
+        "path": "docs/qa/screenshots/2026-09-27-visual-repair/repair-damaged-360x900-whole.png",
+        "sha256": "6d082df59c456776e1fbe1ef4ffaf6cee3011fbb6d8507569df86667e66fd237",
+        "root_model_viewed": true,
+        "human_reviewed": false
+      },
+      {
+        "path": "docs/qa/screenshots/2026-09-27-visual-repair/repair-revised-420x900-whole.png",
+        "sha256": "9052c2946970e1e54bf6fada8c901c4960e18347cb5eeaed32f1a3b4a728436c",
+        "root_model_viewed": true,
+        "human_reviewed": false
+      },
+      {
+        "path": "docs/qa/screenshots/2026-09-27-visual-repair/repair-unrecoverable-900x820-whole.png",
+        "sha256": "e459a25487b4cc82880cc373a2b9da7579911c564658625594ae0a6f3a9f5397",
+        "root_model_viewed": true,
+        "human_reviewed": false
+      }
+    ]
+  },
+  "remaining": [
+    "Complete local question annotation and image-dependent evidence review",
+    "Read and distill remaining textbook and lecture material",
+    "Resolve held source-answer issues",
+    "Complete remaining C02 recovery cases",
+    "Human review and packaged executable verification"
+  ]
+}
