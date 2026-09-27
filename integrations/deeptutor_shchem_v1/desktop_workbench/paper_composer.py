@@ -29,6 +29,11 @@ class MixedPaperComposerModel:
         self.excluded: set[str] = set()
         self.settings: dict[str, dict] = {}
 
+    def details(self, *, duration_minutes):
+        from ..desktop_paper_details import build_paper_details
+        return build_paper_details(self.items, self.order, self.excluded, self.settings,
+                                   duration_minutes=duration_minutes)
+
     def merge(self, projection: Mapping[str, Any]) -> None:
         if projection.get("schema_version") != "shchem.desktop-mixed-basket.v1":
             raise ValueError("题篮版本无法读取，请刷新。")

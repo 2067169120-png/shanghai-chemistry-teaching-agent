@@ -1,0 +1,581 @@
+{
+  "schema_version": "shchem.textbook-page-reading-notes.v1",
+  "purpose": "选必二3.1九页及3.3衍射一页的模型研读候选，不含原教材图像或完整原题。",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_review_completed": true,
+  "root_model_review_completed": true,
+  "original_source_redistribution": false,
+  "review_method": "page_images_read_by_model",
+  "sources": [
+    {
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C3:3.1",
+      "sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+      "pdf_pages_viewed": [
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83
+      ],
+      "printed_pages_viewed": [
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79
+      ],
+      "page_number_convention": "数字页码指PDF文件页序，印刷页另列。"
+    },
+    {
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C3:3.3",
+      "sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+      "pdf_pages_viewed": [
+        96
+      ],
+      "printed_pages_viewed": [
+        92
+      ],
+      "page_number_convention": "数字页码指PDF文件页序，印刷页另列。"
+    }
+  ],
+  "notes": [
+    {
+      "id": "READ-TB-E2-20260927-CRYSTALS-01",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C3:3.1",
+      "title": "定义、外形与准晶体的适用范围",
+      "pdf_pages": [
+        75,
+        76,
+        77
+      ],
+      "printed_pages": [
+        71,
+        72,
+        73
+      ],
+      "source_anchors": [
+        "晶体结构特征",
+        "准晶体",
+        "宏观外形"
+      ],
+      "summary": "先把常规周期模型与全部晶体概念区分。PDF77的准晶体说明长程有序不必具有通常周期性；外形规则只能作为线索。教材玛瑙分类与讲义59相冲突，暂不作为正面例证。",
+      "classroom_check": "给“所有晶体都按普通晶胞周期平移”添加模型限定，列出仅凭样品外观尚不能确定的内容。",
+      "lecture_package_id": "PKG-078",
+      "lecture_block_indices": [
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101
+      ],
+      "source_sha256": "28abde3f604dd5e66b841d2a105631f5a526f39f0aaf33add4605d500e41847d",
+      "source_preview_revision": "77bbba8d5b648d3c3a901a795f459d15b59a89bc7225415324a90116eea7a833",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          75,
+          76,
+          77
+        ],
+        "printed_pages": [
+          71,
+          72,
+          73
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitations": "未把矿物学外部核验冒充本模型独立浏览；原旧K1另留修订提案，不静默替换。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260927-CRYSTALS-02",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C3:3.1",
+      "title": "各向异性活动需要真实观测",
+      "pdf_pages": [
+        76,
+        77
+      ],
+      "printed_pages": [
+        72,
+        73
+      ],
+      "source_anchors": [
+        "各向异性",
+        "活动探究"
+      ],
+      "summary": "教材用不同方向的性质和云母/玻璃受热活动组织证据。活动表没有填入实测结果；教学要控制薄片、热源接触与观察条件，再描述所测性质的方向差别。多晶整体和单晶不能不加区分地套同一句话。",
+      "classroom_check": "学生写出观察量与控制条件，说明“未观察到差异”为什么不等于证明非晶体。",
+      "lecture_package_id": "PKG-078",
+      "lecture_block_indices": [
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101
+      ],
+      "source_sha256": "28abde3f604dd5e66b841d2a105631f5a526f39f0aaf33add4605d500e41847d",
+      "source_preview_revision": "77bbba8d5b648d3c3a901a795f459d15b59a89bc7225415324a90116eea7a833",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          76,
+          77
+        ],
+        "printed_pages": [
+          72,
+          73
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitations": "本轮只读教材图片，没有开展实验或读取实际温度场；不虚构椭圆/圆形测量记录。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260927-CRYSTALS-03",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C3:3.1",
+      "title": "画出的球数与本胞归属数",
+      "pdf_pages": [
+        78,
+        82
+      ],
+      "printed_pages": [
+        74,
+        78
+      ],
+      "source_anchors": [
+        "面心立方晶胞",
+        "晶胞均摊"
+      ],
+      "summary": "面心立方示意画出8顶点和6面心位置，但每胞只归属4个原子；必须解释边界分享。用钠、镍、钋练习时先读各自位置图，再计算体心2、面心4、简单1，不能把图中可见球数当粒子数。",
+      "classroom_check": "让学生分别写“可见位置数、每位置份额、本胞总数”，用数值差检查是否遗漏共享。",
+      "lecture_package_id": "PKG-078",
+      "lecture_block_indices": [
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        349,
+        350,
+        351,
+        352,
+        353,
+        354,
+        355,
+        356
+      ],
+      "source_sha256": "28abde3f604dd5e66b841d2a105631f5a526f39f0aaf33add4605d500e41847d",
+      "source_preview_revision": "77bbba8d5b648d3c3a901a795f459d15b59a89bc7225415324a90116eea7a833",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          78,
+          82
+        ],
+        "printed_pages": [
+          74,
+          78
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitations": "立方份额有几何范围；不机械用于斜胞顶点、六棱柱或二维面密度。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260927-CRYSTALS-04",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C3:3.1",
+      "title": "刚球模型中的接触线",
+      "pdf_pages": [
+        79,
+        82,
+        83
+      ],
+      "printed_pages": [
+        75,
+        78,
+        79
+      ],
+      "source_anchors": [
+        "简单立方",
+        "体心立方",
+        "面心立方",
+        "堆积模型"
+      ],
+      "summary": "用教材常规堆积图建立边长和原子半径关系，再读密度题。模型是等径球相切；位置示意线条不是每条都表示接触或化学键。晶胞选择与质量、体积必须成套使用，hcp两种展示单元的2和6不矛盾。",
+      "classroom_check": "分别标简单、体心、面心立方的最近接触方向，并说明密度计算为何还需要每胞质量。",
+      "lecture_package_id": "PKG-078",
+      "lecture_block_indices": [
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        312,
+        313,
+        314,
+        315,
+        349,
+        350,
+        351,
+        352,
+        353,
+        354,
+        355,
+        356,
+        371,
+        372,
+        373,
+        374,
+        375
+      ],
+      "source_sha256": "28abde3f604dd5e66b841d2a105631f5a526f39f0aaf33add4605d500e41847d",
+      "source_preview_revision": "77bbba8d5b648d3c3a901a795f459d15b59a89bc7225415324a90116eea7a833",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          79,
+          82,
+          83
+        ],
+        "printed_pages": [
+          75,
+          78,
+          79
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitations": "不把刚球填充率当真实电子云占空间的精密测量；教材图不提供普遍材料性质排序。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260927-CRYSTALS-05",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C3:3.1",
+      "title": "电子气模型与宏观性质",
+      "pdf_pages": [
+        80
+      ],
+      "printed_pages": [
+        76
+      ],
+      "source_anchors": [
+        "金属键",
+        "电子气模型",
+        "性质解释"
+      ],
+      "summary": "电子气模型用离域价电子与金属正离子之间的相互作用解释金属键共性；定向电子运动与导电、原子层滑移仍保持凝聚与延展性相联系。该定性模型不直接给出任何金属的熔点、硬度或气态原子电离能。",
+      "classroom_check": "把“模型能解释的共性”与“还需结构、组成和实验数据的性质比较”分列。",
+      "lecture_package_id": "PKG-078",
+      "lecture_block_indices": [
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        308,
+        309,
+        317,
+        318,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324,
+        325,
+        326,
+        327,
+        328,
+        329,
+        330,
+        331,
+        332,
+        333,
+        334,
+        335,
+        336,
+        337,
+        338,
+        339,
+        340,
+        341,
+        342,
+        343
+      ],
+      "source_sha256": "28abde3f604dd5e66b841d2a105631f5a526f39f0aaf33add4605d500e41847d",
+      "source_preview_revision": "77bbba8d5b648d3c3a901a795f459d15b59a89bc7225415324a90116eea7a833",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          80
+        ],
+        "printed_pages": [
+          76
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitations": "不采用讲义相互矛盾的可见光产生解释；自由电子不等于没有任何约束的理想气体。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260927-CRYSTALS-06",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C3:3.1",
+      "title": "材料选择与纳米尺寸不能靠一句规则",
+      "pdf_pages": [
+        79,
+        81
+      ],
+      "printed_pages": [
+        75,
+        77
+      ],
+      "source_anchors": [
+        "材料选择",
+        "纳米金属晶体",
+        "金溶胶"
+      ],
+      "summary": "教材将结构与材料选择联系，并介绍纳米金属晶体的尺寸、形状对性质的影响。金溶胶照片显示不同颜色，但没有逐瓶粒径值，不能仅据照片给每种颜色指定唯一尺寸；合金性质也不能一律按纯金属简单排序。",
+      "classroom_check": "提出需要补测的组成、尺寸分布、温度或性质数据，区分教材现象图与实际材料参数。",
+      "lecture_package_id": "PKG-078",
+      "lecture_block_indices": [
+        296,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        327,
+        328,
+        329,
+        330,
+        331,
+        332,
+        333,
+        334,
+        335,
+        336,
+        337,
+        338,
+        339,
+        340,
+        341,
+        342,
+        343
+      ],
+      "source_sha256": "28abde3f604dd5e66b841d2a105631f5a526f39f0aaf33add4605d500e41847d",
+      "source_preview_revision": "77bbba8d5b648d3c3a901a795f459d15b59a89bc7225415324a90116eea7a833",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          79,
+          81
+        ],
+        "printed_pages": [
+          75,
+          77
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitations": "不把历史应用叙述作为当前产品性能或安全建议；没有新增纳米配方和粒径测量。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260927-CRYSTALS-07",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C3:3.3",
+      "title": "衍射是结构分析证据",
+      "pdf_pages": [
+        96
+      ],
+      "printed_pages": [
+        92
+      ],
+      "source_anchors": [
+        "X射线衍射",
+        "晶体结构分析"
+      ],
+      "summary": "实际读PDF96/印92：X射线衍射斑点的方向与强度为晶胞大小、形状和原子种类、位置的分析提供信息。结构结论需要结合模型和分析，不能仅凭斑点个数直接断言化学键类型；同页甲醇晶体示例标明122K。",
+      "classroom_check": "让学生说明一个晶胞位置模型需要哪些测量信息支撑，避免将示意图当实验衍射图。",
+      "lecture_package_id": "PKG-078",
+      "lecture_block_indices": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68
+      ],
+      "source_sha256": "28abde3f604dd5e66b841d2a105631f5a526f39f0aaf33add4605d500e41847d",
+      "source_preview_revision": "77bbba8d5b648d3c3a901a795f459d15b59a89bc7225415324a90116eea7a833",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          96
+        ],
+        "printed_pages": [
+          92
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitations": "只实际查看3.3中的这一页；未声称完整研读3.3、实施衍射或独立解析甲醇晶体。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    }
+  ]
+}

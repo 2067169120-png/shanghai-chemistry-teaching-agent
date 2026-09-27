@@ -58,6 +58,7 @@ jobs:
               'test_mixed_basket_entrypoints.py',
               'test_mixed_paper_draft_undo.py', 'test_mixed_paper_draft_undo_ui.py',
               'test_desktop_mixed_paper_ui.py',
+              'test_paper_details.py', 'test_paper_details_ui.py',
               'test_complete_readme.py', 'test_maintenance_release_safety.py',
           ]
           out = pathlib.Path('candidate-qa'); out.mkdir(exist_ok=True)
@@ -86,6 +87,15 @@ jobs:
           python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_mixed_paper_draft_undo_ui.py --junitxml=candidate-qa/draft-undo-2x.xml
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python runtime/deeptutor_shchem/mixed_paper_draft_undo_qa.py --output candidate-qa/draft-undo-2x
+          exit $LASTEXITCODE
+      - name: Current paper details at double scaling with synthetic sources
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_SCALE_FACTOR: '2'
+        run: |
+          python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_paper_details_ui.py --junitxml=candidate-qa/paper-details-2x.xml
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python runtime/deeptutor_shchem/paper_details_qa.py --output candidate-qa/paper-details-2x
           exit $LASTEXITCODE
       - uses: actions/upload-artifact@v4
         if: always()

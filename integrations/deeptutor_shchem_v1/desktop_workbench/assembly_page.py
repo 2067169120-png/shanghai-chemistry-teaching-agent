@@ -2009,6 +2009,11 @@ class MixedPaperPanel(QWidget):
         self._artifact_paths = {}
         self._draft_session = None
         self._saving = False
+        self._details_dialog = None
+        self._details_epoch = 0
+        self._details_loading = False
+        self._legacy_details_expectation = None
+        self._legacy_details_conflict = False
         self.setMinimumWidth(0)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -2053,6 +2058,10 @@ class MixedPaperPanel(QWidget):
         )
         self.summary = _label('正在读取选题篮…', "CardTitle")
         root.addWidget(self.summary)
+        self.details_button = _quiet_button("查看当前卷细目表")
+        self.details_button.setAccessibleName("核对来源后查看当前卷结构与分值细目")
+        self.details_button.clicked.connect(self._open_details)
+        root.addWidget(self.details_button)
         self.sections = QListWidget()
         self.sections.setAccessibleName("当前卷完整题目顺序")
         self.sections.setWordWrap(True)
@@ -2145,7 +2154,7 @@ class MixedPaperPanel(QWidget):
         self.undo_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
         self.undo_shortcut.activated.connect(self._undo)
         for button in (self.up_button, self.down_button, self.remove_button, self.restore_button,
-                       self.reload_button, self.restart_button, self.preview_button, self.export_button, self.undo_button, self.back_button):
+                       self.reload_button, self.restart_button, self.preview_button, self.export_button, self.undo_button, self.back_button, self.details_button):
             button.setAutoDefault(False)
         self.sections.currentRowChanged.connect(self._selection_changed)
         self.up_button.clicked.connect(lambda: self._move(-1))
@@ -2166,6 +2175,95 @@ class MixedPaperPanel(QWidget):
     def _current_key(self):
         item = self.sections.currentItem()
         return item.data(Qt.ItemDataRole.UserRole) if item else None
+
+    def _open_details(self):
+        if self._busy or self._saving or self._closed:
+            return
+        from .paper_details_dialog import PaperDetailsDialog
+        if self._details_dialog is None:
+            dialog = PaperDetailsDialog(self)
+            self._details_dialog = dialog
+            dialog.resize(max(320, min(760, self.window().width())),
+                          max(400, min(650, self.window().height())))
+            dialog.refresh_requested.connect(self.load)
+            dialog.edit_requested.connect(self._details_edit)
+            dialog.finished.connect(lambda _result: self._details_closed(dialog))
+        self._details_dialog.open()
+        if self._restore_failed or not self._loaded_once:
+            self._details_dialog.set_error()
+        else:
+            self._verify_details()
+
+    def _details_closed(self, dialog):
+        if dialog is not self._details_dialog:
+            return
+        self._details_epoch += 1
+        self._details_dialog = None
+        if self._details_loading:
+            self._details_loading = False
+            self._busy = False
+            self._update_actions()
+        dialog.deleteLater()
+
+    def _details_edit(self, key):
+        if not self._restore_failed and key in self.model.order:
+            self.sections.setCurrentRow(self.model.order.index(key))
+            self.scroll.ensureWidgetVisible(self.settings_note, 0, 0)
+
+    def _invalidate_details(self):
+        self._details_epoch += 1
+        if self._details_loading:
+            self._details_loading = False
+            self._busy = False
+        if self._details_dialog is not None:
+            self._details_dialog.set_error()
+
+    def _show_current_details(self):
+        if self._details_dialog is not None:
+            self._details_dialog.set_details(
+                self.model.details(duration_minutes=self.duration.value()), selected=self._current_key())
+
+    def _verify_details(self):
+        dialog = self._details_dialog
+        if dialog is None:
+            return
+        try:
+            checked = self._draft_session.check()
+        except Exception:
+            self._draft_failed("草稿或来源已变化，请重新读取后再查看细目。")
+            return
+        self._details_epoch += 1
+        epoch = self._details_epoch
+        basis = (self.model.basket_sha256, deepcopy(self.model.items))
+        self._busy = self._details_loading = True
+        dialog.set_pending()
+        self._update_actions()
+
+        def ready(value):
+            if self._closed or epoch != self._details_epoch or dialog is not self._details_dialog:
+                return
+            self._busy = self._details_loading = False
+            try:
+                candidate = MixedPaperComposerModel()
+                candidate.merge(value)
+                if checked != self._draft_session.check() or basis != (candidate.basket_sha256, candidate.items):
+                    raise ValueError("source or draft changed")
+                self._show_current_details()
+            except Exception:
+                self._draft_failed("来源或草稿待核对，旧细目已清除；请重新读取。")
+            self._update_actions()
+
+        def failed(_message):
+            if self._closed or epoch != self._details_epoch or dialog is not self._details_dialog:
+                return
+            self._busy = self._details_loading = False
+            self._draft_failed("来源暂不能读取，旧细目已清除；请重新读取。")
+
+        try:
+            self.tasks.submit("核对当前卷细目来源", self.facade.paper_basket_projection,
+                              on_success=ready, on_failure=failed)
+        except Exception:
+            failed(None)
 
     def _save(self, *, action="修改卷面设置", remember=True, selected=None):
         if self._saving or self._restore_failed or not self._loaded_once or self._draft_session is None:
@@ -2193,6 +2291,9 @@ class MixedPaperPanel(QWidget):
             self._draft_session.invalidate(preserve_recovery=preserve_recovery)
         self._restore_failed = True
         self._invalidate_preview()
+        self.summary.setText("当前卷待重新核对，暂不统计。")
+        if self._details_dialog is not None:
+            self._details_dialog.set_error(message)
         self.status.setText(message)
         self._update_actions()
 
@@ -2299,6 +2400,9 @@ class MixedPaperPanel(QWidget):
         self._busy = True
         self._update_actions()
         self.status.setText("正在读取同一题篮的完整来源…")
+        self.summary.setText("正在重读来源，暂不显示旧统计。")
+        if self._details_dialog is not None:
+            self._details_dialog.set_pending()
 
         def ready(value):
             if self._closed or epoch != self._load_epoch:
@@ -2319,6 +2423,7 @@ class MixedPaperPanel(QWidget):
                 if saved:
                     self.status.setText("已读取当前草稿；旧撤销记录已失效。" if current["history_reset"]
                                         else "当前草稿已保存；可调整本卷并重新核对预览。")
+                    self._show_current_details()
             except Exception:
                 recovery = self._draft_session is not None and self._draft_session.can_restart
                 self._draft_failed("旧稿不能直接沿用，原稿未覆盖；可保留旧稿并重新开始。" if recovery
@@ -2350,6 +2455,12 @@ class MixedPaperPanel(QWidget):
 
     def _restore_initial(self, record):
         legacy = self._legacy_model
+        expectation = self._legacy_details_expectation
+        if expectation is not None:
+            current = self._draft_session.current
+            if (current.revision, current.content_sha256) != expectation:
+                self._legacy_details_conflict = True
+                raise ValueError("saved mixed draft changed before legacy transition")
         known_core = {
             key
             for key, item in self.model.items.items()
@@ -2387,6 +2498,18 @@ class MixedPaperPanel(QWidget):
         self.model.order = ordered + [
             key for key in self.model.order if key not in ordered and key not in deleted
         ]
+        if expectation is not None and record is None and legacy.revision > 0:
+            try:
+                details = {row["key"]: row for row in self.model.details(
+                    duration_minutes=legacy.duration_minutes)["rows"]}
+                for theme in legacy.themes:
+                    row = details[theme.source_identity_sha256]
+                    if row["selected"].get("atomic_ids") != [q.key for q in theme.questions]:
+                        raise ValueError("legacy partial/reordered units cannot be represented as a whole theme")
+            except Exception:
+                self._legacy_details_conflict = True
+                raise
+        self._legacy_details_expectation = None
         if record is not None:
             self._apply_record(record)
         else:
@@ -2526,6 +2649,7 @@ class MixedPaperPanel(QWidget):
         self._render()
 
     def _invalidate_preview(self):
+        self._invalidate_details()
         self._generation += 1
         self._preview = None
         self._approved = False
@@ -2551,6 +2675,7 @@ class MixedPaperPanel(QWidget):
         self.undo_shortcut.setEnabled(enabled and history > 0)
         self.undo_button.setAccessibleName(f"撤销当前卷上一步{action}，Ctrl+Alt+Z")
         self.reload_button.setEnabled(not self._busy and not self._saving)
+        self.details_button.setEnabled(self._loaded_once and not self._busy and not self._saving)
         recovery = self._draft_session is not None and self._draft_session.can_restart
         self.restart_button.setVisible(recovery)
         self.restart_note.setVisible(recovery)
@@ -2765,6 +2890,8 @@ class MixedPaperPanel(QWidget):
         self._closed = True
         self._load_epoch += 1
         self._generation += 1
+        if self._details_dialog is not None:
+            self._details_dialog.reject()
         if self._draft_session is not None:
             self._draft_session.close()
         if self._preview_dialog is not None:
@@ -2789,6 +2916,7 @@ class PaperPage(QWidget):
         basket = facade.basket()
         self._mixed_panel = None
         self._mixed_basket = None
+        self._details_pending = False
         legacy_basket = tuple(row for row in basket if row.get("item_kind") not in {"word_question", "personal_visual_theme"})
         self._basket_signature = PaperComposerModel.basket_signature(basket)
         self.model = PaperComposerModel.from_basket(legacy_basket, mode="mock_exam")
@@ -2885,6 +3013,10 @@ class PaperPage(QWidget):
         controls_layout.addLayout(fields)
         self.summary_label = _label("", "MutedLabel")
         controls_layout.addWidget(self.summary_label)
+        self.current_details_button = _quiet_button("查看当前卷细目表")
+        self.current_details_button.setAccessibleName("进入统一草稿并查看当前卷细目表")
+        self.current_details_button.clicked.connect(self.request_current_details)
+        controls_layout.addWidget(self.current_details_button)
         self.prompt_blueprint_button = _quiet_button("教材命题提示")
         self.prompt_blueprint_button.setToolTip("选择教材章节和学习目标，离线编译资料提示，不调用模型")
         self.prompt_blueprint_button.clicked.connect(self._open_prompt_blueprint)
@@ -3027,7 +3159,7 @@ class PaperPage(QWidget):
         self.setTabOrder(self.directory, self.continuous_preview)
         self.setTabOrder(self.continuous_preview, self.inspector)
 
-    def _activate_mixed(self, basket, *, force=False):
+    def _activate_mixed(self, basket, *, force=False, details_expectation=None):
         scopes = {row.get("scope", "master") for row in basket if row.get("item_kind") not in {"word_question", "personal_visual_theme"}}
         required = any(row.get("item_kind") in {"word_question", "personal_visual_theme"} for row in basket) or len(scopes) > 1
         required = required or (self._mixed_panel is not None and bool(basket)) or (force and bool(basket))
@@ -3035,7 +3167,9 @@ class PaperPage(QWidget):
             return False
         if self._mixed_panel is None:
             self._mixed_panel = MixedPaperPanel(self.facade, self.tasks, self.model, self)
+            self._mixed_panel._legacy_details_expectation = details_expectation
             self._mixed_panel.load_finished.connect(self._basket_preview_loaded)
+            self._mixed_panel.load_finished.connect(self._details_loaded)
             self.layout().addWidget(self._mixed_panel)
         self._legacy_body.hide()
         self._mixed_panel.show()
@@ -3043,6 +3177,58 @@ class PaperPage(QWidget):
             self._mixed_basket = deepcopy(basket)
             self._mixed_panel.load()
         return True
+
+    def request_current_details(self):
+        # Reuse the saved mixed draft, including its exclusions and overrides.
+        # This explicit entry does not request a document/Office preview.
+        try:
+            basket = self.facade.basket()
+        except Exception:
+            self.preview_state.setText("题篮暂不能读取，请重新读取后查看细目。")
+            return
+        if not basket:
+            self.preview_state.setText("选题篮为空，请先选题后查看当前卷细目。")
+            return
+        expectation = None
+        if self._mixed_panel is None:
+            from ..desktop_mixed_paper_drafts import DRAFT_ID
+            try:
+                snapshot = self.facade.state_store.draft_snapshot(DRAFT_ID)
+            except Exception:
+                self.preview_state.setText("草稿状态暂不能读取；原编排保留，请重试。")
+                return
+            if snapshot.record is not None and not self._confirm_open_saved_mixed_details():
+                return
+            expectation = (snapshot.revision, snapshot.content_sha256)
+        self._details_pending = True
+        if not self._activate_mixed(basket, force=True, details_expectation=expectation):
+            self._details_pending = False
+            self.preview_state.setText("当前资料服务不能读取细目，请重新打开工作台。")
+        elif self._mixed_panel._loaded_once and not self._mixed_panel._busy:
+            self._details_loaded(not self._mixed_panel._restore_failed)
+
+    def _confirm_open_saved_mixed_details(self):
+        return QMessageBox.question(
+            self, "已有统一草稿", "已有保存的统一组卷草稿。\n是否打开它的细目表？\n当前旧版编排保留，不覆盖统一草稿。",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        ) == QMessageBox.StandardButton.Yes
+
+    def _details_loaded(self, success):
+        if not self._details_pending:
+            return
+        self._details_pending = False
+        if self._mixed_panel is not None:
+            if not success and self._mixed_panel._legacy_details_conflict:
+                panel, self._mixed_panel = self._mixed_panel, None
+                self._mixed_basket = None
+                panel.close()
+                panel.hide()
+                panel.deleteLater()
+                self._legacy_body.show()
+                self.preview_state.setText("旧版小问编排或草稿版本不能直接沿用；原编排保留，未保存新稿。细目表当前支持完整主题。")
+                return
+            self._mixed_panel._open_details()
 
     def request_layout_preview(self):
         """Preview the current basket through the existing frozen DOCX/PDF pipeline."""
