@@ -60,7 +60,10 @@
       "test_modules": [
         "staging.coordination.deeptutor_gateway.tests.test_complete_readme",
         "staging.coordination.deeptutor_gateway.tests.test_maintenance_release_safety"
-      ]
+      ],
+      "final_maintainer_link_update_rerun_passed": 14,
+      "final_guide_junit_sha256": "f54cc9d2dfbf0fe43a1c09c6412f4cb5556658db699e1cf828cbc976f1335a0d",
+      "rerun_is_overlap": true
     },
     "distinct_passed": 818,
     "qt_2x_is_overlap_not_added": true,
