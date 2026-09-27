@@ -1,0 +1,892 @@
+{
+  "schema_version": "shchem.textbook-page-reading-notes.v1",
+  "purpose": "选必一2.2 PDF38—46（印刷32—40）九页模型研读候选，与PKG-090完整原生文字及所见图像绑定；主代理核对全部7条笔记、表达式和数值，仍为非官方候选、未经教师审核。",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "original_source_redistribution": false,
+  "review_method": "page_images_read_by_model",
+  "root_review_completed": true,
+  "source": {
+    "volume_id": "TB-E1",
+    "title": "普通高中教科书 化学 选择性必修1 化学反应原理",
+    "sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+    "pdf_pages_viewed": [
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "printed_pages_viewed": [
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40
+    ],
+    "toc_pdf_pages_viewed": [],
+    "linked_pdf_pages": [
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "page_number_convention": "正文教材页号均为PDF页序，printed_pages为印刷页码。"
+  },
+  "notes": [
+    {
+      "id": "READ-TB-E1-20260927-EQSHIFT-01",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.2",
+      "title": "同温平衡数据先看关系式，不把近似表值改成完全一致",
+      "pdf_pages": [
+        38
+      ],
+      "printed_pages": [
+        32
+      ],
+      "source_anchors": [
+        "表2.1",
+        "457.6℃",
+        "正逆反应起始条件"
+      ],
+      "summary": "表2.1在同温下用不同初始配比和两个反应方向形成平衡，列出的[HI]²/([H₂][I₂])数值接近48—50。它支持同温平衡组成满足同一关系，不表示各组分浓度相等或各行舍入值必须完全一致；对实验/表格数值保留原精度。",
+      "classroom_check": "分别标出“同一个K关系”和“不同平衡浓度”；不要把等K自动说成等效平衡或相同转化率。",
+      "lecture_package_id": "PKG-090",
+      "lecture_block_indices": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        329,
+        330,
+        331,
+        332,
+        333,
+        334,
+        335,
+        336,
+        337,
+        338,
+        339,
+        340,
+        341,
+        342,
+        343,
+        344,
+        345,
+        346,
+        347,
+        348,
+        349,
+        350,
+        351,
+        352,
+        353,
+        354,
+        355,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-090/第12讲 化学平衡移动（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "758409bd54d47b215bf936149ac7e1983c5613eeeb340eb32d8f0ee2841146d6",
+      "source_preview_revision": "d940b8e1ecb7e7fd8fb6a944ba6017fb023b1bc55e6b05c5840f3f18f7cdc580",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 34,
+          "end": 80,
+          "start_xml_locator": "word/document.xml#/w:body/*[39]",
+          "end_xml_locator": "word/document.xml#/w:body/*[85]"
+        },
+        {
+          "start": 329,
+          "end": 362,
+          "start_xml_locator": "word/document.xml#/w:body/*[347]",
+          "end_xml_locator": "word/document.xml#/w:body/*[380]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.2",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          38
+        ],
+        "printed_pages": [
+          32
+        ],
+        "anchors": [
+          "表2.1",
+          "457.6℃",
+          "正逆反应起始条件"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "已读完整原图；表中五组数值独立复算，未强行统一为精确K。",
+        "必修二备选页未读。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-EQSHIFT-02",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.2",
+      "title": "平衡式随物态书写，水蒸气仍在式中",
+      "pdf_pages": [
+        39
+      ],
+      "printed_pages": [
+        33
+      ],
+      "source_anchors": [
+        "K浓度表达式",
+        "纯相与溶剂水",
+        "书写表达中的铁水蒸气反应"
+      ],
+      "summary": "按页中模型，3Fe(s)+4H₂O(g)⇌Fe₃O₄(s)+4H₂(g)（铁、水蒸气、四氧化三铁、氢气）的浓度式为K=[H₂]⁴/[H₂O]⁴。纯固相不列入，水蒸气须列入；“液体”不能代替“纯液体”，溶液中的溶质也不能全部删去。注明反应方向、计量写法、温度与数值单位约定。",
+      "classroom_check": "把讲义152的省略说法改成条件完整的陈述；不利用未读164题式去修169/171的Q值。",
+      "lecture_package_id": "PKG-090",
+      "lecture_block_indices": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-090/第12讲 化学平衡移动（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "758409bd54d47b215bf936149ac7e1983c5613eeeb340eb32d8f0ee2841146d6",
+      "source_preview_revision": "d940b8e1ecb7e7fd8fb6a944ba6017fb023b1bc55e6b05c5840f3f18f7cdc580",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 34,
+          "end": 80,
+          "start_xml_locator": "word/document.xml#/w:body/*[39]",
+          "end_xml_locator": "word/document.xml#/w:body/*[85]"
+        },
+        {
+          "start": 145,
+          "end": 152,
+          "start_xml_locator": "word/document.xml#/w:body/*[150]",
+          "end_xml_locator": "word/document.xml#/w:body/*[157]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.2",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          39
+        ],
+        "printed_pages": [
+          33
+        ],
+        "anchors": [
+          "K浓度表达式",
+          "纯相与溶剂水",
+          "书写表达中的铁水蒸气反应"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "反应式及指数依据教材39实图；不把它强加到未读旧式题式上。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-EQSHIFT-03",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.2",
+      "title": "Q比较当前组成，K比较同温同写法的平衡关系",
+      "pdf_pages": [
+        40,
+        41
+      ],
+      "printed_pages": [
+        34,
+        35
+      ],
+      "source_anchors": [
+        "平衡转化率",
+        "浓度商",
+        "合成氨增加氮气例"
+      ],
+      "summary": "Q按当前组成代入与K相同的式，二者必须同温、同写法和同单位约定。教材合成氨例只将氮气浓度加倍、其他浓度瞬间保持不变，故Q变为K/2；这是明确的单变量改变，不能套到同时稀释全部组分的操作。教材转化率的浓度差式在变容时须先转回物质的量账。",
+      "classroom_check": "用讲义恒容/恒压两种惰性气体操作画n、V、c表，再指出哪些量真正改变。",
+      "lecture_package_id": "PKG-090",
+      "lecture_block_indices": [
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        269,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275,
+        276,
+        277,
+        278,
+        279,
+        280,
+        281,
+        282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-090/第12讲 化学平衡移动（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "758409bd54d47b215bf936149ac7e1983c5613eeeb340eb32d8f0ee2841146d6",
+      "source_preview_revision": "d940b8e1ecb7e7fd8fb6a944ba6017fb023b1bc55e6b05c5840f3f18f7cdc580",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 61,
+          "end": 80,
+          "start_xml_locator": "word/document.xml#/w:body/*[66]",
+          "end_xml_locator": "word/document.xml#/w:body/*[85]"
+        },
+        {
+          "start": 269,
+          "end": 299,
+          "start_xml_locator": "word/document.xml#/w:body/*[287]",
+          "end_xml_locator": "word/document.xml#/w:body/*[317]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.2",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          40,
+          41
+        ],
+        "printed_pages": [
+          34,
+          35
+        ],
+        "anchors": [
+          "平衡转化率",
+          "浓度商",
+          "合成氨增加氮气例"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "同温均匀缩放公式为本轮代数推导，不是教材原文定理。",
+        "讲义“浓度熵”按原文保留在私有问题单，候选术语用浓度商。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-EQSHIFT-04",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.2",
+      "title": "吸光度曲线区分瞬时改变与后续净反应",
+      "pdf_pages": [
+        42
+      ],
+      "printed_pages": [
+        36
+      ],
+      "source_anchors": [
+        "图2.1注射器与比色皿",
+        "410nm测量",
+        "图2.3两条曲线"
+      ],
+      "summary": "原装置向比色皿推进或抽出NO₂/N₂O₄混合气，曲线先突变再缓慢变化。应先说明气量、体积、光程与温度条件，再解释净反应。推进气体后的先深后浅，与原页所述新平衡仍深于初态并不矛盾；不能仅凭颜色变深就宣称逆向移动，也不从图中未经标定的读数拟合K。",
+      "classroom_check": "将图分为操作前、操作瞬间和随后弛豫三段；说明实际装置与“活塞压缩”模型的区别。",
+      "lecture_package_id": "PKG-090",
+      "lecture_block_indices": [
+        301,
+        302,
+        303,
+        304,
+        305,
+        454,
+        455,
+        456,
+        457,
+        458,
+        459,
+        460,
+        461,
+        462,
+        463,
+        464,
+        465,
+        466,
+        467,
+        468
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-090/第12讲 化学平衡移动（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "758409bd54d47b215bf936149ac7e1983c5613eeeb340eb32d8f0ee2841146d6",
+      "source_preview_revision": "d940b8e1ecb7e7fd8fb6a944ba6017fb023b1bc55e6b05c5840f3f18f7cdc580",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 301,
+          "end": 305,
+          "start_xml_locator": "word/document.xml#/w:body/*[319]",
+          "end_xml_locator": "word/document.xml#/w:body/*[323]"
+        },
+        {
+          "start": 454,
+          "end": 468,
+          "start_xml_locator": "word/document.xml#/w:body/*[477]",
+          "end_xml_locator": "word/document.xml#/w:body/*[491]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.2",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          42
+        ],
+        "printed_pages": [
+          36
+        ],
+        "anchors": [
+          "图2.1注射器与比色皿",
+          "410nm测量",
+          "图2.3两条曲线"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "仅采用实际可见趋势及原页说明；无仪器原始数值、误差或校准数据。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-EQSHIFT-05",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.2",
+      "title": "平衡移动原理需要明确约束与平衡前提",
+      "pdf_pages": [
+        43,
+        44
+      ],
+      "printed_pages": [
+        37,
+        38
+      ],
+      "source_anchors": [
+        "气体压力的条件",
+        "勒夏特列原理",
+        "催化剂思考",
+        "化学史话"
+      ],
+      "summary": "按理想气体且其他条件可比的模型，压力影响须落实为反应气体分压；惰性气体与缩容不能只因总压都增大而混作同一操作。催化作用与平衡组成的改变分别讨论。原页的历史故事和医疗拓展只作阅读范围记录，不转为未核验的工艺或诊疗指导。",
+      "classroom_check": "依据讲义374先检查反应状态、Δν、温度和容器，再决定能否使用单条件平衡移动规则。",
+      "lecture_package_id": "PKG-090",
+      "lecture_block_indices": [
+        269,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275,
+        276,
+        277,
+        278,
+        279,
+        280,
+        281,
+        282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        373,
+        374
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-090/第12讲 化学平衡移动（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "758409bd54d47b215bf936149ac7e1983c5613eeeb340eb32d8f0ee2841146d6",
+      "source_preview_revision": "d940b8e1ecb7e7fd8fb6a944ba6017fb023b1bc55e6b05c5840f3f18f7cdc580",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 269,
+          "end": 305,
+          "start_xml_locator": "word/document.xml#/w:body/*[287]",
+          "end_xml_locator": "word/document.xml#/w:body/*[323]"
+        },
+        {
+          "start": 373,
+          "end": 374,
+          "start_xml_locator": "word/document.xml#/w:body/*[391]",
+          "end_xml_locator": "word/document.xml#/w:body/*[394]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.2",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          43,
+          44
+        ],
+        "printed_pages": [
+          37,
+          38
+        ],
+        "anchors": [
+          "气体压力的条件",
+          "勒夏特列原理",
+          "催化剂思考",
+          "化学史话"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "未采纳医疗拓展中的时间或疗效数字。",
+        "不由故事推出任意高炉加高或任意催化剂行为的工艺结论。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-EQSHIFT-06",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.2",
+      "title": "跨页三段式先判方向再求平衡组成",
+      "pdf_pages": [
+        44,
+        45
+      ],
+      "printed_pages": [
+        38,
+        39
+      ],
+      "source_anchors": [
+        "CO/水蒸气例题",
+        "Q=2/3",
+        "x约0.22mol"
+      ],
+      "summary": "教材800℃例先由Q=2/3<K=1判净反应正向，再将变化量ξ代入始、变、平。独立解得ξ=2/9mol，原页0.22mol为舍入值；四种气体依次为16/9、25/9、20/9、20/9mol。保留精确值再代回K能核对守恒与残差；约去V依赖此式气体系数和相等。",
+      "classroom_check": "与讲义173—184的Δν不为0反应比较，为何不能一律用物质的量直接代入浓度式。",
+      "lecture_package_id": "PKG-090",
+      "lecture_block_indices": [
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-090/第12讲 化学平衡移动（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "758409bd54d47b215bf936149ac7e1983c5613eeeb340eb32d8f0ee2841146d6",
+      "source_preview_revision": "d940b8e1ecb7e7fd8fb6a944ba6017fb023b1bc55e6b05c5840f3f18f7cdc580",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 81,
+          "end": 109,
+          "start_xml_locator": "word/document.xml#/w:body/*[86]",
+          "end_xml_locator": "word/document.xml#/w:body/*[114]"
+        },
+        {
+          "start": 173,
+          "end": 184,
+          "start_xml_locator": "word/document.xml#/w:body/*[188]",
+          "end_xml_locator": "word/document.xml#/w:body/*[199]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.2",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          44,
+          45
+        ],
+        "printed_pages": [
+          38,
+          39
+        ],
+        "anchors": [
+          "CO/水蒸气例题",
+          "Q=2/3",
+          "x约0.22mol"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "不拼接不同来源/温度的K数值。",
+        "平衡体积未给绝对值，但该式的共同V因子可抵消。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-EQSHIFT-07",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.2",
+      "title": "练习的数值与附加条件分别记录",
+      "pdf_pages": [
+        45,
+        46
+      ],
+      "printed_pages": [
+        39,
+        40
+      ],
+      "source_anchors": [
+        "350℃HI题",
+        "1200℃CO₂/H₂题",
+        "HBr平衡浓度题"
+      ],
+      "summary": "独立复算：350℃H₂/I₂/HI题Q=0.25<K=21.9；1200℃CO₂(g)+H₂(g)⇌CO(g)+H₂O(g)（二氧化碳、氢气、一氧化碳、水蒸气）题由给定数据得K=2.25。H₂(g)+Br₂(g)⇌2HBr(g)（氢气、溴蒸气、溴化氢）题得K=51.2；初始无HBr且体积不变时，起始H₂、Br₂浓度分别为1.3、0.9mol/L。",
+      "classroom_check": "逐项注明温度是否给定、初始产物是否为0，以及浓度差法是否允许；HBr题具体温度仍unknown。",
+      "lecture_package_id": "PKG-090",
+      "lecture_block_indices": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-090/第12讲 化学平衡移动（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "758409bd54d47b215bf936149ac7e1983c5613eeeb340eb32d8f0ee2841146d6",
+      "source_preview_revision": "d940b8e1ecb7e7fd8fb6a944ba6017fb023b1bc55e6b05c5840f3f18f7cdc580",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 34,
+          "end": 80,
+          "start_xml_locator": "word/document.xml#/w:body/*[39]",
+          "end_xml_locator": "word/document.xml#/w:body/*[85]"
+        },
+        {
+          "start": 81,
+          "end": 109,
+          "start_xml_locator": "word/document.xml#/w:body/*[86]",
+          "end_xml_locator": "word/document.xml#/w:body/*[114]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.2",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          45,
+          46
+        ],
+        "printed_pages": [
+          39,
+          40
+        ],
+        "anchors": [
+          "350℃HI题",
+          "1200℃CO₂/H₂题",
+          "HBr平衡浓度题"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "这些是模型独立解答，不称教材印刷答案或官方评分点。",
+        "跨页NO/氧气题的给定焓值未作外部热化学数据核验。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ]
+}

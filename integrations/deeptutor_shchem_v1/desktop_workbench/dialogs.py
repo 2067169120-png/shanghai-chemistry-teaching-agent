@@ -74,7 +74,7 @@ class ImportDialog(QDialog):
         self._resumable_receipts: tuple[DesktopVisualImportReceipt, ...] = ()
         self.setWindowTitle("导入资料")
         self.resize(720, 680)
-        self.setMinimumSize(420, 540)
+        self.setMinimumSize(320, 440)
         root = QVBoxLayout(self)
         root.setContentsMargins(24, 22, 24, 22)
         root.setSpacing(12)
@@ -231,6 +231,11 @@ class ImportDialog(QDialog):
         word_history_title = QLabel("已导入 Word")
         word_history_title.setObjectName("CardTitle")
         word_history_layout.addWidget(word_history_title)
+        self.import_identity_summary = QLabel()
+        self.import_identity_summary.setWordWrap(True)
+        self.import_identity_summary.setTextFormat(Qt.TextFormat.PlainText)
+        self.import_identity_summary.hide()
+        word_history_layout.addWidget(self.import_identity_summary)
         self.word_batch_combo = QComboBox()
         self.word_batch_combo.setAccessibleName("选择已保存的 Word 导入批次")
         self.word_batch_combo.setMinimumContentsLength(12)
@@ -260,6 +265,25 @@ class ImportDialog(QDialog):
         self.word_reference_button.clicked.connect(self._open_word_reference)
         self.word_reference_button.setVisible(False)
         word_history_layout.addWidget(self.word_reference_button)
+        self.word_continuation = QWidget()
+        continuation_layout = QVBoxLayout(self.word_continuation)
+        continuation_layout.setContentsMargins(0, 6, 0, 0)
+        note = QLabel("本次相同内容沿用已有来源。选择一份，继续原题目或查看原批次。")
+        note.setWordWrap(True)
+        continuation_layout.addWidget(note)
+        self.continued_source_combo = QComboBox()
+        self.continued_source_combo.setAccessibleName("本次继续的已有 Word 来源")
+        self.continued_source_combo.setMinimumContentsLength(8)
+        self.continued_source_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        continuation_layout.addWidget(self.continued_source_combo)
+        self.continue_questions_button = QPushButton("继续所选已有题目…")
+        self.continue_original_button = QPushButton("查看所选已有原文…")
+        self.continue_progress_button = QPushButton("查看所选原批次进度…")
+        for button, mode in ((self.continue_questions_button, "questions"), (self.continue_original_button, "original"), (self.continue_progress_button, "progress")):
+            button.clicked.connect(lambda _checked=False, value=mode: self._continue_word_source(value))
+            continuation_layout.addWidget(button)
+        self.word_continuation.hide()
+        word_history_layout.addWidget(self.word_continuation)
         self.word_history_card.setVisible(False)
         content_layout.addWidget(self.word_history_card)
         self.personal_visual_questions_button = QPushButton("已识别图片题 · 逐题预览与挑选…")
@@ -526,6 +550,7 @@ class ImportDialog(QDialog):
             not busy and self.word_batch_combo.count() > 0
         )
         self.word_questions_button.setEnabled(not busy)
+        self.word_continuation.setEnabled(not busy)
         self.personal_visual_questions_button.setEnabled(not busy)
         self.word_annotation_button.setEnabled(not busy and self.word_batch_combo.count() > 0)
         if busy:
@@ -665,6 +690,19 @@ class ImportDialog(QDialog):
             index = self.word_batch_combo.count() - 1
         else:
             self.word_batch_combo.setItemText(index, label)
+        # Same-name, different-byte imports remain independently selectable.
+        # A save-record ordinal describes local history, not an inferred edition.
+        labels = {}
+        for saved_id, saved in self._word_receipts.items():
+            word_names = [item.filename.replace("\\", "/").rsplit("/", 1)[-1]
+                          for item in saved.sources if item.filename.lower().endswith(".docx")]
+            base = "、".join(word_names[:2]) + ("等" if len(word_names) > 2 else "") + f" · {len(word_names)} 份 Word"
+            labels.setdefault(base, []).append(saved_id)
+        for base, saved_ids in labels.items():
+            for ordinal, saved_id in enumerate(saved_ids, 1):
+                position = self.word_batch_combo.findData(saved_id)
+                if position >= 0:
+                    self.word_batch_combo.setItemText(position, (f"保存记录 {ordinal} · " if len(saved_ids) > 1 else "") + base)
         if select:
             self.word_batch_combo.setCurrentIndex(index)
         self.word_history_card.setVisible(True)
@@ -693,6 +731,33 @@ class ImportDialog(QDialog):
         if dialog.exec() == dialog.DialogCode.Accepted and dialog.preparation_reference is not None:
             self.preparation_reference = dialog.preparation_reference
             self.accept()
+        dialog.deleteLater()
+
+    def _continue_word_source(self, mode):
+        target = self.continued_source_combo.currentData()
+        if self._active_task_id or not isinstance(target, dict):
+            return
+        batch_id = target["batch_id"]
+        if mode == "questions":
+            from .word_question_dialog import WordQuestionDialog
+            dialog = WordQuestionDialog(self.facade, self.tasks, self,
+                batch_id=batch_id, initial_source_id=target["source_sha256"],
+                required_source_id=target["source_sha256"])
+            dialog.basket_changed.connect(self.basket_changed)
+            if dialog.exec() == QDialog.DialogCode.Accepted and dialog.preparation_reference is not None:
+                self.preparation_reference = dialog.preparation_reference
+                self.accept()
+        elif mode == "original":
+            from .import_word_dialog import ImportWordDialog
+            dialog = ImportWordDialog(self.facade, batch_id, self,
+                initial_source_id=target["archive_source_id"])
+            if dialog.exec() == QDialog.DialogCode.Accepted and dialog.reference is not None:
+                self.preparation_reference = dialog.reference
+                self.accept()
+        else:
+            from .import_batch_dialog import ImportBatchDialog
+            dialog = ImportBatchDialog(self.facade, self.tasks, batch_id, self)
+            dialog.exec()
         dialog.deleteLater()
 
     def _open_personal_visual_questions(self) -> None:
@@ -956,6 +1021,33 @@ class ImportDialog(QDialog):
         self.progress.setFormat("第一步已完成：已保存并分流")
         self._show_saved_receipt(receipt)
         self._load_resumable_batches()
+        review = getattr(receipt, "import_review", None)
+        self.continued_source_combo.clear()
+        self.word_continuation.hide()
+        self.import_identity_summary.hide()
+        if review is not None:
+            for old_receipt in review["reused_receipts"]:
+                self._remember_word_receipt(old_receipt)
+            for target in review["reused"]:
+                self.continued_source_combo.addItem(target["source_name"], target)
+            self.word_continuation.setVisible(bool(review["reused"]))
+            summary = f"本次新保存 {review['new_count']} 份，继续已有 {len(review['reused'])} 份。"
+            if review["version_count"]:
+                summary += f"其中 {review['version_count']} 份为同名新版本；旧来源和标签保留，未迁移教师修订。"
+            if review["repeated_count"]:
+                summary += f"相同内容的 {review['repeated_count']} 个重复选择仅处理一次。"
+            self.import_identity_summary.setText(summary)
+            self.import_identity_summary.show()
+            if not review["new_count"]:
+                self.progress.setFormat("已找到原来源，可继续")
+                set_status(self.status, "attention" if receipt.native_failed_count else "info",
+                    "已找到原来源；原批次仍有读取失败，可在进度中重试。" if receipt.native_failed_count
+                    else "已回到已有资料；没有重新导入或补标签。")
+                QTimer.singleShot(0, lambda: self.scroll.ensureWidgetVisible(self.word_continuation))
+                return
+            set_status(self.status, "attention" if receipt.native_failed_count else "success",
+                "原件已保存，Word读取仍有失败；请在批次进度中重试。" if receipt.native_failed_count
+                else "本次新资料已保存，候选仍待教师核对；旧来源与标签保留。")
         if (
             callable(getattr(self.facade, "annotate_imported_word_batch", None))
             and receipt.batch_id in self._word_receipts
