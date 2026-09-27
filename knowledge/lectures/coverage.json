@@ -7,10 +7,10 @@
   "source_hashes_and_block_refs_verified": true,
   "all_chemical_claims_teacher_reviewed": false,
   "source_block_versions_bound_count": 46,
-  "knowledge_claims": 291,
-  "method_claims": 155,
-  "pitfall_claims": 122,
-  "teaching_flow_claims": 44,
+  "knowledge_claims": 294,
+  "method_claims": 161,
+  "pitfall_claims": 123,
+  "teaching_flow_claims": 47,
   "sources": [
     {
       "package_id": "PKG-002",
@@ -556,11 +556,11 @@
       "package_id": "PKG-092",
       "title": "工业反应条件选择与合成氨",
       "source_sha256": "b0c0276c5d9874864cecf8a5853556eba7f1c21d44e23bdc40620a1b5f983c4a",
-      "knowledge_count": 5,
-      "method_count": 1,
-      "pitfall_count": 2,
-      "teaching_flow_count": 0,
-      "claim_count": 8,
+      "knowledge_count": 8,
+      "method_count": 7,
+      "pitfall_count": 3,
+      "teaching_flow_count": 3,
+      "claim_count": 21,
       "all_block_refs_exist": true,
       "source_block_version_bound": true
     }

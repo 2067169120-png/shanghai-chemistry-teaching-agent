@@ -78,6 +78,16 @@ jobs:
           QT_QPA_PLATFORM: offscreen
           QT_SCALE_FACTOR: '2'
         run: python runtime/deeptutor_shchem/word_import_identity_qa.py --output local-continuation-qa/word-import-identity
+      - name: Check short question reader geometry and protected actions
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_SCALE_FACTOR: '2'
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_word_question_reader_layout.py staging/coordination/deeptutor_gateway/tests/test_word_question_selection_visibility.py --junitxml=local-continuation-qa/question-reader.xml
+      - name: Capture short question reader states with synthetic content
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_SCALE_FACTOR: '2'
+        run: python runtime/deeptutor_shchem/word_question_reader_layout_qa.py --output local-continuation-qa/question-reader
       - name: Check visual shard recovery and exact outbound disclosure
         env:
           QT_QPA_PLATFORM: offscreen

@@ -1,0 +1,339 @@
+{
+  "date": "2026-09-27",
+  "base_main_commit": "59f20dcfbc023d4f9dad18950d25f8bc53da4fcf",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "release_exe_rebuilt": false,
+  "release_baseline": "v0.1.101",
+  "tests": {
+    "ui_distinct_passed": 112,
+    "knowledge_distinct_passed": 78,
+    "functional_distinct_total": 190,
+    "qt_2x_repeat_passed": 32,
+    "qt_repeat_included_in_ui_total": true,
+    "documentation_passed": 14,
+    "documentation_policy_passed": true
+  },
+  "synthetic_ui": {
+    "captured": 26,
+    "root_model_viewed": 6,
+    "published": 6,
+    "personal_state_accessed": false,
+    "provider_calls": 0,
+    "captures": [
+      {
+        "path": "screenshots/2026-09-27-reader/reader-ready-360x520-reading-top.png",
+        "sha256": "308b5709b76a2f70922773c63ca432be38a309111a3fc848e3d677beadad912c",
+        "mode": "ready",
+        "width": 360,
+        "height": 520,
+        "device_pixel_ratio": 2.0,
+        "pixel_width": 720,
+        "pixel_height": 1040,
+        "evidence": {
+          "status_complete": true,
+          "close_complete": true,
+          "status_text": "已读取 2 道题。题目分段和图片仍须逐题核对。",
+          "status_content_height": 19,
+          "status_needed_height": 19,
+          "status_unclipped": true,
+          "footer_height": 85,
+          "body_height": 429,
+          "tabs_minimum_height": 169,
+          "horizontal_overflow": 0,
+          "visible_actions": []
+        },
+        "root_model_actually_viewed": true
+      },
+      {
+        "path": "screenshots/2026-09-27-reader/reader-ready-360x520-reading-bottom.png",
+        "sha256": "f673340cf967791bf92ddb5058fdcca1df974c25cdca3b92f8ddbd6c97ae8f4b",
+        "mode": "ready",
+        "width": 360,
+        "height": 520,
+        "device_pixel_ratio": 2.0,
+        "pixel_width": 720,
+        "pixel_height": 1040,
+        "evidence": {
+          "status_complete": true,
+          "close_complete": true,
+          "status_text": "已读取 2 道题。题目分段和图片仍须逐题核对。",
+          "status_content_height": 19,
+          "status_needed_height": 19,
+          "status_unclipped": true,
+          "footer_height": 85,
+          "body_height": 429,
+          "tabs_minimum_height": 169,
+          "horizontal_overflow": 0,
+          "visible_actions": []
+        },
+        "root_model_actually_viewed": true
+      },
+      {
+        "path": "screenshots/2026-09-27-reader/reader-settings-360x520-controls.png",
+        "sha256": "4bff9436af99247de2a7987c66501ae92f5b229be122215c748b36e258f0fce6",
+        "mode": "settings",
+        "width": 360,
+        "height": 520,
+        "device_pixel_ratio": 2.0,
+        "pixel_width": 720,
+        "pixel_height": 1040,
+        "evidence": {
+          "status_complete": true,
+          "close_complete": true,
+          "status_text": "已读取 2 道题。题目分段和图片仍须逐题核对。",
+          "status_content_height": 19,
+          "status_needed_height": 19,
+          "status_unclipped": true,
+          "footer_height": 85,
+          "body_height": 429,
+          "tabs_minimum_height": 169,
+          "horizontal_overflow": 0,
+          "visible_actions": [
+            "调整本题范围",
+            "修改教学标签",
+            "AI补全 / 核对已选题标签…"
+          ]
+        },
+        "root_model_actually_viewed": true
+      },
+      {
+        "path": "screenshots/2026-09-27-reader/reader-preparation-360x520-bottom.png",
+        "sha256": "725061cc3db139e9b12711c24ebd30e0709f1edc531e6e35f8b94d688f2a19e8",
+        "mode": "preparation",
+        "width": 360,
+        "height": 520,
+        "device_pixel_ratio": 2.0,
+        "pixel_width": 720,
+        "pixel_height": 1040,
+        "evidence": {
+          "status_complete": true,
+          "close_complete": true,
+          "status_text": "已生成 1 道题的完整参考。请核对后确认；确认时会重新读取并比较。",
+          "status_content_height": 38,
+          "status_needed_height": 38,
+          "status_unclipped": true,
+          "footer_height": 104,
+          "body_height": 410,
+          "tabs_minimum_height": 160,
+          "horizontal_overflow": 0,
+          "visible_actions": [
+            "查看入篮完整题面与答案",
+            "加入选题篮",
+            "预览选题",
+            "确认带入备课"
+          ]
+        },
+        "root_model_actually_viewed": true
+      },
+      {
+        "path": "screenshots/2026-09-27-reader/reader-error-360x520-bottom.png",
+        "sha256": "44f4513d285c912d645a4c6a5d48d3b218b3a99f8ccf78ebbe6f2da8cee4f76e",
+        "mode": "error",
+        "width": 360,
+        "height": 520,
+        "device_pixel_ratio": 2.0,
+        "pixel_width": 720,
+        "pixel_height": 1040,
+        "evidence": {
+          "status_complete": true,
+          "close_complete": true,
+          "status_text": "来源记录暂时无法读取，请保留现有选题并稍后刷新。若仍失败，请返回导入窗口核对原批次；本次没有保存新的题目或标签。",
+          "status_content_height": 57,
+          "status_needed_height": 57,
+          "status_unclipped": true,
+          "footer_height": 123,
+          "body_height": 391,
+          "tabs_minimum_height": 130,
+          "horizontal_overflow": 0,
+          "visible_actions": [
+            "查看入篮完整题面与答案",
+            "加入选题篮"
+          ]
+        },
+        "root_model_actually_viewed": true
+      },
+      {
+        "path": "screenshots/2026-09-27-reader/reader-source_empty-900x760-whole.png",
+        "sha256": "73d3e77c4cc63047331fa077937349c02c40f99a6aa4ffd2e4ecccec99cb0db5",
+        "mode": "source_empty",
+        "width": 900,
+        "height": 760,
+        "device_pixel_ratio": 2.0,
+        "pixel_width": 1800,
+        "pixel_height": 1520,
+        "evidence": {
+          "status_complete": true,
+          "close_complete": true,
+          "status_text": "原来源当前没有可用题目，未显示其他来源。请返回查看原文或原批次进度。",
+          "status_content_height": 19,
+          "status_needed_height": 19,
+          "status_unclipped": true,
+          "footer_height": 85,
+          "body_height": 669,
+          "tabs_minimum_height": 130,
+          "horizontal_overflow": 0,
+          "visible_actions": []
+        },
+        "root_model_actually_viewed": true
+      }
+    ]
+  },
+  "local_labels": {
+    "complete_questions_read": 24,
+    "question_blocks_read": 100,
+    "answer_blocks_read": 52,
+    "missing_only_adopted": 21,
+    "primary_filled": 9,
+    "curriculum_questions_filled": 15,
+    "section_links_added": 18,
+    "rechecked_same_batch_questions": 4,
+    "primary_replaced": 3,
+    "curriculum_replaced": 1,
+    "promoted_primary_duplicate_supporting_removed": 1,
+    "held_questions": 3,
+    "history_before": 9346,
+    "history_after": 9371,
+    "prior_history_unchanged": true,
+    "repeat_changes": [
+      0,
+      0
+    ],
+    "protected_inputs_each_phase": 786,
+    "unselected_attribute_rows_unchanged": 3663
+  },
+  "current_library": {
+    "analysis_sources": 98,
+    "current_questions": 3579,
+    "selectable_questions": 3576,
+    "current_primary_known": 2905,
+    "current_curriculum_mapped": 2754,
+    "missing_field_counts": {
+      "curriculum_mapping": 825,
+      "primary_knowledge": 674
+    },
+    "pending_tasks": 1033,
+    "category_counts": {
+      "readable_pure_text": 189,
+      "requires_image": 785,
+      "scope_or_material_incomplete": 56,
+      "teacher_or_pinned_protected": 3
+    },
+    "duplicate_current_question_keys": 0,
+    "duplicate_source_sha256": 0,
+    "original_exam_unknown": 2742
+  },
+  "industrial_distillation": {
+    "new_references": 13,
+    "new_reading_notes": 9,
+    "new_reference_groups": {
+      "knowledge": 3,
+      "methods": 6,
+      "pitfalls": 1,
+      "teaching_flow": 3
+    },
+    "root_native_blocks_read": 281,
+    "root_textbook_pages_viewed": 15,
+    "root_cache_image_references_viewed": 26,
+    "cache_image_references_total": 94,
+    "root_unviewed_image_references": 68,
+    "WMF_renderings_viewed": 14,
+    "OLE_binaries_unparsed": 52,
+    "H2_table_unit_partly_unread": true,
+    "whole_word_visual_audit": false,
+    "whole_book_read": false,
+    "validation": {
+      "new_claims_in_actual_reader": 13,
+      "total_notes_in_actual_reader": 21,
+      "textbook_concepts_linked": 7,
+      "stale_reference_excluded": true,
+      "removed_support_cases": [
+        {
+          "removed": 89,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 89,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 158,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 110,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 102,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 189,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 246,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 261,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 246,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 139,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 89,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 139,
+          "dependent_claim_excluded": true
+        },
+        {
+          "removed": 102,
+          "dependent_claim_excluded": true
+        }
+      ],
+      "repeat_new_notes": 0
+    },
+    "coverage": {
+      "knowledge": 294,
+      "methods": 161,
+      "pitfalls": 123,
+      "teaching_flow": 47
+    },
+    "lecture_sources": 46,
+    "sources_with_flow": 22,
+    "sources_without_flow": 24,
+    "textbook_concepts": 383,
+    "other_sources_unchanged": 45,
+    "protected_sync_inputs": 820,
+    "original_word_files_unchanged": 196,
+    "private_state_files_unchanged": 488,
+    "catalog_rows": [
+      120,
+      121
+    ]
+  },
+  "next_batch": {
+    "metadata_only": true,
+    "selected_questions": 24,
+    "source_bodies_read": 0,
+    "labels_proposed": 0,
+    "geography_exclusions": 0
+  },
+  "network_scope": {
+    "wechat_article_searches": 0,
+    "new_papers_collected": 0,
+    "real_provider_calls": 0,
+    "new_external_chemistry_reference_checks": 0,
+    "github_operations_use_network": true
+  }
+}
