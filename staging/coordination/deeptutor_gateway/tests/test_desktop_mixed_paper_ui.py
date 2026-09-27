@@ -7,6 +7,7 @@ from dataclasses import replace
 import hashlib
 import json
 import os
+import tempfile
 
 import pytest
 
@@ -21,6 +22,8 @@ from test_word_question_dialog import _isolated_qt_app
 from test_word_question_dialog import _Tasks as Tasks
 
 from integrations.deeptutor_shchem_v1.desktop_facade import PaperPreview
+from integrations.deeptutor_shchem_v1.desktop_state import DesktopStateStore
+from integrations.deeptutor_shchem_v1.desktop_mixed_paper_drafts import MixedPaperDraftSession, digest
 from integrations.deeptutor_shchem_v1.desktop_workbench.assembly_page import (
     MixedPaperPanel,
     MixedPaperPreviewDialog,
@@ -50,15 +53,14 @@ def png_bytes():
     return bytes(raw)
 
 
-class FakeStore:
+class FakeStore(DesktopStateStore):
     def __init__(self):
-        self.data = {"drafts": {}}
+        self.temporary = tempfile.TemporaryDirectory(prefix="mixed-paper-ui-")
+        super().__init__(self.temporary.name)
 
-    def snapshot(self):
-        return deepcopy(self.data)
-
-    def save_draft(self, key, value):
-        self.data["drafts"][key] = deepcopy(value)
+    @property
+    def data(self):
+        return json.loads(self.path.read_text(encoding="utf-8")) if self.path.exists() else {"drafts": {}}
 
 
 class Facade:
@@ -78,6 +80,7 @@ class Facade:
             },
         ]
         self.state_store = FakeStore()
+        self.state_store.add_many_to_basket(self.rows)
         self.calls = []
         self.image_failure = False
         self.preview_failure = False
@@ -87,12 +90,15 @@ class Facade:
     def basket(self):
         return tuple(deepcopy(self.rows))
 
+    def open_mixed_paper_draft_session(self):
+        return MixedPaperDraftSession(self.state_store)
+
     def paper_basket_projection(self):
+        if self.state_store.data["basket"] != self.rows:
+            self.state_store._update(lambda value: value.__setitem__("basket", deepcopy(self.rows)))
         return {
             "schema_version": "shchem.desktop-mixed-basket.v1",
-            "basket_sha256": hashlib.sha256(
-                json.dumps(self.rows, sort_keys=True).encode()
-            ).hexdigest(),
+            "basket_sha256": digest(self.rows),
             "items": [
                 {
                     "kind": "word_question"
@@ -598,7 +604,7 @@ def test_invalid_saved_mixed_draft_is_preserved_and_never_auto_overwritten(
     qt_app, record
 ):
     facade, tasks = Facade(), Tasks()
-    facade.state_store.data["drafts"]["paper-mixed-current"] = deepcopy(record)
+    facade.state_store._update(lambda value: value["drafts"].__setitem__("paper-mixed-current", deepcopy(record)))
     before = deepcopy(facade.state_store.data)
     widget = MixedPaperPanel(facade, tasks, PaperComposerModel())
     widget.load()
@@ -643,10 +649,10 @@ def test_failed_draft_read_is_not_replaced_by_defaults_and_can_retry(
 def test_draft_save_failure_remains_visible_after_projection_load(qt_app, monkeypatch):
     facade, tasks = Facade(), Tasks()
 
-    def unwritable(*_args):
+    def unwritable(*_args, **_kwargs):
         raise OSError("synthetic save failure")
 
-    monkeypatch.setattr(facade.state_store, "save_draft", unwritable)
+    monkeypatch.setattr(facade.state_store, "_write_unlocked", unwritable)
     widget = MixedPaperPanel(facade, tasks, PaperComposerModel())
     widget.load()
     tasks.flush()

@@ -31,6 +31,30 @@ class BasketConflictError(DesktopStateError):
     """The displayed basket is no longer the durable basket."""
 
 
+class DraftConflictError(DesktopStateError):
+    """Only the addressed draft participates in this comparison."""
+
+
+@dataclass(frozen=True)
+class DraftSnapshot:
+    draft_id: str
+    record: dict[str, Any] | None
+    revision: str
+    content_sha256: str
+
+
+def _draft_snapshot(value, draft_id):
+    if not isinstance(draft_id, str) or not draft_id:
+        raise DesktopStateError("草稿标识不正确。")
+    record = value["drafts"].get(draft_id)
+    if draft_id in value["drafts"] and not isinstance(record, dict):
+        raise DesktopStateError("当前草稿无法读取，已保留原记录。")
+    digest = hashlib.sha256(json.dumps(record, ensure_ascii=False, sort_keys=True,
+        separators=(",", ":"), allow_nan=False).encode("utf-8")).hexdigest()
+    revision = value.get("draft_revisions", {}).get(draft_id, "legacy:" + digest)
+    return DraftSnapshot(draft_id, deepcopy(record), revision, digest)
+
+
 def _shared_lock(path: Path):
     identity = os.path.normcase(str(path))
     with _LOCKS_GUARD:
@@ -162,6 +186,13 @@ class DesktopStateStore:
             raise DesktopStateError("题篮数据格式异常，已停止保存；请保留原状态文件并核对备份。")
         if not isinstance(result["drafts"], dict):
             raise DesktopStateError("草稿数据格式异常，已停止保存；请保留原状态文件并核对备份。")
+        revisions = result.get("draft_revisions", {})
+        if (not isinstance(revisions, dict) or any(
+            not isinstance(key, str) or not key or not isinstance(revision, str)
+            or len(revision) != 32 or any(c not in "0123456789abcdef" for c in revision)
+            for key, revision in revisions.items()
+        )):
+            raise DesktopStateError("草稿修订记录无法核验，已停止保存。")
         _reject_sensitive_fields(result)
         _basket_snapshot(result)  # Never silently drop malformed durable rows.
         return result
@@ -221,10 +252,18 @@ class DesktopStateStore:
             if self._disk_token() != token:
                 raise BasketConflictError("个人状态在读取时发生变化，请重新读取后核对。")
             before = deepcopy(value["basket"])
+            old_drafts = deepcopy(value["drafts"])
             if operation(value) is False:
                 return deepcopy(value)
             if basket_write or value["basket"] != before:
                 value["basket_revision"] = uuid.uuid4().hex
+            changed_drafts = {key for key in old_drafts.keys() | value["drafts"].keys()
+                              if old_drafts.get(key, _UNCHECKED) != value["drafts"].get(key, _UNCHECKED)}
+            if changed_drafts:
+                revisions = dict(value.get("draft_revisions", {}))
+                for key in changed_drafts:
+                    revisions[key] = uuid.uuid4().hex
+                value["draft_revisions"] = revisions
             _basket_snapshot(value)
             self._write_unlocked(value, expected_token=token)
             return deepcopy(value)
@@ -331,10 +370,31 @@ class DesktopStateStore:
             raise DesktopStateError("草稿标识不正确。")
         _reject_sensitive_fields(payload)
         def operation(value: dict[str, Any]) -> None:
+            if value["drafts"].get(draft_id, _UNCHECKED) == payload:
+                return False
             drafts = dict(value["drafts"])
             drafts[draft_id] = deepcopy(payload)
             value["drafts"] = drafts
         self._update(operation)
+
+    def draft_snapshot(self, draft_id: str) -> DraftSnapshot:
+        return _draft_snapshot(self.snapshot(), draft_id)
+
+    def compare_draft(self, expected: DraftSnapshot, record: dict[str, Any], *, guard=None) -> DraftSnapshot:
+        """CAS one draft under the same OS lock as every legacy state writer."""
+        if not isinstance(record, dict):
+            raise DesktopStateError("草稿数据格式不正确。")
+        _reject_sensitive_fields(record)
+        def operation(value):
+            current = _draft_snapshot(value, expected.draft_id)
+            if (current.revision, current.content_sha256) != (expected.revision, expected.content_sha256):
+                raise DraftConflictError("当前草稿已被其他操作修改，请重新读取。")
+            if guard is not None:
+                guard(value)
+            if current.record == record:
+                return False
+            value["drafts"][expected.draft_id] = deepcopy(record)
+        return _draft_snapshot(self._update(operation), expected.draft_id)
 
 
 class BasketEditSession:
@@ -437,5 +497,5 @@ class BasketEditSession:
         return {"changed": True, "count": len(current.rows), "selected_key": selected, "action": action}
 
 
-__all__ = ["STATE_SCHEMA", "DesktopStateError", "BasketConflictError", "BasketSnapshot",
+__all__ = ["STATE_SCHEMA", "DesktopStateError", "BasketConflictError", "BasketSnapshot", "DraftConflictError", "DraftSnapshot",
            "BasketEditSession", "DesktopStateStore", "utc_now"]
