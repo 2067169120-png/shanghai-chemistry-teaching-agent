@@ -1,0 +1,349 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-27",
+  "scope": "Word duplicate continuation, separate versions, local labels and equilibrium-shift candidates",
+  "base_commit": "0d5c3a2974e307f659f6b4cc618b9c12b0fea02f",
+  "release": {
+    "executable_version": "v0.1.101",
+    "executable_rebuilt": false
+  },
+  "publication": {
+    "contents": [
+      "maintenance source",
+      "synthetic tests and captures",
+      "source-bound paraphrased candidates",
+      "aggregate verification"
+    ],
+    "private_material_uploaded": false,
+    "provider_calls": 0,
+    "wechat_article_searches": 0,
+    "new_exam_papers": 0,
+    "external_chemistry_check": {
+      "search_queries": 2,
+      "usable_primary_pages": 1,
+      "primary_url": "https://www.nature.com/articles/s41467-023-42403-2",
+      "scope": "abstract, introduction and part of results; not full paper or supporting information",
+      "captcha_bypassed": false
+    }
+  },
+  "import_identity": {
+    "scope": "Word through import preview and final confirmation",
+    "supported": [
+      "same-byte renamed Word continues original source and batch",
+      "same-name different bytes saved separately after confirmation",
+      "mixed old/new handouts save only new files",
+      "old ranges, labels, history and basket preserved",
+      "original purpose and filename retained",
+      "continued source stays scoped when missing or filtered",
+      "final content/history/archive revalidation under thread/process lock"
+    ],
+    "limitations": [
+      "byte identity only; no semantic duplicate detection",
+      "non-Word identity handling remains pending",
+      "no teacher-label migration between versions",
+      "mixed reused/new question-answer context must be separated explicitly"
+    ],
+    "roadmap_C06": "partial"
+  },
+  "labels": {
+    "samples_fully_read": 24,
+    "question_blocks_read": 86,
+    "answer_blocks_read": 52,
+    "distinct_questions_updated": 21,
+    "missing_only": {
+      "questions": 21,
+      "primary_fills": 12,
+      "curriculum_question_fills": 14,
+      "new_section_links": 17
+    },
+    "recheck_automatic": {
+      "questions": 1,
+      "sample": 15,
+      "primary_replacements": 0,
+      "curriculum_replacements": 1
+    },
+    "held_samples": [
+      7,
+      17,
+      24
+    ],
+    "held_unchanged": true,
+    "attribute_rows": 3684,
+    "history_rows": 9346,
+    "old_history_rows_preserved": 9324,
+    "new_history_rows": 22,
+    "repeat_preview_changes": [
+      0,
+      0
+    ],
+    "protected_input_count_each_transaction": 685,
+    "only_personal_database_changed": true,
+    "originals_modified": false,
+    "official_answers_certified": false,
+    "candidate_only": true,
+    "human_reviewed": false
+  },
+  "queue": {
+    "analysis_sources": 98,
+    "current_questions": 3579,
+    "selectable_questions": 3576,
+    "current_primary_known": 2896,
+    "current_curriculum_mapped": 2739,
+    "missing_field_counts": {
+      "curriculum_mapping": 840,
+      "primary_knowledge": 683
+    },
+    "pending_tasks": 1054,
+    "category_counts": {
+      "readable_pure_text": 210,
+      "requires_image": 785,
+      "scope_or_material_incomplete": 56,
+      "teacher_or_pinned_protected": 3
+    },
+    "duplicate_current_question_keys": 0,
+    "duplicate_source_sha256": 0,
+    "original_exam_known": 837,
+    "original_exam_unknown": 2742,
+    "surplus_attribute_rows_not_counted_as_questions": 111
+  },
+  "equilibrium_shift": {
+    "lecture_id": "PKG-090",
+    "new_references": {
+      "knowledge": 2,
+      "methods": 6,
+      "pitfalls": 2,
+      "teaching_flow": 3,
+      "total": 13
+    },
+    "reading_notes": 7,
+    "flow_minutes_each": 40,
+    "source_reading": {
+      "native_word_blocks": 531,
+      "textbook_pdf_pages": [
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "textbook_printed_pages": [
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "cached_word_image_refs_viewed": 15,
+      "cached_word_image_refs_unviewed": 241,
+      "OLE_objects_unread": 198,
+      "extra_SVG_references_unviewed": 4,
+      "external_backup_refs_unviewed": 1,
+      "full_word_visual_audit": false
+    },
+    "actual_study_reference": {
+      "new_references": 13,
+      "total_references": 21,
+      "existing_textbook_concepts": 4
+    },
+    "evidence_checks": {
+      "missing_required_block_exclusions": 13,
+      "source_revision_mismatch_excludes_references": true,
+      "repeat_new_notes": 0
+    },
+    "lecture_totals": {
+      "knowledge": 291,
+      "methods": 155,
+      "pitfalls": 122,
+      "teaching_flow": 44
+    },
+    "lectures": 46,
+    "lectures_with_flow": 21,
+    "lectures_without_flow": 25,
+    "existing_textbook_concepts": 383,
+    "other_lectures_unchanged": 45,
+    "sync_protection": {
+      "inputs": 810,
+      "existing_files": 808,
+      "absent_paths": 2,
+      "original_word_files_and_copies": 196,
+      "state_files": 488,
+      "all_unchanged_during_knowledge_sync": true
+    },
+    "catalog_rows_before": 119,
+    "catalog_rows_after": 120,
+    "candidate_only": true,
+    "human_reviewed": false,
+    "root_model_review_completed": true
+  },
+  "validation": {
+    "knowledge": {
+      "passed": 78,
+      "seconds": 6.57,
+      "exit_code": 0,
+      "modules": [
+        "test_extend_lecture_knowledge.py",
+        "test_lecture_library.py",
+        "test_lecture_study_reference.py"
+      ]
+    },
+    "import_regression": {
+      "passed": 237,
+      "seconds": 25.23,
+      "exit_code": 0,
+      "qt_platform": "offscreen",
+      "qt_scale_factor": 1,
+      "modules": [
+        "test_word_import_identity.py",
+        "test_word_import_identity_ui.py",
+        "test_desktop_import_preview.py",
+        "test_import_preview_dialog.py",
+        "test_import_file_retry.py",
+        "test_import_batch_dialog.py",
+        "test_desktop_visual_import_ui.py",
+        "test_desktop_visual_import_facade.py",
+        "test_word_questions_service.py",
+        "test_word_question_attribute_service.py",
+        "test_word_question_dialog.py"
+      ]
+    },
+    "documentation": {
+      "tests_passed": 14,
+      "seconds": 0.58,
+      "exit_code": 0,
+      "policy": "Teacher scenarios, compact README, chapters, images, history and version boundaries: OK"
+    },
+    "ci": {
+      "identity_tests_configured": true,
+      "synthetic_capture_step_configured": true,
+      "remote_result": "pending PR"
+    },
+    "functional_tests_distinct": 315,
+    "identity_ui_scale_2": {
+      "passed": 28,
+      "seconds": 5.39,
+      "exit_code": 0,
+      "overlaps_functional_total": true,
+      "modules": [
+        "test_word_import_identity_ui.py",
+        "test_import_preview_dialog.py"
+      ]
+    },
+    "verified_implementation_files": [
+      {
+        "path": "integrations/deeptutor_shchem_v1/desktop_import_identity.py",
+        "sha256": "38549121491b482f26baa35897e9cf1c21155ac0af4b4252ad09746a90ac1056",
+        "bytes": 9081
+      },
+      {
+        "path": "integrations/deeptutor_shchem_v1/desktop_import_preview.py",
+        "sha256": "a0b6775e9d34ef166e8cc803ba63e773364f59c678f8f8ff46fbc58d5731fbf5",
+        "bytes": 21675
+      },
+      {
+        "path": "integrations/deeptutor_shchem_v1/desktop_facade.py",
+        "sha256": "a35d3bc01f5b5999998a644ba142c280c8fb6bc0caa4e5c28c25f0b8dd4df363",
+        "bytes": 317523
+      },
+      {
+        "path": "integrations/deeptutor_shchem_v1/desktop_workbench/import_preview_dialog.py",
+        "sha256": "b43b4c02e23fd55c2bd68e1b3af067e3f74c4c132eb43a4b0db3c5b8f3e83906",
+        "bytes": 29048
+      },
+      {
+        "path": "integrations/deeptutor_shchem_v1/desktop_workbench/dialogs.py",
+        "sha256": "08f4dacaf0053bb367cb85aa59975e1d4b8cf27ff02d94cda6550495b39a77dc",
+        "bytes": 86120
+      },
+      {
+        "path": "integrations/deeptutor_shchem_v1/desktop_workbench/word_question_dialog.py",
+        "sha256": "20d6a78aac3fb42060968ee53c3763cafe95c7dc7a3a8f9e9d21f308012e3b5a",
+        "bytes": 119642
+      },
+      {
+        "path": "staging/coordination/deeptutor_gateway/tests/test_word_import_identity.py",
+        "sha256": "5b2ff1e21f44282acbeba86b03a596bcb5ca20e6ee298c5fc974256b6267bdbe",
+        "bytes": 12809
+      },
+      {
+        "path": "staging/coordination/deeptutor_gateway/tests/test_word_import_identity_ui.py",
+        "sha256": "524e857a97657587d68a6fea574676277da0e8689d550c1f93109967b9554e95",
+        "bytes": 11312
+      },
+      {
+        "path": "runtime/deeptutor_shchem/word_import_identity_qa.py",
+        "sha256": "40282ac0101b29f6960c227e9259ba3710af01135e75732c62ebe5786003405b",
+        "bytes": 12827
+      }
+    ],
+    "implementation_hash_basis": "Working-tree bytes at tested handoff; Git may normalize line endings."
+  },
+  "visual_review": {
+    "synthetic_only": true,
+    "device_pixel_ratio": 2,
+    "human_reviewed": false,
+    "native_executable_acceptance": false,
+    "public_captures": 6,
+    "images": [
+      {
+        "path": "docs/qa/screenshots/2026-09-27-word-import/identity-existing-360x520-top.png",
+        "sha256": "0ac453cb025d657b6ef6c6f0ef5ab17a49b3aaec9ec23fb23fd75ccb43a7caad",
+        "root_model_viewed": true,
+        "human_reviewed": false
+      },
+      {
+        "path": "docs/qa/screenshots/2026-09-27-word-import/identity-version-360x520-bottom.png",
+        "sha256": "836f8d36817025e542ffe472f77907ec68610e2a7d4898615489f2b4d9f0d8c3",
+        "root_model_viewed": true,
+        "human_reviewed": false
+      },
+      {
+        "path": "docs/qa/screenshots/2026-09-27-word-import/identity-mixed-900x760-whole.png",
+        "sha256": "509158a9463047dc9895eb6b36e2521b9a1b38592f012379640422102ea7f8a0",
+        "root_model_viewed": true,
+        "human_reviewed": false
+      },
+      {
+        "path": "docs/qa/screenshots/2026-09-27-word-import/identity-context-360x520-bottom.png",
+        "sha256": "e6995906095a9449bd921c4fd3f2b01aab9c901760a581dd37a8f21fad69281a",
+        "root_model_viewed": true,
+        "human_reviewed": false
+      },
+      {
+        "path": "docs/qa/screenshots/2026-09-27-word-import/identity-continued-360x520.png",
+        "sha256": "68eb2beaf4f9d651edc9cee79b22405843d3aa3fbb2a6a5be9eb14afd2027bd6",
+        "root_model_viewed": true,
+        "human_reviewed": false
+      },
+      {
+        "path": "docs/qa/screenshots/2026-09-27-word-import/identity-version_saved-360x520.png",
+        "sha256": "315c7be1cd537c5dc2fb6a29def519670d4c1ee2d15b0c409d8823316c0d3639",
+        "root_model_viewed": true,
+        "human_reviewed": false
+      }
+    ],
+    "generated_final_captures": 25,
+    "root_model_viewed": 9,
+    "logical_import_sizes": [
+      "360x520",
+      "420x680",
+      "900x760"
+    ],
+    "question_reader_empty_state_size": "900x760",
+    "question_reader_existing_minimum_size": "400x600"
+  },
+  "remaining": [
+    "1054 local label tasks",
+    "25 lecture flow gaps",
+    "held source-answer issues and unread media",
+    "remaining C02/C04/C06 recovery and identity cases",
+    "teacher review and packaged executable verification"
+  ]
+}

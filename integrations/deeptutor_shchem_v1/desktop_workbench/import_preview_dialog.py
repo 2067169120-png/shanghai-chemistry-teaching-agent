@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
 )
 
 from ..desktop_word_metafile_preview import can_attempt_metafile
+from ..desktop_import_identity import selection_plan
 from .components import page_scroll, section_title, set_status
 
 
@@ -63,12 +64,15 @@ class ImportPreviewDialog(QDialog):
         self._pdf_bytes = None
         self.setWindowTitle("导入前预览与文件选择")
         self.resize(1100, 800)
-        self.setMinimumSize(400, 540)
+        self.setMinimumSize(320, 440)
         container = QWidget()
+        container.setMinimumWidth(0)
         root = QVBoxLayout(container)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
-        outer.addWidget(page_scroll(container))
+        self.scroll = page_scroll(container)
+        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        outer.addWidget(self.scroll, 1)
         root.addWidget(
             section_title(
                 "先预览，再选择导入",
@@ -77,8 +81,8 @@ class ImportPreviewDialog(QDialog):
         )
         root.addWidget(
             _label(
-                "这里选择的是整份文件：所选解析版中的知识正文和全部题目候选都会保存。"
-                "逐题勾选用于导入后的备课和练习，不表示这里只导入其中几题。"
+                "这里选择的是整份文件。新资料保存知识正文和全部题目候选；内容已保存的 Word 继续原资料。"
+                "逐题勾选用于后续备课和练习。"
             )
         )
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -107,6 +111,9 @@ class ImportPreviewDialog(QDialog):
         self.source_title = _label("请选择文件查看原文")
         self.source_title.setObjectName("CardTitle")
         right_layout.addWidget(self.source_title)
+        self.identity_note = _label()
+        self.identity_note.setAccessibleName("已有来源与本次导入的关系")
+        right_layout.addWidget(self.identity_note)
         self.source_note = _label()
         right_layout.addWidget(self.source_note)
         self.question_combo = QComboBox()
@@ -205,7 +212,14 @@ class ImportPreviewDialog(QDialog):
         self.confirm_button.setObjectName("PrimaryButton")
         self.actions.addWidget(self.cancel_button)
         self.actions.addWidget(self.confirm_button)
-        root.addLayout(self.actions)
+        footer = QWidget()
+        footer_layout = QVBoxLayout(footer)
+        footer_layout.setContentsMargins(12, 8, 12, 10)
+        self.action_summary = _label()
+        self.action_summary.setAccessibleName("本次实际保存与继续数量")
+        footer_layout.addWidget(self.action_summary)
+        footer_layout.addLayout(self.actions)
+        outer.addWidget(footer)
         self.file_list.itemChanged.connect(self._update_selection)
         self.file_list.currentItemChanged.connect(self._open_source)
         self.select_all.clicked.connect(lambda: self._check_all(True))
@@ -214,12 +228,10 @@ class ImportPreviewDialog(QDialog):
         self.tabs.currentChanged.connect(self._tab_changed)
         self.cancel_button.clicked.connect(self.reject)
         self.confirm_button.clicked.connect(self._confirm)
-        roles = {"question": "题目", "answer": "答案", "handout": "讲义"}
         for source in preview["sources"]:
-            item = QListWidgetItem(
-                f"{roles[source['role']]} · {source['source_name']}\n尚未打开查看"
-            )
+            item = QListWidgetItem()
             item.setData(Qt.ItemDataRole.UserRole, source["source_id"])
+            self._label_item(item, "尚未打开查看")
             item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             item.setCheckState(Qt.CheckState.Unchecked)
             self.file_list.addItem(item)
@@ -228,6 +240,17 @@ class ImportPreviewDialog(QDialog):
             set_status(self.status, "attention", "；".join(preview["warnings"]))
         if self.file_list.count():
             self.file_list.setCurrentRow(0)
+
+    def _identity(self, source_id):
+        return self.preview.get("identities", {}).get("items", {}).get(source_id, {})
+
+    def _label_item(self, item, viewed):
+        source_id = item.data(Qt.ItemDataRole.UserRole)
+        source = self.sources[source_id]
+        state = {"existing": "已保存 · 继续已有资料", "new_version": "同名新版本 · 另外保存"}.get(
+            self._identity(source_id).get("status"), "新资料")
+        role = {"question": "题目", "answer": "答案", "handout": "讲义"}[source["role"]]
+        item.setText(f"{role} · {source['source_name']}\n{state}\n{viewed}")
 
     def _submit(self, label, operation, success, failure):
         holder = []
@@ -263,22 +286,38 @@ class ImportPreviewDialog(QDialog):
 
     def _update_selection(self, *_args):
         selected = self._selection()
+        actions = selection_plan(list(self.sources.values()), self.preview.get("identities", {}), selected)
+        new, reused = len(actions["new"]), len(actions["reused"])
         unseen = sum(key not in self._viewed for key in selected)
         self.selection_note.setText(
             f"已选 {len(selected)} / {len(self.sources)} 份文件；所选中已打开 {len(selected) - unseen} 份，尚未打开 {unseen} 份。"
-            "打开查看不等于全部题目已核验；确认后将归档整份文件及其全部候选。"
+            "打开查看不等于题目已核验；已有资料沿用原范围和标签，新资料归档整份文件及其全部候选。"
         )
-        valid = bool(selected) and any(
+        valid = bool(selected) and (any(
             self.sources[key]["role"] != "answer" for key in selected
-        )
-        self.confirm_button.setText(f"确认导入所选 {len(selected)} 份文件")
+        ) or (not new and bool(reused)))
+        if reused:
+            self.confirm_button.setText("确认保存与继续" if new else "继续已有资料")
+        elif any(self._identity(row["source_id"]).get("status") == "new_version" for row in actions["new"]):
+            self.confirm_button.setText("确认另存新版本")
+        else:
+            self.confirm_button.setText(f"确认导入所选 {new} 份文件")
+        summary = f"本次新保存 {new} 份，继续已有 {reused} 份。"
+        if actions["repeated"]:
+            summary += f"相同内容的 {len(actions['repeated'])} 个重复选择仅处理一次。"
+        self.action_summary.setText(summary)
+        valid = valid and not actions["context_conflict"]
         self.confirm_button.setEnabled(valid and not self._source_busy)
-        if selected and not valid:
+        if actions["context_conflict"]:
+            set_status(self.status, "attention", "已有或重复 Word 不能与新题答关联拆开处理。请仅勾选已有资料继续，或单独导入新 Word 讲义。")
+        elif selected and not valid:
             set_status(
                 self.status,
                 "attention",
                 "参考答案不能单独导入，请同时选择题目或讲义文件。",
             )
+        elif selected:
+            set_status(self.status, "info", "确认只执行上方列出的保存与继续；不发送给模型，原教师标签保留。")
 
     def _clear_content(self):
         self._source_value = None
@@ -319,6 +358,17 @@ class ImportPreviewDialog(QDialog):
         self._current = source_id
         source = self.sources[source_id]
         self.source_title.setText(source["source_name"])
+        identity = self._identity(source_id)
+        if identity.get("status") == "existing":
+            existing = identity["existing"]
+            self.identity_note.setText(
+                f"内容已保存为：{existing['source_name']}\n"
+                "确认后继续原来源、原题目范围与教师标签；沿用原用途和文件名，不重新导入或补标签。"
+            )
+        elif identity.get("status") == "new_version":
+            self.identity_note.setText("同名新版本：内容与已有资料不同。确认后另外保存；旧来源和教师标签保留，不自动转移到新题。")
+        else:
+            self.identity_note.setText("新资料：确认后保存整份文件。")
         self.source_note.setText("正在本机读取原文，尚未保存…")
         self._source_busy = True
         self._update_selection()
@@ -328,7 +378,7 @@ class ImportPreviewDialog(QDialog):
                 return
             self._source_busy = False
             self._viewed.discard(source_id)
-            item.setText(item.text().split("\n")[0] + "\n预览未完成（请核对原文件）")
+            self._label_item(item, "预览未完成（请核对原文件）")
             self._clear_content()
             self.source_note.setText(
                 "本文件暂不能完整预览，未标为已查看。可取消勾选，或自行核对原文件后明确选择整份保存。"
@@ -388,8 +438,9 @@ class ImportPreviewDialog(QDialog):
         self._viewed.add(self._current)
         item = self.file_list.currentItem()
         if item:
-            item.setText(item.text().split("\n")[0] + "\n已打开内容（非逐题核验）")
-        self.source_note.setText("已打开本机内容，尚未导入。请核对后选择整份文件。")
+            self._label_item(item, "已打开内容（非逐题核验）")
+        self.source_note.setText("已打开本次原文；确认后继续已保存资料。" if self._identity(self._current).get("status") == "existing"
+                                 else "已打开本机内容，尚未导入。请核对后选择整份文件。")
         self._update_selection()
 
     def _show_word(self, value):
@@ -421,9 +472,11 @@ class ImportPreviewDialog(QDialog):
         self._show_question()
         self._mark_viewed()
         warnings = value.get("warnings", [])
+        continuation = self._identity(self._current).get("status") == "existing"
         self.source_note.setText(
             f"已打开知识原文；识别到 {self.question_combo.count()} 道候选。"
-            "下拉框只用于浏览，确认会导入整份文件。"
+            + ("下拉框只用于浏览；确认后继续原题目与标签，不重复保存。" if continuation
+               else "下拉框只用于浏览，确认会导入整份文件。")
             + ("\n待核对：" + "；".join(warnings) if warnings else "")
         )
 

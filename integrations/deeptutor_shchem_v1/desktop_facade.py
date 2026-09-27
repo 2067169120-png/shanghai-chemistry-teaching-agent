@@ -30,6 +30,7 @@ from .desktop_library import (
     image_descriptors,
 )
 from .desktop_library_session import snapshot_reader_graph
+from .desktop_import_identity import serialized_import
 from .desktop_paths import DesktopPaths
 from .desktop_preparation import DesktopPreparationError, DesktopPreparationManager
 from .desktop_preparation_provider import StructuredPreparationProvider
@@ -828,6 +829,9 @@ class DesktopVisualImportReceipt:
     native_files: tuple[DesktopNativeImportFile, ...] = ()
     native_revision: str = field(default="", repr=False)
     created_at: str = ""
+    # Ephemeral explanation of this confirmation, never persisted as a receipt
+    # or used as authority for source/range/teacher-label identity.
+    import_review: dict[str, Any] | None = field(default=None, repr=False, compare=False)
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -2754,6 +2758,7 @@ class DesktopWorkbenchFacade:
         except ImportPreviewError as exc:
             raise DesktopFacadeError(exc.code, exc.message_zh) from exc
 
+    @serialized_import
     def save_visual_import_batch(
         self,
         *,
@@ -2765,6 +2770,7 @@ class DesktopWorkbenchFacade:
         progress_callback: Callable[[Mapping[str, Any]], None] | None = None,
         should_cancel: Callable[[], bool] | None = None,
         _expected_inputs: list[dict[str, Any]] | None = None,
+        _identity_check: Callable[[], None] | None = None,
     ) -> DesktopVisualImportReceipt:
         """Archive and classify a batch without installing or calling a provider."""
 
@@ -2795,6 +2801,8 @@ class DesktopWorkbenchFacade:
             plan = coordinator.plan(request)
             if _expected_inputs is not None and should_cancel is not None and should_cancel():
                 raise DesktopFacadeError("cancelled", "导入已取消，未保存任何导入记录。")
+            if _identity_check is not None:
+                _identity_check()
             drafts = self._state.snapshot().get("drafts")
             existing = (
                 drafts.get(self._visual_import_draft_id(plan.batch_id))

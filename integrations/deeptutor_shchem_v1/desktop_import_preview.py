@@ -15,6 +15,7 @@ from uuid import uuid4
 
 from .desktop_preparation_sources import PreparationSourcesService
 from .desktop_word_question_index import index_word_questions
+from .desktop_import_identity import identity_guard, inspect_identities, selection_plan
 
 MAX_PREVIEW_SESSIONS = 3
 MAX_CACHED_WORD_SOURCES = 3
@@ -190,17 +191,20 @@ class ImportPreviewService:
                     "size_bytes": size,
                     "mime_type": MIME_TYPES[path.suffix.casefold()],
                 }
+        identities = inspect_identities(self.facade, sources)
         revision = _digest(
             {
                 "sources": sources,
                 "sizes": [private[row["source_id"]]["size_bytes"] for row in sources],
                 "source_type": source_type,
+                "identity_revision": identities["revision"],
             }
         )
         result = {
             "preview_id": "IMPORT-PREVIEW-" + uuid4().hex,
             "revision": revision,
             "sources": sources,
+            "identities": identities,
             "warnings": [
                 "此处按文件选择；确认后会导入勾选文件的完整内容及其全部候选题，文件内逐题选择用于后续备课或练习。"
             ],
@@ -373,13 +377,19 @@ class ImportPreviewService:
             for row in session["result"]["sources"]
             if row["source_id"] in selected_set
         ]
-        if all(row["role"] == "answer" for row in selected):
+        actions = selection_plan(session["result"]["sources"], session["result"]["identities"], selected_source_ids)
+        if actions["new"] and all(row["role"] == "answer" for row in selected):
             raise ImportPreviewError(
                 "question_source_required", "不能只导入答案，请同时勾选题目或讲义文件。"
             )
+        if actions["context_conflict"]:
+            raise ImportPreviewError(
+                "import_identity_context",
+                "本次含已有或重复 Word，不能拆开题目与答案的关联。请仅选择已有文件继续，或将新 Word 讲义单独导入。",
+            )
         paths = {role: [] for role in ROLES}
         expected_inputs = []
-        for row in selected:
+        for row in actions["new"]:
             private = session["private"][row["source_id"]]
             paths[row["role"]].append(private["path"])
             expected_inputs.append(
@@ -399,16 +409,54 @@ class ImportPreviewService:
                     "import_preview_busy", "这批文件正在导入，请等待完成。"
                 )
             session["busy"] = True
+        reused_receipts = {}
+
+        def revalidate():
+            current = inspect_identities(self.facade, session["result"]["sources"])
+            if current != session["result"]["identities"]:
+                raise ImportPreviewError("import_identity_changed", "已有资料或处理状态已变化，尚未保存；请重新预览后确认。")
+            # New sources are bound to the saver's final loaded bytes. Reused
+            # and collapsed inputs must also remain the bytes the teacher saw.
+            new_ids = {row["source_id"] for row in actions["new"]}
+            for row in selected:
+                if row["source_id"] not in new_ids:
+                    self._bytes(row, session["private"][row["source_id"]])
+            for target in actions["reused"]:
+                if target["batch_id"] not in reused_receipts:
+                    reused_receipts[target["batch_id"]] = self.facade.import_batch_details(target["batch_id"])
+
         try:
-            result = self.facade.save_visual_import_batch(
-                question_files=tuple(paths["question"]),
-                answer_files=tuple(paths["answer"]),
-                handout_files=tuple(paths["handout"]),
-                source_type=session["source_type"],
-                progress_callback=progress_callback,
-                should_cancel=should_cancel,
-                _expected_inputs=expected_inputs,
-            )
+            with identity_guard(self.facade.paths.state_root):
+                if actions["new"]:
+                    result = self.facade.save_visual_import_batch(
+                        question_files=tuple(paths["question"]),
+                        answer_files=tuple(paths["answer"]),
+                        handout_files=tuple(paths["handout"]),
+                        source_type=session["source_type"],
+                        progress_callback=progress_callback,
+                        should_cancel=should_cancel,
+                        _expected_inputs=expected_inputs,
+                        _identity_check=revalidate,
+                    )
+                else:
+                    if should_cancel is not None and should_cancel():
+                        raise ImportPreviewError("cancelled", "已取消，未修改已有资料。")
+                    revalidate()
+                    if should_cancel is not None and should_cancel():
+                        raise ImportPreviewError("cancelled", "已取消，未修改已有资料。")
+                    result = reused_receipts[actions["reused"][0]["batch_id"]]
+                if actions["reused"] or actions["repeated"] or any(
+                    session["result"]["identities"]["items"].get(row["source_id"], {}).get("status") == "new_version"
+                    for row in actions["new"]
+                ):
+                    from dataclasses import replace
+                    result = replace(result, import_review={
+                        "new_count": len(actions["new"]),
+                        "reused": deepcopy(actions["reused"]),
+                        "reused_receipts": tuple(reused_receipts.values()),
+                        "repeated_count": len(actions["repeated"]),
+                        "version_count": sum(session["result"]["identities"]["items"].get(row["source_id"], {}).get("status") == "new_version" for row in actions["new"]),
+                    })
         finally:
             with self._lock:
                 session["busy"] = False

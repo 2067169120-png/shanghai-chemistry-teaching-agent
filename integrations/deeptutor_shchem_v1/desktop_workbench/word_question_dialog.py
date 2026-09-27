@@ -539,6 +539,7 @@ class WordQuestionDialog(QDialog):
         parent: QWidget | None = None,
         *,
         initial_source_id: str | None = None,
+        required_source_id: str | None = None,
         initial_question_key: str | None = None,
         batch_id: str | None = None,
         lesson_topic: str = "",
@@ -549,6 +550,7 @@ class WordQuestionDialog(QDialog):
         self.reference: dict | None = None
         self.preparation_reference: dict | None = None
         self._initial_source_id = initial_source_id
+        self._required_source_id = _text(required_source_id).strip() or None
         self._initial_question_key = _text(initial_question_key).strip() or None
         self._initial_batch_id = batch_id
         self._lesson_topic = _text(lesson_topic).strip()
@@ -1102,18 +1104,26 @@ class WordQuestionDialog(QDialog):
                 )
             self.source_combo.blockSignals(True)
             self.source_combo.clear()
-            self.source_combo.addItem("全部来源", None)
+            if not self._required_source_id:
+                self.source_combo.addItem("全部来源", None)
             for source in catalog["sources"]:
                 if isinstance(source, dict) and _text(source.get("source_id")):
+                    if self._required_source_id and source["source_id"] != self._required_source_id:
+                        continue
                     name = (
                         _text(source.get("source_name"))
                         .replace("\\", "/")
                         .rsplit("/", 1)[-1]
                     )
                     self.source_combo.addItem(name or "Word 来源", source["source_id"])
+            if self._required_source_id:
+                selected_source = self._required_source_id
+                if self.source_combo.findData(selected_source) < 0:
+                    self.source_combo.addItem("本次原来源（当前暂无可用题目）", selected_source)
             self.source_combo.setCurrentIndex(
                 max(0, self.source_combo.findData(selected_source))
             )
+            self.source_combo.setEnabled(not self._required_source_id)
             self.source_combo.blockSignals(False)
             self._loaded_once = True
             self._catalog_busy = False
@@ -1128,13 +1138,16 @@ class WordQuestionDialog(QDialog):
                 for warning in catalog.get("warnings", ())
                 if isinstance(warning, str) and warning
             ]
+            scope_note = "当前只查看本次继续的原来源；其他已选题目保持。浏览其他资料请返回导入窗口。" if self._required_source_id else ""
             self.catalog_note.setText(
-                "来源读取提醒：\n" + "\n".join(warnings) if warnings else ""
+                "\n".join(filter(None, (scope_note, "来源读取提醒：\n" + "\n".join(warnings) if warnings else "")))
             )
-            self.catalog_note.setVisible(bool(warnings))
+            self.catalog_note.setVisible(bool(warnings or scope_note))
+            scope_count = sum(item.get("source_id") == self._required_source_id for item in items.values()) if self._required_source_id else len(items)
+            scope_missing = bool(self._required_source_id and not scope_count)
             message = (
-                f"已读取 {len(items)} 道题。题目分段和图片仍须逐题核对。"
-                if items
+                f"已读取 {scope_count} 道题。题目分段和图片仍须逐题核对。"
+                if scope_count
                 else "尚无可用题目，请先导入 Word 或查看来源读取提醒。"
             )
             if removed:
@@ -1144,9 +1157,11 @@ class WordQuestionDialog(QDialog):
                 message += f" 有 {len(warnings)} 条来源读取提醒，请先核对。"
             if requested_missing:
                 message = "待处理题目已变化或不在当前目录，未选中其他题。请返回刷新进度后重新定位。"
+            if scope_missing:
+                message = "原来源当前没有可用题目，未显示其他来源。请返回查看原文或原批次进度。"
             set_status(
                 self.status,
-                "attention" if requested_missing or removed or warnings or not items else "success",
+                "attention" if requested_missing or scope_missing or removed or warnings or not items else "success",
                 message,
             )
         except (KeyError, TypeError, ValueError):
@@ -1213,8 +1228,14 @@ class WordQuestionDialog(QDialog):
             widget.blockSignals(False)
         self._refresh_curriculum_filters()
         options = compile_filter_options(list(self._items.values()), self._attribute_catalog)
+        if self._required_source_id:
+            options["groups"]["source"] = [
+                row for row in options["groups"]["source"]
+                if row["id"] == self._required_source_id
+            ] or [{"id": self._required_source_id, "label": self.source_combo.currentText()}]
         first_filter_load = not self.multi_filter_panel.options
         self.multi_filter_panel.set_options(options["groups"])
+        self.multi_filter_panel.buttons["source"].setEnabled(not self._required_source_id)
         if first_filter_load and self.source_combo.currentData():
             self._legacy_filter_changed("source")
         self._refresh_lesson_suggestions()
@@ -1538,6 +1559,8 @@ class WordQuestionDialog(QDialog):
             {**self.multi_filter_panel.matching_selection(), "query": query}, self._attribute_catalog
         )
         for key, value in self._items.items():
+            if self._required_source_id and value.get("source_id") != self._required_source_id:
+                continue
             if not matcher(value):
                 continue
             question_text = " ".join(
@@ -1684,7 +1707,16 @@ class WordQuestionDialog(QDialog):
         layout = self._panel_layouts[index]
         value = self._items.get(self._current_key, {})
         if not value:
-            layout.addWidget(_label("请调整来源筛选或搜索词。", muted=True))
+            if self._required_source_id and not any(
+                item.get("source_id") == self._required_source_id
+                for item in self._items.values()
+            ):
+                message = "原来源当前没有可用题目，请返回查看原文或原批次进度。"
+            elif self._required_source_id:
+                message = "请调整筛选条件或搜索词。"
+            else:
+                message = "请调整来源筛选或搜索词。"
+            layout.addWidget(_label(message, muted=True))
             layout.addStretch(1)
             return
         blocks = (

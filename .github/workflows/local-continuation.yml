@@ -69,6 +69,15 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: python runtime/deeptutor_shchem/import_batch_review_qa.py --output local-continuation-qa/import-retry
+      - name: Check duplicate Word continuation and separately saved versions
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_word_import_identity.py staging/coordination/deeptutor_gateway/tests/test_word_import_identity_ui.py staging/coordination/deeptutor_gateway/tests/test_import_preview_dialog.py --junitxml=local-continuation-qa/word-import-identity.xml
+      - name: Capture duplicate, version and mixed Word import states
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_SCALE_FACTOR: '2'
+        run: python runtime/deeptutor_shchem/word_import_identity_qa.py --output local-continuation-qa/word-import-identity
       - name: Check visual shard recovery and exact outbound disclosure
         env:
           QT_QPA_PLATFORM: offscreen
