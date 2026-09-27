@@ -8,7 +8,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import Qt, QTimer, QUrl, Signal
+from PySide6.QtCore import QEvent, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QCloseEvent, QDesktopServices, QPixmap, QResizeEvent
 from PySide6.QtWidgets import (
     QBoxLayout,
@@ -594,14 +594,14 @@ class WordQuestionDialog(QDialog):
         self._export_paths: dict[str, str] = {}
         self.setWindowTitle("Word 逐题浏览与选题")
         self.resize(1200, 820)
-        self.setMinimumSize(400, 600)
+        self.setMinimumSize(320, 440)
         content = QWidget()
         root = QVBoxLayout(content)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         self.body_scroll = page_scroll(content)
         content.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
-        outer.addWidget(self.body_scroll)
+        outer.addWidget(self.body_scroll, 1)
         root.setContentsMargins(16, 16, 16, 16)
         root.setSpacing(10)
         root.addWidget(
@@ -755,7 +755,8 @@ class WordQuestionDialog(QDialog):
         self.detail_note = _label("", muted=True)
         right_layout.addWidget(self.detail_title)
         right_layout.addWidget(self.detail_note)
-        self.question_tools_button = QPushButton("题目设置与标签 ▸")
+        self.question_tools_button = QPushButton("题目设置与标签（展开）")
+        self.question_tools_button.setAccessibleName("展开题目设置与标签")
         self.question_tools_button.setObjectName("QuietButton")
         self.question_tools_button.setCheckable(True)
         right_layout.addWidget(self.question_tools_button, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -764,7 +765,11 @@ class WordQuestionDialog(QDialog):
         tools_layout.setContentsMargins(0, 0, 0, 0)
         tools_layout.setSpacing(4)
         self.question_tools.hide()
-        self.question_tools_button.toggled.connect(self.question_tools.setVisible)
+        self.question_tools_button.toggled.connect(
+            lambda checked: self._toggle_section(
+                checked, self.question_tools_button, self.question_tools, "题目设置与标签"
+            )
+        )
         self.question_tools_button.setChecked(bool(self._initial_question_key))
         right_layout.addWidget(self.question_tools)
         self.attribute_note = _label("", muted=True)
@@ -849,7 +854,8 @@ class WordQuestionDialog(QDialog):
         for button in (self.basket_preview_button, self.basket_add_button):
             button.setVisible(callable(getattr(facade, "add_word_questions_to_basket", None)))
             root.addWidget(button)
-        self.preparation_toggle = QPushButton("用所选题备课 ▸")
+        self.preparation_toggle = QPushButton("用所选题备课（展开）")
+        self.preparation_toggle.setAccessibleName("展开用所选题备课")
         self.preparation_toggle.setObjectName("QuietButton")
         self.preparation_toggle.setCheckable(True)
         root.addWidget(self.preparation_toggle, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -857,7 +863,11 @@ class WordQuestionDialog(QDialog):
         preparation_layout = QVBoxLayout(self.preparation_controls)
         preparation_layout.setContentsMargins(0, 0, 0, 0)
         preparation_layout.setSpacing(6)
-        self.preparation_toggle.toggled.connect(self.preparation_controls.setVisible)
+        self.preparation_toggle.toggled.connect(
+            lambda checked: self._toggle_section(
+                checked, self.preparation_toggle, self.preparation_controls, "用所选题备课"
+            )
+        )
         self.preparation_toggle.setChecked(bool(self._lesson_topic))
         self.preparation_controls.setVisible(bool(self._lesson_topic))
         root.addWidget(self.preparation_controls)
@@ -914,13 +924,22 @@ class WordQuestionDialog(QDialog):
         self.export_note.setAccessibleName("练习导出提醒")
         self.export_note.hide()
         root.addWidget(self.export_note)
+        self.reader_footer = QWidget()
+        self.reader_footer.setMinimumWidth(0)
+        self.reader_footer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+        footer_layout = QVBoxLayout(self.reader_footer)
+        footer_layout.setContentsMargins(16, 8, 16, 12)
+        footer_layout.setSpacing(6)
         self.status = _label("正在读取已保存的 Word 题目…")
         self.status.setAccessibleName("Word 选题状态")
-        root.addWidget(self.status)
+        self.status.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        footer_layout.addWidget(self.status)
         self.close_button = QPushButton("关闭")
         self.close_button.setObjectName("QuietButton")
         self.close_button.clicked.connect(self.reject)
-        root.addWidget(self.close_button, alignment=Qt.AlignmentFlag.AlignRight)
+        footer_layout.addWidget(self.close_button, alignment=Qt.AlignmentFlag.AlignRight)
+        outer.addWidget(self.reader_footer)
+        self.body_scroll.viewport().installEventFilter(self)
         self.source_combo.currentIndexChanged.connect(lambda: self._legacy_filter_changed("source"))
         self.volume_filter.currentIndexChanged.connect(self._curriculum_parent_changed)
         self.chapter_filter.currentIndexChanged.connect(self._curriculum_parent_changed)
@@ -1663,7 +1682,13 @@ class WordQuestionDialog(QDialog):
         for index in (0, 1):
             self._clear_panel(index)
         value = self._items.get(key, {})
-        self.detail_title.setText(_text(value.get("title")) or "没有符合条件的题目")
+        source_empty = self._required_source_id and not any(
+            item.get("source_id") == self._required_source_id for item in self._items.values()
+        )
+        self.detail_title.setText(
+            _text(value.get("title"))
+            or ("原来源暂无可用题目" if source_empty else "没有符合条件的题目")
+        )
         source = _text(value.get("source_label")) or _text(value.get("source_name"))
         self.detail_note.setText(
             " · ".join(part for part in (source, _text(value.get("chapter"))) if part)
@@ -1699,6 +1724,7 @@ class WordQuestionDialog(QDialog):
     def _tab_changed(self, index: int) -> None:
         if index in (0, 1):
             self._render_tab(index)
+        self._adapt_reader_height()
 
     def _render_tab(self, index: int) -> None:
         if index in self._loaded_tabs:
@@ -2599,6 +2625,42 @@ class WordQuestionDialog(QDialog):
         if self._basket_busy:
             for control in (self.question_list, self.points, self.reload_button, self.range_button, self.attributes_button, self.clear_button, self.preview_button, self.import_button, self.export_button):
                 control.setEnabled(False)
+        self._adapt_reader_height()
+
+    def _toggle_section(self, checked, button, panel, title) -> None:
+        panel.setVisible(checked)
+        action = "收起" if checked else "展开"
+        button.setText(f"{title}（{action}）")
+        button.setAccessibleName(action + title)
+        if checked and self.isVisible():
+            QTimer.singleShot(0, lambda: self._reveal_section(panel))
+
+    def _reveal_section(self, panel) -> None:
+        if self._closed or not self.isVisible() or not panel.isVisible():
+            return
+        point = panel.mapTo(self.body_scroll.widget(), panel.rect().topLeft())
+        self.body_scroll.ensureVisible(point.x(), point.y(), 0, 12)
+
+    def _adapt_reader_height(self) -> None:
+        """Keep nested reading scrolls useful without a large empty placeholder."""
+        if self._closed:
+            return
+        has_content = self._current_key in self._items or (
+            self.tabs.currentIndex() == 2 and bool(self.preview.toPlainText())
+        )
+        available = self.body_scroll.viewport().height()
+        normal = 310 if self.width() < 760 else 400
+        height = min(normal, max(160, available - 260)) if has_content else 130
+        maximum = 16777215 if has_content else height
+        if self.tabs.minimumHeight() != height:
+            self.tabs.setMinimumHeight(height)
+        if self.tabs.maximumHeight() != maximum:
+            self.tabs.setMaximumHeight(maximum)
+
+    def eventFilter(self, watched, event) -> bool:
+        if watched is self.body_scroll.viewport() and event.type() == QEvent.Type.Resize:
+            self._adapt_reader_height()
+        return super().eventFilter(watched, event)
 
     def _finish_dialog(self, result: QDialog.DialogCode) -> None:
         if self._closed:
@@ -2647,7 +2709,7 @@ class WordQuestionDialog(QDialog):
         narrow = event.size().width() < 760
         self.question_navigation.setMaximumHeight(150 if narrow else 16777215)
         self.question_list.setMinimumHeight(55 if narrow else 115)
-        self.tabs.setMinimumHeight(310 if narrow else 400)
+        self._adapt_reader_height()
         orientation = Qt.Orientation.Vertical if narrow else Qt.Orientation.Horizontal
         if self.splitter.orientation() != orientation:
             self.splitter.setOrientation(orientation)

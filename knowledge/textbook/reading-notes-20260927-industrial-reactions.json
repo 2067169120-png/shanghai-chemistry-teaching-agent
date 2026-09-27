@@ -1,0 +1,940 @@
+{
+  "schema_version": "shchem.textbook-page-reading-notes.v1",
+  "purpose": "选必一2.4与必修二6.3共15页完整模型研读候选；与PKG-092原文及实际所见工艺图绑定，非官方答案、非人审。",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "original_source_redistribution": false,
+  "review_method": "page_images_read_by_model",
+  "root_review_completed": true,
+  "root_model_review_completed": true,
+  "sources": [
+    {
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.4",
+      "sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "pdf_pages_viewed": [
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58
+      ],
+      "printed_pages_viewed": [
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52
+      ],
+      "page_number_convention": "正文数字页码为PDF页序，印刷页另列。"
+    },
+    {
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.3",
+      "sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "pdf_pages_viewed": [
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67
+      ],
+      "printed_pages_viewed": [
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63
+      ],
+      "page_number_convention": "正文数字页码为PDF页序，印刷页另列。"
+    }
+  ],
+  "notes": [
+    {
+      "id": "READ-TB-E1-20260927-INDUSTRY-01",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.4",
+      "title": "合成氨条件是有边界的工艺示例",
+      "pdf_pages": [
+        52,
+        53,
+        54
+      ],
+      "printed_pages": [
+        46,
+        47,
+        48
+      ],
+      "source_anchors": [
+        "2.4工业合成氨",
+        "图2.7",
+        "反应条件总结"
+      ],
+      "summary": "图2.7在H₂:N₂=3的背景下比较平衡氨含量与温压。教材讨论约500℃、20—50MPa、H₂:N₂=2.8—2.9的工艺条件；讲义151/160采用10—30MPa等示例，数值应各自保留。温度影响速率与平衡方向不同，催化剂有适用活性范围；这些来源不能给任意装置规定永久最优参数。",
+      "classroom_check": "逐项写出数据所属来源、混合比和比较条件；指出图示平衡氨含量与单位时间产量不相同。",
+      "lecture_package_id": "PKG-092",
+      "lecture_block_indices": [
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-092/第13讲 硫酸工业与合成氨工业（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "b0c0276c5d9874864cecf8a5853556eba7f1c21d44e23bdc40620a1b5f983c4a",
+      "source_preview_revision": "497655a57ddaa91d31932d7a4eaa992811a433f4f483c0272306481efe50f1d4",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 139,
+          "end": 157,
+          "start_xml_locator": "word/document.xml#/w:body/*[144]",
+          "end_xml_locator": "word/document.xml#/w:body/*[162]"
+        },
+        {
+          "start": 158,
+          "end": 166,
+          "start_xml_locator": "word/document.xml#/w:body/*[163]",
+          "end_xml_locator": "word/document.xml#/w:body/*[171]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.4",
+        "pdf_pages": [
+          52,
+          53,
+          54
+        ],
+        "printed_pages": [
+          46,
+          47,
+          48
+        ],
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "evidence_role": "actual textbook pages read; lecture extensions identified separately",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "anchors": [
+          "2.4工业合成氨",
+          "图2.7",
+          "反应条件总结"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "已读三页含史话，历史与现今工艺真实性未作外部核验。",
+        "不将图2.7曲线读数作高精度测量或替代讲义103表。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-INDUSTRY-02",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.4",
+      "title": "原料路线、净化与催化体系对应",
+      "pdf_pages": [
+        55,
+        56
+      ],
+      "printed_pages": [
+        49,
+        50
+      ],
+      "source_anchors": [
+        "原料气制造",
+        "原料气净化",
+        "表面化学拓展"
+      ],
+      "summary": "本页把原料气制造、净化和催化合成串联，指出H₂S、CO等可使所述催化剂失活。净化对象依原料路线和催化体系决定；蒸汽转化制氢及一氧化碳与水蒸气反应只是书中所列路线，不意味着任何氢源都含CO。表面反应史话用于理解催化过程，不据此宣称所有催化剂只有同一机理。",
+      "classroom_check": "把“净化除去谁、保护哪个操作段”写完整，并与硫酸原料气净化作流程位置比较。",
+      "lecture_package_id": "PKG-092",
+      "lecture_block_indices": [
+        45,
+        46,
+        47,
+        48,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-092/第13讲 硫酸工业与合成氨工业（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "b0c0276c5d9874864cecf8a5853556eba7f1c21d44e23bdc40620a1b5f983c4a",
+      "source_preview_revision": "497655a57ddaa91d31932d7a4eaa992811a433f4f483c0272306481efe50f1d4",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 45,
+          "end": 48,
+          "start_xml_locator": "word/document.xml#/w:body/*[48]",
+          "end_xml_locator": "word/document.xml#/w:body/*[51]"
+        },
+        {
+          "start": 158,
+          "end": 166,
+          "start_xml_locator": "word/document.xml#/w:body/*[163]",
+          "end_xml_locator": "word/document.xml#/w:body/*[171]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.4",
+        "pdf_pages": [
+          55,
+          56
+        ],
+        "printed_pages": [
+          49,
+          50
+        ],
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "evidence_role": "actual textbook pages read; lecture extensions identified separately",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "anchors": [
+          "原料气制造",
+          "原料气净化",
+          "表面化学拓展"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "没有调用外部模型或核验新催化剂工业现状；不生成微观机理新定论。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-INDUSTRY-03",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.4",
+      "title": "合成塔、冷凝分离和循环是不同操作",
+      "pdf_pages": [
+        56,
+        58
+      ],
+      "printed_pages": [
+        50,
+        52
+      ],
+      "source_anchors": [
+        "图2.8",
+        "图2.9",
+        "循环利用练习"
+      ],
+      "summary": "图2.8连接压缩、除油、合成塔、冷却与氨分离，回流气再入循环；图2.9显示换热器、催化剂层和电加热器。把冷凝液氨移出与反应气在催化层反应分开解释，说明循环提高总体原料利用而非让一次反应必然完全。回收放热可用于预热，但不能据示意图承诺启动和所有工况均无需供热。",
+      "classroom_check": "沿160原图为各箭头标氮气/氢气/氨与物态，对照227图检查反应、分离与回流的先后。",
+      "lecture_package_id": "PKG-092",
+      "lecture_block_indices": [
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188,
+        226,
+        227,
+        228,
+        229,
+        230
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-092/第13讲 硫酸工业与合成氨工业（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "b0c0276c5d9874864cecf8a5853556eba7f1c21d44e23bdc40620a1b5f983c4a",
+      "source_preview_revision": "497655a57ddaa91d31932d7a4eaa992811a433f4f483c0272306481efe50f1d4",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 158,
+          "end": 166,
+          "start_xml_locator": "word/document.xml#/w:body/*[163]",
+          "end_xml_locator": "word/document.xml#/w:body/*[171]"
+        },
+        {
+          "start": 181,
+          "end": 188,
+          "start_xml_locator": "word/document.xml#/w:body/*[188]",
+          "end_xml_locator": "word/document.xml#/w:body/*[195]"
+        },
+        {
+          "start": 226,
+          "end": 230,
+          "start_xml_locator": "word/document.xml#/w:body/*[236]",
+          "end_xml_locator": "word/document.xml#/w:body/*[240]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.4",
+        "pdf_pages": [
+          56,
+          58
+        ],
+        "printed_pages": [
+          50,
+          52
+        ],
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "evidence_role": "actual textbook pages read; lecture extensions identified separately",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "anchors": [
+          "图2.8",
+          "图2.9",
+          "循环利用练习"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "教材出口含氨10—20%属于该页语境，不与讲义某题15%拼作新的精确工艺数据。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-INDUSTRY-04",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.4",
+      "title": "CO吸收与吸收液再生采用相反操作方向",
+      "pdf_pages": [
+        57
+      ],
+      "printed_pages": [
+        51
+      ],
+      "source_anchors": [
+        "铜氨醋酸溶液例题",
+        "可逆吸收CO",
+        "再生利用"
+      ],
+      "summary": "教材给出含CO气体与铜氨醋酸溶液发生可逆放热结合的模型：在其他条件可比时，较高CO分压与较低温度有利于吸收；再生则利用升温、降压释放CO。这里反复使用的是吸收液，不能把模型直接推广为任意杂质处理，也不能只看总压而忽略CO分压。",
+      "classroom_check": "分别标“吸收段”和“再生段”的目标，写清气体种类、温度与分压；无需从Word未读对象补反应式。",
+      "lecture_package_id": "PKG-092",
+      "lecture_block_indices": [
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-092/第13讲 硫酸工业与合成氨工业（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "b0c0276c5d9874864cecf8a5853556eba7f1c21d44e23bdc40620a1b5f983c4a",
+      "source_preview_revision": "497655a57ddaa91d31932d7a4eaa992811a433f4f483c0272306481efe50f1d4",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 48,
+          "end": 53,
+          "start_xml_locator": "word/document.xml#/w:body/*[51]",
+          "end_xml_locator": "word/document.xml#/w:body/*[56]"
+        },
+        {
+          "start": 158,
+          "end": 166,
+          "start_xml_locator": "word/document.xml#/w:body/*[163]",
+          "end_xml_locator": "word/document.xml#/w:body/*[171]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.4",
+        "pdf_pages": [
+          57
+        ],
+        "printed_pages": [
+          51
+        ],
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "evidence_role": "actual textbook pages read; lecture extensions identified separately",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "anchors": [
+          "铜氨醋酸溶液例题",
+          "可逆吸收CO",
+          "再生利用"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "此具体吸收模型来自教材，讲义区块只关联净化和分离原理。",
+        "不把教材“任何一种原料气”理解为所有现代制氢路线的分析事实。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-M2-20260927-INDUSTRY-05",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.3",
+      "title": "硫酸三段流程从硫元素守恒展开",
+      "pdf_pages": [
+        60,
+        61,
+        62
+      ],
+      "printed_pages": [
+        56,
+        57,
+        58
+      ],
+      "source_anchors": [
+        "制取二氧化硫",
+        "催化氧化",
+        "图6.12",
+        "图6.13"
+      ],
+      "summary": "制气、催化转化、吸收是硫酸流程的三段任务。原料选硫、硫铁矿或含硫工业气体时，原料组成、杂质和废物也随之改变；不能只凭原料名称比较总成本。沸腾炉图说明气固接触，转化器图说明催化层与换热的安排。教材从物料守恒出发，要求硫元素在进料、产品和含硫尾气之间追踪。",
+      "classroom_check": "用111图核制气炉、净化、接触室、吸收塔各自输入输出，检查原文135为何误把进料SO₂当应除尽杂质。",
+      "lecture_package_id": "PKG-092",
+      "lecture_block_indices": [
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-092/第13讲 硫酸工业与合成氨工业（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "b0c0276c5d9874864cecf8a5853556eba7f1c21d44e23bdc40620a1b5f983c4a",
+      "source_preview_revision": "497655a57ddaa91d31932d7a4eaa992811a433f4f483c0272306481efe50f1d4",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 89,
+          "end": 94,
+          "start_xml_locator": "word/document.xml#/w:body/*[94]",
+          "end_xml_locator": "word/document.xml#/w:body/*[99]"
+        },
+        {
+          "start": 110,
+          "end": 136,
+          "start_xml_locator": "word/document.xml#/w:body/*[115]",
+          "end_xml_locator": "word/document.xml#/w:body/*[141]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-M2",
+        "section_key": "TB-M2-C6:6.3",
+        "pdf_pages": [
+          60,
+          61,
+          62
+        ],
+        "printed_pages": [
+          56,
+          57,
+          58
+        ],
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "evidence_role": "actual textbook pages read; lecture extensions identified separately",
+        "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+        "anchors": [
+          "制取二氧化硫",
+          "催化氧化",
+          "图6.12",
+          "图6.13"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "2018年产量与原料发展趋势只列已读范围，不充当当前行业统计。",
+        "完整守恒衡算还需进出料测量，示意图未提供这些数据。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-M2-20260927-INDUSTRY-06",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.3",
+      "title": "吸收总反应与吸收塔操作不能混写",
+      "pdf_pages": [
+        63
+      ],
+      "printed_pages": [
+        59
+      ],
+      "source_anchors": [
+        "98.3%硫酸",
+        "酸雾",
+        "气液逆流"
+      ],
+      "summary": "SO₃最终与水形成硫酸说明总计量关系；吸收段却采用质量分数98.3%的硫酸。教材指出用水或稀硫酸易产生酸雾，影响吸收速率，并通过气体下进、液体上进的逆流方式改善接触。说明“浓硫酸吸收SO₃”的具体用途，比只写“水能与SO₃反应”更符合本页工艺语境。",
+      "classroom_check": "在111图C中标气体入口、吸收液入口、尾气和液体出口，分别写化学变化与操作理由。",
+      "lecture_package_id": "PKG-092",
+      "lecture_block_indices": [
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-092/第13讲 硫酸工业与合成氨工业（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "b0c0276c5d9874864cecf8a5853556eba7f1c21d44e23bdc40620a1b5f983c4a",
+      "source_preview_revision": "497655a57ddaa91d31932d7a4eaa992811a433f4f483c0272306481efe50f1d4",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 110,
+          "end": 136,
+          "start_xml_locator": "word/document.xml#/w:body/*[115]",
+          "end_xml_locator": "word/document.xml#/w:body/*[141]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-M2",
+        "section_key": "TB-M2-C6:6.3",
+        "pdf_pages": [
+          63
+        ],
+        "printed_pages": [
+          59
+        ],
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "evidence_role": "actual textbook pages read; lecture extensions identified separately",
+        "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+        "anchors": [
+          "98.3%硫酸",
+          "酸雾",
+          "气液逆流"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "98.3%是原教材工艺示例；不宣称所有不同装置和温度的唯一最优浓度。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-M2-20260927-INDUSTRY-07",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.3",
+      "title": "余热回收先辨流股再辨温度效果",
+      "pdf_pages": [
+        64,
+        66
+      ],
+      "printed_pages": [
+        60,
+        62
+      ],
+      "source_anchors": [
+        "余热利用",
+        "热交换器",
+        "475℃例题"
+      ],
+      "summary": "教材用反应热预热冷原料，同时带走热反应气的部分热量；这是不同流股和位置的温度安排。例题讨论约475℃的V₂O₅催化体系，不等于越高温催化效果越好。沿图6.13及讲义212图追踪，换热后还经过下一催化层，组成会继续因反应而改变，不能把该段直接解释为SO₃冷凝。",
+      "classroom_check": "对每一段填写“是否反应、是否分离、是否混合、热量向谁传递”；对218原解析写出与图不符的具体位置。",
+      "lecture_package_id": "PKG-092",
+      "lecture_block_indices": [
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        211,
+        212,
+        213,
+        214,
+        215,
+        216,
+        217,
+        218
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-092/第13讲 硫酸工业与合成氨工业（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "b0c0276c5d9874864cecf8a5853556eba7f1c21d44e23bdc40620a1b5f983c4a",
+      "source_preview_revision": "497655a57ddaa91d31932d7a4eaa992811a433f4f483c0272306481efe50f1d4",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 110,
+          "end": 136,
+          "start_xml_locator": "word/document.xml#/w:body/*[115]",
+          "end_xml_locator": "word/document.xml#/w:body/*[141]"
+        },
+        {
+          "start": 211,
+          "end": 218,
+          "start_xml_locator": "word/document.xml#/w:body/*[221]",
+          "end_xml_locator": "word/document.xml#/w:body/*[228]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-M2",
+        "section_key": "TB-M2-C6:6.3",
+        "pdf_pages": [
+          64,
+          66
+        ],
+        "printed_pages": [
+          60,
+          62
+        ],
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "evidence_role": "actual textbook pages read; lecture extensions identified separately",
+        "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+        "anchors": [
+          "余热利用",
+          "热交换器",
+          "475℃例题"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "图示没有完整能量参数，不能算实际热效率或承诺免外加热运行。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-M2-20260927-INDUSTRY-08",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.3",
+      "title": "三废处置和资源回收需要分别列物料",
+      "pdf_pages": [
+        64,
+        65,
+        66
+      ],
+      "printed_pages": [
+        60,
+        61,
+        62
+      ],
+      "source_anchors": [
+        "氨酸法",
+        "酸性废水",
+        "含铁固废"
+      ],
+      "summary": "教材氨酸法先用氨水吸收SO₂，再用硫酸处理含亚硫酸氢铵溶液，释放SO₂回制酸并得到硫酸铵。未污染冷却水、酸性废水和含铁固废分开处理：循环水不等于任意废水可直接循环，固废用途取决于含铁量及杂质。资源化和污染削减须按各股物料核算，不能仅因存在循环箭头便称零排放。",
+      "classroom_check": "独立配平吸收/再生两阶段并圈出回流物质，区别讲义碱过量生成亚硫酸钠的例子。",
+      "lecture_package_id": "PKG-092",
+      "lecture_block_indices": [
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-092/第13讲 硫酸工业与合成氨工业（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "b0c0276c5d9874864cecf8a5853556eba7f1c21d44e23bdc40620a1b5f983c4a",
+      "source_preview_revision": "497655a57ddaa91d31932d7a4eaa992811a433f4f483c0272306481efe50f1d4",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 89,
+          "end": 94,
+          "start_xml_locator": "word/document.xml#/w:body/*[94]",
+          "end_xml_locator": "word/document.xml#/w:body/*[99]"
+        },
+        {
+          "start": 110,
+          "end": 136,
+          "start_xml_locator": "word/document.xml#/w:body/*[115]",
+          "end_xml_locator": "word/document.xml#/w:body/*[141]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-M2",
+        "section_key": "TB-M2-C6:6.3",
+        "pdf_pages": [
+          64,
+          65,
+          66
+        ],
+        "printed_pages": [
+          60,
+          61,
+          62
+        ],
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "evidence_role": "actual textbook pages read; lecture extensions identified separately",
+        "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+        "anchors": [
+          "氨酸法",
+          "酸性废水",
+          "含铁固废"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "氨酸法细节来自教材64—65；讲义仅作尾气治理主题连接，不冒称Word包含同一流程。",
+        "未核排放指标、收率或真实厂区安全合规。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-M2-20260927-INDUSTRY-09",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.3",
+      "title": "硫酸铵联产回路用守恒识别循环物",
+      "pdf_pages": [
+        67
+      ],
+      "printed_pages": [
+        63
+      ],
+      "source_anchors": [
+        "练习4沉淀池",
+        "煅烧炉",
+        "回流X"
+      ],
+      "summary": "原图给沉淀池生成CaCO₃与硫酸铵，沉淀送煅烧炉。按CaCO₃(s)→CaO(s)+CO₂(g)（碳酸钙、氧化钙、二氧化碳；高温煅烧）独立核算，回流X为CO₂，副产物为CaO；每1mol碳酸钙的计量对应两者各1mol。反应式守恒支持物质识别，但不等于已验证实际收率、热量来源或经济收益。",
+      "classroom_check": "圈出气体回路、沉淀去向与滤液中的硫酸铵，解释为何工业评价还需要能耗和分离等数据。",
+      "lecture_package_id": "PKG-092",
+      "lecture_block_indices": [
+        24,
+        25,
+        26,
+        27,
+        28,
+        49,
+        50,
+        51,
+        52,
+        53,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-092/第13讲 硫酸工业与合成氨工业（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "b0c0276c5d9874864cecf8a5853556eba7f1c21d44e23bdc40620a1b5f983c4a",
+      "source_preview_revision": "497655a57ddaa91d31932d7a4eaa992811a433f4f483c0272306481efe50f1d4",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 24,
+          "end": 28,
+          "start_xml_locator": "word/document.xml#/w:body/*[27]",
+          "end_xml_locator": "word/document.xml#/w:body/*[31]"
+        },
+        {
+          "start": 49,
+          "end": 53,
+          "start_xml_locator": "word/document.xml#/w:body/*[52]",
+          "end_xml_locator": "word/document.xml#/w:body/*[56]"
+        },
+        {
+          "start": 129,
+          "end": 136,
+          "start_xml_locator": "word/document.xml#/w:body/*[134]",
+          "end_xml_locator": "word/document.xml#/w:body/*[141]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-M2",
+        "section_key": "TB-M2-C6:6.3",
+        "pdf_pages": [
+          67
+        ],
+        "printed_pages": [
+          63
+        ],
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "evidence_role": "actual textbook pages read; lecture extensions identified separately",
+        "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+        "anchors": [
+          "练习4沉淀池",
+          "煅烧炉",
+          "回流X"
+        ],
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "教材独有综合利用练习，Word范围只提供工业目标/循环/环境背景。",
+        "该解答为模型独立推导，非教材印刷答案或官方评分点。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    }
+  ]
+}
