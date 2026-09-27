@@ -1,0 +1,679 @@
+{
+  "schema_version": "shchem.textbook-page-reading-notes.v1",
+  "purpose": "选必一2.3 PDF47—51（印刷41—45）五页原图研读候选，关联PKG-088完整上下文和实际所见图片；主代理模型核对平均/瞬时、组分/统一速率、体积条件与来源疑点，仍待教师核对。",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "original_source_redistribution": false,
+  "review_method": "page_images_read_by_model",
+  "source": {
+    "volume_id": "TB-E1",
+    "title": "普通高中教科书 化学 选择性必修1 化学反应原理",
+    "sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+    "pdf_pages_viewed": [
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "printed_pages_viewed": [
+      41,
+      42,
+      43,
+      44,
+      45
+    ],
+    "toc_pdf_pages_viewed": [],
+    "linked_pdf_pages": [
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "page_number_convention": "正文教材页号均为PDF页序，printed_pages为印刷页码。"
+  },
+  "notes": [
+    {
+      "id": "READ-TB-E1-20260927-RATE-01",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.3",
+      "title": "平均速率先写对象、时间段与归一规则",
+      "pdf_pages": [
+        47
+      ],
+      "printed_pages": [
+        41
+      ],
+      "source_anchors": [
+        "2.3引入",
+        "Δc取正值",
+        "按系数归一的v",
+        "瞬时速率侧栏"
+      ],
+      "summary": "热力学上可以进行并不等于在观察时间内足够快。原页同时给物质的平均速率和除以计量系数的统一v；记录时先说明采用哪种定义、哪个区间及单位。瞬时速率是时间间隔趋近零的极限，单个较长区间不能直接给出某时刻值。",
+      "classroom_check": "用149的10min数据标“平均”，核对156的“平衡量”标签为何超出题设；在体积变化时先用n与V分别列账。",
+      "lecture_package_id": "PKG-088",
+      "lecture_block_indices": [
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-088/第11讲 化学反应速率（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "a99cc06139ed468668a0b8f2a2d29779e937144820e82d2c37d5e9dcd913ba72",
+      "source_preview_revision": "877a833ee1d505500bbb94c1c5f3a696aff64c78c09d7cd8619b38b41e4ad81a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 37,
+          "end": 79,
+          "start_xml_locator": "word/document.xml#/w:body/*[44]",
+          "end_xml_locator": "word/document.xml#/w:body/*[89]"
+        },
+        {
+          "start": 149,
+          "end": 157,
+          "start_xml_locator": "word/document.xml#/w:body/*[159]",
+          "end_xml_locator": "word/document.xml#/w:body/*[167]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          47
+        ],
+        "printed_pages": [
+          41
+        ],
+        "anchors": [
+          "2.3引入",
+          "Δc取正值",
+          "按系数归一的v",
+          "瞬时速率侧栏"
+        ],
+        "support_role": "direct_page_reading_with_explicit_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未读41/44旧公式与64的OMML；本页定义原图已实际查看，不补写Word缺式。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-RATE-02",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.3",
+      "title": "从测量信号到速率须有条件与校准",
+      "pdf_pages": [
+        48
+      ],
+      "printed_pages": [
+        42
+      ],
+      "source_anchors": [
+        "量气法",
+        "分光光度法",
+        "浓度、温度、压强等因素"
+      ],
+      "summary": "教材把压强、体积或吸光度列为间接测量途径，须再得到浓度变化。110装置可用于产氢读数，但可比温压、气密性和计时/混合条件不能省略。272/274又说明总压与反应气体浓度并不等价，不能把加惰性气体的一切情形写成同一速率变化。",
+      "classroom_check": "为量气和pH测量各画一条换算链；用236表先算混合后浓度，再说明为何加水量不必等于某试剂体积。",
+      "lecture_package_id": "PKG-088",
+      "lecture_block_indices": [
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        117,
+        118,
+        214,
+        215,
+        233,
+        234,
+        235,
+        236,
+        237,
+        238,
+        239,
+        240,
+        241,
+        242,
+        243,
+        244,
+        245,
+        246,
+        247,
+        248,
+        252,
+        253,
+        254,
+        255,
+        256,
+        257,
+        258,
+        259,
+        260,
+        261,
+        262,
+        263,
+        264,
+        265,
+        266,
+        267,
+        268,
+        269,
+        270,
+        271,
+        272,
+        273,
+        274,
+        275,
+        276,
+        277,
+        278,
+        279
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-088/第11讲 化学反应速率（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "a99cc06139ed468668a0b8f2a2d29779e937144820e82d2c37d5e9dcd913ba72",
+      "source_preview_revision": "877a833ee1d505500bbb94c1c5f3a696aff64c78c09d7cd8619b38b41e4ad81a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 80,
+          "end": 118,
+          "start_xml_locator": "word/document.xml#/w:body/*[90]",
+          "end_xml_locator": "word/document.xml#/w:body/*[128]"
+        },
+        {
+          "start": 214,
+          "end": 215,
+          "start_xml_locator": "word/document.xml#/w:body/*[224]",
+          "end_xml_locator": "word/document.xml#/w:body/*[225]"
+        },
+        {
+          "start": 233,
+          "end": 248,
+          "start_xml_locator": "word/document.xml#/w:body/*[243]",
+          "end_xml_locator": "word/document.xml#/w:body/*[258]"
+        },
+        {
+          "start": 252,
+          "end": 279,
+          "start_xml_locator": "word/document.xml#/w:body/*[262]",
+          "end_xml_locator": "word/document.xml#/w:body/*[289]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          48
+        ],
+        "printed_pages": [
+          42
+        ],
+        "anchors": [
+          "量气法",
+          "分光光度法",
+          "浓度、温度、压强等因素"
+        ],
+        "support_role": "direct_page_reading_with_explicit_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未实施校准或真实实验；279小装置图未看，只采用可读控制条件文字。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-RATE-03",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.3",
+      "title": "总方程式、反应历程与有效碰撞分开",
+      "pdf_pages": [
+        48,
+        49
+      ],
+      "printed_pages": [
+        42,
+        43
+      ],
+      "source_anchors": [
+        "基元反应与反应历程",
+        "图2.4",
+        "图2.5"
+      ],
+      "summary": "总方程式描述反应物和生成物的计量，不能代替实际历程；教材明确条件变化可能改变历程。图2.4区分合适与不合适取向，图2.5描画能量随历程变化。由此审查314—326时，不能把任意总式的系数直接当经验速率式指数，也不能把历程图斜率当随时间的反应速率。",
+      "classroom_check": "把“计量关系”“基元步骤或经验速率式”“碰撞模型”分栏，标明各自需要的证据；列出k的单位依赖速率定义和级数。",
+      "lecture_package_id": "PKG-088",
+      "lecture_block_indices": [
+        281,
+        282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        308,
+        309,
+        310,
+        311,
+        312,
+        313,
+        314,
+        315,
+        316,
+        317,
+        318,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324,
+        325,
+        326
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-088/第11讲 化学反应速率（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "a99cc06139ed468668a0b8f2a2d29779e937144820e82d2c37d5e9dcd913ba72",
+      "source_preview_revision": "877a833ee1d505500bbb94c1c5f3a696aff64c78c09d7cd8619b38b41e4ad81a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 281,
+          "end": 326,
+          "start_xml_locator": "word/document.xml#/w:body/*[291]",
+          "end_xml_locator": "word/document.xml#/w:body/*[342]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          48,
+          49
+        ],
+        "printed_pages": [
+          42,
+          43
+        ],
+        "anchors": [
+          "基元反应与反应历程",
+          "图2.4",
+          "图2.5"
+        ],
+        "support_role": "direct_page_reading_with_explicit_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "未为教材示例补建未经验证的真实机理；284的OMML及若干旧式箭头未读。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-RATE-04",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.3",
+      "title": "催化路径不改变相同初末状态",
+      "pdf_pages": [
+        49,
+        50
+      ],
+      "printed_pages": [
+        43,
+        44
+      ],
+      "source_anchors": [
+        "图2.5",
+        "图2.6",
+        "分子反应动力学"
+      ],
+      "summary": "图2.6以相同初末能级、不同路径能垒表示催化作用，不能由催化加快推断平衡转化率增加。286同样要分清正向能垒、逆向能垒与始末能级差。385与454是讲义扩展图：按同一温度比较k，并读清R及10⁻³轴标，不能只凭斜率宣布全温域效能排名。",
+      "classroom_check": "标出能量轴和历程轴，再标385的Rlnk和1/T轴；独立计算m的96kJ/mol，并写明所用线性模型和比较范围。",
+      "lecture_package_id": "PKG-088",
+      "lecture_block_indices": [
+        281,
+        282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        296,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        308,
+        309,
+        310,
+        311,
+        312,
+        384,
+        385,
+        386,
+        387,
+        388,
+        389,
+        390,
+        391,
+        453,
+        454,
+        455,
+        456
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-088/第11讲 化学反应速率（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "a99cc06139ed468668a0b8f2a2d29779e937144820e82d2c37d5e9dcd913ba72",
+      "source_preview_revision": "877a833ee1d505500bbb94c1c5f3a696aff64c78c09d7cd8619b38b41e4ad81a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 281,
+          "end": 312,
+          "start_xml_locator": "word/document.xml#/w:body/*[291]",
+          "end_xml_locator": "word/document.xml#/w:body/*[326]"
+        },
+        {
+          "start": 384,
+          "end": 391,
+          "start_xml_locator": "word/document.xml#/w:body/*[406]",
+          "end_xml_locator": "word/document.xml#/w:body/*[413]"
+        },
+        {
+          "start": 453,
+          "end": 456,
+          "start_xml_locator": "word/document.xml#/w:body/*[476]",
+          "end_xml_locator": "word/document.xml#/w:body/*[479]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          49,
+          50
+        ],
+        "printed_pages": [
+          43,
+          44
+        ],
+        "anchors": [
+          "图2.5",
+          "图2.6",
+          "分子反应动力学"
+        ],
+        "support_role": "direct_page_reading_with_explicit_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "阿仑尼乌斯线性模型为明确AI采用的扩展，不声称该教材页已提供；384/391等旧公式仍未读。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-TB-E1-20260927-RATE-05",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C2:2.3",
+      "title": "跨页例题与表格：两栏速率核算",
+      "pdf_pages": [
+        50,
+        51
+      ],
+      "printed_pages": [
+        44,
+        45
+      ],
+      "source_anchors": [
+        "合成氨例题",
+        "水煤气反应练习",
+        "H₂O₂浓度—时间表"
+      ],
+      "summary": "合成氨例需连读两页：NH₃（氨）增加0.6mol/L用时2s，对应组分速率0.30、H₂（氢气）0.45，统一v为0.15mol·L⁻¹·s⁻¹。H₂O₂（过氧化氢）表先求每20min的消耗速率，再按计量系数2换算统一v；空白行是计算任务。比例变化与绝对变化也应分开，424水样Ⅲ分解率较高却绝对平均速率较低。",
+      "classroom_check": "同时提交组分速率栏和统一v栏；写各时间段，不由表中等时减半推断所有过氧化氢反应的反应级数。",
+      "lecture_package_id": "PKG-088",
+      "lecture_block_indices": [
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        149,
+        150,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        423,
+        424,
+        425,
+        426,
+        427,
+        428,
+        429,
+        430
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-088/第11讲 化学反应速率（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "a99cc06139ed468668a0b8f2a2d29779e937144820e82d2c37d5e9dcd913ba72",
+      "source_preview_revision": "877a833ee1d505500bbb94c1c5f3a696aff64c78c09d7cd8619b38b41e4ad81a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 37,
+          "end": 57,
+          "start_xml_locator": "word/document.xml#/w:body/*[44]",
+          "end_xml_locator": "word/document.xml#/w:body/*[67]"
+        },
+        {
+          "start": 149,
+          "end": 180,
+          "start_xml_locator": "word/document.xml#/w:body/*[159]",
+          "end_xml_locator": "word/document.xml#/w:body/*[190]"
+        },
+        {
+          "start": 423,
+          "end": 430,
+          "start_xml_locator": "word/document.xml#/w:body/*[446]",
+          "end_xml_locator": "word/document.xml#/w:body/*[453]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C2:2.3",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          50,
+          51
+        ],
+        "printed_pages": [
+          44,
+          45
+        ],
+        "anchors": [
+          "合成氨例题",
+          "水煤气反应练习",
+          "H₂O₂浓度—时间表"
+        ],
+        "support_role": "direct_page_reading_with_explicit_AI_application"
+      },
+      "evidence_origin": "local_original_files_and_current_session_AI_reasoning",
+      "limitations": [
+        "按体积变化可忽略计算；没有由端点确定瞬时值或平衡到达时刻，也未把空白表当官方答案。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ],
+  "root_review_completed": true
+}

@@ -507,7 +507,7 @@ class ImportDialog(QDialog):
             "停止批量读取" if kind == "corpus" else "停止当前任务"
         )
         self.cancel_button.setVisible(True)
-        self.cancel_button.setEnabled(True)
+        self.cancel_button.setEnabled(kind != "visual_repair")
         self._set_busy(True)
         set_status(self.status, "info", message)
 
@@ -849,6 +849,7 @@ class ImportDialog(QDialog):
             )
             result = dialog.exec()
             reprocess = dialog.selected_reprocess_shards() if result == VisualImportEgressDialog.REVISE_PREVIEW else ()
+            repair_options = dialog.selected_repair_records() if result == getattr(VisualImportEgressDialog, "REVISE_REPAIR", 3) else ()
         except (OSError, RuntimeError, TypeError, ValueError, KeyError):
             self._discard_visual_egress(preview_id)
             set_status(self.status, "error", "图片核对窗口未能打开，未调用模型；请重新预览。")
@@ -857,11 +858,17 @@ class ImportDialog(QDialog):
             if dialog is not None:
                 with suppress(RuntimeError):
                     dialog.deleteLater()
-        if result == VisualImportEgressDialog.REVISE_PREVIEW:
-            self._begin_task("visual_preview", "正在本机更新重做范围；尚未调用模型。")
+        if result in {VisualImportEgressDialog.REVISE_PREVIEW, getattr(VisualImportEgressDialog, "REVISE_REPAIR", 3)}:
+            repair_selection = result == getattr(VisualImportEgressDialog, "REVISE_REPAIR", 3)
+            self._begin_task("visual_preview", "正在本机核对恢复范围；未写入、未调用模型。" if repair_selection else
+                             "正在本机更新重做范围；尚未调用模型。")
             def revise_pages(report, cancelled):
                 try:
-                    updated = self.facade.revise_visual_import_egress(preview_id, plan["revision"], reprocess)
+                    if cancelled():
+                        return None
+                    updated = (self.facade.revise_visual_import_repair(preview_id, plan["revision"], repair_options)
+                               if repair_selection else
+                               self.facade.revise_visual_import_egress(preview_id, plan["revision"], reprocess))
                     if cancelled():
                         self._discard_visual_egress(updated.get("preview_id"))
                     return updated
@@ -884,6 +891,33 @@ class ImportDialog(QDialog):
         if result != QDialog.DialogCode.Accepted:
             self._discard_visual_egress(preview_id)
             set_status(self.status, "info", "已返回，未发送图片、未调用模型；已保存来源保留。")
+            return
+        if "repair" in plan:
+            self._begin_task("visual_repair", "正在保留旧记录并修复本机目录；不调用模型，请等待完成。")
+            def repair_directory(report, cancelled):
+                try:
+                    return self.facade.repair_visual_import_egress(
+                        batch_id=receipt.batch_id, preview_id=preview_id, revision=plan["revision"],
+                        teacher_confirmed=True, should_cancel=cancelled,
+                    )
+                finally:
+                    self._discard_visual_egress(preview_id)
+            def repaired(updated):
+                self.progress.setValue(3)
+                self.progress.setFormat("本机目录已修复，返回普通预览")
+                set_status(self.status, "info", "本机目录已修复，旧记录保留；尚未调用模型。接下来核对普通预览。")
+                self._pending_visual_egress = (receipt, selected, updated)
+            try:
+                self._active_task_id = self.tasks.submit_progress(
+                    "修复本机处理目录", repair_directory,
+                    on_progress=self._import_progress, on_success=repaired, on_failure=self._import_failed,
+                )
+            except (AttributeError, RuntimeError, TypeError):
+                self._discard_visual_egress(preview_id)
+                self._active_task_id = self._active_task_kind = None
+                self.cancel_button.hide()
+                self._set_busy(False)
+                set_status(self.status, "error", "本机修复未启动，未调用模型；可重新打开图片预览。")
             return
         profile_id, revision = selected
         self._visual_egress_id = preview_id
@@ -1035,6 +1069,8 @@ class ImportDialog(QDialog):
         self.progress.setFormat("任务未完成")
         if self._active_task_kind == "visual":
             text = f"视觉候选未生成；离线来源仍已保存，可重试。{message}"
+        elif self._active_task_kind == "visual_repair":
+            text = f"本机目录修复未完成，未调用模型；旧记录保留。请重新打开图片预览核对并恢复。{message}"
         elif self._active_task_kind == "visual_preview":
             text = f"发送页面预览未完成，未调用模型；已保存来源保留。{message}"
         elif self._active_task_kind == "preview":
@@ -1091,6 +1127,9 @@ class ImportDialog(QDialog):
         self.status.setText(message)
 
     def _cancel_active(self) -> None:
+        if self._active_task_kind == "visual_repair":
+            set_status(self.status, "info", "正在保留旧记录并完整提交本机修复；请等待完成后返回。")
+            return
         if self._active_task_kind == "word_labels":
             set_status(self.status, "info", "原件已保存，正在核对并原子保存本批标签；请等待完成后关闭。")
             return
@@ -1141,7 +1180,7 @@ class ImportDialog(QDialog):
         if kind == "visual":
             preview_id, self._visual_egress_id = self._visual_egress_id, None
             self._discard_visual_egress(preview_id)
-        if kind == "visual_preview":
+        if kind in {"visual_preview", "visual_repair"}:
             pending, self._pending_visual_egress = self._pending_visual_egress, None
             if pending:
                 self._open_visual_egress(*pending)

@@ -77,6 +77,15 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: python runtime/deeptutor_shchem/visual_resume_qa.py --output local-continuation-qa/visual-resume
+      - name: Check explicit local checkpoint repair and interrupted commits
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_visual_checkpoint_repair.py staging/coordination/deeptutor_gateway/tests/test_visual_checkpoint_repair_ui.py --junitxml=local-continuation-qa/visual-repair.xml
+      - name: Capture local repair selection and return to ordinary preview
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_SCALE_FACTOR: '2'
+        run: python runtime/deeptutor_shchem/visual_repair_qa.py --output local-continuation-qa/visual-repair
       - name: Check formula occurrence locations and read-only native UI
         env:
           QT_QPA_PLATFORM: offscreen

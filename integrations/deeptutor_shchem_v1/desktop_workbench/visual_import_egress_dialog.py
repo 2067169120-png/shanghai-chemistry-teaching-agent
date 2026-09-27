@@ -5,7 +5,7 @@ import re
 from copy import deepcopy
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtWidgets import QDialog, QLayout, QLabel, QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QDialog, QFrame, QLayout, QLabel, QListWidget, QListWidgetItem, QPlainTextEdit, QPushButton, QScrollArea, QSizePolicy, QSplitter, QVBoxLayout, QWidget
 
 from ..desktop_visual_import_v2 import _image_dimensions
 from .preparation_egress_dialog import PreparationEgressDialog
@@ -33,6 +33,7 @@ class VisualImportEgressDialog(PreparationEgressDialog):
     """
 
     REVISE_PREVIEW = 2
+    REVISE_REPAIR = 3
 
     def __init__(self, plan, image_loader, parent=None):
         self._plan = deepcopy(plan) if isinstance(plan, dict) else {}
@@ -40,6 +41,8 @@ class VisualImportEgressDialog(PreparationEgressDialog):
         self._valid_plan = False
         self._selection_dirty = False
         self._selected_shards = ()
+        self._repair_mode = "repair" in self._plan
+        self._selected_options = ()
         self._can_confirm = self._plan.get("can_confirm", True) is True
         assets = []
         try:
@@ -71,12 +74,14 @@ class VisualImportEgressDialog(PreparationEgressDialog):
                     raise ValueError("Invalid resume state")
                 sending = page.get("will_send", True)
                 blocked = page.get("checkpoint_state") == "blocked"
-                action = "需选择重做" if blocked else "本次发送" if sending else "本机复用"
+                action = ("本机恢复核对" if self._repair_mode else
+                          "需选择重做" if blocked else "本次发送" if sending else "本机复用")
                 assets.append({
                     "asset_id": page_id, "sha256": page["sha256"],
                     "caption": f"{action} · {role} · {name} · 第 {page['page_number']} 页",
                     "source": f"{name} · 第 {page['page_number']} 页",
-                    "purpose": (f"{role}；已存结果无法核验，选择重做并更新预览后才能继续" if blocked else
+                    "purpose": (f"{role}；核对既有记录对应的原页，本次修复不会发送" if self._repair_mode else
+                                f"{role}；已存结果无法核验，选择重做并更新预览后才能继续" if blocked else
                                 f"{role}；整页像素将交给模型识别，结果仍待核对" if sending
                                 else f"{role}；复用已保存分片，本次不发送，结果仍待教师核对"),
                     "width": page["width"], "height": page["height"],
@@ -145,14 +150,33 @@ class VisualImportEgressDialog(PreparationEgressDialog):
             self.summary.setText("已有页组的保存记录无法核验。请在“处理进度”中选择重做，再更新发送预览。")
             self.reminder.setText("当前不能发送或汇总。原页与旧记录保留；选择重做后仍需确认发送范围。")
             self.confirm_button.setEnabled(False)
-        self._install_progress_tab()
+        if self._repair_mode:
+            self.setWindowTitle("题目导入 · 本机目录修复")
+            self.heading.setText("修复本机处理目录")
+            self.summary.setText("目录损坏，尚未恢复。先选择已有记录并预览，再确认本机修复。")
+            self.reminder.setText("保留旧记录；修复不调用模型。修复后返回普通预览，发送须再次确认。")
+            self.tabs.setTabText(self.tabs.indexOf(self.disclosure), "修复说明")
+            self.confirm_button.setText("确认本机修复")
+            self.cancel_button.setText("返回")
+            self.image_list.setAccessibleName("本机修复核对的原页；不会发送或调用模型")
+            self._install_repair_tab()
+            if not self._manifest_error:
+                if self._original_selection:
+                    self.summary.setText(
+                        f"本次将恢复 {len(self._original_selection)} 组，其余 {len(self._plan['shards']) - len(self._original_selection)} 组保持待处理。"
+                        "请核对所选记录与原页，再确认本机修复。"
+                    )
+                elif not self._repair_options:
+                    self.summary.setText("未找到可安全恢复的记录。请先核对来源和保存记录；当前不能本机修复。")
+        else:
+            self._install_progress_tab()
         shards = self._plan.get("shards")
         reprocess_count = sum(s.get("reprocess") is True for s in shards if isinstance(s, dict)) if isinstance(shards, list) else 0
         if self._valid_plan and reprocess_count and self._can_confirm:
             self.confirm_button.setText("确认发送选定页面")
         self._full_summary = self.summary.text()
         self._compact_summary = self._full_summary
-        if self._valid_plan and sending_count and self._can_confirm:
+        if self._valid_plan and sending_count and self._can_confirm and not self._repair_mode:
             self._compact_summary = (
                 f"接收模型：{self._plan['model_label']}\n"
                 f"{sending_count} 页本次发送 · {reused_count} 页从本机复用\n"
@@ -164,7 +188,152 @@ class VisualImportEgressDialog(PreparationEgressDialog):
                 notice = "已有记录与当前页面或配置不匹配，本次重新处理。\n"
                 self._full_summary = notice + self._full_summary
                 self._compact_summary = notice + self._compact_summary
+        if self._repair_mode:
+            self._install_repair_scroll()
         self._adapt_layout()
+
+    def _install_repair_scroll(self):
+        """Keep consent buttons reachable even on a short window or large font."""
+        root = self.layout()
+        buttons = root.takeAt(root.count() - 1).widget()
+        content = QWidget()
+        content.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        body = QVBoxLayout(content)
+        body.setContentsMargins(0, 0, 0, 0)
+        body.setSpacing(6)
+        body.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+        self.tabs.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
+        while root.count():
+            widget = root.takeAt(0).widget()
+            body.addWidget(widget, 1 if widget is self.tabs else 0)
+        self.repair_scroll = QScrollArea()
+        self.repair_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.repair_scroll.setWidgetResizable(True)
+        self.repair_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.repair_scroll.setAccessibleName("本机修复内容；可上下滚动，确认与返回按钮固定在窗口底部")
+        self.repair_scroll.setWidget(content)
+        root.addWidget(self.repair_scroll, 1)
+        root.addWidget(buttons)
+
+    def _install_repair_tab(self):
+        try:
+            repair = self._plan["repair"]
+            options, shards = repair["options"], self._plan["shards"]
+            if not isinstance(options, list) or not isinstance(shards, list) or not shards:
+                raise ValueError("repair list")
+            pages = {p["page_id"]: p for p in self._plan["pages"]}
+            by_shard = {s["shard_id"]: s for s in shards}
+            members = [p for s in shards for p in s["page_ids"]]
+            if len(by_shard) != len(shards) or len(members) != len(pages) or set(members) != set(pages):
+                raise ValueError("repair page membership")
+            self._repair_options = {o["option_id"]: o for o in options}
+            if len(self._repair_options) != len(options):
+                raise ValueError("duplicate option")
+            for option in options:
+                if (not isinstance(option["option_id"], str) or not option["option_id"]
+                        or option["shard_id"] not in by_shard or type(option["version"]) is not int or option["version"] < 1
+                        or not isinstance(option["summary"], str)
+                        or option["shard_index"] != by_shard[option["shard_id"]]["shard_index"]):
+                    raise ValueError("repair option")
+            self._original_selection = tuple(sorted(repair["selected_option_ids"]))
+            if (not set(self._original_selection) <= self._repair_options.keys()
+                    or len({self._repair_options[o]["shard_id"] for o in self._original_selection}) != len(self._original_selection)
+                    or bool(self._original_selection) != self._can_confirm):
+                raise ValueError("repair selection")
+        except (KeyError, TypeError, ValueError):
+            self._manifest_error = True
+            self._can_confirm = False
+            self.confirm_button.setEnabled(False)
+            self.validation_status.setText("恢复记录清单不完整，请返回重新预览。")
+            return
+        panel = QWidget()
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(8, 8, 8, 8)
+        note = QLabel("选择可恢复记录，每组只选一个。点选记录可看摘录；原页在“图片预览”。")
+        note.setWordWrap(True)
+        note.setTextFormat(Qt.TextFormat.PlainText)
+        layout.addWidget(note)
+        self.repair_list = _ShardList()
+        self.repair_list.setWordWrap(True)
+        self.repair_list.setTextElideMode(Qt.TextElideMode.ElideNone)
+        self.repair_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.repair_list.setMinimumHeight(80)
+        self.repair_list.setAccessibleName("选择经独立核验的旧页组记录，每组一个版本")
+        for shard in shards:
+            names = "、".join(f"{pages[p]['source_name']} 第{pages[p]['page_number']}页" for p in shard["page_ids"])
+            role = _ROLES[pages[shard["page_ids"][0]]["source_role"]]
+            choices = [o for o in options if o["shard_id"] == shard["shard_id"]]
+            for option in choices or [None]:
+                title = f"候选 {option['version']} · 可恢复" if option else "无可安全恢复的记录"
+                item = QListWidgetItem(f"第 {shard['shard_index']} 组 · {role} · {title}\n{names}")
+                item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
+                if option:
+                    item.setData(Qt.ItemDataRole.UserRole, option["option_id"])
+                    item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                    item.setCheckState(Qt.CheckState.Checked if option["option_id"] in self._original_selection else Qt.CheckState.Unchecked)
+                else:
+                    item.setData(Qt.ItemDataRole.UserRole + 1, shard.get("unavailable_reason", "未找到这组的可用旧记录。"))
+                self.repair_list.addItem(item)
+        self.repair_details = QPlainTextEdit()
+        self.repair_details.setReadOnly(True)
+        self.repair_details.setMinimumHeight(70)
+        self.repair_details.setAccessibleName("损坏原因与所选记录摘录，仍需教师核对")
+        self.repair_details.setPlainText("\n".join(repair["issues"]) + "\n选择记录查看摘录。")
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        splitter.addWidget(self.repair_list)
+        splitter.addWidget(self.repair_details)
+        splitter.setChildrenCollapsible(False)
+        splitter.setSizes([180, 120])
+        layout.addWidget(splitter, 1)
+        self.selection_note = QLabel()
+        self.selection_note.setTextFormat(Qt.TextFormat.PlainText)
+        self.selection_note.setWordWrap(True)
+        layout.addWidget(self.selection_note)
+        self.revise_button = QPushButton("预览所选恢复范围")
+        self.revise_button.setAutoDefault(False)
+        self.revise_button.clicked.connect(lambda: self.done(self.REVISE_REPAIR))
+        layout.addWidget(self.revise_button)
+        self.repair_list.itemChanged.connect(self._repair_selection_changed)
+        self.repair_list.currentItemChanged.connect(self._repair_item_changed)
+        self.tabs.addTab(panel, "处理进度")
+        self.tabs.setCurrentWidget(panel)
+        self._repair_selection_changed()
+
+    def _repair_item_changed(self, item, _previous=None):
+        option = self._repair_options.get(item.data(Qt.ItemDataRole.UserRole)) if item else None
+        reason = "\n".join(self._plan["repair"]["issues"])
+        self.repair_details.setPlainText(reason + "\n\n" + (
+            option["summary"] + "\n\n已核对来源与处理条件；内容仍待教师核对。" if option else
+            str((item.data(Qt.ItemDataRole.UserRole + 1) if item else None) or "未找到这组的可用旧记录。")
+            + "\n本次不处理；修复后如需识别，须另行确认发送。"
+        ))
+
+    def _repair_selection_changed(self, changed=None):
+        if changed is not None and changed.checkState() == Qt.CheckState.Checked:
+            selected = self._repair_options[changed.data(Qt.ItemDataRole.UserRole)]
+            self.repair_list.blockSignals(True)
+            for index in range(self.repair_list.count()):
+                item = self.repair_list.item(index)
+                option = self._repair_options.get(item.data(Qt.ItemDataRole.UserRole))
+                if item is not changed and option and option["shard_id"] == selected["shard_id"]:
+                    item.setCheckState(Qt.CheckState.Unchecked)
+            self.repair_list.blockSignals(False)
+        self._selected_options = tuple(sorted(
+            self.repair_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self.repair_list.count())
+            if self.repair_list.item(i).checkState() == Qt.CheckState.Checked
+        ))
+        self._selection_dirty = self._selected_options != self._original_selection
+        self.revise_button.setEnabled(bool(self._selected_options) and self._selection_dirty and not self._manifest_error)
+        count = len(self._selected_options)
+        self.selection_note.setText(
+            f"已选 {count} 组，请先预览范围。" if self._selection_dirty else
+            f"将恢复 {count} 组，其余保持待处理。" if count else
+            "尚未选择；每组可选一个版本。"
+        )
+        self._show_status()
+
+    def selected_repair_records(self):
+        return self._selected_options
 
     def _install_progress_tab(self):
         shards = self._plan.get("shards")
@@ -258,6 +427,23 @@ class VisualImportEgressDialog(PreparationEgressDialog):
         super()._show_status()
         self.confirm_button.setEnabled(self._ready and not self._failed and not self._manifest_error
                                        and not self._rechecking and not self._selection_dirty and self._can_confirm)
+        if self._repair_mode:
+            if self._manifest_error:
+                message = "恢复清单不完整，请返回重试。"
+            elif self._failed:
+                message = "原页无法核对，不能本机修复。"
+            elif self._selection_dirty:
+                message = "选择已变化，请先预览范围。"
+            elif not self._can_confirm:
+                message = "尚未修复，请先选择并预览。"
+            elif self._rechecking:
+                message = "正在再次核对原页；未调用模型。"
+            elif self._ready:
+                message = "原页已载入；确认时再次核验。"
+            else:
+                message = f"正在读取原页（{self._cursor}/{len(self._assets)}）；未发送。"
+            self.validation_status.setText(message)
+            return
         if self._selection_dirty or not self._can_confirm:
             self.confirm_button.setEnabled(False)
             self.validation_status.setText("重做选择已变化，请先更新发送预览。" if self._selection_dirty else
@@ -272,6 +458,9 @@ class VisualImportEgressDialog(PreparationEgressDialog):
         if result == QDialog.DialogCode.Accepted and (self._selection_dirty or not self._can_confirm):
             return
         if result == self.REVISE_PREVIEW and (not self._selection_dirty or self._manifest_error):
+            return
+        if result == self.REVISE_REPAIR and (not self._repair_mode or not self._selected_options
+                                           or not self._selection_dirty or self._manifest_error):
             return
         super().done(result)
 

@@ -128,6 +128,8 @@ class _PreviewSnapshot:
     requests: tuple[VisualShardRequest, ...]
     checkpoint_revision: str
     reprocess_shard_ids: tuple[str, ...] = ()
+    repair_mode: bool = False
+    repair_option_ids: tuple[str, ...] = ()
 
 
 class FrozenPageRenderer:
@@ -475,18 +477,33 @@ class DesktopVisualEgressService:
             profile_id=profile_id, profile_revision=expected_profile_revision,
             model_label=model_label, request_policy=request_policy, requests=requests,
         )
-        checkpoint_snapshot = checkpoints.inspect(diagnostics=True)
+        try:
+            checkpoint_snapshot = checkpoints.inspect(diagnostics=True)
+            repair_snapshot = None
+        except VisualCheckpointError as exc:
+            if exc.code not in {"visual_checkpoint_invalid",
+                                "visual_checkpoint_repair_required", "visual_checkpoint_repair_incomplete"}:
+                raise
+            repair_snapshot = checkpoints.inspect_repair()
+            checkpoint_snapshot = None
         if progress_callback is not None:
             progress_callback({"stage": "completed", "batch_id": batch_id, "page_count": len(pages)})
         return self._publish(
             batch_id=batch_id, profile_id=profile_id, expected_profile_revision=expected_profile_revision,
             model_label=model_label, request_policy=request_policy, source_manifests=source_manifests,
             pages=pages, requests=requests, checkpoint_snapshot=checkpoint_snapshot,
+            repair_snapshot=repair_snapshot,
         )
 
     def _publish(self, *, batch_id, profile_id, expected_profile_revision, model_label,
                  request_policy, source_manifests, pages, requests, checkpoint_snapshot,
-                 reprocess_shard_ids=()) -> dict[str, Any]:
+                 reprocess_shard_ids=(), repair_snapshot=None, repair_option_ids=()) -> dict[str, Any]:
+        if repair_snapshot is not None:
+            return self._publish_repair(
+                batch_id=batch_id, profile_id=profile_id, expected_profile_revision=expected_profile_revision,
+                model_label=model_label, request_policy=request_policy, source_manifests=source_manifests,
+                pages=pages, requests=requests, repair_snapshot=repair_snapshot, option_ids=repair_option_ids,
+            )
         selected = VisualShardCheckpoints.validate_selection(checkpoint_snapshot, reprocess_shard_ids)
         invalid_ids = set(checkpoint_snapshot["invalid_shard_ids"])
         blocked_ids = invalid_ids - set(selected)
@@ -592,6 +609,8 @@ class DesktopVisualEgressService:
     def revise(self, preview_id: str, revision: str, reprocess_shard_ids: Sequence[str]) -> dict[str, Any]:
         """Change sending intent only; keep all saved records untouched."""
         snapshot = self._snapshot(preview_id, revision)
+        if snapshot.repair_mode:
+            raise VisualCheckpointError("visual_checkpoint_repair_required")
         if self.facade.import_batch_details(snapshot.batch_id).visual_status in {"completed", "not_required"}:
             raise VisualEgressError("visual_egress_batch_completed", "该批次已完成视觉识别，不能重复发送。")
         profile = self.facade._visual_import_profile(snapshot.profile_id, snapshot.profile_revision)
@@ -608,6 +627,107 @@ class DesktopVisualEgressService:
             model_label=snapshot.model_label, request_policy=snapshot.request_policy,
             source_manifests=snapshot.source_manifests, pages=snapshot.pages, requests=snapshot.requests,
             checkpoint_snapshot=current, reprocess_shard_ids=reprocess_shard_ids,
+        )
+
+    def _publish_repair(self, *, batch_id, profile_id, expected_profile_revision, model_label,
+                        request_policy, source_manifests, pages, requests, repair_snapshot, option_ids=()):
+        from .desktop_visual_checkpoint_repair import validate_options
+
+        selected = validate_options(repair_snapshot, option_ids) if option_ids else []
+        chosen = {item["shard_id"] for item in selected}
+        option_ids = tuple(sorted(option_ids))
+        pages = [_FrozenPage(deepcopy(page.manifest), page.pixels) for page in pages]
+        shard_for_page = {(p.source_file_id, p.page_number): r.shard_id for r in requests for p in r.pages}
+        for page in pages:
+            shard_id = shard_for_page[(page.manifest["source_file_id"], page.manifest["page_number"])]
+            page.manifest.update(shard_id=shard_id, will_send=False,
+                                 checkpoint_state="repair_selected" if shard_id in chosen else "repair_pending")
+        revision = "ve_rev_" + _digest({"repair": repair_snapshot["revision"], "selected": option_ids,
+                                        "sources": source_manifests, "pages": [p.manifest for p in pages]})
+        with self._lock:
+            for key in [key for key, value in self._snapshots.items() if value.batch_id == batch_id]:
+                self._snapshots.pop(key)
+            if len(self._snapshots) >= MAX_ACTIVE_SNAPSHOTS:
+                raise VisualEgressError("visual_egress_snapshot_limit", "请先关闭其它图片预览。")
+            preview_id = _PREVIEW_PREFIX + uuid.uuid4().hex
+            self._snapshots[preview_id] = _PreviewSnapshot(
+                preview_id, revision, batch_id, profile_id, expected_profile_revision, model_label,
+                deepcopy(request_policy), source_manifests, tuple(pages), requests,
+                repair_snapshot["revision"], repair_mode=True, repair_option_ids=option_ids,
+            )
+        messages = {
+            "scope_missing": "处理范围记录缺失。",
+            "scope_unreadable": "处理范围记录损坏，无法读取。",
+            "active_missing": "当前使用的页组版本记录缺失，不能自动选择旧版本。",
+            "active_unreadable": "当前使用的页组版本记录损坏，不能自动选择旧版本。",
+            "repair_incomplete": "上次本机修复未完成，已阻止继续识别。",
+        }
+        public_pages = [deepcopy(page.manifest) for page in pages]
+        options = [{key: value for key, value in option.items() if key not in {"record_path", "record_sha256"}}
+                   for option in repair_snapshot["options"]]
+        available = {item["shard_id"] for item in options}
+        missing = len(requests) - len(available)
+        selected_count = len(chosen)
+        confirmation = (
+            "\n".join(messages[issue] for issue in repair_snapshot["issues"])
+            + "\n可选记录已重新核对来源文件、页面像素、模型配置、处理规则及页组内容。"
+            + "\n同组多个版本必须由你选择；不会按日期自动选用。点击记录可读摘录，切换原页可核对范围。"
+            + f"\n本次选择恢复 {selected_count} 组；{len(requests) - selected_count} 组保持待处理。"
+            + "\n确认只在本机修复目录，保留旧记录与原目录字节；不会调用模型。修复后返回普通预览。"
+            + "\n尚未恢复的页面如需识别，必须在普通预览再次确认发送。恢复结果仍待教师核对。"
+        )
+        return {
+            "preview_id": preview_id, "revision": revision, "batch_id": batch_id,
+            "profile_id": profile_id, "profile_revision": expected_profile_revision,
+            "model_label": model_label, "request_policy": deepcopy(request_policy), "pages": public_pages,
+            "repair": {"issues": [messages[issue] for issue in repair_snapshot["issues"]],
+                       "options": options, "selected_option_ids": list(option_ids),
+                       "selected_shards": selected_count, "unavailable_shards": missing},
+            "shards": [{"shard_id": r.shard_id, "shard_index": r.shard_index,
+                        "page_ids": [p["page_id"] for p in public_pages if p["shard_id"] == r.shard_id],
+                        "unavailable_reason": repair_snapshot["unavailable_reasons"].get(
+                            r.shard_id, "未找到这组的可用旧记录；本次保持待处理。") if r.shard_id not in available else ""}
+                       for r in requests],
+            "can_confirm": bool(selected), "confirmation_text": confirmation,
+        }
+
+    def _revalidate_repair(self, snapshot):
+        if self.facade.import_batch_details(snapshot.batch_id).visual_status in {"completed", "not_required"}:
+            raise VisualEgressError("visual_egress_batch_completed", "该批次已完成识别，请重新打开批次。")
+        profile = self.facade._visual_import_profile(snapshot.profile_id, snapshot.profile_revision)
+        if _request_policy(profile) != snapshot.request_policy or _model_label(profile) != snapshot.model_label:
+            raise VisualEgressError("visual_egress_policy_changed", "模型或处理规则已变化，请重新预览。")
+        descriptor = self.facade._saved_visual_import_batch(snapshot.batch_id)
+        FrozenPageRenderer(snapshot).validate(self.facade._restore_visual_import_sources(descriptor))
+        if not snapshot.repair_mode:
+            raise VisualCheckpointError("visual_checkpoint_repair_selection")
+
+    def revise_repair(self, preview_id, revision, option_ids):
+        snapshot = self._snapshot(preview_id, revision)
+        self._revalidate_repair(snapshot)
+        current = self._checkpoints(snapshot).inspect_repair()
+        if current["revision"] != snapshot.checkpoint_revision:
+            raise VisualCheckpointError("visual_checkpoint_stale")
+        return self._publish_repair(
+            batch_id=snapshot.batch_id, profile_id=snapshot.profile_id, expected_profile_revision=snapshot.profile_revision,
+            model_label=snapshot.model_label, request_policy=snapshot.request_policy, source_manifests=snapshot.source_manifests,
+            pages=snapshot.pages, requests=snapshot.requests, repair_snapshot=current, option_ids=option_ids,
+        )
+
+    def repair(self, preview_id, revision, *, batch_id, teacher_confirmed, should_cancel=None):
+        """Caller holds the batch lock. Return an ordinary preview, never a run."""
+        if teacher_confirmed is not True:
+            raise VisualEgressError("teacher_confirmation_required", "本机修复前需要明确确认所选记录。")
+        snapshot = self._snapshot(preview_id, revision, batch_id=batch_id)
+        self._revalidate_repair(snapshot)
+        current = self._checkpoints(snapshot).repair_metadata(
+            snapshot.checkpoint_revision, snapshot.repair_option_ids, should_cancel=should_cancel,
+            revalidate=lambda: self._revalidate_repair(snapshot),
+        )
+        return self._publish(
+            batch_id=snapshot.batch_id, profile_id=snapshot.profile_id, expected_profile_revision=snapshot.profile_revision,
+            model_label=snapshot.model_label, request_policy=snapshot.request_policy, source_manifests=snapshot.source_manifests,
+            pages=snapshot.pages, requests=snapshot.requests, checkpoint_snapshot=current,
         )
 
     def _checkpoints(self, snapshot: _PreviewSnapshot) -> VisualShardCheckpoints:
@@ -679,6 +799,8 @@ class DesktopVisualEgressService:
             profile_id=profile_id,
             profile_revision=expected_profile_revision,
         )
+        if snapshot.repair_mode:
+            raise VisualCheckpointError("visual_checkpoint_repair_required")
         profile = self.facade._visual_import_profile(profile_id, expected_profile_revision)
         if _request_policy(profile) != snapshot.request_policy:
             raise VisualEgressError(

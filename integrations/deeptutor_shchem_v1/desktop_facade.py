@@ -3359,6 +3359,22 @@ class DesktopWorkbenchFacade:
 
         return self._visual_egress_call("discard", preview_id)
 
+    def revise_visual_import_repair(self, preview_id: str, revision: str, option_ids: Sequence[str]) -> dict[str, Any]:
+        """Preview explicit old-record choices without writes or provider calls."""
+        return self._visual_egress_call("revise_repair", preview_id, revision, option_ids)
+
+    def repair_visual_import_egress(self, *, batch_id: str, preview_id: str, revision: str,
+                                   teacher_confirmed: Literal[True], should_cancel=None) -> dict[str, Any]:
+        """Repair local indexes under the same lock as import; return a fresh preview."""
+        from .desktop_import_recovery import import_batch_lock
+
+        try:
+            with import_batch_lock(self._visual_import_root, batch_id):
+                return self._visual_egress_call("repair", preview_id, revision, batch_id=batch_id,
+                                              teacher_confirmed=teacher_confirmed, should_cancel=should_cancel)
+        except DesktopImportBridgeError as exc:
+            raise DesktopFacadeError(exc.code, exc.message_zh) from exc
+
     def run_saved_visual_import_batch(
         self,
         *,

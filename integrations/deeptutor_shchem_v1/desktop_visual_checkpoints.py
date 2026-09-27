@@ -38,6 +38,11 @@ class VisualCheckpointError(IntakeBatchV2Error):
             "visual_checkpoint_scope_changed": "页面、模型或分片范围已变化，请重新预览。",
             "visual_checkpoint_write_failed": "图片分片未能安全保存，本次停止；已保存分片保留。",
             "visual_checkpoint_selection_invalid": "重做范围已变化或不完整，请重新选择并更新预览。",
+            "visual_checkpoint_repair_required": "处理目录需要本机修复，请先核对可恢复记录；尚未发送。",
+            "visual_checkpoint_repair_unsafe": "目录含无法安全核验的内容，不能本机重建；请保留原记录并核对来源。",
+            "visual_checkpoint_repair_selection": "请选择可恢复记录；每个页组只能选择一个版本。",
+            "visual_checkpoint_repair_incomplete": "上次本机修复尚未完成，请重新查看处理进度；未继续识别。",
+            "visual_checkpoint_repair_cancelled": "已取消本机修复，原处理记录未改变。",
         }
         super().__init__(code, messages[code], 409)
         self.message_zh = messages[code]
@@ -203,10 +208,31 @@ class VisualShardCheckpoints:
 
     def inspect(self, *, diagnostics: bool = False) -> dict[str, Any]:
         self._paths_safe()
+        if self._raw(self.directory / "repair-pending.json") is not None:
+            raise VisualCheckpointError("visual_checkpoint_repair_incomplete")
         scope_record = self._read(self.directory / "scope.json")
         if scope_record is not None and scope_record[0] != self.scope:
             raise VisualCheckpointError()
         active, active_sha = self._attempts()
+        if active_sha is None:
+            attempts = self.directory / "attempts"
+            self._safe_path(attempts)
+            entries = 0
+            if attempts.exists():
+                if not attempts.is_dir():
+                    raise VisualCheckpointError()
+                for directory in attempts.iterdir():
+                    entries += 1
+                    self._safe_path(directory)
+                    if entries > 1000 or not directory.is_dir():
+                        raise VisualCheckpointError("visual_checkpoint_repair_unsafe")
+                    for path in directory.iterdir():
+                        entries += 1
+                        self._safe_path(path)
+                        if entries > 1000:
+                            raise VisualCheckpointError("visual_checkpoint_repair_unsafe")
+                        if path.name.startswith("shard-") and path.suffix == ".json":
+                            raise VisualCheckpointError("visual_checkpoint_repair_required")
         expected_names = {"scope.json", "active-attempts.json", *(self._path(request, active).name for request in self.requests)}
         if self.directory.exists() and any(path.name not in expected_names for path in self.directory.glob("*.json")):
             raise VisualCheckpointError()
@@ -236,6 +262,15 @@ class VisualShardCheckpoints:
             "pending_shards": len(self.requests) - len(complete),
             "has_other_scopes": other_scopes,
         }
+
+    def inspect_repair(self) -> dict[str, Any]:
+        from .desktop_visual_checkpoint_repair import inspect_repair
+        return inspect_repair(self)
+
+    def repair_metadata(self, expected_revision, option_ids, *, should_cancel=None, revalidate=None):
+        from .desktop_visual_checkpoint_repair import repair_metadata
+        return repair_metadata(self, expected_revision, option_ids,
+                               should_cancel=should_cancel, revalidate=revalidate)
 
     def select_reprocess(self, expected_revision: str, shard_ids: Sequence[str]) -> dict[str, Any]:
         """Commit one explicit selection atomically; retain every old record.
