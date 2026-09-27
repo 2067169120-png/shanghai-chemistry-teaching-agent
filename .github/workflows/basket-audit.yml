@@ -54,6 +54,8 @@ jobs:
               'test_backup_paths.py', 'test_exam_analysis.py',
               'test_teaching_closure.py', 'test_work_batches.py',
               'test_desktop_state_corruption.py', 'test_explorer_basket_recovery_ui.py',
+              'test_desktop_basket_undo.py', 'test_explorer_basket_undo_ui.py',
+              'test_mixed_basket_entrypoints.py',
               'test_complete_readme.py', 'test_maintenance_release_safety.py',
           ]
           out = pathlib.Path('candidate-qa'); out.mkdir(exist_ok=True)
@@ -65,6 +67,15 @@ jobs:
           files = ['staging/coordination/deeptutor_gateway/tests/'+name for name in names]
           subprocess.run([sys.executable, '-m', 'pytest', '-q', *files,
               '--junitxml=candidate-qa/pytest.xml'], check=True)
+      - name: Basket undo at double scaling with synthetic screenshots
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_SCALE_FACTOR: '2'
+        run: |
+          python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_explorer_basket_undo_ui.py staging/coordination/deeptutor_gateway/tests/test_explorer_basket_recovery_ui.py --junitxml=candidate-qa/basket-undo-2x.xml
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python runtime/deeptutor_shchem/basket_undo_qa.py --output candidate-qa/basket-undo-2x
+          exit $LASTEXITCODE
       - uses: actions/upload-artifact@v4
         if: always()
         with:

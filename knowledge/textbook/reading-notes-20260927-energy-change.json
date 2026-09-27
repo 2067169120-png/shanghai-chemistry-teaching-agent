@@ -1,0 +1,1199 @@
+{
+  "schema_version": "shchem.textbook-page-reading-notes.v1",
+  "purpose": "选必一1.1—1.3共18页模型研读候选；与PKG-076完整原文及实际所见公式/图形绑定，不称官方答案或人审。",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "original_source_redistribution": false,
+  "review_method": "page_images_read_by_model",
+  "root_review_completed": true,
+  "root_model_review_completed": true,
+  "sources": [
+    {
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C1:1.1",
+      "sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "pdf_pages_viewed": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "printed_pages_viewed": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "page_number_convention": "正文数字页码为PDF文件页序，印刷页另列。"
+    },
+    {
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C1:1.2",
+      "sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "pdf_pages_viewed": [
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22
+      ],
+      "printed_pages_viewed": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "page_number_convention": "正文数字页码为PDF文件页序，印刷页另列。"
+    },
+    {
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C1:1.3",
+      "sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "pdf_pages_viewed": [
+        23,
+        24,
+        25,
+        26
+      ],
+      "printed_pages_viewed": [
+        17,
+        18,
+        19,
+        20
+      ],
+      "page_number_convention": "正文数字页码为PDF文件页序，印刷页另列。"
+    }
+  ],
+  "notes": [
+    {
+      "id": "READ-TB-E1-20260927-ENERGY-01",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C1:1.1",
+      "title": "先划定系统，再使用温度与热量模型",
+      "pdf_pages": [
+        9,
+        10
+      ],
+      "printed_pages": [
+        3,
+        4
+      ],
+      "source_anchors": [
+        "系统与环境",
+        "内能",
+        "Q=cmΔT"
+      ],
+      "summary": "内能属于系统状态，热和功描述能量传递。只在适合的无相变、无化学反应的温度变化模型中，才直接用Q=cmΔT表示所取样品的热量。教材水和沙接受相同100kJ、质量均1kg，比热不同，计算温升也不同；不能以相同温升替代相同热量。",
+      "classroom_check": "注明系统是谁、Q正负从谁看、质量/比热单位，以及相变或化学反应是否使单一温升模型失效。",
+      "lecture_package_id": "PKG-076",
+      "lecture_block_indices": [
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-076/第09讲 化学反应与能量变化（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5df18535cee41bc58bf9211d687a2490869c6ebee31dcc91ce2aca89fb954032",
+      "source_preview_revision": "307bd9823642042037e0ffb8cea356948ce18614572fffbaa02a8a6121cd0327",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 46,
+          "end": 76,
+          "start_xml_locator": "word/document.xml#/w:body/*[60]",
+          "end_xml_locator": "word/document.xml#/w:body/*[92]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C1:1.1",
+        "pdf_pages": [
+          9,
+          10
+        ],
+        "printed_pages": [
+          3,
+          4
+        ],
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "evidence_role": "Actual textbook reading; Word-specific calculations are explicitly identified as lecture extensions.",
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false,
+        "anchors": [
+          "系统与环境",
+          "内能",
+          "Q=cmΔT"
+        ]
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "教材示意和练习不是实际实验测量；未以绝对内能数值或未知热容补计算。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-ENERGY-02",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C1:1.1",
+      "title": "键能差不是反应活化能",
+      "pdf_pages": [
+        11,
+        12,
+        13
+      ],
+      "printed_pages": [
+        5,
+        6,
+        7
+      ],
+      "source_anchors": [
+        "吸热与放热",
+        "恒压反应热",
+        "氢气与溴蒸气"
+      ],
+      "summary": "吸热、放热以所定系统为对象，放热反应也可能需要触发。教材气态氢气与溴的键能例给436+193−2×360=−91kJ·mol⁻¹；这是所写反应的能量差估算。讲义63/67图的峰高须另按初态到峰的势垒读取，不能把全部断键总能与反应活化能直接画等号。",
+      "classroom_check": "对H₂(g)+Br₂(g)→2HBr(g)（氢气、溴蒸气、溴化氢）分别写键能估算与能垒问题需要的数据。",
+      "lecture_package_id": "PKG-076",
+      "lecture_block_indices": [
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        117,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        164,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172,
+        173,
+        174,
+        175,
+        176
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-076/第09讲 化学反应与能量变化（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5df18535cee41bc58bf9211d687a2490869c6ebee31dcc91ce2aca89fb954032",
+      "source_preview_revision": "307bd9823642042037e0ffb8cea356948ce18614572fffbaa02a8a6121cd0327",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 63,
+          "end": 76,
+          "start_xml_locator": "word/document.xml#/w:body/*[78]",
+          "end_xml_locator": "word/document.xml#/w:body/*[92]"
+        },
+        {
+          "start": 117,
+          "end": 145,
+          "start_xml_locator": "word/document.xml#/w:body/*[133]",
+          "end_xml_locator": "word/document.xml#/w:body/*[163]"
+        },
+        {
+          "start": 164,
+          "end": 176,
+          "start_xml_locator": "word/document.xml#/w:body/*[184]",
+          "end_xml_locator": "word/document.xml#/w:body/*[196]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C1:1.1",
+        "pdf_pages": [
+          11,
+          12,
+          13
+        ],
+        "printed_pages": [
+          5,
+          6,
+          7
+        ],
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "evidence_role": "Actual textbook reading; Word-specific calculations are explicitly identified as lecture extensions.",
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false,
+        "anchors": [
+          "吸热与放热",
+          "恒压反应热",
+          "氢气与溴蒸气"
+        ]
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "只采用题给气态键能；不假定实际机理必经完全原子化。温度曲线不作精确量热读数。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-ENERGY-03",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C1:1.1",
+      "title": "相态改变的是端点，催化改变的是途径",
+      "pdf_pages": [
+        14,
+        15
+      ],
+      "printed_pages": [
+        8,
+        9
+      ],
+      "source_anchors": [
+        "水的液态与气态",
+        "氨气与液氨"
+      ],
+      "summary": "教材同量氢气燃烧生成水蒸气或液水给出不同焓变。两式在相同条件下相减，得到每1mol水凝结的焓差−44kJ·mol⁻¹；催化剂则不改变相同起终态的焓差。氨气变液氨的题没有给出具体相变热，不能凭水的数值或图高比例补出。",
+      "classroom_check": "写出H₂O(g)→H₂O(l)（水蒸气→液水）的状态和归一基准，再解释为什么换催化剂不产生同类端点差。",
+      "lecture_package_id": "PKG-076",
+      "lecture_block_indices": [
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        220,
+        221,
+        222,
+        223,
+        224,
+        225,
+        226,
+        432,
+        433,
+        434,
+        435,
+        436,
+        437,
+        438,
+        439,
+        440,
+        441,
+        442,
+        443,
+        444,
+        445,
+        446,
+        447,
+        448,
+        449,
+        450,
+        451,
+        452,
+        453,
+        454,
+        455,
+        456,
+        457,
+        458
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-076/第09讲 化学反应与能量变化（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5df18535cee41bc58bf9211d687a2490869c6ebee31dcc91ce2aca89fb954032",
+      "source_preview_revision": "307bd9823642042037e0ffb8cea356948ce18614572fffbaa02a8a6121cd0327",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 63,
+          "end": 76,
+          "start_xml_locator": "word/document.xml#/w:body/*[78]",
+          "end_xml_locator": "word/document.xml#/w:body/*[92]"
+        },
+        {
+          "start": 220,
+          "end": 226,
+          "start_xml_locator": "word/document.xml#/w:body/*[241]",
+          "end_xml_locator": "word/document.xml#/w:body/*[247]"
+        },
+        {
+          "start": 432,
+          "end": 458,
+          "start_xml_locator": "word/document.xml#/w:body/*[459]",
+          "end_xml_locator": "word/document.xml#/w:body/*[487]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C1:1.1",
+        "pdf_pages": [
+          14,
+          15
+        ],
+        "printed_pages": [
+          8,
+          9
+        ],
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "evidence_role": "Actual textbook reading; Word-specific calculations are explicitly identified as lecture extensions.",
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false,
+        "anchors": [
+          "水的液态与气态",
+          "氨气与液氨"
+        ]
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "−44仅沿教材同组数据计算，不作为任意温度凝结热常数。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-ENERGY-04",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C1:1.2",
+      "title": "量热需要计量、初温和热容近似同时成立",
+      "pdf_pages": [
+        16,
+        17
+      ],
+      "printed_pages": [
+        10,
+        11
+      ],
+      "source_anchors": [
+        "中和反应热测量",
+        "温度传感器",
+        "弹式热量计"
+      ],
+      "summary": "教材50mL 0.50mol/L盐酸与50mL 0.55mol/L氢氧化钠生成水0.025mol。溶液升温热量除以实际生成水量才得到该归一值；密度、比热近似水并忽略量热器吸热只是实验简化。两液初温的算术平均需要两侧热容m·c相同。密封弹式热量计在恒容条件测热，不能不作条件分析就把读数写成恒压焓变。",
+      "classroom_check": "将原始温度、质量、比热、限量试剂和忽略项分别列出；用415表核得平均温差3.10℃。",
+      "lecture_package_id": "PKG-076",
+      "lecture_block_indices": [
+        295,
+        296,
+        297,
+        298,
+        299,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        308,
+        347,
+        348,
+        349,
+        350,
+        351,
+        352,
+        353,
+        354,
+        355,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363,
+        364,
+        365,
+        366,
+        367,
+        368,
+        369,
+        370,
+        371,
+        372,
+        373,
+        374,
+        375,
+        376,
+        377,
+        378,
+        379,
+        380,
+        381,
+        384,
+        385,
+        386,
+        387,
+        388,
+        389,
+        390,
+        391,
+        392,
+        393,
+        394,
+        395,
+        396,
+        397,
+        398,
+        399,
+        400,
+        401,
+        402,
+        403,
+        404,
+        405,
+        406,
+        407,
+        408,
+        409,
+        410,
+        411,
+        412,
+        413,
+        414,
+        415,
+        416,
+        417,
+        418,
+        419,
+        420,
+        421,
+        422,
+        423,
+        424,
+        425,
+        426,
+        427,
+        428,
+        429
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-076/第09讲 化学反应与能量变化（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5df18535cee41bc58bf9211d687a2490869c6ebee31dcc91ce2aca89fb954032",
+      "source_preview_revision": "307bd9823642042037e0ffb8cea356948ce18614572fffbaa02a8a6121cd0327",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 295,
+          "end": 308,
+          "start_xml_locator": "word/document.xml#/w:body/*[320]",
+          "end_xml_locator": "word/document.xml#/w:body/*[333]"
+        },
+        {
+          "start": 347,
+          "end": 381,
+          "start_xml_locator": "word/document.xml#/w:body/*[374]",
+          "end_xml_locator": "word/document.xml#/w:body/*[408]"
+        },
+        {
+          "start": 384,
+          "end": 429,
+          "start_xml_locator": "word/document.xml#/w:body/*[411]",
+          "end_xml_locator": "word/document.xml#/w:body/*[456]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C1:1.2",
+        "pdf_pages": [
+          16,
+          17
+        ],
+        "printed_pages": [
+          10,
+          11
+        ],
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "evidence_role": "Actual textbook reading; Word-specific calculations are explicitly identified as lecture extensions.",
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false,
+        "anchors": [
+          "中和反应热测量",
+          "温度传感器",
+          "弹式热量计"
+        ]
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "教材PDF16温度示意图不当作精确数据；数据核算使用讲义原表而非估读该图。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-ENERGY-05",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C1:1.2",
+      "title": "每摩尔要对应所写反应进度",
+      "pdf_pages": [
+        18
+      ],
+      "printed_pages": [
+        12
+      ],
+      "source_anchors": [
+        "热化学方程式",
+        "298K和100kPa",
+        "计量系数"
+      ],
+      "summary": "热化学方程式同时规定物态、化学计量和对应反应焓。教材把生成1mol或2mol液水分别写成不同倍式，ΔH同步倍乘，逆写变号。普通热化学式不要求某反应物系数必须1；燃烧焓等特定定义才另规定归一基准。讲义462的838因此必须连同半摩尔硫酸铵式阅读。",
+      "classroom_check": "把半式变整式，逐项核对原子、电荷、状态及ΔH是否同步变化；说明kJ和kJ·mol⁻¹分别指什么。",
+      "lecture_package_id": "PKG-076",
+      "lecture_block_indices": [
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        275,
+        276,
+        277,
+        278,
+        279,
+        280,
+        281,
+        282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        461,
+        462,
+        463,
+        464
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-076/第09讲 化学反应与能量变化（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5df18535cee41bc58bf9211d687a2490869c6ebee31dcc91ce2aca89fb954032",
+      "source_preview_revision": "307bd9823642042037e0ffb8cea356948ce18614572fffbaa02a8a6121cd0327",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 188,
+          "end": 207,
+          "start_xml_locator": "word/document.xml#/w:body/*[208]",
+          "end_xml_locator": "word/document.xml#/w:body/*[228]"
+        },
+        {
+          "start": 275,
+          "end": 294,
+          "start_xml_locator": "word/document.xml#/w:body/*[299]",
+          "end_xml_locator": "word/document.xml#/w:body/*[319]"
+        },
+        {
+          "start": 461,
+          "end": 464,
+          "start_xml_locator": "word/document.xml#/w:body/*[490]",
+          "end_xml_locator": "word/document.xml#/w:body/*[493]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C1:1.2",
+        "pdf_pages": [
+          18
+        ],
+        "printed_pages": [
+          12
+        ],
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "evidence_role": "Actual textbook reading; Word-specific calculations are explicitly identified as lecture extensions.",
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false,
+        "anchors": [
+          "热化学方程式",
+          "298K和100kPa",
+          "计量系数"
+        ]
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "讲义另用25℃/101kPa等条件的数据各自保留，不无说明地拼成同一个标准态数据库。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-ENERGY-06",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C1:1.2",
+      "title": "盖斯定律核对共同起终态",
+      "pdf_pages": [
+        19,
+        20
+      ],
+      "printed_pages": [
+        13,
+        14
+      ],
+      "source_anchors": [
+        "盖斯定律",
+        "铜经氧化亚铜的路径"
+      ],
+      "summary": "教材直接把铜氧化为氧化铜，与先形成氧化亚铜再氧化的两条路径比较。按相同起终态与计量，−169+(−146)=−315kJ；这是状态量关系，不能从中推出哪条路径更快或是真实微观机理。应用到离子水合循环时，同样要保留气态/水溶液和分数系数。",
+      "classroom_check": "在两条路径中逐项划掉中间物种；另以462图验证半摩尔循环的838，避免把中间离子计数翻倍。",
+      "lecture_package_id": "PKG-076",
+      "lecture_block_indices": [
+        237,
+        238,
+        239,
+        240,
+        241,
+        242,
+        243,
+        244,
+        245,
+        246,
+        247,
+        248,
+        461,
+        462,
+        463,
+        464,
+        574,
+        575,
+        576,
+        577,
+        578,
+        579,
+        580,
+        581,
+        582
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-076/第09讲 化学反应与能量变化（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5df18535cee41bc58bf9211d687a2490869c6ebee31dcc91ce2aca89fb954032",
+      "source_preview_revision": "307bd9823642042037e0ffb8cea356948ce18614572fffbaa02a8a6121cd0327",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 237,
+          "end": 248,
+          "start_xml_locator": "word/document.xml#/w:body/*[258]",
+          "end_xml_locator": "word/document.xml#/w:body/*[269]"
+        },
+        {
+          "start": 461,
+          "end": 464,
+          "start_xml_locator": "word/document.xml#/w:body/*[490]",
+          "end_xml_locator": "word/document.xml#/w:body/*[493]"
+        },
+        {
+          "start": 574,
+          "end": 582,
+          "start_xml_locator": "word/document.xml#/w:body/*[606]",
+          "end_xml_locator": "word/document.xml#/w:body/*[614]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C1:1.2",
+        "pdf_pages": [
+          19,
+          20
+        ],
+        "printed_pages": [
+          13,
+          14
+        ],
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "evidence_role": "Actual textbook reading; Word-specific calculations are explicitly identified as lecture extensions.",
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false,
+        "anchors": [
+          "盖斯定律",
+          "铜经氧化亚铜的路径"
+        ]
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "气態離子分步只是方便計算的假想路径，不主张真实溶解机制。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-ENERGY-07",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C1:1.2",
+      "title": "相减计算与实测热量归一分两步写",
+      "pdf_pages": [
+        21,
+        22
+      ],
+      "printed_pages": [
+        15,
+        16
+      ],
+      "source_anchors": [
+        "碳与一氧化碳的氧化",
+        "甲醇反应热例题",
+        "实验记录表"
+      ],
+      "summary": "教材用−394−(−283)=−111得到生成1mol一氧化碳的焓差；先核对被消去物质的状态，再做代数。甲醇例中0.1mol放出72.7kJ，归一为−727kJ·mol⁻¹；若热化学式写成2mol甲醇，数值为−1454。实验练习未给出的热容或反应热不能从答案、图形印象补齐。",
+      "classroom_check": "将“样品放热72.7kJ”“每摩尔−727”“倍式−1454”连成一条有单位的换算链，并标甲醇l、二氧化碳g、水l。",
+      "lecture_package_id": "PKG-076",
+      "lecture_block_indices": [
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        237,
+        238,
+        239,
+        240,
+        241,
+        242,
+        243,
+        244,
+        245,
+        246,
+        247,
+        248,
+        403,
+        404,
+        405,
+        406,
+        407,
+        408,
+        409,
+        410,
+        411,
+        412,
+        413,
+        414,
+        415,
+        416,
+        417,
+        418,
+        419,
+        420,
+        421,
+        422,
+        423,
+        424,
+        425,
+        426,
+        427,
+        428,
+        429
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-076/第09讲 化学反应与能量变化（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5df18535cee41bc58bf9211d687a2490869c6ebee31dcc91ce2aca89fb954032",
+      "source_preview_revision": "307bd9823642042037e0ffb8cea356948ce18614572fffbaa02a8a6121cd0327",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 188,
+          "end": 207,
+          "start_xml_locator": "word/document.xml#/w:body/*[208]",
+          "end_xml_locator": "word/document.xml#/w:body/*[228]"
+        },
+        {
+          "start": 237,
+          "end": 248,
+          "start_xml_locator": "word/document.xml#/w:body/*[258]",
+          "end_xml_locator": "word/document.xml#/w:body/*[269]"
+        },
+        {
+          "start": 403,
+          "end": 429,
+          "start_xml_locator": "word/document.xml#/w:body/*[430]",
+          "end_xml_locator": "word/document.xml#/w:body/*[456]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C1:1.2",
+        "pdf_pages": [
+          21,
+          22
+        ],
+        "printed_pages": [
+          15,
+          16
+        ],
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "evidence_role": "Actual textbook reading; Word-specific calculations are explicitly identified as lecture extensions.",
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false,
+        "anchors": [
+          "碳与一氧化碳的氧化",
+          "甲醇反应热例题",
+          "实验记录表"
+        ]
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "原题语句不公开复刻；新课堂检查为改述。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-ENERGY-08",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C1:1.3",
+      "title": "燃烧焓、热值和数值来源分开保留",
+      "pdf_pages": [
+        23,
+        24
+      ],
+      "printed_pages": [
+        17,
+        18
+      ],
+      "source_anchors": [
+        "表1.1",
+        "表1.2",
+        "图1.9"
+      ],
+      "summary": "本教材燃烧热按负的燃烧焓列值，并注明温度、100kPa和稳定产物；实际燃料热值又可能以单位质量或体积给出。不同燃料或不同单位不能只比表中数字大小。表1.1甲醇为−726kJ·mol⁻¹，图1.9给2mol甲醇−1454，对应−727；两处数据差异保留，按各题所给值独立计算，不悄悄统一。",
+      "classroom_check": "识别讲义292与教材的符号约定差异，再区分纯物质摩尔燃烧焓和混合燃料热值。",
+      "lecture_package_id": "PKG-076",
+      "lecture_block_indices": [
+        275,
+        276,
+        277,
+        278,
+        279,
+        280,
+        281,
+        282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        310,
+        311,
+        312,
+        313,
+        314,
+        315,
+        316,
+        317,
+        318,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324,
+        325,
+        326,
+        327,
+        328,
+        329,
+        330,
+        331,
+        332,
+        333,
+        334,
+        335,
+        336,
+        337,
+        338,
+        339,
+        340,
+        341,
+        342,
+        343,
+        344,
+        345
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-076/第09讲 化学反应与能量变化（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5df18535cee41bc58bf9211d687a2490869c6ebee31dcc91ce2aca89fb954032",
+      "source_preview_revision": "307bd9823642042037e0ffb8cea356948ce18614572fffbaa02a8a6121cd0327",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 275,
+          "end": 294,
+          "start_xml_locator": "word/document.xml#/w:body/*[299]",
+          "end_xml_locator": "word/document.xml#/w:body/*[319]"
+        },
+        {
+          "start": 310,
+          "end": 345,
+          "start_xml_locator": "word/document.xml#/w:body/*[335]",
+          "end_xml_locator": "word/document.xml#/w:body/*[372]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C1:1.3",
+        "pdf_pages": [
+          23,
+          24
+        ],
+        "printed_pages": [
+          17,
+          18
+        ],
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "evidence_role": "Actual textbook reading; Word-specific calculations are explicitly identified as lecture extensions.",
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false,
+        "anchors": [
+          "表1.1",
+          "表1.2",
+          "图1.9"
+        ]
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "表列燃料组成/热值为教材例，未外核为当前工业标准；体积热值比较还需体积状态一致。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E1-20260927-ENERGY-09",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C1:1.3",
+      "title": "放热量与可利用热量不能等同",
+      "pdf_pages": [
+        25,
+        26
+      ],
+      "printed_pages": [
+        19,
+        20
+      ],
+      "source_anchors": [
+        "充分燃烧和利用",
+        "图1.10",
+        "反应进度例题"
+      ],
+      "summary": "教材把充分燃烧、减少热损失和余热回收分别讨论；过多空气会带走热量，换热器通过不同流股传热改善利用，不等于改变相同反应的摩尔焓变。26页肼与过氧化氢例按1g肼=0.03125mol和放热20kJ归一，得到所写反应进度的−640kJ·mol⁻¹，热量大小与归一焓变须分开。",
+      "classroom_check": "对N₂H₄(l)+2H₂O₂(l)→N₂(g)+4H₂O(g)（肼、过氧化氢、氮气、水蒸气）先配平，再解释题给20kJ如何归一；不讨论实际推进剂操作。",
+      "lecture_package_id": "PKG-076",
+      "lecture_block_indices": [
+        188,
+        189,
+        190,
+        191,
+        192,
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        275,
+        276,
+        277,
+        278,
+        279,
+        280,
+        281,
+        282,
+        283,
+        284,
+        285,
+        286,
+        287,
+        288,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294
+      ],
+      "source_path": "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-076/第09讲 化学反应与能量变化（复习讲义）（上海专用）（解析版）.docx",
+      "source_sha256": "5df18535cee41bc58bf9211d687a2490869c6ebee31dcc91ce2aca89fb954032",
+      "source_preview_revision": "307bd9823642042037e0ffb8cea356948ce18614572fffbaa02a8a6121cd0327",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "complete_source_ranges": [
+        {
+          "start": 188,
+          "end": 207,
+          "start_xml_locator": "word/document.xml#/w:body/*[208]",
+          "end_xml_locator": "word/document.xml#/w:body/*[228]"
+        },
+        {
+          "start": 275,
+          "end": 294,
+          "start_xml_locator": "word/document.xml#/w:body/*[299]",
+          "end_xml_locator": "word/document.xml#/w:body/*[319]"
+        }
+      ],
+      "textbook_evidence": {
+        "volume_id": "TB-E1",
+        "section_key": "TB-E1-C1:1.3",
+        "pdf_pages": [
+          25,
+          26
+        ],
+        "printed_pages": [
+          19,
+          20
+        ],
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+        "evidence_role": "Actual textbook reading; Word-specific calculations are explicitly identified as lecture extensions.",
+        "review_method": "page_images_read_by_model",
+        "human_reviewed": false,
+        "anchors": [
+          "充分燃烧和利用",
+          "图1.10",
+          "反应进度例题"
+        ]
+      },
+      "evidence_origin": "local_original_page_images_and_native_word_context_read_by_model",
+      "limitations": [
+        "能源发展与历史叙述仅列已读范围，不作当前统计；不把教材设备示意扩展为燃烧安全或工艺操作指导。"
+      ],
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    }
+  ]
+}
