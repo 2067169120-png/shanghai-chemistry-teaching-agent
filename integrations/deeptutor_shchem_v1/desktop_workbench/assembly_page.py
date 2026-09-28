@@ -14,7 +14,7 @@ import hashlib
 from pathlib import Path
 from typing import Any, Mapping
 
-from PySide6.QtCore import QTimer, QRect, QSize, Qt, QUrl, Signal
+from PySide6.QtCore import QEvent, QTimer, QRect, QSize, Qt, QUrl, Signal
 from PySide6.QtGui import QAction, QDesktopServices, QKeyEvent, QKeySequence, QPixmap, QResizeEvent, QShortcut
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -1990,10 +1990,13 @@ class MixedPaperPanel(QWidget):
     """Edit the ordered sections of the existing basket without flattening sources."""
 
     load_finished = Signal(bool)
+    scope_changed = Signal()
+    draft_saved = Signal()
 
     def __init__(self, facade, tasks, legacy_model, parent=None):
         super().__init__(parent)
         self.facade, self.tasks = facade, tasks
+        self._independent = getattr(facade, "independent_paper", False) is True
         self.model = MixedPaperComposerModel()
         self._legacy_model = legacy_model
         self._generation = 0
@@ -2022,6 +2025,7 @@ class MixedPaperPanel(QWidget):
         root.addWidget(
             section_title(
                 "组卷工作台",
+                "当前卷使用已保存来源引用；公共题篮变化不会改动本卷。" if self._independent else
                 "同一个题篮：图片整主题、原卷主题与 Word 原生题按这里的顺序编排，共同材料不拆散。",
             )
         )
@@ -2072,6 +2076,7 @@ class MixedPaperPanel(QWidget):
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
         self.sections.setMinimumSize(0, 180)
+        self.sections.viewport().installEventFilter(self)
         root.addWidget(self.sections)
         row = QHBoxLayout()
         self.up_button, self.down_button = _quiet_button("上移"), _quiet_button("下移")
@@ -2146,7 +2151,19 @@ class MixedPaperPanel(QWidget):
         self.undo_button = _quiet_button("撤销上一步（Ctrl+Alt+Z）")
         self.undo_button.setAccessibleName("撤销当前卷上一步已保存编辑")
         self.undo_button.clicked.connect(self._undo)
-        outer.addWidget(self.undo_button)
+        self.save_button = None
+        if self._independent:
+            self.undo_button.setText("撤销上一步")
+            self.undo_button.setToolTip("撤销本次打开期间最近一次已保存编辑（Ctrl+Alt+Z）")
+            self.save_button = _quiet_button("保存当前卷")
+            self.save_button.setAutoDefault(False)
+            self.save_button.clicked.connect(self._save_explicitly)
+            saved_actions = QHBoxLayout()
+            saved_actions.addWidget(self.save_button, 1)
+            saved_actions.addWidget(self.undo_button, 1)
+            outer.addLayout(saved_actions)
+        else:
+            outer.addWidget(self.undo_button)
         self.back_button = _quiet_button("返回题库")
         self.back_button.clicked.connect(self._return_to_library)
         outer.addWidget(self.back_button)
@@ -2284,7 +2301,12 @@ class MixedPaperPanel(QWidget):
         self._update_actions()
         if result["changed"] and remember:
             self.status.setText(f"已保存{action}，可撤销；请重新核对预览。")
+        self.draft_saved.emit()
         return True
+
+    def _save_explicitly(self):
+        if self._save(remember=False):
+            self.status.setText("当前卷已保存；之后改变公共题篮不会改动此卷。")
 
     def _draft_failed(self, message, *, preserve_recovery=False):
         if self._draft_session is not None:
@@ -2296,6 +2318,7 @@ class MixedPaperPanel(QWidget):
             self._details_dialog.set_error(message)
         self.status.setText(message)
         self._update_actions()
+        self.scope_changed.emit()
 
     def _return_to_library(self):
         navigate = getattr(self.window(), "navigate", None)
@@ -2312,7 +2335,7 @@ class MixedPaperPanel(QWidget):
         ) == QMessageBox.StandardButton.Yes
 
     def _restart(self):
-        if (self._closed or self._busy or self._saving or self._draft_session is None
+        if (self._independent or self._closed or self._busy or self._saving or self._draft_session is None
             or not self._draft_session.can_restart or not self._confirm_restart()):
             return
         self._busy = True
@@ -2363,6 +2386,7 @@ class MixedPaperPanel(QWidget):
             self._apply_record(result["record"])
             self._render(result["selected"])
             self.status.setText(f"已撤销{result['action']}并保存；请重新核对预览。")
+            self.draft_saved.emit()
         except Exception:
             self._draft_failed("撤销未能确认保存，旧记录已失效；请重新读取已保存草稿。")
         finally:
@@ -2399,7 +2423,7 @@ class MixedPaperPanel(QWidget):
         self._invalidate_preview()
         self._busy = True
         self._update_actions()
-        self.status.setText("正在读取同一题篮的完整来源…")
+        self.status.setText("正在按保存引用核对当前卷来源…" if self._independent else "正在读取同一题篮的完整来源…")
         self.summary.setText("正在重读来源，暂不显示旧统计。")
         if self._details_dialog is not None:
             self._details_dialog.set_pending()
@@ -2425,8 +2449,9 @@ class MixedPaperPanel(QWidget):
                                         else "当前草稿已保存；可调整本卷并重新核对预览。")
                     self._show_current_details()
             except Exception:
-                recovery = self._draft_session is not None and self._draft_session.can_restart
+                recovery = not self._independent and self._draft_session is not None and self._draft_session.can_restart
                 self._draft_failed("旧稿不能直接沿用，原稿未覆盖；可保留旧稿并重新开始。" if recovery
+                                   else "本卷草稿或来源待核对，原稿保留；可重读或从顶部题篮新建。" if self._independent
                                    else "旧草稿或来源无法恢复，原稿未覆盖；请重新读取或返回题库核对。",
                                    preserve_recovery=recovery)
                 if recovery:
@@ -2440,7 +2465,8 @@ class MixedPaperPanel(QWidget):
             if self._closed or epoch != self._load_epoch:
                 return
             self._busy = False
-            self._draft_failed("完整来源暂不能读取，当前草稿待核对；请重新读取。")
+            self._draft_failed("本卷草稿或来源待核对，原稿保留；可重读或从顶部题篮新建。" if self._independent
+                               else "完整来源暂不能读取，当前草稿待核对；请重新读取。")
             self.load_finished.emit(False)
 
         try:
@@ -2558,15 +2584,20 @@ class MixedPaperPanel(QWidget):
         if self.sections.currentItem() is not None:
             self.sections.scrollToItem(self.sections.currentItem())
         self.summary.setText(
+            f"本卷 {len(self.model.order)} 个完整题目段 · 本卷移除 {len(self.model.excluded)} 项"
+            if self._independent else
             f"本卷 {len(self.model.order)} 个完整题目段 · 统一题篮 {len(self.model.items)} 项"
         )
         self._selection_changed()
         self._update_actions()
+        self.scope_changed.emit()
 
     def _size_section_rows(self):
         # The shared style pads each item by 10px. Qt's default multi-line
         # size hint can retain the old width and elide the source line after
         # a resize, even with ElideNone; measure the full title and source.
+        if self._closed:
+            return
         width = max(80, self.sections.viewport().width() - 24)
         metrics = self.sections.fontMetrics()
         for index in range(self.sections.count()):
@@ -2574,6 +2605,13 @@ class MixedPaperPanel(QWidget):
             height = metrics.boundingRect(QRect(0, 0, width, 10000), Qt.TextFlag.TextWordWrap, item.text()).height()
             item.setSizeHint(QSize(0, height + 24))
         self.sections.doItemsLayout()
+
+    def eventFilter(self, watched, event):
+        if watched is self.sections.viewport() and event.type() == QEvent.Type.Resize:
+            # The panel resize callback precedes the child layout. Measure
+            # after the actual viewport width changes, including scrollbars.
+            QTimer.singleShot(0, self._size_section_rows)
+        return super().eventFilter(watched, event)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -2672,11 +2710,13 @@ class MixedPaperPanel(QWidget):
         history = self._draft_session.undo_count if self._draft_session is not None else 0
         action = self._draft_session.undo_action if history else ""
         self.undo_button.setEnabled(enabled and history > 0)
+        if self.save_button is not None:
+            self.save_button.setEnabled(enabled)
         self.undo_shortcut.setEnabled(enabled and history > 0)
         self.undo_button.setAccessibleName(f"撤销当前卷上一步{action}，Ctrl+Alt+Z")
         self.reload_button.setEnabled(not self._busy and not self._saving)
         self.details_button.setEnabled(self._loaded_once and not self._busy and not self._saving)
-        recovery = self._draft_session is not None and self._draft_session.can_restart
+        recovery = not self._independent and self._draft_session is not None and self._draft_session.can_restart
         self.restart_button.setVisible(recovery)
         self.restart_note.setVisible(recovery)
         self.restart_button.setEnabled(recovery and not self._busy and not self._saving)
@@ -2857,7 +2897,7 @@ class MixedPaperPanel(QWidget):
                 button.show()
             self.status.setText(
                 str(result.get("message_zh") or "已保存学生、教师版 DOCX 和 PDF。")
-                + '\n四个文件来自本次已核对的预览时已核对的文件；编辑 DOCX 后应重新检查分页。'
+                + '\n四个文件沿用已确认分页；编辑 DOCX 后请重新核对分页。'
             )
             self._update_actions()
 

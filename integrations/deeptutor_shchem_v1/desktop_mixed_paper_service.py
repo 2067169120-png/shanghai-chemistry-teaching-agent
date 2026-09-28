@@ -333,6 +333,9 @@ class MixedPaperService:
                     },
                 }
             )
+        verify_scope = getattr(self.facade, "_verify_independent_sources", None)
+        if callable(verify_scope):
+            verify_scope(result, words)
         return result, words, inventory, catalogs
 
     def projection(self):

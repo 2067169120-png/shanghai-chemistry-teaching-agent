@@ -298,6 +298,28 @@ class OfflineWordLabelReviewService:
     def __init__(self, words):
         self.words = words
 
+    def _validate_candidates(self, candidates):
+        return validate_candidate_batch(candidates)
+
+    def _policy(self, mode):
+        return (
+            RECHECK_RULE_REVISION if mode == "recheck_automatic" else RULE_REVISION,
+            READING_POLICY_REVISIONS[mode], PLAN_SCHEMA_VERSION,
+        )
+
+    def _receipt_schema(self):
+        return RECEIPT_SCHEMA_VERSION
+
+    def _reading_scope(self, entry, row, old, preview, source, *, mode):
+        # Separate admission policies can reuse the same source resolution,
+        # merge constraints, CAS transaction and post-commit failure reporting.
+        # The default remains the original, deliberately text-only policy.
+        return (
+            _source_blocks(row, old, preview, mode=mode),
+            _review_scope_sha256(row) if mode == "recheck_automatic" else None,
+            {},
+        )
+
     def _prime_locations(self, entries):
         # These are untrusted lookup hints only. _resolve still validates the
         # descriptor closure, archive bytes, question key and every revision.
@@ -323,8 +345,7 @@ class OfflineWordLabelReviewService:
         })
 
     def _compile(self, batch, *, mode):
-        rule_revision = RECHECK_RULE_REVISION if mode == "recheck_automatic" else RULE_REVISION
-        reading_policy = READING_POLICY_REVISIONS[mode]
+        rule_revision, reading_policy, plan_schema = self._policy(mode)
         entries = batch["entries"]
         try:
             self._prime_locations(entries)
@@ -381,8 +402,9 @@ class OfflineWordLabelReviewService:
                 and preview.get("extraction_revision") == row["extraction_revision"],
                 "source_identity_changed", "完整原文件或解析版本与候选绑定不一致。",
             )
-            blocks = _source_blocks(row, old, preview, mode=mode)
-            review_sha = _review_scope_sha256(row) if mode == "recheck_automatic" else None
+            blocks, review_sha, scope_metadata = self._reading_scope(
+                entry, row, old, preview, source, mode=mode,
+            )
             unit = {
                 "mode": mode, "attributes": old, "images": [],
                 "input": {"blocks": blocks, "source_sha256": row["source_sha256"]},
@@ -423,6 +445,7 @@ class OfflineWordLabelReviewService:
                 "stored_attribute_revision": old["revision"],
                 "planned_attribute_revision": new["revision"],
                 "review_scope_sha256": review_sha,
+                **scope_metadata,
             })
             metadata.append({
                 "key": row["key"], "source_sha256": row["source_sha256"],
@@ -432,6 +455,7 @@ class OfflineWordLabelReviewService:
                 "old_edit_version": old["edit_version"], "new_edit_version": new["edit_version"],
                 "changed": changed,
                 "review_scope_sha256": review_sha,
+                **scope_metadata,
                 "old_primary": old["primary_knowledge"]["id"],
                 "new_primary": new["primary_knowledge"]["id"],
                 "old_sections": [node["section_key"] for node in old["curriculum_candidates"]],
@@ -441,13 +465,13 @@ class OfflineWordLabelReviewService:
         catalog_sha = _digest(catalog)
         candidate_sha = _digest(batch)
         plan_sha = _digest({
-            "schema_version": PLAN_SCHEMA_VERSION, "rule_revision": rule_revision,
+            "schema_version": plan_schema, "rule_revision": rule_revision,
             "label_mode": mode, "reading_policy_revision": reading_policy,
             "candidates": batch, "catalog_sha256": catalog_sha, "bindings": bindings,
         })
         changed_count = sum(entry["changed"] for entry in metadata)
         report = {
-            "schema_version": PLAN_SCHEMA_VERSION, "rule_revision": rule_revision,
+            "schema_version": plan_schema, "rule_revision": rule_revision,
             "label_mode": mode, "reading_policy_revision": reading_policy,
             "provenance": PROVENANCE, "candidate_only": True, "human_review": False,
             "provider_invoked": False, "teacher_confirmed": False,
@@ -473,7 +497,7 @@ class OfflineWordLabelReviewService:
 
     def preview(self, candidates, *, mode="missing_only"):
         mode = validate_label_mode(mode)
-        batch = validate_candidate_batch(candidates)
+        batch = self._validate_candidates(candidates)
         with self.words._lock:
             return self._compile(batch, mode=mode)[0]
 
@@ -491,7 +515,7 @@ class OfflineWordLabelReviewService:
         }
         try:
             mode = validate_label_mode(mode)
-            batch = validate_candidate_batch(candidates)
+            batch = self._validate_candidates(candidates)
             _require(
                 valid_digest, "expected_plan_required", "应用候选须提供已核对预览的完整摘要。",
             )
@@ -525,7 +549,7 @@ class OfflineWordLabelReviewService:
                 )
                 operation.update(stage="readback_verified", readback_verified=True)
                 return {
-                    **report, "schema_version": RECEIPT_SCHEMA_VERSION, **operation,
+                    **report, "schema_version": self._receipt_schema(), **operation,
                     "completed": True, "applied": True,
                     "do_not_retry_automatically": False,
                     "after_actual": _coverage(list(actual.values())),

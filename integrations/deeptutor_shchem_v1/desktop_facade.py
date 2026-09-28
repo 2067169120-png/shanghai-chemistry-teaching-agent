@@ -1748,6 +1748,10 @@ class DesktopWorkbenchFacade:
     def open_mixed_paper_draft_session(self):
         return self._mixed_paper_call("open_draft_session")
 
+    def independent_paper_library(self):
+        from .desktop_independent_paper import IndependentPaperLibrary
+        return IndependentPaperLibrary(self)
+
     def paper_preview_image(self, preview_id: str, image_id: str) -> dict[str, Any]:
         return self._mixed_paper_call("image", preview_id, image_id)
 
