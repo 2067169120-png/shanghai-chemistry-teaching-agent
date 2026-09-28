@@ -302,3 +302,15 @@
 /README-*-archive.md
 !/docs/WORKFLOW_STATUS.md
 !/.github/workflows/documentation.yml
+
+# Reviewed page navigation source and synthetic evidence only.
+!/runtime/deeptutor_shchem/preview_navigation_qa.py
+!/docs/qa/2026-09-28-preview-navigation.md
+!/docs/qa/2026-09-28-preview-navigation.json
+!/docs/qa/screenshots/
+/docs/qa/screenshots/*
+!/docs/qa/screenshots/2026-09-28-preview-navigation/
+/docs/qa/screenshots/2026-09-28-preview-navigation/*
+!/docs/qa/screenshots/2026-09-28-preview-navigation/paper-360.png
+!/docs/qa/screenshots/2026-09-28-preview-navigation/paper-1000.png
+!/docs/qa/screenshots/2026-09-28-preview-navigation/ppt-360.png

@@ -6,7 +6,7 @@ from uuid import uuid4
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QDesktopServices, QPixmap
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QFileDialog, QFormLayout,
     QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
     QMessageBox, QPlainTextEdit, QPushButton, QScrollArea, QSpinBox, QSplitter,
@@ -15,6 +15,7 @@ from ..desktop_lesson_design import (KINDS, DesignHistory, bind_material,
     content_fingerprint, coverage, new_design, new_node, update_goal, update_node)
 from ..desktop_lesson_output import FILES, actual_ppt_preview, checked_file, export_design, copy_output_bundle
 from .components import page_scroll
+from .actual_ppt_preview_dialog import ActualPptPreview
 
 
 def label(text):
@@ -22,56 +23,6 @@ def label(text):
     w.setWordWrap(True)
     w.setTextFormat(Qt.TextFormat.PlainText)
     return w
-
-
-class ActualPptPreview(QDialog):
-    def __init__(self, report, parent=None):
-        super().__init__(parent)
-        self.report = report
-        self.setWindowTitle("实际PPTX预览 · LibreOffice")
-        self.resize(1080, 760)
-        root = QVBoxLayout(self)
-        root.addWidget(label("来自已生成的PPTX，不是结构示意图。LibreOffice与PowerPoint可能存在呈现差异。"))
-        self.picture = QLabel()
-        self.picture.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setWidget(self.picture)
-        root.addWidget(scroll, 1)
-        self.scroll = scroll
-        import pypdfium2 as pdfium
-        from ..desktop_local_pagination import _PDF_LOCK
-        with _PDF_LOCK, pdfium.PdfDocument(report["path"]) as doc:
-            self.count = len(doc)
-        row = QHBoxLayout()
-        self.prev, self.next = QPushButton("上一页"), QPushButton("下一页")
-        self.caption = QLabel()
-        row.addWidget(self.prev); row.addWidget(self.caption); row.addWidget(self.next)
-        open_pdf = QPushButton("打开完整PDF")
-        open_pdf.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(report["path"])))
-        row.addWidget(open_pdf)
-        root.addLayout(row)
-        self.index = 0
-        self.prev.clicked.connect(lambda: self.move(-1))
-        self.next.clicked.connect(lambda: self.move(1))
-        self.move(0)
-
-    def move(self, delta):
-        import pypdfium2 as pdfium
-        from ..desktop_local_pagination import _PDF_LOCK
-        from io import BytesIO
-        self.index = max(0, min(self.count - 1, self.index + delta))
-        with _PDF_LOCK, pdfium.PdfDocument(self.report["path"]) as doc:
-            page = doc[self.index]
-            bitmap = page.render(scale=1.25)
-            image = bitmap.to_pil()
-            stream = BytesIO(); image.save(stream, format="PNG")
-            image.close(); bitmap.close(); page.close()
-        pixmap = QPixmap()
-        pixmap.loadFromData(stream.getvalue())
-        self.picture.setPixmap(pixmap)
-        self.caption.setText(f"{self.index+1} / {self.count}")
-        self.prev.setEnabled(self.index > 0); self.next.setEnabled(self.index+1 < self.count)
 
 
 class LessonDesignDialog(QDialog):
@@ -506,7 +457,7 @@ class LessonDesignDialog(QDialog):
     def preview_ppt(self):
         plan = deepcopy(self.history.value); identity = self.outputs.currentData()
         self.run("正在转换实际PPTX…", lambda: actual_ppt_preview(self.facade, plan, identity),
-                 lambda report: ActualPptPreview(report, self).exec(), cancellable=True)
+                 lambda report: ActualPptPreview(report, self, tasks=self.tasks).exec(), cancellable=True)
 
     def reject(self):
         if self.busy:

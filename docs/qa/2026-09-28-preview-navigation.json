@@ -1,0 +1,1065 @@
+{
+  "base_commit": "89c7da3a9d1fea8306cc206fb31a08c10f0d97c8",
+  "candidate_only": true,
+  "new_exe": false,
+  "human_reviewed": false,
+  "source_sha256": {
+    "integrations/deeptutor_shchem_v1/desktop_workbench/assembly_page.py": "5de370e8e179871d0e15b7cba2302e39efa46754cacdfa669e0ae37fbdb0279a",
+    "integrations/deeptutor_shchem_v1/desktop_workbench/lesson_design_dialog.py": "3c4f5a6a2aceda9ce1d4f22b8c0d80c9f7bcd235586bdebdffbeb12a793d4ca1",
+    "integrations/deeptutor_shchem_v1/desktop_workbench/actual_ppt_preview_dialog.py": "7ed9cdf22cb07cccbb76c4e50a528f3a86bb69c2b2d5ba59b5225625fbcf5356",
+    "integrations/deeptutor_shchem_v1/desktop_workbench/preview_navigation.py": "209cb46c70ced394f2736c12d0edf24c61486200c62d34414042e9b8f734e8ff",
+    "integrations/deeptutor_shchem_v1/desktop_preview_pdf.py": "96bbd6315c1ceb705134070b273c555deb1316056e20360f805473a719910f83",
+    "runtime/deeptutor_shchem/preview_navigation_qa.py": "e8c4a4d45defb4f4837c108dca1d7fb734cdcc081d2d6f099860cbfe914b7a59",
+    "staging/coordination/deeptutor_gateway/tests/test_preview_navigation.py": "a3141bc503509b6561dd888b04b43b0816e91b8fbbd52aabec1ae67e9cc8b602"
+  },
+  "syntax_pass": 7,
+  "root_final_screenshot_views": 16,
+  "public_screenshots": 3,
+  "review_note": "Root directly viewed all 16 final images; wide 2x displays were tool-resized, originals preserved.",
+  "ui": [
+    {
+      "folder": "ui-qa-dpi-final",
+      "manifest_sha256": "39d3db84c8656d02001678329e85767055d698ef92e47d992d69c2d04e93de6b",
+      "synthetic_only": true,
+      "provider_calls": 0,
+      "office_calls": 0,
+      "personal_state_accessed": false,
+      "initial_rss": 119705600,
+      "cycles": [
+        {
+          "cycle": 1,
+          "first_page_seconds": 4.047000000005937,
+          "pages_visited": 41,
+          "max_cache_bytes": 18045744,
+          "released_cache_entries": 0,
+          "post_close_rss": 142966784
+        },
+        {
+          "cycle": 2,
+          "first_page_seconds": 0.34400000001187436,
+          "pages_visited": 41,
+          "max_cache_bytes": 18045744,
+          "released_cache_entries": 0,
+          "post_close_rss": 141516800
+        },
+        {
+          "cycle": 3,
+          "first_page_seconds": 0.34399999999732245,
+          "pages_visited": 41,
+          "max_cache_bytes": 18045744,
+          "released_cache_entries": 0,
+          "post_close_rss": 142372864
+        },
+        {
+          "cycle": 4,
+          "first_page_seconds": 0.34399999999732245,
+          "pages_visited": 41,
+          "max_cache_bytes": 18045744,
+          "released_cache_entries": 0,
+          "post_close_rss": 142856192
+        },
+        {
+          "cycle": 5,
+          "first_page_seconds": 0.34399999999732245,
+          "pages_visited": 41,
+          "max_cache_bytes": 18045744,
+          "released_cache_entries": 0,
+          "post_close_rss": 143654912
+        },
+        {
+          "cycle": 6,
+          "first_page_seconds": 0.34399999999732245,
+          "pages_visited": 41,
+          "max_cache_bytes": 18045744,
+          "released_cache_entries": 0,
+          "post_close_rss": 144195584
+        }
+      ],
+      "post_warmup_final_rss_growth": 2678784,
+      "memory_tolerance_bytes": 33554432,
+      "memory_pass": true,
+      "images": [
+        {
+          "file": "ppt-360.png",
+          "sha256": "3b69fe83ae9c55d9c23ede83d4baa9c2e25d973aa7a246ba0f67d9bade4593ff",
+          "logical_size": [
+            360,
+            520
+          ],
+          "pixel_size": [
+            360,
+            520
+          ],
+          "dpr": 1.0,
+          "controls": {
+            "previous": [
+              11,
+              351,
+              34,
+              40
+            ],
+            "next": [
+              183,
+              351,
+              34,
+              40
+            ],
+            "page": [
+              51,
+              350,
+              126,
+              42
+            ],
+            "zoom": [
+              223,
+              351,
+              126,
+              39
+            ],
+            "open": [
+              11,
+              469,
+              166,
+              40
+            ],
+            "return": [
+              183,
+              469,
+              166,
+              40
+            ],
+            "status": [
+              11,
+              444,
+              338,
+              19
+            ]
+          }
+        },
+        {
+          "file": "ppt-420.png",
+          "sha256": "792966e46c17d7d56c3ddcaf22853f5f83dee5a3ebcd2ad73744018be5be5503",
+          "logical_size": [
+            420,
+            700
+          ],
+          "pixel_size": [
+            420,
+            700
+          ],
+          "dpr": 1.0,
+          "controls": {
+            "previous": [
+              11,
+              531,
+              34,
+              40
+            ],
+            "next": [
+              213,
+              531,
+              34,
+              40
+            ],
+            "page": [
+              51,
+              530,
+              156,
+              42
+            ],
+            "zoom": [
+              253,
+              531,
+              156,
+              39
+            ],
+            "open": [
+              11,
+              649,
+              196,
+              40
+            ],
+            "return": [
+              213,
+              649,
+              196,
+              40
+            ],
+            "status": [
+              11,
+              624,
+              398,
+              19
+            ]
+          }
+        },
+        {
+          "file": "ppt-1080.png",
+          "sha256": "0c447e1d495dc0a3794113322d8dadff2051fdb0d71a54d75fc33f4aff71e6a8",
+          "logical_size": [
+            1080,
+            760
+          ],
+          "pixel_size": [
+            1080,
+            760
+          ],
+          "dpr": 1.0,
+          "controls": {
+            "previous": [
+              11,
+              591,
+              84,
+              40
+            ],
+            "next": [
+              543,
+              591,
+              84,
+              40
+            ],
+            "page": [
+              101,
+              590,
+              436,
+              42
+            ],
+            "zoom": [
+              633,
+              591,
+              436,
+              39
+            ],
+            "open": [
+              11,
+              709,
+              526,
+              40
+            ],
+            "return": [
+              543,
+              709,
+              526,
+              40
+            ],
+            "status": [
+              11,
+              684,
+              1058,
+              19
+            ]
+          }
+        },
+        {
+          "file": "paper-360.png",
+          "sha256": "cb82d598a10f75709490417e903ffbc9191f40c6bca2d678c7126019e355239e",
+          "logical_size": [
+            360,
+            520
+          ],
+          "pixel_size": [
+            360,
+            520
+          ],
+          "dpr": 1.0,
+          "controls": {
+            "previous": [
+              11,
+              332,
+              34,
+              40
+            ],
+            "next": [
+              183,
+              332,
+              34,
+              40
+            ],
+            "page": [
+              51,
+              331,
+              126,
+              42
+            ],
+            "zoom": [
+              223,
+              332,
+              126,
+              39
+            ],
+            "review": [
+              11,
+              379,
+              338,
+              40
+            ],
+            "confirm": [
+              154,
+              469,
+              195,
+              40
+            ],
+            "return": [
+              11,
+              469,
+              137,
+              40
+            ],
+            "status": [
+              11,
+              425,
+              338,
+              38
+            ]
+          }
+        },
+        {
+          "file": "paper-420.png",
+          "sha256": "7e73d7999df6f1462a51759dd2286c64181e4efab4c841c1f99b79bfa972a7c7",
+          "logical_size": [
+            420,
+            700
+          ],
+          "pixel_size": [
+            420,
+            700
+          ],
+          "dpr": 1.0,
+          "controls": {
+            "previous": [
+              11,
+              531,
+              34,
+              40
+            ],
+            "next": [
+              213,
+              531,
+              34,
+              40
+            ],
+            "page": [
+              51,
+              530,
+              156,
+              42
+            ],
+            "zoom": [
+              253,
+              531,
+              156,
+              39
+            ],
+            "review": [
+              11,
+              578,
+              398,
+              40
+            ],
+            "confirm": [
+              213,
+              649,
+              196,
+              40
+            ],
+            "return": [
+              11,
+              649,
+              196,
+              40
+            ],
+            "status": [
+              11,
+              624,
+              398,
+              19
+            ]
+          }
+        },
+        {
+          "file": "paper-1000.png",
+          "sha256": "762bf1736cc503a9ccfab514b8ae2cff5feeec2c1f2523f746fed9faacb2cd7b",
+          "logical_size": [
+            1000,
+            850
+          ],
+          "pixel_size": [
+            1000,
+            850
+          ],
+          "dpr": 1.0,
+          "controls": {
+            "previous": [
+              11,
+              681,
+              84,
+              40
+            ],
+            "next": [
+              503,
+              681,
+              84,
+              40
+            ],
+            "page": [
+              101,
+              680,
+              396,
+              42
+            ],
+            "zoom": [
+              593,
+              681,
+              396,
+              39
+            ],
+            "review": [
+              11,
+              728,
+              978,
+              40
+            ],
+            "confirm": [
+              503,
+              799,
+              486,
+              40
+            ],
+            "return": [
+              11,
+              799,
+              486,
+              40
+            ],
+            "status": [
+              11,
+              774,
+              978,
+              19
+            ]
+          }
+        },
+        {
+          "file": "paper-teacher-reviewed.png",
+          "sha256": "7cdd4ed093ad0878c64d5a52c5570fb91d8245a4354cc80cbe0a5d512756d940",
+          "logical_size": [
+            420,
+            700
+          ],
+          "pixel_size": [
+            420,
+            700
+          ],
+          "dpr": 1.0,
+          "controls": {
+            "confirm": [
+              213,
+              649,
+              196,
+              40
+            ],
+            "return": [
+              11,
+              649,
+              196,
+              40
+            ],
+            "review": [
+              11,
+              559,
+              398,
+              40
+            ],
+            "status": [
+              11,
+              605,
+              398,
+              38
+            ]
+          }
+        },
+        {
+          "file": "paper-failed.png",
+          "sha256": "111d5e10d6f395b2eca6512641ba656aacd0f98d23edd0339746ed3392baaf30",
+          "logical_size": [
+            360,
+            520
+          ],
+          "pixel_size": [
+            360,
+            520
+          ],
+          "dpr": 1.0,
+          "controls": {
+            "failure": [
+              240,
+              285,
+              109,
+              40
+            ],
+            "return": [
+              11,
+              469,
+              137,
+              40
+            ],
+            "confirm": [
+              154,
+              469,
+              195,
+              40
+            ],
+            "status": [
+              11,
+              425,
+              338,
+              38
+            ]
+          }
+        }
+      ],
+      "pdf_sha256": "00000a403dd243ba6d7e7a97428aff5811eec6b0f57c31f7154a448a02794bd9",
+      "paper_pages_explicitly_reviewed": 80,
+      "limitations": [
+        "Authored PDF tests the actual PDF reader; no PPTX conversion fidelity claim.",
+        "RSS is a bounded observation across these runs, not an all-hardware memory guarantee.",
+        "Read failures are located; layout overflow still needs visual judgement."
+      ]
+    },
+    {
+      "folder": "ui-qa-dpi-2x-final",
+      "manifest_sha256": "d2300064eb3baefb558fb852985b04c0761679f7aca5cdc76f91bdeab357b3e6",
+      "synthetic_only": true,
+      "provider_calls": 0,
+      "office_calls": 0,
+      "personal_state_accessed": false,
+      "initial_rss": 119541760,
+      "cycles": [
+        {
+          "cycle": 1,
+          "first_page_seconds": 4.0310000000026776,
+          "pages_visited": 41,
+          "max_cache_bytes": 64050560,
+          "released_cache_entries": 0,
+          "post_close_rss": 142143488
+        },
+        {
+          "cycle": 2,
+          "first_page_seconds": 0.48399999999674037,
+          "pages_visited": 41,
+          "max_cache_bytes": 64050560,
+          "released_cache_entries": 0,
+          "post_close_rss": 144723968
+        },
+        {
+          "cycle": 3,
+          "first_page_seconds": 0.5,
+          "pages_visited": 41,
+          "max_cache_bytes": 64050560,
+          "released_cache_entries": 0,
+          "post_close_rss": 147173376
+        },
+        {
+          "cycle": 4,
+          "first_page_seconds": 0.4850000000005821,
+          "pages_visited": 41,
+          "max_cache_bytes": 64050560,
+          "released_cache_entries": 0,
+          "post_close_rss": 145797120
+        },
+        {
+          "cycle": 5,
+          "first_page_seconds": 0.3899999999994179,
+          "pages_visited": 41,
+          "max_cache_bytes": 64050560,
+          "released_cache_entries": 0,
+          "post_close_rss": 145027072
+        },
+        {
+          "cycle": 6,
+          "first_page_seconds": 0.48399999999674037,
+          "pages_visited": 41,
+          "max_cache_bytes": 64050560,
+          "released_cache_entries": 0,
+          "post_close_rss": 147349504
+        }
+      ],
+      "post_warmup_final_rss_growth": 2625536,
+      "memory_tolerance_bytes": 33554432,
+      "memory_pass": true,
+      "images": [
+        {
+          "file": "ppt-360.png",
+          "sha256": "614307b8f92bad7d6ed3957d9da68298c937bf9bed4ffca4123c40accd647637",
+          "logical_size": [
+            360,
+            520
+          ],
+          "pixel_size": [
+            720,
+            1040
+          ],
+          "dpr": 2.0,
+          "controls": {
+            "previous": [
+              11,
+              351,
+              34,
+              40
+            ],
+            "next": [
+              183,
+              351,
+              34,
+              40
+            ],
+            "page": [
+              51,
+              350,
+              126,
+              42
+            ],
+            "zoom": [
+              223,
+              351,
+              126,
+              39
+            ],
+            "open": [
+              11,
+              469,
+              166,
+              40
+            ],
+            "return": [
+              183,
+              469,
+              166,
+              40
+            ],
+            "status": [
+              11,
+              444,
+              338,
+              19
+            ]
+          }
+        },
+        {
+          "file": "ppt-420.png",
+          "sha256": "288a1fb86ccd05b90ca9e10a2498bb0b0d2a16a15310f012b29f78fdf212505f",
+          "logical_size": [
+            420,
+            700
+          ],
+          "pixel_size": [
+            840,
+            1400
+          ],
+          "dpr": 2.0,
+          "controls": {
+            "previous": [
+              11,
+              531,
+              34,
+              40
+            ],
+            "next": [
+              213,
+              531,
+              34,
+              40
+            ],
+            "page": [
+              51,
+              530,
+              156,
+              42
+            ],
+            "zoom": [
+              253,
+              531,
+              156,
+              39
+            ],
+            "open": [
+              11,
+              649,
+              196,
+              40
+            ],
+            "return": [
+              213,
+              649,
+              196,
+              40
+            ],
+            "status": [
+              11,
+              624,
+              398,
+              19
+            ]
+          }
+        },
+        {
+          "file": "ppt-1080.png",
+          "sha256": "43ce094a4fb23e9cdd912804d66d34dca66c0f0fe6d27fed80259e0d068dc478",
+          "logical_size": [
+            1080,
+            760
+          ],
+          "pixel_size": [
+            2160,
+            1520
+          ],
+          "dpr": 2.0,
+          "controls": {
+            "previous": [
+              11,
+              591,
+              84,
+              40
+            ],
+            "next": [
+              543,
+              591,
+              84,
+              40
+            ],
+            "page": [
+              101,
+              590,
+              436,
+              42
+            ],
+            "zoom": [
+              633,
+              591,
+              436,
+              39
+            ],
+            "open": [
+              11,
+              709,
+              526,
+              40
+            ],
+            "return": [
+              543,
+              709,
+              526,
+              40
+            ],
+            "status": [
+              11,
+              684,
+              1058,
+              19
+            ]
+          }
+        },
+        {
+          "file": "paper-360.png",
+          "sha256": "d8f99d105fd1a799687dfebb78adeb3faf06c30dcfe6ff0af1c65caab0e071f5",
+          "logical_size": [
+            360,
+            520
+          ],
+          "pixel_size": [
+            720,
+            1040
+          ],
+          "dpr": 2.0,
+          "controls": {
+            "previous": [
+              11,
+              332,
+              34,
+              40
+            ],
+            "next": [
+              183,
+              332,
+              34,
+              40
+            ],
+            "page": [
+              51,
+              331,
+              126,
+              42
+            ],
+            "zoom": [
+              223,
+              332,
+              126,
+              39
+            ],
+            "review": [
+              11,
+              379,
+              338,
+              40
+            ],
+            "confirm": [
+              154,
+              469,
+              195,
+              40
+            ],
+            "return": [
+              11,
+              469,
+              137,
+              40
+            ],
+            "status": [
+              11,
+              425,
+              338,
+              38
+            ]
+          }
+        },
+        {
+          "file": "paper-420.png",
+          "sha256": "eec72d1fc8086e9ed62aca69cb913c3e509cfb533feda4db6eb0a0b08026e63e",
+          "logical_size": [
+            420,
+            700
+          ],
+          "pixel_size": [
+            840,
+            1400
+          ],
+          "dpr": 2.0,
+          "controls": {
+            "previous": [
+              11,
+              531,
+              34,
+              40
+            ],
+            "next": [
+              213,
+              531,
+              34,
+              40
+            ],
+            "page": [
+              51,
+              530,
+              156,
+              42
+            ],
+            "zoom": [
+              253,
+              531,
+              156,
+              39
+            ],
+            "review": [
+              11,
+              578,
+              398,
+              40
+            ],
+            "confirm": [
+              213,
+              649,
+              196,
+              40
+            ],
+            "return": [
+              11,
+              649,
+              196,
+              40
+            ],
+            "status": [
+              11,
+              624,
+              398,
+              19
+            ]
+          }
+        },
+        {
+          "file": "paper-1000.png",
+          "sha256": "3ff2349a118268f0156a322d9b5b7aa898f6ed16d32dd111dc954747e1bd0e52",
+          "logical_size": [
+            1000,
+            850
+          ],
+          "pixel_size": [
+            2000,
+            1700
+          ],
+          "dpr": 2.0,
+          "controls": {
+            "previous": [
+              11,
+              681,
+              84,
+              40
+            ],
+            "next": [
+              503,
+              681,
+              84,
+              40
+            ],
+            "page": [
+              101,
+              680,
+              396,
+              42
+            ],
+            "zoom": [
+              593,
+              681,
+              396,
+              39
+            ],
+            "review": [
+              11,
+              728,
+              978,
+              40
+            ],
+            "confirm": [
+              503,
+              799,
+              486,
+              40
+            ],
+            "return": [
+              11,
+              799,
+              486,
+              40
+            ],
+            "status": [
+              11,
+              774,
+              978,
+              19
+            ]
+          }
+        },
+        {
+          "file": "paper-teacher-reviewed.png",
+          "sha256": "74c4f2dcc3acd6c0657f2bccd582b906360996bc534e7851c4b17a7448d0ae64",
+          "logical_size": [
+            420,
+            700
+          ],
+          "pixel_size": [
+            840,
+            1400
+          ],
+          "dpr": 2.0,
+          "controls": {
+            "confirm": [
+              213,
+              649,
+              196,
+              40
+            ],
+            "return": [
+              11,
+              649,
+              196,
+              40
+            ],
+            "review": [
+              11,
+              559,
+              398,
+              40
+            ],
+            "status": [
+              11,
+              605,
+              398,
+              38
+            ]
+          }
+        },
+        {
+          "file": "paper-failed.png",
+          "sha256": "444955b0dd6a7a76187345336c63fb05f4c3ad371a156d97ebe261ea38ed248c",
+          "logical_size": [
+            360,
+            520
+          ],
+          "pixel_size": [
+            720,
+            1040
+          ],
+          "dpr": 2.0,
+          "controls": {
+            "failure": [
+              240,
+              285,
+              109,
+              40
+            ],
+            "return": [
+              11,
+              469,
+              137,
+              40
+            ],
+            "confirm": [
+              154,
+              469,
+              195,
+              40
+            ],
+            "status": [
+              11,
+              425,
+              338,
+              38
+            ]
+          }
+        }
+      ],
+      "pdf_sha256": "68f8ae8282c584c58fb77fba3a7d0d670821894e5165d45390b3236dd8a4552c",
+      "paper_pages_explicitly_reviewed": 80,
+      "limitations": [
+        "Authored PDF tests the actual PDF reader; no PPTX conversion fidelity claim.",
+        "RSS is a bounded observation across these runs, not an all-hardware memory guarantee.",
+        "Read failures are located; layout overflow still needs visual judgement."
+      ]
+    }
+  ],
+  "complete_new_question_reads": 0,
+  "new_knowledge_claims": 0,
+  "applied_question_changes": 0,
+  "tests": [
+    {
+      "file": "navigation-final.xml",
+      "sha256": "c78c7136bcde5691c6eb6b4118eb692319c9803812043ff8e93bd7ae375c7b59",
+      "passed": 109
+    },
+    {
+      "file": "navigation-dpi-2x-final.xml",
+      "sha256": "9ba65c188ce40a1febc503d057a78ac06cc0de7c0acbe912f786e800e7f76b46",
+      "passed": 24
+    },
+    {
+      "file": "documentation-final.xml",
+      "sha256": "bd5a9a13f0fef98ed4d6b7d93b94e79de787de24f4aabdbd89df27822f6cf727",
+      "passed": 34
+    }
+  ],
+  "distinct_local_tests": 143,
+  "local_protection_expected": {
+    "files": 770,
+    "state_members": 488,
+    "formal_data_changes": 0
+  }
+}
