@@ -6488,6 +6488,15 @@ class DesktopWorkbenchFacade:
             concept_id, revision
         )
 
+    def preparation_textbook_section_source(
+        self, concept_id: str, revision: str
+    ) -> dict[str, Any]:
+        from .desktop_preparation_sources import PreparationSourcesService
+
+        return PreparationSourcesService(self.paths.workspace_root).textbook_section_source(
+            concept_id, revision
+        )
+
     def preparation_source_reference(
         self,
         word_path: str | None,

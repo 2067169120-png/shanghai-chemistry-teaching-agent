@@ -22,8 +22,11 @@ from .tasks import DesktopTaskBridge
 
 
 class TextbookSourceDialog(QDialog):
-    def __init__(self, facade, concept, parent=None, *, tasks=None, excerpt=None):
+    def __init__(self, facade, concept, parent=None, *, tasks=None, excerpt=None, reading_mode="concept"):
         super().__init__(parent)
+        if reading_mode not in {"concept", "section"} or (reading_mode == "section" and excerpt is not None):
+            raise ValueError("整节阅读不接受知识点摘录或未知阅读范围。")
+        self.reading_mode = reading_mode
         self.facade = facade
         self.concept = dict(concept)
         self.tasks = tasks or DesktopTaskBridge(self)
@@ -34,7 +37,7 @@ class TextbookSourceDialog(QDialog):
         self._source = None
         self.excerpt = dict(excerpt) if excerpt is not None else None
         self.excerpt_panel = None
-        self.setWindowTitle("查看教材原页 · 本地核对")
+        self.setWindowTitle("阅读本节 · 只读教材原页" if reading_mode == "section" else "查看教材原页 · 本地核对")
         self.resize(960, 850)
         self.setMinimumSize(400, 500)
         root = QVBoxLayout(self)
@@ -53,11 +56,15 @@ class TextbookSourceDialog(QDialog):
         self.summary_tabs.setMinimumHeight(140)
         self.summary_tabs.setMaximumHeight(220)
         self.summary_tabs.addTab(self.summary, "知识摘要")
+        if reading_mode == "section":
+            self.summary_tabs.setTabText(0, "阅读范围")
+            self.summary.setAccessibleName("本节阅读范围与原知识点范围")
+            self.summary_tabs.setAccessibleName("本节阅读范围与候选研读提示")
         self.summary_tabs.addTab(self.reading_hints, "研读提示")
         root.addWidget(self.summary_tabs)
         controls = QHBoxLayout()
         self.pages = QComboBox()
-        self.pages.setAccessibleName("知识点关联的PDF文件页序")
+        self.pages.setAccessibleName("本节PDF文件页序与印刷页码" if reading_mode == "section" else "知识点关联的PDF文件页序")
         self.pages.setSizeAdjustPolicy(
             QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
         )
@@ -100,11 +107,14 @@ class TextbookSourceDialog(QDialog):
         )
         self.status.setTextFormat(Qt.TextFormat.PlainText)
         self.status.setWordWrap(True)
+        if reading_mode == "section":
+            self.status.setText("本节阅读依据教材目录。研读提示为候选，待教师核对；阅读不会勾选材料或确认摘录。")
         root.addWidget(self.status)
         self.excerpt_button = QPushButton("摘录/修改教材原句…")
         self.excerpt_button.setObjectName("QuietButton")
         self.excerpt_button.clicked.connect(self._edit_excerpt)
         root.addWidget(self.excerpt_button)
+        self.excerpt_button.setVisible(reading_mode != "section")
         close = QPushButton("关闭，返回选材")
         close.setObjectName("QuietButton")
         close.clicked.connect(self.reject)
@@ -121,9 +131,11 @@ class TextbookSourceDialog(QDialog):
             self.excerpt_button,
         ):
             control.setEnabled(enabled)
+        if self.reading_mode == "section":
+            self.excerpt_button.setEnabled(False)
 
     def _edit_excerpt(self):
-        if not self._loaded_pages or self._source is None:
+        if self.reading_mode == "section" or not self._loaded_pages or self._source is None:
             return
         if self.excerpt_panel is None:
             from .textbook_excerpt_widget import TextbookExcerptWidget
@@ -149,6 +161,8 @@ class TextbookSourceDialog(QDialog):
         self.excerpt_button.show()
 
     def _excerpt_applied(self, value):
+        if self.reading_mode == "section":
+            return
         self.excerpt = value
         self._release()
         super().accept()
@@ -156,11 +170,14 @@ class TextbookSourceDialog(QDialog):
     def _load(self):
         if self._closed:
             return
+        def read():
+            operation = (self.facade.preparation_textbook_section_source if self.reading_mode == "section"
+                         else self.facade.preparation_textbook_source)
+            return operation(self.concept["concept_id"], self.concept["revision"])
+
         self.tasks.submit(
-            "读取教材原页",
-            lambda: self.facade.preparation_textbook_source(
-                self.concept["concept_id"], self.concept["revision"]
-            ),
+            "读取本节教材原页" if self.reading_mode == "section" else "读取教材原页",
+            read,
             on_success=self._source_ready,
             on_failure=self._failed,
         )
@@ -169,10 +186,26 @@ class TextbookSourceDialog(QDialog):
         if self._closed:
             return
         self._source = source
-        self.heading.setText(source["title"] + " · " + source["source_name"])
-        self.summary.setPlainText(
-            '整理出的知识摘要（请对照原页，不是教材原句）：\n' + source["statement"]
-        )
+        if self.reading_mode == "section":
+            if source.get("reading_mode") != "section":
+                self._failed("本节阅读范围未能核对，请返回后重新选择。")
+                return
+            pages, printed = source["pdf_pages"], source["printed_pages"]
+            scope = f"PDF文件 {pages[0]}—{pages[-1]} 页 · 印刷 {printed[0]}—{printed[-1]} 页"
+            title = source["section_number"] + " " + source["section_title"]
+            self.heading.setText("阅读本节 · " + source["volume_title"] + " · " + title + "\n" + scope)
+            self.summary.setPlainText(
+                source["volume_title"] + " · " + source["source_name"] + "\n" + title + "\n" + scope
+                + "\n本窗口只读本节原页。查看不等于教师审核，不会加入备课材料。"
+                + "\n所选知识点：" + source["title"]
+                + "\n原知识点PDF页序：" + "、".join(map(str, source["concept_pdf_pages"]))
+                + "\n需要摘录时，请返回“查看选中知识点的教材原页”。"
+            )
+        else:
+            self.heading.setText(source["title"] + " · " + source["source_name"])
+            self.summary.setPlainText(
+                '整理出的知识摘要（请对照原页，不是教材原句）：\n' + source["statement"]
+            )
         self.buffer.setData(QByteArray(source["pdf_bytes"]))
         self.buffer.open(QIODevice.OpenModeFlag.ReadOnly)
         self.document.load(self.buffer)
@@ -188,11 +221,14 @@ class TextbookSourceDialog(QDialog):
             return
         if any(page > self.document.pageCount() for page in self._source["pdf_pages"]):
             self.document.close()
-            self._failed("知识点关联的文件页序超出教材范围，未跳转到其他页面。")
+            self._failed("本节目录页序超出教材范围，未打开本节。" if self.reading_mode == "section"
+                         else "知识点关联的文件页序超出教材范围，未跳转到其他页面。")
             return
         self._loaded_pages = True
-        for page in self._source["pdf_pages"]:
-            self.pages.addItem(f"关联PDF第{page}页", page)
+        for index, page in enumerate(self._source["pdf_pages"]):
+            label = (f"PDF第{page}页 · 印刷第{self._source['printed_pages'][index]}页"
+                     if self.reading_mode == "section" else f"关联PDF第{page}页")
+            self.pages.addItem(label, page)
         self._set_controls(True)
         self._source_page()
         if self._reading_hint_count:
@@ -204,11 +240,28 @@ class TextbookSourceDialog(QDialog):
             self._jump(page - 1)
 
     def _jump(self, page):
+        if self.reading_mode == "section" and (not self._source or page + 1 not in self._source["pdf_pages"]):
+            return
         if self._loaded_pages and 0 <= page < self.document.pageCount():
             self.view.pageNavigator().jump(page, QPointF())
             self._page_changed(page)
 
     def _page_changed(self, page):
+        if self.reading_mode == "section" and self._source:
+            pages = self._source["pdf_pages"]
+            if page + 1 not in pages:
+                self._jump(min(max(page + 1, pages[0]), pages[-1]) - 1)
+                return
+            index = pages.index(page + 1)
+            printed = self._source["printed_pages"][index]
+            self.position.setText(f"PDF第{page + 1}页 · 印刷第{printed}页\n本节 {index + 1} / {len(pages)} 页")
+            self.pages.blockSignals(True)
+            self.pages.setCurrentIndex(index)
+            self.pages.blockSignals(False)
+            self._update_reading_hints(page + 1)
+            self.previous.setEnabled(self._loaded_pages and index > 0)
+            self.next.setEnabled(self._loaded_pages and index + 1 < len(pages))
+            return
         self.position.setText(f"PDF文件第{page + 1} / {self.document.pageCount()}页")
         self._update_reading_hints(page + 1)
         self.previous.setEnabled(self._loaded_pages and page > 0)

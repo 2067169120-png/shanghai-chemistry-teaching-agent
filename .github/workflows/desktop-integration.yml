@@ -34,6 +34,7 @@ jobs:
           staging/coordination/deeptutor_gateway/tests/test_textbook_reading_hints.py
           staging/coordination/deeptutor_gateway/tests/test_textbook_source_service.py
           staging/coordination/deeptutor_gateway/tests/test_textbook_source_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_textbook_section_reader.py
           staging/coordination/deeptutor_gateway/tests/test_preparation_sources.py
           --junitxml=desktop-qa/textbook-reading-hints.xml
       - name: Exercise native Windows Qt routes and capture real screenshots
