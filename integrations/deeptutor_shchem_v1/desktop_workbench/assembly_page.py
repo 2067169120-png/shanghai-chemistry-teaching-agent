@@ -65,6 +65,7 @@ from .paper_composer import (
     response_label,
 )
 from .tasks import DesktopTaskBridge
+from .preview_navigation import PageNavigator, PixmapCache, checked_page_pixmap, scaled_page
 
 
 def _label(text: str, object_name: str | None = None) -> QLabel:
@@ -1770,9 +1771,14 @@ class MixedPaperPaginationDialog(QDialog):
         super().__init__(parent)
         self._closed = False
         self._tasks, self._image_loader = tasks, image_loader
-        self._jobs, self._pending, self._pixmaps = [], set(), {}
+        self._jobs, self._pending, self._pixmaps = [], set(), PixmapCache()
+        self._failures = set()
+        self._navigation_explicit = False
+        self._displayed_key = self._current_bitmap = None
         self._pages = {"student": 1, "teacher": 1}
         self._labels, self._scrolls = {}, {}
+        if hasattr(tasks, "task_cancelled"):
+            tasks.task_cancelled.connect(self._read_cancelled)
         self.confirmed = False
         self.review = None
         self.resize(900, 850)
@@ -1780,7 +1786,7 @@ class MixedPaperPaginationDialog(QDialog):
         self.setWindowTitle("真实分页预览 · 逐页核对")
         root = QVBoxLayout(self)
         root.addWidget(_label(str(data.get("title") or "本次试卷"), "CardTitle"))
-        root.addWidget(_label("这里显示本次学生、教师文档的真实页图。每页显示后请明确核对；切换标签或自动读图不等于已核对。确认不提升来源或化学审核状态。", "MutedLabel"))
+        root.addWidget(_label("逐页核对两版真实页图。翻页不算核对；确认不代表化学审核。", "MutedLabel"))
         try:
             self.review = MixedPaperPageReviewModel(data.get("pagination"))
             if data.get("blockers"):
@@ -1791,7 +1797,7 @@ class MixedPaperPaginationDialog(QDialog):
             root.addWidget(_label("待处理：\n" + "\n".join(str(x) for x in data["blockers"]), "StatusAttention"))
         self.tabs = QTabWidget()
         self.tabs.setMinimumWidth(0)
-        for audience, title in (("student", "学生版 · 题面与共同材料"), ("teacher", "教师版 · 答案与逐题分值")):
+        for audience, title in (("student", "学生版"), ("teacher", "教师版（含答案）")):
             body = QWidget()
             layout = QVBoxLayout(body)
             label = _label("请选择本版页面。", "MutedLabel")
@@ -1802,8 +1808,34 @@ class MixedPaperPaginationDialog(QDialog):
             self.tabs.addTab(scroll, title)
             self._labels[audience], self._scrolls[audience] = label, scroll
         root.addWidget(self.tabs, 1)
+        self.navigator = PageNavigator()
+        self.navigator.set_pages([
+            ((audience, number), f"{'教师' if audience == 'teacher' else '学生'} {number} 页")
+            for audience in ("student", "teacher")
+            for number in range(1, len(self.review.pages[audience]) + 1)
+        ] if self.review else [])
+        self.navigator.page_selected.connect(self._navigate)
+        root.addWidget(self.navigator)
+        navigation = QHBoxLayout()
+        self.navigation_toggle = _quiet_button("页码导航")
+        self.navigation_toggle.setCheckable(True)
+        self.navigation_toggle.setChecked(True)
+        self.navigation_toggle.setAccessibleName("展开或收起页面缩略导航")
+        self.navigation_toggle.clicked.connect(self._toggle_navigation)
+        self.unreviewed_button = _quiet_button("下一待核")
+        self.failure_button = _quiet_button("读图失败")
+        self.unreviewed_button.setAccessibleName("跳到下一待核对页")
+        self.failure_button.setAccessibleName("定位读取失败的页面")
+        self.unreviewed_button.clicked.connect(self._next_unreviewed)
+        self.failure_button.clicked.connect(self._locate_failure)
+        navigation.addWidget(self.navigation_toggle)
+        navigation.addWidget(self.unreviewed_button)
+        navigation.addWidget(self.failure_button)
+        root.addLayout(navigation)
         controls = QHBoxLayout()
         self.previous_button, self.next_button = _quiet_button("上一页"), _quiet_button("下一页")
+        self.previous_button.setAccessibleName("上一页")
+        self.next_button.setAccessibleName("下一页")
         self.page_selector = QSpinBox()
         self.page_selector.setAccessibleName("当前版本页码")
         self.page_selector.setMinimumWidth(0)
@@ -1814,6 +1846,9 @@ class MixedPaperPaginationDialog(QDialog):
             self.zoom.addItem(f"{value}%", value)
         for widget in (self.previous_button, self.page_selector, self.next_button, self.zoom):
             controls.addWidget(widget)
+        controls.setStretch(1, 1)
+        controls.setStretch(3, 1)
+        self.zoom.setMinimumWidth(self.zoom.fontMetrics().horizontalAdvance("适合宽度") + 38)
         root.addLayout(controls)
         self.review_page_button = QPushButton("已核对当前页")
         self.review_page_button.setAccessibleName("明确标记当前页已核对")
@@ -1840,12 +1875,17 @@ class MixedPaperPaginationDialog(QDialog):
         audience = "teacher" if self.tabs.currentIndex() == 1 else "student"
         return audience, self._pages[audience]
 
+    def _toggle_navigation(self, checked):
+        self._navigation_explicit = True
+        self.navigator.setVisible(checked)
+
     def _edition_changed(self, *_args):
         audience, number = self._current()
         count = len(self.review.pages[audience]) if self.review else 1
         self.page_selector.blockSignals(True)
         self.page_selector.setRange(1, count)
         self.page_selector.setSuffix(f" / {count} 页")
+        self.page_selector.setMinimumWidth(self.page_selector.fontMetrics().horizontalAdvance(f"{count} / {count} 页") + 30)
         self.page_selector.setValue(number)
         self.page_selector.blockSignals(False)
         self._show_current()
@@ -1855,6 +1895,38 @@ class MixedPaperPaginationDialog(QDialog):
         self._pages[audience] = number
         self._show_current()
 
+    def _navigate(self, key):
+        if self._closed or not self.review or key not in self.navigator._items:
+            return
+        audience, number = key
+        self.tabs.blockSignals(True)
+        self.tabs.setCurrentIndex(1 if audience == "teacher" else 0)
+        self.tabs.blockSignals(False)
+        self._pages[audience] = number
+        self._edition_changed()
+
+    def _next_unreviewed(self):
+        if not self.review:
+            return
+        keys = list(self.navigator._items)
+        offset = keys.index(self._current()) + 1
+        for key in keys[offset:] + keys[:offset]:
+            if key not in self.review.reviewed:
+                self._navigate(key)
+                break
+
+    def _locate_failure(self):
+        keys = list(self.navigator._items)
+        offset = keys.index(self._current()) + 1 if keys else 0
+        for key in keys[offset:] + keys[:offset]:
+            if key in self._failures:
+                self._navigate(key)
+                break
+
+    def _read_cancelled(self, task_id, *_args):
+        if not self._closed and task_id in self._jobs and self._pending:
+            self._page_failed(next(iter(self._pending)))
+
     def _show_current(self):
         if self._closed:
             return
@@ -1863,18 +1935,30 @@ class MixedPaperPaginationDialog(QDialog):
             self._update_confirmation()
             return
         audience, number = current
+        self.navigator.select_page(current)
         label = self._labels[audience]
-        label.clear()
+        for page_label in self._labels.values():
+            page_label.clear()
         label.setMinimumSize(0, 0)
         label.setMaximumSize(16777215, 16777215)
         self._scrolls[audience].verticalScrollBar().setValue(0)
-        if current in self._pixmaps:
+        bitmap = self._pixmaps.get(current)
+        if bitmap is None and self._displayed_key == current:
+            bitmap = self._current_bitmap
+        self._displayed_key = self._current_bitmap = None
+        if current in self._failures:
+            label.setText("本页读取失败，请返回重新生成预览。其他页面仍可查看。")
+        elif bitmap is not None:
+            self._displayed_key, self._current_bitmap = current, bitmap
             self._fit_page()
         else:
             label.setText("正在读取本页实际图像…")
-            if current not in self._pending and not self.review.failed:
+            # At most one read is active. Rapid jumps replace the next target,
+            # rather than starting a worker for every intermediate page.
+            if not self._pending:
                 page = self.review.page(*current)
                 self._pending.add(current)
+                self.navigator.set_status(current, "读取中")
                 try:
                     task_id = self._tasks.submit(
                         "读取实际分页图",
@@ -1882,74 +1966,92 @@ class MixedPaperPaginationDialog(QDialog):
                         on_success=lambda value, key=current: self._page_ready(key, value),
                         on_failure=lambda _message, key=current: self._page_failed(key),
                     )
-                    if task_id:
+                    if task_id and current in self._pending:
                         self._jobs.append(task_id)
                 except Exception:
                     self._page_failed(current)
+        if self._displayed_key is None:
+            self._fit_page()
         self._update_confirmation()
 
     def _page_ready(self, key, value):
         if self._closed or not self.review:
             return
-        raw = value.get("data", value.get("bytes")) if isinstance(value, Mapping) else None
-        mime = value.get("content_type", value.get("mime_type")) if isinstance(value, Mapping) else None
         page = self.review.page(*key)
-        bitmap = QPixmap()
-        if (
-            not isinstance(raw, bytes) or not raw or len(raw) > 32 * 1024 * 1024
-            or mime != "image/png"
-            or hashlib.sha256(raw).hexdigest() != page["sha256"]
-            or value.get("sha256") != page["sha256"]
-            or not bitmap.loadFromData(raw) or bitmap.isNull()
-            or not self.review.mark_loaded(*key, page["sha256"], bitmap.width(), bitmap.height())
-        ):
+        try:
+            bitmap = checked_page_pixmap(value, page)
+        except (ValueError, TypeError, KeyError):
+            self._page_failed(key)
+            return
+        if not self.review.mark_loaded(*key, page["sha256"], bitmap.width(), bitmap.height()):
             self._page_failed(key)
             return
         self._pending.discard(key)
-        self._pixmaps[key] = bitmap
+        self._jobs.clear()
+        self._pixmaps.put(key, bitmap)
+        self.navigator.set_thumbnail(key, bitmap)
+        self.navigator.set_status(key, "已核对" if key in self.review.reviewed else "待核对")
         if key == self._current():
-            self._fit_page()
-        self._update_confirmation()
+            self._displayed_key, self._current_bitmap = key, bitmap
+        self._show_current()
 
     def _page_failed(self, key):
         if self._closed or not self.review:
             return
         self._pending.discard(key)
+        self._jobs.clear()
+        self._failures.add(key)
         self.review.failed = True
-        if key == self._current():
-            self._labels[key[0]].setText('这一页无法读取或已发生变化，请重新生成预览后核对。')
-        self._update_confirmation()
+        self.navigator.set_status(key, "读取失败")
+        self._show_current()
 
     def _fit_page(self, *_args):
         key = self._current()
-        pixmap = self._pixmaps.get(key)
-        if pixmap is None:
-            return
+        pixmap = self._current_bitmap
         scroll, label = self._scrolls[key[0]], self._labels[key[0]]
+        if pixmap is None or key != self._displayed_key:
+            if label.text():
+                width = max(40, scroll.viewport().width() - 28)
+                height = label.fontMetrics().boundingRect(
+                    QRect(0, 0, width, 10000), Qt.TextFlag.TextWordWrap, label.text()
+                ).height()
+                label.setFixedSize(width, max(30, height + 8))
+            return
         zoom = self.zoom.currentData()
         width = max(40, scroll.viewport().width() - 28) if not zoom else max(1, round(pixmap.width() * zoom / 100))
-        image = pixmap.scaledToWidth(width, Qt.TransformationMode.SmoothTransformation)
+        image = scaled_page(pixmap, width, self.devicePixelRatioF())
         label.setPixmap(image)
-        label.setFixedSize(image.size())
+        label.setFixedSize(image.deviceIndependentSize().toSize())
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded if zoom else Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
     def _review_current(self):
-        if self.review and self.isVisible() and self.review.mark_reviewed(*self._current()):
-            self._update_confirmation()
+        if (self.review and self.isVisible() and self._displayed_key == self._current()
+                and self.review.mark_reviewed(*self._current())):
+            self.navigator.set_status(self._current(), "已核对")
+        self._update_confirmation()
 
     def _update_confirmation(self):
         current = self._current()
         review = self.review
-        enabled = review is not None and not review.failed and not self._closed
-        self.page_selector.setEnabled(enabled)
-        self.zoom.setEnabled(enabled)
-        self.previous_button.setEnabled(enabled and current[1] > 1)
-        self.next_button.setEnabled(enabled and current[1] < len(review.pages[current[0]]))
-        self.review_page_button.setEnabled(enabled and current in review.loaded and current not in review.reviewed)
+        navigable = review is not None and not self._closed
+        enabled = navigable and not review.failed
+        self.page_selector.setEnabled(navigable)
+        self.navigator.setEnabled(navigable)
+        self.unreviewed_button.setEnabled(navigable and len(review.reviewed) < review.total_pages)
+        self.failure_button.setEnabled(navigable and bool(self._failures))
+        self.zoom.setEnabled(navigable and self._displayed_key == current)
+        self.previous_button.setEnabled(navigable and current[1] > 1)
+        self.next_button.setEnabled(navigable and current[1] < len(review.pages[current[0]]))
+        self.review_page_button.setEnabled(enabled and self._displayed_key == current and current not in review.reviewed)
         self.confirm_button.setEnabled(enabled and review.can_confirm and not self._pending and not self.confirmed)
         self.review_page_button.setText("本页已核对" if review and current in review.reviewed else "已核对当前页")
+        failed_labels = [f"{'教师' if a == 'teacher' else '学生'}第{n}页" for a, n in sorted(self._failures)]
+        failed_text = "、".join(failed_labels[:3])
+        if len(failed_labels) > 3:
+            failed_text += f"等{len(failed_labels)}页（见页码导航）"
         self.status.setText(
-            "分页或图片不完整，本次不能确认。" if not enabled
+            ("分页或图片不完整，本次不能确认。" +
+             ("读取失败：" + failed_text if self._failures else "")) if not enabled
             else f"已明确核对 {len(review.reviewed)} / {review.total_pages} 页。"
             + ("两版全部页面已核对，可确认本次预览。" if review.can_confirm else "请逐页查看后点击“已核对当前页”。")
         )
@@ -1960,26 +2062,48 @@ class MixedPaperPaginationDialog(QDialog):
             self.preview_confirmed.emit()
 
     def mark_confirmed(self):
+        if self._closed:
+            return
         self.confirmed = True
         self.confirm_button.setEnabled(False)
         self.status.setText("已确认本次两版全部分页；返回后可导出。")
 
     def mark_confirmation_failed(self, message):
+        if self._closed:
+            return
         self._update_confirmation()
         self.status.setText(str(message))
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
         if hasattr(self, "zoom"):
+            narrow = self.width() < 600
+            self.previous_button.setText("‹" if narrow else "上一页")
+            self.next_button.setText("›" if narrow else "下一页")
+            self.previous_button.setFixedWidth(34 if narrow else 84)
+            self.next_button.setFixedWidth(34 if narrow else 84)
+            if not self._navigation_explicit:
+                self.navigator.setVisible(not narrow)
+                self.navigation_toggle.setChecked(not narrow)
             self._fit_page()
 
     def reject(self):
+        if self._closed:
+            return
         self._closed = True
         cancel = getattr(self._tasks, "cancel", None)
         if callable(cancel):
             for task_id in self._jobs:
                 cancel(task_id)
+        self._jobs.clear()
+        self._pending.clear()
+        self._pixmaps.clear()
+        self._displayed_key = self._current_bitmap = None
+        self.navigator.clear_pages()
+        for label in self._labels.values():
+            label.clear()
         super().reject()
+        self.deleteLater()
 
     def closeEvent(self, event):
         self.reject()

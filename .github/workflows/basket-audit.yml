@@ -82,6 +82,7 @@ jobs:
               'test_desktop_mixed_paper_ui.py',
               'test_paper_details.py', 'test_paper_details_ui.py',
               'test_independent_paper.py', 'test_independent_paper_ui.py',
+              'test_preview_navigation.py', 'test_visual_mixed_paper_ui.py',
               'test_complete_readme.py', 'test_maintenance_release_safety.py',
           ]
           out = pathlib.Path('candidate-qa'); out.mkdir(exist_ok=True)
@@ -93,6 +94,15 @@ jobs:
           files = ['staging/coordination/deeptutor_gateway/tests/'+name for name in names]
           subprocess.run([sys.executable, '-m', 'pytest', '-q', *files,
               '--junitxml=candidate-qa/pytest.xml'], check=True)
+      - name: Page navigation and bounded preview memory at double scaling
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_SCALE_FACTOR: '2'
+        run: |
+          python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_preview_navigation.py --junitxml=candidate-qa/page-navigation-2x.xml
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m runtime.deeptutor_shchem.preview_navigation_qa --output candidate-qa/page-navigation-2x --cycles 3
+          exit $LASTEXITCODE
       - name: Basket undo at double scaling with synthetic screenshots
         env:
           QT_QPA_PLATFORM: offscreen
