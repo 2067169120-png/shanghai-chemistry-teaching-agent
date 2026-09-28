@@ -1,0 +1,850 @@
+{
+  "schema_version": "shchem.lecture-source-extension.v1",
+  "purpose": "离子、共价与分子晶体的来源绑定教学参考候选；新增结构判据、端点计数、晶胞几何与两节40分钟教学流程。",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_review_completed": true,
+  "root_model_review_completed": true,
+  "entries": [
+    {
+      "package_id": "PKG-084",
+      "source_sha256": "cf3f18417d048170a9496d8e969577c65ed0c70a5f3077ee0970c5d141b53577",
+      "source_preview_revision": "383874a10dfa31de5da5e1773ff02db073047cbdfbc4e6064e36fbde1a0e6a85",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "knowledge": [
+        {
+          "summary": "离子晶体中，多原子离子内部仍可有共价键，也可存在配位作用、氢键或中性分子。判别时先看构成单元和整体结合方式；教材的低熔点离子物质说明，低熔点本身不能否定离子型。",
+          "block_indices": [
+            53,
+            68,
+            71
+          ]
+        },
+        {
+          "summary": "键数计算先确定自己数的是哪一类端点。理想金刚石或晶体硅中每原子连4条同类原子间的键，按全部原子计数须除以2；SiO₂骨架从每个Si连4个O计Si—O键时，每条键只遇到一个Si端点，每个化学式单位已有4条键，不能再除以2。",
+          "block_indices": [
+            161,
+            173,
+            174,
+            175,
+            177
+          ]
+        },
+        {
+          "summary": "氢键也要核对共享端点：所示理想冰网络中每个H₂O与4个邻居相连，按全体分子计为每个H₂O平均2条氢键；所示硼酸层中每个分子连接6条氢键，平均归属3条。这个计数不表示液态水具有固定氢键数，也不表示融化后氢键全部消失。",
+          "block_indices": [
+            269,
+            272,
+            277,
+            280,
+            282,
+            286
+          ]
+        },
+        {
+          "summary": "解释石墨性质时分清层内与层间：层内每个C与3个C形成σ键，未杂化p轨道参与离域π电子体系，可解释沿层方向的导电性；层间作用较弱，层易滑移。不能把一个方向的性质直接推广到所有方向，也不能由易滑移断言层内共价键弱。",
+          "block_indices": [
+            233,
+            236,
+            237,
+            238,
+            318,
+            319
+          ]
+        },
+        {
+          "summary": "同一组成可以有不同晶型。图示六方BN具有层状骨架，立方BN具有三维四面体连接；比较性质时要同时考查组成、结构和电子状态。仅因六方BN外形结构类似石墨，不能直接套用石墨的导电性。",
+          "block_indices": [
+            306,
+            307,
+            310,
+            312,
+            314
+          ]
+        }
+      ],
+      "methods": [
+        {
+          "summary": "找最近邻时先写清中心粒子和邻居种类，再按周期延拓跨晶胞边界计数。NaCl模型中每个Na⁺有6个最近Cl⁻，而同种最近Na⁺有12个；ZnS图示立方晶胞的最近异种原子位移为(a/4,a/4,a/4)，距离为√3a/4。配位数、同种近邻数和每胞粒子数分别计算。",
+          "block_indices": [
+            43,
+            50,
+            91,
+            92,
+            95,
+            96,
+            98
+          ]
+        },
+        {
+          "summary": "多组分晶胞先分别均摊，再用电中性和配位互计交叉检查。图示K、Cu、Fe每胞各4个，结合K⁺、Cu²⁺、Fe³⁺和CN⁻得化学式KCuFe(CN)₆。配位互计用n_Az_A=n_Bz_B：CaF₂每胞4个Ca和8个F，Ca看F为8配位、F看Ca为4配位，不能互换。",
+          "block_indices": [
+            50,
+            128,
+            129,
+            130,
+            131,
+            133
+          ]
+        },
+        {
+          "summary": "晶胞密度统一写为ρ=ZM/(N_A V)，Z和M必须对应同一化学式单位。图示Li—Fe—Se晶胞计得Li₂Fe₄Se₄，即2个LiFe₂Se₂；题面明确三棱夹角为90°，棱长a、a、b以nm计，故V=a²b×10⁻²¹ cm³。先核对计数、几何和单位，再代入摩尔质量。",
+          "block_indices": [
+            122,
+            123,
+            125
+          ]
+        },
+        {
+          "summary": "比较性质先确认变化过程：分子热分解涉及分子内成键，分子晶体的普通熔化或升华主要改变分子间排列与作用，不能用分子内共价键越强推出熔、沸点越高。用电荷、半径或相对分子质量作趋势比较时，应限定为结构相似的体系，并核对压力、晶型和是否先分解。",
+          "block_indices": [
+            261,
+            262,
+            264,
+            267,
+            375,
+            376,
+            377,
+            379
+          ]
+        }
+      ],
+      "pitfalls": [
+        {
+          "summary": "水溶液能导电说明溶液中存在可迁移的带电粒子，不能单凭这一点判定原固体为离子晶体；分子物质入水也可能发生电离或反应。教材范围内，固态与熔融态导电性的对照是有用线索，但仍需确认加热后的物质与载流粒子，不能把所有体系写成绝对判据。",
+          "block_indices": [
+            80,
+            81,
+            82,
+            84,
+            85,
+            86,
+            87,
+            89
+          ]
+        },
+        {
+          "summary": "晶体网络图与晶胞图只是显示范围不同。边界处没有画出的键应按周期结构延伸，不能据此说晶胞中的某些原子未成键；源b191关于石墨“部分碳原子没有成键”的解释不采用。检查配位和环时，要看完整连接关系，不能只数裁切图中可见的线段。",
+          "block_indices": [
+            184,
+            185,
+            186,
+            188,
+            189,
+            191
+          ]
+        },
+        {
+          "summary": "源b138—149的CaO—MgO模型需同时审查图、单位和算式。图中4个侧面Ca各占1/2，应为2个Ca；Mg为2、O为4。体积应按cm³理解时，ρ=(2×40+2×24+4×16)/(N_A V)≈3.32 g·cm⁻³。源把Ca写成4仍给3.32，且题面体积写成cm⁻³，这两处不能照抄。",
+          "block_indices": [
+            138,
+            139,
+            142,
+            143,
+            145,
+            146,
+            147,
+            148,
+            149
+          ]
+        },
+        {
+          "summary": "求“最近且等距”必须有长度和夹角等几何信息。源b411只给不等棱长的平行六面体和棱心位置，不能仅据示意图锁定任一分子的最近邻数；长方体棱心模型在不同不等边长下可得到2或4个最近邻。类似地，面心位置计得每胞4个分子，并不自动意味着12个等距最近邻。",
+          "block_indices": [
+            293,
+            294,
+            296,
+            298,
+            411,
+            412,
+            417
+          ]
+        }
+      ],
+      "teaching_flow": [
+        {
+          "summary": "40分钟：0—5分钟用NaCl、CO₂、SiO₂和稀有气体固体辨认构成单元；5—14分钟用低熔点离子物质检验分类判据；14—25分钟对金刚石、SiO₂和冰做端点计数；25—34分钟用石墨说明层内、层间及方向条件；34—40分钟让学生修订“键强则分子晶体熔点高”等断言，并写出证据与限定。",
+          "block_indices": [
+            38,
+            46,
+            53,
+            68,
+            71,
+            153,
+            157,
+            161,
+            165,
+            224,
+            226,
+            233,
+            236,
+            237,
+            238,
+            261,
+            262,
+            264,
+            267,
+            280,
+            282,
+            286,
+            318,
+            319
+          ]
+        },
+        {
+          "summary": "40分钟：0—6分钟区分NaCl每胞4个化学式单位、异号6配位与同种12近邻；6—14分钟用CaF₂配位互计和ZnS坐标距离复核；14—24分钟对K—Cu—Fe—CN模型计数并验电中性；24—33分钟对Li—Fe—Se模型完成体积换算与密度；33—40分钟审查CaO—MgO源题的计数、量纲和数值矛盾，提交附条件的更正。",
+          "block_indices": [
+            43,
+            50,
+            91,
+            92,
+            95,
+            96,
+            98,
+            122,
+            123,
+            125,
+            128,
+            129,
+            130,
+            131,
+            133,
+            138,
+            139,
+            142,
+            143,
+            145,
+            146,
+            147,
+            148,
+            149
+          ]
+        }
+      ],
+      "textbook_links": [
+        {
+          "volume_id": "TB-E2",
+          "section_key": "TB-E2-C3:3.2",
+          "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+          "pdf_pages": [
+            84,
+            85,
+            86,
+            87,
+            88
+          ],
+          "printed_pages": [
+            80,
+            81,
+            82,
+            83,
+            84
+          ],
+          "lecture_block_indices": [
+            38,
+            43,
+            46,
+            50,
+            53,
+            68,
+            71,
+            80,
+            81,
+            82,
+            84,
+            85,
+            86,
+            87,
+            89,
+            91,
+            92,
+            95,
+            96,
+            98,
+            122,
+            123,
+            125,
+            128,
+            129,
+            130,
+            131,
+            133,
+            138,
+            139,
+            142,
+            143,
+            145,
+            146,
+            147,
+            148,
+            149,
+            153,
+            157,
+            161,
+            165,
+            224,
+            226,
+            233,
+            236,
+            237,
+            238,
+            261,
+            262,
+            264,
+            267,
+            280,
+            282,
+            286,
+            318,
+            319
+          ],
+          "candidate_only": true,
+          "human_reviewed": false,
+          "review_method": "page_images_read_by_model"
+        },
+        {
+          "volume_id": "TB-E2",
+          "section_key": "TB-E2-C3:3.3",
+          "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+          "pdf_pages": [
+            89,
+            90,
+            91,
+            92,
+            93,
+            94,
+            95,
+            96,
+            97
+          ],
+          "printed_pages": [
+            85,
+            86,
+            87,
+            88,
+            89,
+            90,
+            91,
+            92,
+            93
+          ],
+          "lecture_block_indices": [
+            38,
+            43,
+            46,
+            50,
+            53,
+            68,
+            71,
+            91,
+            92,
+            95,
+            96,
+            98,
+            122,
+            123,
+            125,
+            128,
+            129,
+            130,
+            131,
+            133,
+            138,
+            139,
+            142,
+            143,
+            145,
+            146,
+            147,
+            148,
+            149,
+            153,
+            157,
+            161,
+            165,
+            173,
+            174,
+            175,
+            177,
+            184,
+            185,
+            186,
+            188,
+            189,
+            191,
+            224,
+            226,
+            233,
+            236,
+            237,
+            238,
+            261,
+            262,
+            264,
+            267,
+            269,
+            272,
+            277,
+            280,
+            282,
+            286,
+            306,
+            307,
+            310,
+            312,
+            314,
+            318,
+            319,
+            375,
+            376,
+            377,
+            379
+          ],
+          "candidate_only": true,
+          "human_reviewed": false,
+          "review_method": "page_images_read_by_model"
+        }
+      ]
+    }
+  ],
+  "source_review": {
+    "source_sha256": "cf3f18417d048170a9496d8e969577c65ed0c70a5f3077ee0970c5d141b53577",
+    "source_preview_revision": "383874a10dfa31de5da5e1773ff02db073047cbdfbc4e6064e36fbde1a0e6a85",
+    "source_extraction_revision": "20260909-editable-chemistry-v2",
+    "candidate_only": true,
+    "human_reviewed": false,
+    "root_review_completed": true,
+    "root_model_review_completed": true,
+    "native_text_blocks_actually_read": 418,
+    "textbook_pdf_pages_actually_viewed": [
+      84,
+      85,
+      86,
+      87,
+      88,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95,
+      96,
+      97
+    ],
+    "root_word_assets_actually_viewed": 29,
+    "root_WMF_renders_actually_viewed": 11,
+    "root_raster_references_actually_viewed": 18,
+    "source_word_assets_total": 138,
+    "root_word_assets_not_viewed": 109,
+    "unread_OLE_binaries": 65,
+    "special_font_symbols_not_decoded": 3,
+    "field_boundaries_not_executed": 42,
+    "field_instructions_not_executed": 15,
+    "full_original_Word_pagination_reviewed": false,
+    "original_sources_modified": false,
+    "all_17_candidate_required_assets_root_viewed": true,
+    "existing_card_correction": {
+      "id": "PKG084-OLD-K04-CORRECTION",
+      "record_id": "LECT-PKG-084",
+      "group": "knowledge",
+      "zero_based_position": 3,
+      "old": {
+        "summary": "分子晶体保留独立分子，分子之间主要由范德华力及可能存在的氢键联系。要区分分子内部成键与分子间作用。",
+        "block_indices": [
+          224,
+          226
+        ]
+      },
+      "new": {
+        "summary": "分子晶体以分子或稀有气体原子为构成单元，单元之间主要靠范德华力及可能存在的氢键联系；含分子的体系要区分分子内共价键与分子间作用。",
+        "block_indices": [
+          165,
+          224,
+          226
+        ]
+      },
+      "reason": "旧摘要遗漏稀有气体原子；按讲义区块165、224、226及选必二PDF92/印刷88显式修订，旧文与修订依据保留。",
+      "textbook_pdf_pages": [
+        92
+      ],
+      "source_sha256": "cf3f18417d048170a9496d8e969577c65ed0c70a5f3077ee0970c5d141b53577",
+      "source_preview_revision": "383874a10dfa31de5da5e1773ff02db073047cbdfbc4e6064e36fbde1a0e6a85",
+      "status": "explicit_root_adopted_candidate_correction",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    "source_issue_handling": [
+      {
+        "id": "ISSUE-CA-COUNT-UNIT",
+        "block_indices": [
+          138,
+          139,
+          142,
+          148
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "保留原文；仅显式将体积理解为cm³后重算Ca₂Mg₂O₄、ρ≈3.32，原Ca₄式应≈4.70。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-CA-REPLACEMENT",
+        "block_indices": [
+          143,
+          146,
+          149
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "若其余组成与价态不变且无补偿，净电荷增加4e，不满足电中性；不需只用同号排斥作稳定性证明。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-OLD-K4",
+        "block_indices": [
+          165,
+          224,
+          226
+        ],
+        "textbook_pdf_pages": [
+          92
+        ],
+        "decision": "显式补入稀有气体原子；原记录不静默覆盖。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-EXAM-STRUCTURE",
+        "block_indices": [
+          30
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "不纳入晶体知识或上海卷式结论。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-ELECTRONEGATIVITY",
+        "block_indices": [
+          41
+        ],
+        "textbook_pdf_pages": [
+          95
+        ],
+        "decision": "只作粗略经验趋势，不作必要充分阈值。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-LI2O-PROJECTION",
+        "block_indices": [
+          99,
+          100,
+          101,
+          102,
+          103,
+          104,
+          105
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "不从答案重构题面、不纳入此题结论。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-ION-RADII",
+        "block_indices": [
+          116,
+          119,
+          120
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "不采用无条件等于或不等于；须指定半径定义和硬球接触模型。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-CSCL-BCC",
+        "block_indices": [
+          120
+        ],
+        "textbook_pdf_pages": [
+          85
+        ],
+        "decision": "仅描述两种离子占角与体心；不把它说成相同粒子的体心立方布拉维点阵。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-SILICA-POLYMORPH",
+        "block_indices": [
+          161
+        ],
+        "textbook_pdf_pages": [
+          90
+        ],
+        "decision": "只采用每Si连4O、每O连2Si及组成/键数；方石英模型明确限定。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-NETWORK-CLASSIFICATION",
+        "block_indices": [
+          159,
+          244,
+          246
+        ],
+        "textbook_pdf_pages": [
+          95
+        ],
+        "decision": "不把来源未明百分数、简单标签或全部晶型当确定事实。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-GRAPHITE-UNBONDED",
+        "block_indices": [
+          191
+        ],
+        "textbook_pdf_pages": [
+          95
+        ],
+        "decision": "晶胞图裁切不等于原子未成键；保留原错句供审核。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-COVALENT-CONDUCTIVITY",
+        "block_indices": [
+          204,
+          210
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "只使用具体结构的常见模型，不排除半导体等情况。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-MELTING-TABLE",
+        "block_indices": [
+          212,
+          355,
+          356,
+          365
+        ],
+        "textbook_pdf_pages": [
+          91
+        ],
+        "decision": "不纳入精确常量或普适总序；特别MgCl₂与NaCl排序仍待可靠数据核验。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-MOLECULAR-12",
+        "block_indices": [
+          226,
+          230,
+          298
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "必须依具体结构和度量求邻距，位置均摊不等于等距邻数。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-ICE-CELL",
+        "block_indices": [
+          230
+        ],
+        "textbook_pdf_pages": [
+          93
+        ],
+        "decision": "只采用实际所示四面体氢键连接，不将8推广到所有冰晶型。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-SEO2-SO2",
+        "block_indices": [
+          250,
+          251,
+          252,
+          253,
+          254,
+          255
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "−755℃低于绝对零度，保留原错不私改小数点；SeO₂聚合链结构与相态条件不足，整段定量分类不采用。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-BORIC-ACID-SOLUBILITY",
+        "block_indices": [
+          272,
+          277
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "只采用实看结构与氢键共享计数；不将速率推论当溶解平衡的完整解释。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-C60-CELL",
+        "block_indices": [
+          323,
+          324,
+          329,
+          330
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "不纳入每胞数量结论。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-T-CARBON-RETRACTED",
+        "block_indices": [
+          339,
+          340,
+          352,
+          353
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "撤回错误怀疑；实看完整WMF包含4，独立计32个C、ρ=384/(N_A a³)，a以cm计，与原结果一致。",
+        "status": "retracted_not_a_source_error"
+      },
+      {
+        "id": "ISSUE-NAF-ORDER",
+        "block_indices": [
+          370,
+          371,
+          372,
+          373,
+          374,
+          376,
+          379
+        ],
+        "textbook_pdf_pages": [
+          84,
+          88
+        ],
+        "decision": "记录内部矛盾；仅在教材NaF/NaCl/NaBr数据支撑下采用递减趋势。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-SNF4-INFERENCE",
+        "block_indices": [
+          380,
+          381,
+          382,
+          383,
+          384,
+          385,
+          386
+        ],
+        "textbook_pdf_pages": [
+          86,
+          89
+        ],
+        "decision": "高熔点为线索，不能单独充分确定成键分类。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-WO4-NUMBERING",
+        "block_indices": [
+          388,
+          389,
+          390,
+          391
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "未独立建立编号空间坐标，不纳入答案。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-CA3PCL3-ACID",
+        "block_indices": [
+          392,
+          393,
+          394,
+          395,
+          396,
+          397,
+          398,
+          399
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "晶胞计数与酸解论证分开；该酸解比较未独立验证，不纳入。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-AL-HALIDE",
+        "block_indices": [
+          406,
+          407,
+          408,
+          409,
+          410
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "不纳入无单位物性或跨固液气相不加条件的结构结论。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-AL2BR6-NEAREST",
+        "block_indices": [
+          411,
+          412,
+          417
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "仅给该条件不能唯一推出4；构造满足条件的2邻居和4邻居例。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-TB-CO2-PRESSURE",
+        "block_indices": [],
+        "textbook_pdf_pages": [
+          92
+        ],
+        "decision": "不采用此无降温条件命题；教材原文保留，NIST状态数据另有来源记录。",
+        "status": "excluded_or_qualified"
+      },
+      {
+        "id": "ISSUE-TB-CARBON-TEMPERATURE",
+        "block_indices": [],
+        "textbook_pdf_pages": [
+          89,
+          91,
+          94
+        ],
+        "decision": "不纳入无条件精确熔点；相变类型及压力需注明。",
+        "status": "excluded_or_qualified"
+      }
+    ],
+    "external_fact_sources": [
+      {
+        "title": "NIST Chemistry WebBook: carbon dioxide phase-change data",
+        "url": "https://webbook.nist.gov/cgi/cbook.cgi?ID=C124389&Mask=4"
+      },
+      {
+        "title": "NIST thermophysical fluid properties: carbon dioxide",
+        "url": "https://webbook.nist.gov/cgi/fluid.cgi?Action=Page&ID=C124389",
+        "query_results": "6.06 MPa下293.15 K为液态、298.15 K为气态；不能把常温仅加该压力称为固态。"
+      },
+      {
+        "title": "Royal Society of Chemistry: Carbon",
+        "url": "https://periodic-table.rsc.org/element/6/carbon",
+        "used_for": "相变类型和压力条件的限定；未采用无条件精确熔点。"
+      }
+    ],
+    "reader_scope": {
+      "exact_support_blocks": 92,
+      "exact_disjoint_ranges": 56,
+      "range_limit_per_request": 32,
+      "executable_request_range_counts": [
+        32,
+        32
+      ],
+      "note_counts": [
+        10,
+        12
+      ],
+      "unique_reference_count": 22,
+      "materials_characters": [
+        18612,
+        21079
+      ],
+      "include_images_in_consumer_check": false,
+      "note": "全部条目依完整原区块支持按两组读取；不能把56段并集冒充单次可执行请求。图像另行实读，原件未随派生条目发布。"
+    },
+    "book2skills_used": false,
+    "provider_calls": 0
+  }
+}

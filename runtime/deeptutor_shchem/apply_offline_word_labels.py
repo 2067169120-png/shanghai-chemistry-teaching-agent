@@ -185,7 +185,7 @@ def read_side_service(workspace, state_root):
     return words
 
 
-def run(args, *, service_factory=None):
+def run(args, *, service_factory=None, review_service_factory=None):
     operation = _operation_metadata(args)
     stream = None
     try:
@@ -220,7 +220,7 @@ def run(args, *, service_factory=None):
         with desktop_lock(state, apply=args.apply):
             operation["stage"] = "service_initialization"
             words = (service_factory or read_side_service)(workspace, state)
-            service = OfflineWordLabelReviewService(words)
+            service = (review_service_factory or OfflineWordLabelReviewService)(words)
             operation["stage"] = "apply" if args.apply else "preview"
             outcome = (
                 service.apply(candidates, expected_plan_sha256=args.expected_plan_sha256, mode=label_mode)

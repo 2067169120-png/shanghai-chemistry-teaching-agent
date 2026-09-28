@@ -29,6 +29,10 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_library_progress_visual.py staging/coordination/deeptutor_gateway/tests/test_personal_visual_questions.py staging/coordination/deeptutor_gateway/tests/test_personal_visual_questions_ui.py staging/coordination/deeptutor_gateway/tests/test_personal_visual_attributes_ui.py staging/coordination/deeptutor_gateway/tests/test_word_question_index.py staging/coordination/deeptutor_gateway/tests/test_word_question_attribute_service.py staging/coordination/deeptutor_gateway/tests/test_word_questions_service.py staging/coordination/deeptutor_gateway/tests/test_lecture_library.py staging/coordination/deeptutor_gateway/tests/test_lecture_study_reference.py --junitxml=local-continuation-qa/visual-boundaries.xml
+      - name: Check source-bound offline image candidates with synthetic Word objects
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_offline_word_image_label_review.py --junitxml=local-continuation-qa/offline-images.xml
       - name: Capture the native dashboard in temporary synthetic storage
         env:
           QT_QPA_PLATFORM: offscreen

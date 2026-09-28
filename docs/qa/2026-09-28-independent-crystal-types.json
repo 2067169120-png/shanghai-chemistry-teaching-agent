@@ -1,0 +1,322 @@
+{
+  "date": "2026-09-28",
+  "base_main_commit": "b5f555e880cf01cd7a2518176d1e36eaa457d958",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "release_exe_rebuilt": false,
+  "release_baseline": "v0.1.101",
+  "tests": {
+    "independent_paper_and_regressions": {
+      "passed": 333,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_sha256": "eb22a28d991d604bd9039d21766d13c8add814f423eba55418ffc788fc9f7cf7",
+      "modules": [
+        "staging.coordination.deeptutor_gateway.tests.test_desktop_mixed_paper_service",
+        "staging.coordination.deeptutor_gateway.tests.test_desktop_mixed_paper_ui",
+        "staging.coordination.deeptutor_gateway.tests.test_exam_practice_set",
+        "staging.coordination.deeptutor_gateway.tests.test_exam_practice_set_ui",
+        "staging.coordination.deeptutor_gateway.tests.test_independent_paper",
+        "staging.coordination.deeptutor_gateway.tests.test_independent_paper_ui",
+        "staging.coordination.deeptutor_gateway.tests.test_mixed_basket_entrypoints",
+        "staging.coordination.deeptutor_gateway.tests.test_mixed_paper_draft_undo",
+        "staging.coordination.deeptutor_gateway.tests.test_mixed_paper_draft_undo_ui",
+        "staging.coordination.deeptutor_gateway.tests.test_paper_details",
+        "staging.coordination.deeptutor_gateway.tests.test_paper_details_ui",
+        "staging.coordination.deeptutor_gateway.tests.test_scan_number_ui",
+        "staging.coordination.deeptutor_gateway.tests.test_visual_mixed_paper_integration"
+      ]
+    },
+    "image_and_legacy_text_labels": {
+      "passed": 217,
+      "new_image_cases": 35,
+      "legacy_text_cases": 182,
+      "failures": 0,
+      "evidence": "frozen implementation manifest and captured successful pytest output",
+      "manifest_sha256": "b991df553f4661c696b337281c3dc7243577e7411e59f8f3aecbf7b71f1bcb0e"
+    },
+    "knowledge": {
+      "passed": 78,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_sha256": "f0d504f38f465bc98309504b8ab7c16932b310edb2367f32d5cc0f6062a74ff5",
+      "modules": [
+        "staging.coordination.deeptutor_gateway.tests.test_extend_lecture_knowledge",
+        "staging.coordination.deeptutor_gateway.tests.test_lecture_library",
+        "staging.coordination.deeptutor_gateway.tests.test_lecture_study_reference"
+      ]
+    },
+    "documentation": {
+      "passed": 34,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_sha256": "a4683c016a75efc444d7e480d0eb7b51f7646c605578e1148cb3eed56d8778cb",
+      "modules": [
+        "staging.coordination.deeptutor_gateway.tests.test_complete_readme",
+        "staging.coordination.deeptutor_gateway.tests.test_maintenance_release_safety"
+      ]
+    },
+    "distinct_passed": 662,
+    "documentation_policy_output_sha256": "ad2830ff334e90a84acf20d81383eba8050bfca357177c4d8068624a52db1b70"
+  },
+  "synthetic_ui": {
+    "final_images_actually_viewed_by_root": 12,
+    "prior_office_qa_images_actually_viewed_by_root": 14,
+    "scale_factor": 2,
+    "logical_sizes": [
+      [
+        360,
+        520
+      ],
+      [
+        420,
+        520
+      ],
+      [
+        1000,
+        780
+      ]
+    ],
+    "review_sha256": "39dc39fb24ec17dacfd2e4f1baa5573f858fa691506a9c4ad78965ee20280d59",
+    "final_images": [
+      {
+        "file": "01-choose-or-create-360x520.png",
+        "sha256": "fb8bdc427916b7f17aa3760299c2624af48f8021271572e307373399ed20b26f"
+      },
+      {
+        "file": "02-current-top-360x520.png",
+        "sha256": "bcadb8462299b18367d673e6f3a7d35f2bbc839bf034d59978c7ad81e6db2297"
+      },
+      {
+        "file": "03-current-edit-360x520.png",
+        "sha256": "e367c68bca5eadeee81acbfad042d3cc42aef2f73b688f0b15517848b6484d85"
+      },
+      {
+        "file": "03-current-edit-420x520.png",
+        "sha256": "1db57ce337e1dcabd782995019c3a6de46a280102526f17bbc8c1dd411636074"
+      },
+      {
+        "file": "04-current-wide-1000x780.png",
+        "sha256": "f305ed709507f981b71bc181308c41d9291d237933365070259005ea55e90496"
+      },
+      {
+        "file": "05-reopened-after-basket-change-420x520.png",
+        "sha256": "04371f8e508d7e3d82a9de198bcbcc750f26474b6b483eddd79bd410d585e9f8"
+      },
+      {
+        "file": "06-reopened-empty-basket-420x520.png",
+        "sha256": "52ef804084e3b865bcbf77ce49a94f75af6c1a37872660210ff9e0a49949f9d7"
+      },
+      {
+        "file": "07-current-details-420x520.png",
+        "sha256": "b80c0351b5fdb7276221c9c813c63b6d7887a8834ac784585853501208e2f697"
+      },
+      {
+        "file": "08-empty-current-360x520.png",
+        "sha256": "3442cdd1ddd6892614048a0137bb91c65d15b202552e6e9bf413176d24c9a70b"
+      },
+      {
+        "file": "11-concurrent-error-360x520.png",
+        "sha256": "feae9c84c6d853e1ee391c39eb90a780d171c1e6ae231fbfb1a78daa1a736671"
+      },
+      {
+        "file": "12-recovered-420x520.png",
+        "sha256": "f7c7590b37b1d23e2dcf9395b4d0dfa8f722aa90d70c9fd02d4250e999d69a9d"
+      },
+      {
+        "file": "13-incompatible-preserved-360x520.png",
+        "sha256": "614accbb38588478441cfb1c24954a7b629110d58691ba631b7a5458eebcb7f8"
+      }
+    ],
+    "office_renderer": "Microsoft Word 2021",
+    "real_office_artifacts": 4,
+    "student_and_teacher_pdf_pages": [
+      1,
+      1
+    ],
+    "source_and_state": "synthetic temporary fixtures only",
+    "limits": [
+      "No EXE rebuild or release certification",
+      "Final UI-only refinements did not change Office pagination/export code"
+    ]
+  },
+  "local_image_labels": {
+    "questions_read": 12,
+    "unique_images_viewed": 22,
+    "different_questions_changed": 3,
+    "primary_filled": 2,
+    "curriculum_questions_filled": 3,
+    "curriculum_links_filled": 4,
+    "automatic_primary_corrected": 1,
+    "held_questions": 9,
+    "unchanged_attribute_rows": 3681,
+    "old_history_preserved": 9448,
+    "new_history_rows": 3,
+    "teacher_and_material_fields_unchanged": true,
+    "source_warnings_unchanged": true,
+    "both_fresh_repeat_previews_changed": 0,
+    "original_review_receipt_immutable": true,
+    "review_before_sha256": "7cafff85e3271d6e6c61f04e3ac436122ffcee63bca2fc2e0495514f47999b69",
+    "post_apply_verification_sha256": "236207ea22ba2ad1d2f7136391d650f04c99c11372c9cad981980fbfd1be7552",
+    "current_state_summary": {
+      "active_attribute_rows": 3573,
+      "analysis_sources": 98,
+      "attribute_binding_counts": {
+        "current": 3567,
+        "missing": 6,
+        "stale": 6
+      },
+      "batch_id": "DESKTOPBATCH-b2f0b01ab11633066da08744a68db874",
+      "candidate_only": true,
+      "category_counts": {
+        "readable_pure_text": 127,
+        "requires_image": 782,
+        "scope_or_material_incomplete": 56,
+        "teacher_or_pinned_protected": 3
+      },
+      "central_question_bank_write": false,
+      "current_curriculum_mapped": 2811,
+      "current_primary_known": 2931,
+      "current_questions": 3579,
+      "database_attribute_rows": 3684,
+      "duplicate_current_question_keys": 0,
+      "duplicate_source_sha256": 0,
+      "human_reviewed": false,
+      "inventory_rows": 196,
+      "labels_written": 0,
+      "missing_field_counts": {
+        "curriculum_mapping": 768,
+        "primary_knowledge": 648
+      },
+      "original_exam_known": 837,
+      "original_exam_unknown": 2742,
+      "pending_tasks": 968,
+      "provider_calls": 0,
+      "publication_allowed": false,
+      "retrieval_ready": false,
+      "schema_version": "shchem.local-import-continuation.v1",
+      "scope": "Saved analysis-version Word import only; current source ranges and metadata, without question text, answers, images or student data. Review tasks are not chemistry judgments or completed imports.",
+      "selectable_questions": 3576,
+      "source_hashes_verified": true,
+      "source_or_personal_state_written": false,
+      "status": "candidate_review_queue_built",
+      "surplus_attribute_rows_not_counted_as_questions": 111
+    }
+  },
+  "crystal_types": {
+    "package_id": "PKG-084",
+    "new_reference_counts": {
+      "knowledge": 5,
+      "methods": 4,
+      "pitfalls": 4,
+      "teaching_flow": 2
+    },
+    "new_references": 15,
+    "reading_notes": 8,
+    "explicit_old_K4_correction": 1,
+    "old_other_references_preserved": 6,
+    "root_native_blocks_read": 418,
+    "textbook_pdf_pages": [
+      84,
+      85,
+      86,
+      87,
+      88,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95,
+      96,
+      97
+    ],
+    "root_word_image_refs_actually_viewed": 29,
+    "total_word_image_refs": 138,
+    "root_raster_refs": 18,
+    "root_WMF_refs": 11,
+    "root_unviewed_refs": 109,
+    "unread_OLE_binary_objects": 65,
+    "all_required_17_candidate_asset_refs_viewed_by_root": true,
+    "full_Word_visual_review": false,
+    "unexecuted_fields_and_unread_special_symbols_remain": true,
+    "formal_source_reference_validation": {
+      "formal_request_note_counts": [
+        10,
+        12
+      ],
+      "formal_request_character_counts": [
+        18612,
+        21079
+      ],
+      "unique_reference_count": 22,
+      "exact_support_blocks": 92,
+      "separate_requests": 2,
+      "range_counts": [
+        32,
+        32
+      ],
+      "whole_56_range_request_supported": false,
+      "new_claim_first_support_removal_cases": 15,
+      "worker_every_required_block_removal_cases": 150,
+      "identity_mismatch_cases": 3,
+      "repeat_additions_CODE_and_DATA": 0,
+      "textbook_concepts_unchanged": 383,
+      "other_cards_unchanged": 45
+    },
+    "coverage": {
+      "knowledge": 308,
+      "methods": 180,
+      "pitfalls": 133,
+      "teaching_flow": 57
+    },
+    "lecture_count": 46,
+    "with_teaching_flow": 26,
+    "without_teaching_flow": 20,
+    "textbook_concepts_unchanged": 383,
+    "knowledge_phase_protected_inputs_unchanged": 1259,
+    "catalog_before": 124,
+    "catalog_after": 125,
+    "sync_receipt_sha256": "23334d0e87514cf6a930701334b4831dcc8795484ffc1e5f63564bb25fe5d0a6",
+    "root_claim_review_sha256": "176fc23ca2c1c3b888039f41b9aec83521e4b28c984aeef2a255fd769a1e702a",
+    "root_actual_reading_sha256": "550fd9a6be982fd55c3c03667bdb73d80a71febc7f0640a17ee72dbe72cc122c",
+    "public_knowledge_files": {
+      "knowledge/lectures/extensions-20260928-crystal-types.json": "4451e8ade3003a3393ee6cabe7514df2dfe68526f3a80093e7411c9b82d4a2a6",
+      "knowledge/textbook/reading-notes-20260928-crystal-types.json": "66081ce8061597a1c0a9f56757caefac59af01874e560cb2c2f8c9ddc3cfd440"
+    }
+  },
+  "input_protection": {
+    "baseline_files": 766,
+    "baseline_files_unchanged": 762,
+    "authorized_existing_changes": [
+      "personal label database",
+      "DATA lecture part-c",
+      "DATA coverage",
+      "DATA catalog"
+    ],
+    "unexpected_changes": 0,
+    "original_word_files_unchanged": 196,
+    "private_state_file_membership": 488,
+    "data_checkout_head_unchanged": true,
+    "data_git_status_only_two_new_knowledge_files": true,
+    "precommit_receipt_sha256": "6eb3aeb99624ce9c8917e37701cecc515ad76ce1085694705e4fa3549f770e4d"
+  },
+  "network_and_collection": {
+    "wechat_articles_searched": 0,
+    "new_papers": 0,
+    "real_model_provider_calls": 0,
+    "public_chemistry_sources_and_github_network_requests": true
+  },
+  "remaining": [
+    "968 local review tasks",
+    "20 lecture teaching flows",
+    "complex object and source quality review",
+    "cross-window undo",
+    "lossless legacy per-question draft migration",
+    "question timing evidence and target coverage"
+  ]
+}

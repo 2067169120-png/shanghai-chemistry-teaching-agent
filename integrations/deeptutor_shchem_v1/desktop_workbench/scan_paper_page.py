@@ -29,7 +29,13 @@ class ScanNumberPanel(MixedPaperPanel):
         if self._busy or not self.model.order:
             return
         self._edited()
-        request, generation = self.request(), self._generation
+        if self._restore_failed:
+            return
+        try:
+            request, generation = self.request(), self._generation
+        except Exception:
+            self._draft_failed('当前卷草稿或来源已变化，请重新读取后再调整图片题号。')
+            return
         self._busy = True
         self._update_actions()
         self.status.setText('正在读取本次试卷题图，尚未改动原图…')
@@ -47,7 +53,8 @@ class ScanNumberPanel(MixedPaperPanel):
                 self._number_failed(generation, '本次没有可调整的 PNG/JPEG/BMP 题图；可直接使用普通排版预览。')
                 return
             from ..desktop_number_regions import NumberRegionStore
-            dialog = ScanNumberDialog(catalog, self, region_store=NumberRegionStore(self.facade.state_store))
+            dialog = ScanNumberDialog(catalog, self, region_store=NumberRegionStore(
+                getattr(self.facade, "number_region_state", self.facade.state_store)))
             self._number_dialog = dialog
 
             def finished(code):
@@ -97,16 +104,18 @@ class ScanNumberPanel(MixedPaperPanel):
 
 
 class ScanComposer(ComposerPage):
-    def _activate_mixed(self, basket, *, force=False):
+    def _activate_mixed(self, basket, *, force=False, details_expectation=None):
         scopes = {row.get('scope', 'master') for row in basket
                   if row.get('item_kind') not in {'word_question', 'personal_visual_theme'}}
         required = any(row.get('item_kind') in {'word_question', 'personal_visual_theme'} for row in basket)
         required = required or len(scopes) > 1 or (force and bool(basket))
         if required and self._mixed_panel is None and callable(getattr(self.facade, 'paper_basket_projection', None)):
             self._mixed_panel = ScanNumberPanel(self.facade, self.tasks, self.model, self)
+            self._mixed_panel._legacy_details_expectation = details_expectation
             self._mixed_panel.load_finished.connect(self._basket_preview_loaded)
+            self._mixed_panel.load_finished.connect(self._details_loaded)
             self.layout().addWidget(self._mixed_panel)
-        return super()._activate_mixed(basket, force=force)
+        return super()._activate_mixed(basket, force=force, details_expectation=details_expectation)
 
 
 class ScanPaperPage(WorkflowPaperPage):
@@ -115,7 +124,13 @@ class ScanPaperPage(WorkflowPaperPage):
         QWidget.__init__(self, parent)
         self.facade = facade
         self.tasks = tasks
-        self._composer = ScanComposer(facade, tasks)
+        independent = callable(getattr(facade, "independent_paper_library", None))
+        if independent:
+            from .independent_paper_workspace import IndependentPaperWorkspace
+            self._composer = IndependentPaperWorkspace(facade, tasks, panel_type=ScanNumberPanel)
+        else:
+            self._composer = ScanComposer(facade, tasks)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
-        outer.addWidget(page_scroll(self._composer))
+        # The independent editor owns its body scroll and fixed footer.
+        outer.addWidget(self._composer if independent else page_scroll(self._composer))
