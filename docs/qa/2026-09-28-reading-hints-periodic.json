@@ -1,0 +1,148 @@
+{
+  "schema_version": "shchem.increment-acceptance.v1",
+  "verified_at_utc": "2026-09-28T09:32:48.172052+00:00",
+  "base_commit": "b9369910c4f877ddf9a22ba76cadf28717fdd2c1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "tests": [
+    {
+      "name": "root-functional-tests.xml",
+      "sha256": "f5cd7e26afca07abab424e9854c4910a9785cf8e849bf58c966827ff0baa0ef0",
+      "passed": 213,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "root-guide-tests.xml",
+      "sha256": "2eb9c41a29df01ad3905a9e8c490b7ac6c8a1dd24cc4106409371ed3c01aa7a1",
+      "passed": 14,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "distinct_passed": 227,
+  "code_sha256": {
+    "integrations/deeptutor_shchem_v1/desktop_textbook_reading_hints.py": "a751a06b29d73cbf89d249fd9241d972dad052aea56b7dfd03f7285459c730d9",
+    "integrations/deeptutor_shchem_v1/desktop_preparation_sources.py": "98b1fb1027cfb3dc6674195dff239424ef24c95a0faf424289583cacc511a3c6",
+    "integrations/deeptutor_shchem_v1/desktop_workbench/textbook_source_dialog.py": "182d2c772eb5275c988ba403b8ffea1842c6640903dee898eaa4eb3f5824a0bd",
+    "integrations/deeptutor_shchem_v1/desktop_resources.json": "88de0cf56bde8ccb4ab738bcb9873546d2d2ad63050d7deb9b9b4b14c13c1a48",
+    "staging/coordination/deeptutor_gateway/tests/test_textbook_reading_hints.py": "c2a2616a410bd30847c74dcfe18c3e7a107278d91d95b201ac524122f5d35493",
+    "runtime/deeptutor_shchem/qa_textbook_reading_hints.py": "cee458a9b49af2477e1cd60086db2cffa5531d389f8bf8f0596359cba740c9ae"
+  },
+  "actual_qt_screenshots": 9,
+  "root_model_visually_viewed_screenshots": 9,
+  "human_visual_reviewed": false,
+  "ui_screenshot_sha256": {
+    "atomic-1000": "f46c6638589910783b1de7d50874d7701f070adefc562287ce81058166dc9965",
+    "atomic-420": "a444a846e45c424d6c43bf5fc804944474f2ba031d19acc560c7389a7a671865",
+    "atomic-420-scrolled": "c1927a320566dd1cccd0fc460f0844724c33c5abf9d29f8eab42759ead9f0ddc",
+    "atomic-page-11-no-hints": "14118c3f0d42455c078e8a250bc6106122a38f8851c37885f3ab237b1eed9fe6",
+    "periodic-1000": "063f7185c23fc9846bf45377f9118363c389eae1ac5948d2feee4e38b86fbf90",
+    "periodic-420-short": "015154eb7fe9f923bb9d421ac1f396d5f8c057d8e99852cc28bd16d37e1af028",
+    "periodic-420-short-scrolled": "7dd5f63860f1edc2c2e0030d909b1ff4764ab0bd17f4ed0a7dd18984ffbc69f7",
+    "periodic-page-24-no-hints": "037cbfdb00f70ed4b53e6f39507644cf100b561be0843aa4550f75b8e387cd8a",
+    "periodic-range-23-only": "871e51aa9774201318b72f5b69632d75b6535f530ef92762f56053dc0aa3b812"
+  },
+  "ui_fixture": "SHA-verified textbook and three copied real concepts, isolated local output; private page images not redistributed",
+  "real_concept_count": 383,
+  "reachable_reading_notes": {
+    "periodic_table": {
+      "notes": 8,
+      "reachable_notes": 5,
+      "unreachable_notes": 3,
+      "total_note_concept_matches": 7,
+      "distinct_matching_concepts": 5
+    },
+    "atomic_structure": {
+      "notes": 7,
+      "reachable_notes": 6,
+      "unreachable_notes": 1,
+      "total_note_concept_matches": 8,
+      "distinct_matching_concepts": 8
+    }
+  },
+  "knowledge": {
+    "lecture_count": 46,
+    "new_references": 10,
+    "new_reading_notes": 8,
+    "explicit_old_corrections": 2,
+    "counts": {
+      "knowledge": 311,
+      "methods": 187,
+      "pitfalls": 139,
+      "teaching_flow": 61
+    },
+    "with_flow": 28,
+    "without_flow": 18,
+    "concept_count": 383,
+    "catalog_rows": 127,
+    "word_native_blocks_read": 242,
+    "textbook_core_page_images_read": 21,
+    "textbook_toc_page_images_read": 3,
+    "word_cached_asset_references_read": 20,
+    "word_cached_asset_references_total": 46,
+    "unread_ole_payloads": 3,
+    "real_consumer": {
+      "formal_request_note_counts": [
+        14,
+        7
+      ],
+      "formal_request_character_counts": [
+        16565,
+        11504
+      ],
+      "unique_reference_count": 18,
+      "exact_support_blocks": 58,
+      "exact_union_ranges": 40,
+      "range_counts": [
+        32,
+        14
+      ],
+      "root_first_required_support_removal_cases": 18,
+      "identity_mismatch_cases": 3,
+      "range_widening": false,
+      "repeat_additions_CODE_and_DATA": 0,
+      "textbook_concepts_unchanged": 383,
+      "other_cards_unchanged": 45
+    }
+  },
+  "question_import": {
+    "sources": 98,
+    "questions": 3579,
+    "selectable": 3576,
+    "read_this_batch": 12,
+    "historical_unique_read_identities": 370,
+    "labels_saved_questions": 7,
+    "primary_fills": 5,
+    "curriculum_fills": 3,
+    "held": 5,
+    "known_primary": 2941,
+    "mapped_curriculum": 2818,
+    "missing_primary": 638,
+    "missing_curriculum": 761,
+    "pending": 955,
+    "pending_categories": {
+      "readable_pure_text": 127,
+      "requires_image": 769,
+      "scope_or_material_incomplete": 56,
+      "teacher_or_pinned_protected": 3
+    },
+    "prior_history_preserved": 9457,
+    "new_history": 7,
+    "other_attributes_unchanged": 3677,
+    "repeat_changes": 0
+  },
+  "provider_calls": 0,
+  "wechat_articles_searched": 0,
+  "new_papers": 0,
+  "release_exe_rebuilt": false,
+  "limitations": [
+    "Candidate model review only; no teacher/official approval.",
+    "No system multi-screen, 2x display or new EXE acceptance this increment.",
+    "Four of 15 checked reading notes have no complete real concept page coverage; not force-enabled.",
+    "Full Word pagination and unread objects are not covered by selected text/image review.",
+    "Full 955-item backlog and 18 lectures without flows remain."
+  ]
+}
