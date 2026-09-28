@@ -26,6 +26,16 @@ jobs:
         run: python -m compileall -q integrations
       - name: Run desktop regression tests
         run: python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_desktop_first_run.py staging/coordination/deeptutor_gateway/tests/test_desktop_library_progress.py staging/coordination/deeptutor_gateway/tests/test_desktop_teaching_design_contract.py staging/coordination/deeptutor_gateway/tests/test_desktop_ui.py staging/coordination/deeptutor_gateway/tests/test_desktop_preparation_provider.py staging/coordination/deeptutor_gateway/tests/test_teacher_source_prompt_rules.py --junitxml=desktop-qa/pytest.xml
+      - name: Check source-bound textbook hints and original-page reading
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: >-
+          python -m pytest -q
+          staging/coordination/deeptutor_gateway/tests/test_textbook_reading_hints.py
+          staging/coordination/deeptutor_gateway/tests/test_textbook_source_service.py
+          staging/coordination/deeptutor_gateway/tests/test_textbook_source_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_preparation_sources.py
+          --junitxml=desktop-qa/textbook-reading-hints.xml
       - name: Exercise native Windows Qt routes and capture real screenshots
         run: python runtime/deeptutor_shchem/desktop_ci_smoke.py
       - name: Archive exact tracked source
