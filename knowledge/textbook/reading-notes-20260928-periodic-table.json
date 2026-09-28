@@ -1,0 +1,433 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_review_completed": true,
+  "root_model_review_completed": true,
+  "purpose": "必修一4.1与选必二1.3共21页的8条教材研读候选；保留双页码、教材SHA和限定范围，不包含教材原图或完整试卷。",
+  "notes": [
+    {
+      "id": "READ-TB-M1-20260928-PERIODIC-01",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.1",
+      "title": "按原子序数定位，并注明族编号约定",
+      "pdf_pages": [
+        112,
+        114,
+        115
+      ],
+      "printed_pages": [
+        107,
+        109,
+        110
+      ],
+      "source_anchors": [
+        "按原子序数定位，并注明族编号约定"
+      ],
+      "summary": "现代周期表按Z排列。教材用1—18族，同时对照主、副族和0族的旧记号；读取元素方格时须分清原子序数、符号、名称和相对原子质量。",
+      "classroom_check": "给Fe、Pd、W的信息框分别标注Z与相对原子质量，并把旧Ⅷ族对应到现代8、9、10族。",
+      "lecture_package_id": "PKG-030",
+      "lecture_block_indices": [
+        26,
+        27,
+        37,
+        38,
+        41,
+        49,
+        84,
+        86,
+        90,
+        94,
+        98,
+        108,
+        112,
+        224
+      ],
+      "source_sha256": "c164f49fcd2e08895f398bc34785858ac1466d015548ed151e1e370c65f9441b",
+      "source_preview_revision": "fe7ad44578cee8515c4e249900afe7702074d51d1c2cebe1d2865e0388ce7b8c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          112,
+          114,
+          115
+        ],
+        "printed_pages": [
+          107,
+          109,
+          110
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "“18族”在现代编号下成立；不能用讲义旧16族约定否定现代编号，也不能将相对原子质量作为核素质量数。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-M1-20260928-PERIODIC-02",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.1",
+      "title": "用实验现象解释周期趋势",
+      "pdf_pages": [
+        116,
+        117
+      ],
+      "printed_pages": [
+        111,
+        112
+      ],
+      "source_anchors": [
+        "用实验现象解释周期趋势"
+      ],
+      "summary": "教材将Na、Mg、Al与水、酸的反应及氢氧化物性质相互对照，以可观察的实验事实讨论元素性质递变。",
+      "classroom_check": "说明氧化膜处理、温度和反应物浓度为什么要明确；用一句话区分金属反应难易与失电子总数。",
+      "lecture_package_id": "PKG-030",
+      "lecture_block_indices": [
+        146,
+        152,
+        153,
+        159
+      ],
+      "source_sha256": "c164f49fcd2e08895f398bc34785858ac1466d015548ed151e1e370c65f9441b",
+      "source_preview_revision": "fe7ad44578cee8515c4e249900afe7702074d51d1c2cebe1d2865e0388ce7b8c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          116,
+          117
+        ],
+        "printed_pages": [
+          111,
+          112
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "只在相应实验条件与常见主族范围内比较；不能以每原子失电子数多判定金属性强，也不能将Al(OH)₃的两性简化为只表现碱性。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-M1-20260928-PERIODIC-03",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.1",
+      "title": "分清氢化物热稳定性和溶液酸性",
+      "pdf_pages": [
+        118,
+        119,
+        120
+      ],
+      "printed_pages": [
+        113,
+        114,
+        115
+      ],
+      "source_anchors": [
+        "分清氢化物热稳定性和溶液酸性"
+      ],
+      "summary": "同周期和同主族的性质比较需要给出具体证据，例如Si、P、S、Cl的氢化物热稳定性及相应最高价含氧酸，或卤素置换反应。",
+      "classroom_check": "分别列出可支持Cl、S非金属性比较的证据，并指出HCl、H₂S酸性比较为何不是同一口径。",
+      "lecture_package_id": "PKG-030",
+      "lecture_block_indices": [
+        146,
+        152,
+        153,
+        159,
+        181,
+        182,
+        183,
+        184
+      ],
+      "source_sha256": "c164f49fcd2e08895f398bc34785858ac1466d015548ed151e1e370c65f9441b",
+      "source_preview_revision": "fe7ad44578cee8515c4e249900afe7702074d51d1c2cebe1d2865e0388ce7b8c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          118,
+          119,
+          120
+        ],
+        "printed_pages": [
+          113,
+          114,
+          115
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "最高价含氧酸、气态氢化物稳定性与水溶液酸性是不同对象；不把主族趋势无条件外推到全部元素、所有化合物或固定pH。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-M1-20260928-PERIODIC-04",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.1",
+      "title": "从位置提出材料线索，再回到证据",
+      "pdf_pages": [
+        121,
+        122,
+        123
+      ],
+      "printed_pages": [
+        116,
+        117,
+        118
+      ],
+      "source_anchors": [
+        "从位置提出材料线索，再回到证据"
+      ],
+      "summary": "周期表把位置、结构和性质联系起来，可用于解释材料选择的线索；元素信息框也能帮助检查元素身份和数字含义。",
+      "classroom_check": "给一个材料用途提出位置线索，再列出仍需要验证的组成、结构或实验条件。",
+      "lecture_package_id": "PKG-030",
+      "lecture_block_indices": [
+        49,
+        108,
+        112,
+        179,
+        182,
+        183,
+        184,
+        186,
+        224
+      ],
+      "source_sha256": "c164f49fcd2e08895f398bc34785858ac1466d015548ed151e1e370c65f9441b",
+      "source_preview_revision": "fe7ad44578cee8515c4e249900afe7702074d51d1c2cebe1d2865e0388ce7b8c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          121,
+          122,
+          123
+        ],
+        "printed_pages": [
+          116,
+          117,
+          118
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "分界线附近的位置不是所有元素都具备相同用途的证明；不把讲义中的砹性质推测或未知试卷来源升级为实测事实、官方命题依据。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260928-PERIODIC-05",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.3",
+      "title": "周期容量来自能级组",
+      "pdf_pages": [
+        21,
+        22
+      ],
+      "printed_pages": [
+        17,
+        18
+      ],
+      "source_anchors": [
+        "周期容量来自能级组"
+      ],
+      "summary": "教材用近似能级图联系周期长度，第四周期涉及4s、3d、4p，容量合计18；周期容量与单一电子层的最大容量不同。",
+      "classroom_check": "分别计算4s、3d、4p可容纳电子数，并解释为何第四周期不是32种元素。",
+      "lecture_package_id": "PKG-030",
+      "lecture_block_indices": [
+        34,
+        45,
+        54,
+        56,
+        58,
+        59,
+        64,
+        179
+      ],
+      "source_sha256": "c164f49fcd2e08895f398bc34785858ac1466d015548ed151e1e370c65f9441b",
+      "source_preview_revision": "fe7ad44578cee8515c4e249900afe7702074d51d1c2cebe1d2865e0388ce7b8c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          21,
+          22
+        ],
+        "printed_pages": [
+          17,
+          18
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "近似填充图不能替代所有元素实测基态排布；“周期等于实际占据层数”对Pd等特殊排布不能直接使用。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260928-PERIODIC-06",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.3",
+      "title": "四分区、五分区与氦的画法",
+      "pdf_pages": [
+        22,
+        23
+      ],
+      "printed_pages": [
+        18,
+        19
+      ],
+      "source_anchors": [
+        "四分区、五分区与氦的画法"
+      ],
+      "summary": "教材图1.11使用s、p、d、f四分区；讲义另以ds区区分第11、12列。教材图中He随第18族画入p区，同时文字明确其1s²排布是例外。",
+      "classroom_check": "用两套图例分别给Cu、Mn标区，再说明He在图中的位置与实际电子排布。",
+      "lecture_package_id": "PKG-030",
+      "lecture_block_indices": [
+        38,
+        69,
+        177,
+        179,
+        203,
+        205,
+        238,
+        242
+      ],
+      "source_sha256": "c164f49fcd2e08895f398bc34785858ac1466d015548ed151e1e370c65f9441b",
+      "source_preview_revision": "fe7ad44578cee8515c4e249900afe7702074d51d1c2cebe1d2865e0388ce7b8c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          22,
+          23
+        ],
+        "printed_pages": [
+          18,
+          19
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "Cu属于d还是ds须先说明四分区或五分区；He按表中图示分区与按填充轨道分区可能记法不同，不改变He为1s²、第18族的事实。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260928-PERIODIC-07",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.3",
+      "title": "比较半径前统一定义",
+      "pdf_pages": [
+        24,
+        25
+      ],
+      "printed_pages": [
+        20,
+        21
+      ],
+      "source_anchors": [
+        "比较半径前统一定义"
+      ],
+      "summary": "教材区分金属、共价和范德华半径，并从电子层与核吸引的共同作用解释原子大小的变化。",
+      "classroom_check": "先在数据旁标注半径定义，再判断能否将这些数值放在同一条趋势线上。",
+      "lecture_package_id": "PKG-030",
+      "lecture_block_indices": [
+        153,
+        159,
+        181,
+        182,
+        183,
+        184
+      ],
+      "source_sha256": "c164f49fcd2e08895f398bc34785858ac1466d015548ed151e1e370c65f9441b",
+      "source_preview_revision": "fe7ad44578cee8515c4e249900afe7702074d51d1c2cebe1d2865e0388ce7b8c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          24,
+          25
+        ],
+        "printed_pages": [
+          20,
+          21
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "原子没有刚性边界；不同半径定义、不同成键环境的数值不能直接混排。稀有气体半径的测定口径尤其需要说明。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260928-PERIODIC-08",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.3",
+      "title": "第一电离能和电负性的趋势都有条件",
+      "pdf_pages": [
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "printed_pages": [
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "source_anchors": [
+        "第一电离能和电负性的趋势都有条件"
+      ],
+      "summary": "第一电离能描述气态基态原子失去一个电子所需的最低能量；电负性描述原子在化合物中吸引电子的相对能力。教材曲线显示第一电离能总体趋势中的局部例外。",
+      "classroom_check": "在图中找到Be/B、N/O、Mg/Al和P/S的局部逆序；再分别说明电离能与电负性比较的对象。",
+      "lecture_package_id": "PKG-030",
+      "lecture_block_indices": [
+        146,
+        152,
+        153,
+        159,
+        238,
+        242
+      ],
+      "source_sha256": "c164f49fcd2e08895f398bc34785858ac1466d015548ed151e1e370c65f9441b",
+      "source_preview_revision": "fe7ad44578cee8515c4e249900afe7702074d51d1c2cebe1d2865e0388ce7b8c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          25,
+          26,
+          27,
+          28,
+          29
+        ],
+        "printed_pages": [
+          21,
+          22,
+          23,
+          24,
+          25
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "总体趋势不能改写成每一步都严格单调；电负性差与键类型的经验判断也不是不带条件的充分必要判据。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    }
+  ]
+}

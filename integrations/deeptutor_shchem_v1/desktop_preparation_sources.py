@@ -445,6 +445,8 @@ class PreparationSourcesService:
 
     def textbook_source(self, concept_id, revision):
         """Return exact verified PDF bytes for local viewing, never extraction."""
+        from .desktop_textbook_reading_hints import load_reading_hints
+
         if not isinstance(concept_id, str) or not isinstance(revision, str):
             raise PreparationSourceError("教材知识点选择记录不正确。")
         row = self._concepts().get(concept_id)
@@ -492,6 +494,13 @@ class PreparationSourcesService:
             "pdf_bytes": data,
             "verification_caveat": str(
                 row.get("verification_caveat", "尚未经教师核验")
+            ),
+            "reading_hints": load_reading_hints(
+                self.workspace,
+                volume_id=row.get("volume_id"),
+                section_key=row.get("section_key"),
+                source_sha256=row["source_sha256"],
+                pdf_pages=pages,
             ),
         }
 

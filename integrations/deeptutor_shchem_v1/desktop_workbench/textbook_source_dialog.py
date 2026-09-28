@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QPlainTextEdit,
     QPushButton,
+    QTabWidget,
     QVBoxLayout,
 )
 
@@ -29,6 +30,7 @@ class TextbookSourceDialog(QDialog):
         self._own_tasks = tasks is None
         self._closed = False
         self._loaded_pages = False
+        self._reading_hint_count = 0
         self._source = None
         self.excerpt = dict(excerpt) if excerpt is not None else None
         self.excerpt_panel = None
@@ -42,9 +44,17 @@ class TextbookSourceDialog(QDialog):
         root.addWidget(self.heading)
         self.summary = QPlainTextEdit()
         self.summary.setReadOnly(True)
-        self.summary.setMaximumHeight(86)
         self.summary.setAccessibleName('待核对的教材整理出的知识摘要，不是教材原句')
-        root.addWidget(self.summary)
+        self.reading_hints = QPlainTextEdit()
+        self.reading_hints.setReadOnly(True)
+        self.reading_hints.setAccessibleName("当前教材页面的研读提示、适用范围与双页码，候选待教师核对")
+        self.summary_tabs = QTabWidget()
+        self.summary_tabs.setAccessibleName("教材知识摘要与研读提示")
+        self.summary_tabs.setMinimumHeight(140)
+        self.summary_tabs.setMaximumHeight(220)
+        self.summary_tabs.addTab(self.summary, "知识摘要")
+        self.summary_tabs.addTab(self.reading_hints, "研读提示")
+        root.addWidget(self.summary_tabs)
         controls = QHBoxLayout()
         self.pages = QComboBox()
         self.pages.setAccessibleName("知识点关联的PDF文件页序")
@@ -185,6 +195,8 @@ class TextbookSourceDialog(QDialog):
             self.pages.addItem(f"关联PDF第{page}页", page)
         self._set_controls(True)
         self._source_page()
+        if self._reading_hint_count:
+            self.summary_tabs.setCurrentIndex(1)
 
     def _source_page(self, *_args):
         page = self.pages.currentData()
@@ -198,10 +210,28 @@ class TextbookSourceDialog(QDialog):
 
     def _page_changed(self, page):
         self.position.setText(f"PDF文件第{page + 1} / {self.document.pageCount()}页")
+        self._update_reading_hints(page + 1)
         self.previous.setEnabled(self._loaded_pages and page > 0)
         self.next.setEnabled(
             self._loaded_pages and page + 1 < self.document.pageCount()
         )
+
+    def _update_reading_hints(self, page):
+        from ..desktop_textbook_reading_hints import reading_hints_for_page
+
+        source = self._source or {}
+        text, count = reading_hints_for_page(
+            source.get("reading_hints", {}), page, source.get("pdf_pages", [])
+        )
+        self._reading_hint_count = count
+        self.reading_hints.setPlainText(text)
+        self.summary_tabs.setTabText(1, f"研读提示（{count}）" if count else "研读提示")
+
+    def resizeEvent(self, event):
+        # Keep long notes scrollable without taking the PDF/navigation space on
+        # short screens. Leave several readable lines below the tab controls.
+        self.summary_tabs.setMaximumHeight(160 if self.height() < 650 else 220)
+        super().resizeEvent(event)
 
     def _zoom_changed(self, index):
         if index < 2:
