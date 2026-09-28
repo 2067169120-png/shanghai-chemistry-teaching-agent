@@ -4,7 +4,6 @@ import hashlib
 import io
 import json
 from copy import deepcopy
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -14,22 +13,79 @@ from integrations.deeptutor_shchem_v1.desktop_facade import DesktopWorkbenchFaca
 from integrations.deeptutor_shchem_v1.desktop_preparation_sources import CONCEPTS, PreparationSourceError, PreparationSourcesService
 from integrations.deeptutor_shchem_v1.desktop_textbook_section_reader import TextbookSectionError, textbook_section_scope
 
-ROOT = Path(__file__).resolve().parents[4]
+def blank_pdf(page_count):
+    """Generated blank pages only; no local textbook or private fixture input."""
+    from pypdf import PdfWriter
+
+    writer, buffer = PdfWriter(), io.BytesIO()
+    for _ in range(page_count):
+        writer.add_blank_page(600, 800)
+    writer.write(buffer)
+    return buffer.getvalue()
+
+
+def synthetic_directory(source_sha256):
+    """Exercise the real 5/19/60 protocol with wholly invented metadata.
+
+    The status/role strings below are protocol fixture values, not evidence of
+    any real textbook or visual review. Only the fixture's hash is activated;
+    no directory validation function or count/identity rule is bypassed.
+    """
+    volumes, nodes = [], []
+    for volume_index, (volume_id, chapter_count) in enumerate(zip(
+            ("TB-M1", "TB-M2", "TB-E1", "TB-E2", "TB-E3"), (4, 4, 4, 4, 3))):
+        source = {
+            "volume_id": volume_id,
+            "volume_title": f"合成教材册 {volume_index + 1}",
+            "source_root": "workspace_root",
+            "source_path": f"books/synthetic-{volume_id}.pdf",
+            "source_sha256": source_sha256,
+            "toc_pdf_pages": [1],
+            "toc_visual_evidence": [{
+                "bytes": 1, "path": f"synthetic-evidence/{volume_id}.png",
+                "role": "textbook_toc_visual_evidence", "sha256": "a" * 64,
+            }],
+        }
+        volumes.append({**deepcopy(source), "textbook_family": "合成测试系列", "publisher": "合成测试出版者",
+                        "edition_or_printing": None, "edition_status": registry_module.EDITION_STATUS_UNKNOWN,
+                        "evidence_level": "L1_LOCAL_TEXTBOOK"})
+        section_index = 0
+        for chapter in range(1, chapter_count + 1):
+            # 19 * 3 sections plus one in each of the first three volumes.
+            section_count = 4 if chapter == 1 and volume_index < 3 else 3
+            for section in range(1, section_count + 1):
+                chapter_id, number = f"{volume_id}-C{chapter}", f"{chapter}.{section}"
+                first = 7 + section_index * 9
+                nodes.append({
+                    **deepcopy(source), "chapter_id": chapter_id, "chapter_title": f"合成第{chapter}章",
+                    "node_key": f"{chapter_id}:{number}", "section_number": number,
+                    "section_title": f"合成第{number}节",
+                    "section_id": f"SYNTHETIC-SECTION-{len(nodes) + 1}" if len(nodes) < 3 else None,
+                    "unit_id": None, "unit_title": None, "unit_status": registry_module.UNIT_STATUS_UNKNOWN,
+                    "status": "toc_visual_verified_directory_node", "content_pdf_pages": [first, first + 8],
+                    "printed_pages": [first - 4, first + 4],
+                })
+                section_index += 1
+    return {
+        "schema_version": "1.0.0-textbook-directory-nodes", "title": "合成测试目录",
+        "volume_count": 5, "chapter_count": 19, "numbered_section_count": 60,
+        "section_id_policy": "only_reuse_existing_verified_ids_otherwise_null",
+        "unit_policy": registry_module.UNIT_STATUS_UNKNOWN, "volumes": volumes, "nodes": nodes,
+    }
 
 
 @pytest.fixture
 def section_fixture(tmp_path, monkeypatch):
-    registry = json.loads((ROOT / "sh-chem-db" / registry_module.DIRECTORY_RELATIVE).read_text(encoding="utf-8"))
-    row = next(json.loads(line) for line in (ROOT / CONCEPTS).read_text(encoding="utf-8").splitlines()
-               if json.loads(line)["concept_id"] == "TB-E2-C1-S11-C01")
+    row = {"concept_id": "SYNTHETIC-CONCEPT-1", "title": "合成概念", "statement": "合成知识摘要",
+           "volume_id": "TB-E2", "chapter_id": "TB-E2-C1", "section_key": "TB-E2-C1:1.1",
+           "source_path": "books/synthetic-TB-E2.pdf", "pdf_pages": [7, 8, 10],
+           "candidate_only": True, "human_reviewed": False}
     book = tmp_path / row["source_path"]
     book.parent.mkdir(parents=True)
-    book.write_bytes(b"%PDF-1.7\nsection fixture\n%%EOF")
+    book.write_bytes(blank_pdf(128))
     sha = hashlib.sha256(book.read_bytes()).hexdigest()
     row["source_sha256"] = sha
-    for item in registry["volumes"] + registry["nodes"]:
-        if item["volume_id"] == row["volume_id"]:
-            item["source_sha256"] = sha
+    registry = synthetic_directory(sha)
     catalog = tmp_path / CONCEPTS
     catalog.parent.mkdir(parents=True)
     catalog.write_text(json.dumps(row), encoding="utf-8")
@@ -165,41 +221,25 @@ def test_facade_section_reader_has_no_state_or_provider_dependency(section_fixtu
     assert source["pdf_pages"] == list(range(7, 16))
 
 
-def test_all_real_concepts_have_explicit_scope_or_a_specific_block_reason(tmp_path):
-    concepts = [json.loads(line) for line in (ROOT / CONCEPTS).read_text(encoding="utf-8").splitlines()]
-    assert len(concepts) == 383
-    # Worktree data may be a junction to the user's private workspace. Stage
-    # identical directory bytes in a regular contained root for this check.
-    registry = tmp_path / "sh-chem-db" / registry_module.DIRECTORY_RELATIVE
-    registry.parent.mkdir(parents=True)
-    registry.write_bytes((ROOT / "sh-chem-db" / registry_module.DIRECTORY_RELATIVE).read_bytes())
-    scopes = {}
-    blocked = {}
-    for row in concepts:
-        try:
-            scope = textbook_section_scope(tmp_path, row)
-        except TextbookSectionError as exc:
-            blocked[row["concept_id"]] = str(exc)
-        else:
-            scopes[row["concept_id"]] = scope
-            assert set(row["pdf_pages"]).issubset(scope["pdf_pages"])
-    assert len(scopes) + len(blocked) == 383
-    assert len(scopes) == 360 and len(blocked) == 23
-    assert all("尚无明确的册与节" in reason for reason in blocked.values())
-    assert scopes["TB-M1-C4-4.1-C01"]["pdf_pages"] == list(range(112, 124))
-    assert scopes["TB-E2-C1-S11-C01"]["pdf_pages"] == list(range(7, 16))
-    assert scopes["TB-E2-C1-S13-C03"]["pdf_pages"] == list(range(21, 30))
+def test_known_and_unknown_synthetic_concepts_preserve_their_scope_boundary(section_fixture):
+    f = section_fixture
+    known = deepcopy(f.row)
+    unknown = {**deepcopy(f.row), "concept_id": "SYNTHETIC-NO-SECTION", "section_key": None}
+    f.catalog.write_text("\n".join(json.dumps(row) for row in (known, unknown)), encoding="utf-8")
+    before = f.catalog.read_bytes()
+    options = {row["concept_id"]: row for row in f.service.concept_options()}
+    scope = textbook_section_scope(f.root, known)
+    assert scope["pdf_pages"] == list(range(7, 16))
+    assert scope["concept_pdf_pages"] == known["pdf_pages"] == [7, 8, 10]
+    with pytest.raises(TextbookSectionError, match="尚无明确的册与节"):
+        f.service.textbook_section_source(unknown["concept_id"], options[unknown["concept_id"]]["revision"])
+    assert f.service.textbook_source(unknown["concept_id"], options[unknown["concept_id"]]["revision"])["pdf_pages"] == [7, 8, 10]
+    assert f.catalog.read_bytes() == before and len(f.service.concept_options()) == 2
 
 
 def ui_source():
-    from pypdf import PdfWriter
-
-    writer, buffer = PdfWriter(), io.BytesIO()
-    for _ in range(5):
-        writer.add_blank_page(600, 800)
-    writer.write(buffer)
     return {"concept_id": "C1", "title": "所选概念", "source_name": "教材.pdf", "statement": "概念摘要",
-            "pdf_bytes": buffer.getvalue(), "reading_mode": "section", "volume_title": "测试教材册",
+            "pdf_bytes": blank_pdf(5), "reading_mode": "section", "volume_title": "测试教材册",
             "section_number": "1.1", "section_title": "测试节", "pdf_pages": [2, 3, 4],
             "printed_pages": [10, 11, 12], "concept_pdf_pages": [3], "reading_hints": {"notes": [], "notices": []}}
 
