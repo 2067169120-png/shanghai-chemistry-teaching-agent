@@ -504,6 +504,28 @@ class PreparationSourcesService:
             ),
         }
 
+    def textbook_section_source(self, concept_id, revision):
+        """Explicit read-only section view; never change concept/material scope."""
+        from .desktop_textbook_reading_hints import load_reading_hints
+        from .desktop_textbook_section_reader import textbook_section_scope
+
+        if not isinstance(concept_id, str) or not isinstance(revision, str):
+            raise PreparationSourceError("教材知识点选择记录不正确。")
+        row = self._concepts().get(concept_id)
+        if row is None or _digest(row) != revision:
+            raise PreparationSourceError("教材知识点已变化或缺失，请刷新后重选。")
+        scope = textbook_section_scope(self.workspace, row)
+        # Revalidates the concept and original PDF on each explicit request.
+        # This payload is only consumed by the reader, never reference().
+        source = self.textbook_source(concept_id, revision)
+        return {
+            **source, **scope,
+            "reading_hints": load_reading_hints(
+                self.workspace, volume_id=row["volume_id"], section_key=row["section_key"],
+                source_sha256=source["source_sha256"], pdf_pages=scope["pdf_pages"],
+            ),
+        }
+
     def reference(
         self,
         word_path,

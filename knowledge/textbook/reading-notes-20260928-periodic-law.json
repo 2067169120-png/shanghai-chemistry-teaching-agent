@@ -1,0 +1,362 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "purpose": "基于两节共21正文页图的6条研读候选；突出实验条件、半径口径、电离过程与电负性证据。",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_review_completed": true,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-TB-M1-20260928-PERIODIC-LAW-01",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.1",
+      "title": "把金属性结论连回可比较的实验条件",
+      "pdf_pages": [
+        116,
+        117
+      ],
+      "printed_pages": [
+        111,
+        112
+      ],
+      "source_anchors": [
+        "把金属性结论连回可比较的实验条件"
+      ],
+      "summary": "Na、Mg、Al的实验分别记录反应条件和现象；镁、铝表面先处理氧化膜，反应温度和溶液条件也是证据的一部分。氢氧化铝与酸、强碱的反应用于说明两性，不能把加碱后的任一时刻都认作沉淀终点。",
+      "classroom_check": "给学生一张条件记录表，要求把“同样加水”和“同样与酸反应”改写为能实际比较的陈述，再解释过量碱下铝的沉淀为何不保留。",
+      "limitation": "课堂建议是AI改述；无实测条件时不能由照片气泡多少定量比较速率，也不能用Na直接置换水溶液中的Mg。",
+      "lecture_package_id": "PKG-040",
+      "lecture_block_indices": [
+        51,
+        52,
+        53,
+        54,
+        69,
+        70,
+        71,
+        73
+      ],
+      "source_sha256": "fbd71747d2b620c02d8a112a8f370f6f7459248a97e2861c69302bda3249b01c",
+      "source_preview_revision": "652534e3c74520ead2aea424163b2da1df63f8287315b1c34061eba1447fa0ed",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          116,
+          117
+        ],
+        "printed_pages": [
+          111,
+          112
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-M1-20260928-PERIODIC-LAW-02",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.1",
+      "title": "把氢化物稳定性、含氧酸与pH分开",
+      "pdf_pages": [
+        118,
+        120,
+        123
+      ],
+      "printed_pages": [
+        113,
+        115,
+        118
+      ],
+      "source_anchors": [
+        "把氢化物稳定性、含氧酸与pH分开"
+      ],
+      "summary": "本节用气态氢化物热稳定性和相应最高价含氧酸等不同证据比较非金属性。这些比较对象有明确范围；HClO、H₂SO₃不是最高价含氧酸，不能直接照搬该组比较规则。",
+      "classroom_check": "为“热稳定性”“酸强弱”“pH”各写一句可用证据和一个限制条件，再检查题目中的化合价是否满足前提。",
+      "limitation": "HF/HCl/HBr/HI的酸性比较还需区分溶剂的拉平效应；酸强弱关系不能无条件写成pH排序。",
+      "lecture_package_id": "PKG-040",
+      "lecture_block_indices": [
+        57,
+        59,
+        84,
+        86,
+        98,
+        100
+      ],
+      "source_sha256": "fbd71747d2b620c02d8a112a8f370f6f7459248a97e2861c69302bda3249b01c",
+      "source_preview_revision": "652534e3c74520ead2aea424163b2da1df63f8287315b1c34061eba1447fa0ed",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          118,
+          120,
+          123
+        ],
+        "printed_pages": [
+          113,
+          115,
+          118
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260928-PERIODIC-LAW-03",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.3",
+      "title": "半径数据先统一含义和单位",
+      "pdf_pages": [
+        24,
+        25
+      ],
+      "printed_pages": [
+        20,
+        21
+      ],
+      "source_anchors": [
+        "半径数据先统一含义和单位"
+      ],
+      "summary": "教材把金属半径、共价半径、范德华半径分开定义。半径不是电子云的硬边界；比较相对大小时应使用一致的数据口径，同电子结构离子的核电荷比较也不能替代口径核对。",
+      "classroom_check": "让学生说明0.160 nm与160 pm为何等值，再找出把不同半径定义混排的问题，并写出10电子离子的排序依据。",
+      "limitation": "离子半径还受配位条件影响；“电子层数相同”本身不保证电子排布相同。",
+      "lecture_package_id": "PKG-040",
+      "lecture_block_indices": [
+        111,
+        112,
+        113,
+        117,
+        118,
+        120,
+        181,
+        186,
+        189,
+        199
+      ],
+      "source_sha256": "fbd71747d2b620c02d8a112a8f370f6f7459248a97e2861c69302bda3249b01c",
+      "source_preview_revision": "652534e3c74520ead2aea424163b2da1df63f8287315b1c34061eba1447fa0ed",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          24,
+          25
+        ],
+        "printed_pages": [
+          20,
+          21
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260928-PERIODIC-LAW-04",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.3",
+      "title": "先写电离过程，再解释反常与跃升",
+      "pdf_pages": [
+        25,
+        26
+      ],
+      "printed_pages": [
+        21,
+        22
+      ],
+      "source_anchors": [
+        "先写电离过程，再解释反常与跃升"
+      ],
+      "summary": "I₁对应气态基态中性原子失去第一个电子。本节折线同时展示总体上升与Be/B、N/O、Mg/Al、P/S的局部差异；讲义逐级电离能表可用于进一步检查每一步移走电子的对象。",
+      "classroom_check": "分别写M(g)→M⁺(g)+e⁻和M⁺(g)→M²⁺(g)+e⁻，说明它们是气态原子和气态离子的电离；区分Al第三步能量与前三步总和。",
+      "limitation": "逐级数据来自已读讲义，不冒称本教材页列有这张表；I₁不能单独决定金属在溶液中的还原性。",
+      "lecture_package_id": "PKG-040",
+      "lecture_block_indices": [
+        78,
+        80,
+        123,
+        125,
+        131,
+        133,
+        134,
+        135,
+        139,
+        143
+      ],
+      "source_sha256": "fbd71747d2b620c02d8a112a8f370f6f7459248a97e2861c69302bda3249b01c",
+      "source_preview_revision": "652534e3c74520ead2aea424163b2da1df63f8287315b1c34061eba1447fa0ed",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          25,
+          26
+        ],
+        "printed_pages": [
+          21,
+          22
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260928-PERIODIC-LAW-05",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.3",
+      "title": "电负性总体趋势须接受表中数值检验",
+      "pdf_pages": [
+        27,
+        28
+      ],
+      "printed_pages": [
+        23,
+        24
+      ],
+      "source_anchors": [
+        "电负性总体趋势须接受表中数值检验"
+      ],
+      "summary": "教材图1.16在同一标度下给出电负性；第13族Al、Ga、In、Tl为1.5、1.6、1.7、1.8，已经说明“向下必减”不成立。先使用题给同一标度的数值，再谈一般趋势和成键电子偏向。",
+      "classroom_check": "比较Al/Ga以及Si/Ge，要求分别回答大小关系和是否能仅凭方向箭头判断；随后用N、H、B的表值说明不同键中电子偏向。",
+      "limitation": "本页小数是教材采用的近似标度，不与别的表混用；电负性也不等于第一电离能或单质反应速率。",
+      "lecture_package_id": "PKG-040",
+      "lecture_block_indices": [
+        147,
+        148,
+        150,
+        151,
+        152,
+        154,
+        157,
+        158,
+        168,
+        169,
+        243,
+        244,
+        245
+      ],
+      "source_sha256": "fbd71747d2b620c02d8a112a8f370f6f7459248a97e2861c69302bda3249b01c",
+      "source_preview_revision": "652534e3c74520ead2aea424163b2da1df63f8287315b1c34061eba1447fa0ed",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          27,
+          28
+        ],
+        "printed_pages": [
+          23,
+          24
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260928-PERIODIC-LAW-06",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.3",
+      "title": "区分经验键型判据、键极性和分子极性",
+      "pdf_pages": [
+        27,
+        28
+      ],
+      "printed_pages": [
+        23,
+        24
+      ],
+      "source_anchors": [
+        "区分经验键型判据、键极性和分子极性"
+      ],
+      "summary": "教材以电负性差讨论键型，并使用“一般”限定经验分界。HF按本图数值的差为1.9仍含极性共价键；讲义CF₄实例还提示，整分子极性必须结合空间构型，不能只看某根键的电负性差。",
+      "classroom_check": "先判断H—F键的电子偏向，再解释CF₄的四个键偶极为何可相互抵消；在答案中分别写“键”和“分子”的判断。",
+      "limitation": "HF与分子极性的补充判断由已读讲义及公开化学教材核对，不能把1.7写成无例外的定义或精确界线。",
+      "lecture_package_id": "PKG-040",
+      "lecture_block_indices": [
+        76,
+        80,
+        147,
+        150,
+        159,
+        160,
+        161
+      ],
+      "source_sha256": "fbd71747d2b620c02d8a112a8f370f6f7459248a97e2861c69302bda3249b01c",
+      "source_preview_revision": "652534e3c74520ead2aea424163b2da1df63f8287315b1c34061eba1447fa0ed",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          27,
+          28
+        ],
+        "printed_pages": [
+          23,
+          24
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    }
+  ],
+  "external_fact_sources": [
+    {
+      "title": "NIST periodic table, July 2019",
+      "url": "https://www.nist.gov/system/files/documents/2019/12/10/nist_periodictable_july2019.pdf",
+      "access": "full_pdf_text_opened",
+      "scope": "Mg/Al、N/O、P/S、Ca/Sc、Al/Ga第一电离能核对；不使用表格文本错位的原子序数字段。",
+      "retrieved_on": "2026-09-28"
+    },
+    {
+      "title": "OpenStax Chemistry 2e 7.2 Covalent Bonding",
+      "url": "https://openstax.org/books/chemistry-2e/pages/7-2-covalent-bonding",
+      "access": "page_opened",
+      "scope": "电负性差的经验界限及HF差1.9仍为极性共价键。",
+      "retrieved_on": "2026-09-28"
+    },
+    {
+      "title": "OpenStax Chemistry 2e 14.3 Relative Strengths of Acids and Bases",
+      "url": "https://openstax.org/books/chemistry-2e/pages/14-3-relative-strengths-of-acids-and-bases",
+      "access": "page_opened_relevant_paragraph_read",
+      "scope": "水的拉平效应；HCl/HBr/HI更细强弱比较须注明溶剂。",
+      "retrieved_on": "2026-09-28"
+    },
+    {
+      "title": "Avramovic et al., TMT 2006: Development of method for removal the nitric oxides from process of precious metals recovery from anode slime",
+      "url": "https://www.tmt.unze.ba/zbornik/TMT2006/089-TMT06-406.pdf",
+      "access": "four_page_pdf_text_opened",
+      "scope": "仅采用印刷378页式(4)核对NO2与NaOH生成亚硝酸钠、硝酸钠和水；未采其工程数据或旧法规。",
+      "retrieved_on": "2026-09-28"
+    }
+  ],
+  "limitations": [
+    "模型实际阅读不是教师人工审核；全部候选继续human_reviewed=false。",
+    "54缓存引用均逐一打开，涉及58个原生XML图片出现；两者不是同一个计数。",
+    "原始ZIP有45媒体、0 OLE二进制嵌入；5 OMML按XML语义读取，未实际Office版式渲染。",
+    "1个Wingdings特殊字体对象仅有原生标记，未作视觉解码；Word分页、裁切、文本框整体版式尚未复核。",
+    "微小的word-b192-image2上标未用于本轮教学结论；失败的黑底显示由白底显示替代后记录。",
+    "7张补充教材页虽已准备但未阅读，不计入21页正文及3页目录。",
+    "外链仅登记未打开，原始网页URL、学校、考试身份、发布日期与官方答案/评分细则未认证。",
+    "IUPAC、RSC、REB、ACS和CiteSeer部分页面打开失败，其搜索摘要不作为已读全文；仅采用上列实际打开来源。",
+    "本轮资料为本地化学内容蒸馏，未采集新试卷，未从地域或题号推断认知难度。"
+  ],
+  "root_evidence_receipt": "outputs/periodic-law-chapter-read-live-20260928/root-claim-review.json"
+}

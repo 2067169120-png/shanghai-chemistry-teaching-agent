@@ -217,6 +217,12 @@ class PreparationSourcesDialog(QDialog):
         self.original_button.setEnabled(False)
         self.original_button.clicked.connect(self._show_textbook_source)
         concept_layout.addWidget(self.original_button)
+        self.section_read_button = QPushButton("阅读本节…")
+        self.section_read_button.setObjectName("QuietButton")
+        self.section_read_button.setAccessibleName("阅读当前知识点所属教材节的完整原页，不改变勾选或摘录范围")
+        self.section_read_button.setEnabled(False)
+        self.section_read_button.clicked.connect(self._show_textbook_section)
+        concept_layout.addWidget(self.section_read_button)
         self.concept_hint = QLabel("正在读取本地教材知识点…")
         self.concept_hint.setObjectName("MutedLabel")
         self.concept_hint.setWordWrap(True)
@@ -551,6 +557,24 @@ class PreparationSourcesDialog(QDialog):
             self.concept_list.currentItem() is not None
             and callable(getattr(self.facade, "preparation_textbook_source", None))
         )
+        self.section_read_button.setEnabled(
+            self.concept_list.currentItem() is not None
+            and callable(getattr(self.facade, "preparation_textbook_section_source", None))
+        )
+
+    def _show_textbook_section(self):
+        item = self.concept_list.currentItem()
+        if item is None or not self.section_read_button.isEnabled():
+            return
+        from .textbook_source_dialog import TextbookSourceDialog
+
+        concept = item.data(Qt.ItemDataRole.UserRole + 1)
+        if not isinstance(concept, Mapping):
+            return
+        dialog = TextbookSourceDialog(self.facade, concept, self, reading_mode="section")
+        dialog.exec()
+        # Section reading has no selection, excerpt or model-material action.
+        dialog.deleteLater()
 
     def _show_textbook_source(self):
         item = self.concept_list.currentItem()

@@ -1,0 +1,119 @@
+{
+  "date": "2026-09-28",
+  "base_commit": "90abec18a2fa6fc566708193bdb2c0ef83d6984e",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "release_exe_rebuilt": false,
+  "distinct_passed": 282,
+  "root_model_screenshots_viewed": 20,
+  "screenshots_published": false,
+  "concepts": 383,
+  "valid_section_scopes": 360,
+  "missing_section_identity": 23,
+  "reading_hints_reachable": 21,
+  "previous_unreachable_hints_now_reachable": 4,
+  "new_references": 11,
+  "new_reading_notes": 6,
+  "lecture_total": 46,
+  "lectures_with_flow": 29,
+  "lectures_without_flow": 17,
+  "knowledge_counts": {
+    "knowledge": 313,
+    "methods": 191,
+    "pitfalls": 142,
+    "teaching_flow": 63
+  },
+  "current_questions": 3579,
+  "primary_known": 2944,
+  "curriculum_mapped": 2824,
+  "pending_tasks": 948,
+  "changed_question_attributes": 7,
+  "old_history_preserved": 9464,
+  "new_history_rows": 7,
+  "provider_calls": 0,
+  "documentation_policy": "passed",
+  "original_work_item_ids_preserved": 69,
+  "initial_local_tests": [
+    {
+      "report_name": "tests-final.xml",
+      "sha256": "70b8f8eb8f571a60fdc0860fee67c6738b5bbc6780a8e580e07bf15261b17bb3",
+      "passed": 118,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "report_name": "root-consumer-tests.xml",
+      "sha256": "5120cc8f6706ff25828e361b755dd3b7b584fcb6de6df1294e3e587e2491d596",
+      "passed": 150,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "report_name": "guide-tests.xml",
+      "sha256": "b3494f93ee2ba61913e8a76b080977a5f46d335b5ef7c72c76446b545a8d449f",
+      "passed": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "tests": [
+    {
+      "report_name": "tests-final.xml",
+      "sha256": "70b8f8eb8f571a60fdc0860fee67c6738b5bbc6780a8e580e07bf15261b17bb3",
+      "passed": 94,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "source_report_passed": 118,
+      "selection": "Exclude the 24 superseded section-reader cases."
+    },
+    {
+      "report_name": "root-consumer-tests.xml",
+      "sha256": "5120cc8f6706ff25828e361b755dd3b7b584fcb6de6df1294e3e587e2491d596",
+      "passed": 150,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "report_name": "guide-tests.xml",
+      "sha256": "b3494f93ee2ba61913e8a76b080977a5f46d335b5ef7c72c76446b545a8d449f",
+      "passed": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "report_name": "tests-clean-ci-step7.xml",
+      "sha256": "b6bec0a05ad2f6f6574741c7747481cb40fc7b13ff7dd6ecd4d95a13cad4d0d7",
+      "passed": 24,
+      "source_report_passed": 82,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "selection": "Count only 24 replacement section-reader cases; 58 other reruns are already counted."
+    }
+  ],
+  "ci_fixture_repair": {
+    "first_head_sha": "2d30144e42b639d2b18efbf1bbfed44b9dbeeee0",
+    "failed_run_id": 36412634033,
+    "failed_job_id": 108896195044,
+    "first_run_step_result": {
+      "failed": 1,
+      "passed": 61,
+      "errors": 20
+    },
+    "cause": "New unit tests depended on ignored private registry and concept files.",
+    "repair": "Synthetic metadata and blank PDFs; real directory protocol validation is retained.",
+    "clean_archive_passed": 82,
+    "section_reader_replacement_tests": 24,
+    "duplicate_reruns_not_accumulated": 58,
+    "private_directories_in_archive": false,
+    "production_code_changed_for_repair": false,
+    "full_383_concept_coverage_source": "Separate local QA script and original verified coverage report.",
+    "test_identity_inventory_sha256": "5902b33da5192b058302ba334a324a1a4d8396eab2331dd027a23241f3fc8188"
+  }
+}
