@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .reader_cancellation import ReadCancelled, check_read_cancelled
 
 """Thin desktop adapters for the formal visual-import v2 core.
 
@@ -120,6 +121,7 @@ class LocalPageRendererV2Adapter:
                     mime_type=source_file.mime_type,
                     work_root=work_root,
                 )
+                check_read_cancelled()
                 pages: list[RenderedPixelPage] = []
                 for page_number, item in enumerate(rendered, 1):
                     pixels = Path(item.path).read_bytes()
@@ -144,7 +146,10 @@ class LocalPageRendererV2Adapter:
                             render_recipe_sha256=recipe,
                         )
                     )
+                check_read_cancelled()
                 return tuple(pages)
+        except ReadCancelled:
+            raise
         except DesktopVisualImportAdapterError:
             raise
         except Exception as exc:

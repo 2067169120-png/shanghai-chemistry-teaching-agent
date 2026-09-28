@@ -106,6 +106,7 @@ _SAFE_ERROR_CODE = re.compile(r"^[A-Za-z0-9_.-]{1,120}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _PAPER_PREVIEW_ACTIVE_DRAFT = "paper-preview-active"
 _PAPER_EXPORT_WAIT_SECONDS = 180.0
+_PAPER_EXPORT_CANCEL_WAIT_SECONDS = 2.0
 _VISUAL_IMPORT_DRAFT_PREFIX = "visual-import-v2:"
 _VISUAL_IMPORT_DRAFT_SCHEMA = "shchem.desktop-visual-import-draft.v1"
 _VISUAL_FAILURE_UNKNOWN_CODE = "unknown"
@@ -3989,7 +3990,7 @@ class DesktopWorkbenchFacade:
                 revision = str(latest.get("revision") or "")
             assert latest is not None
             return self._student_submission_summary(latest)
-        except DesktopFacadeError:
+        except (DesktopFacadeError, ReadCancelled):
             raise
         except Exception as exc:
             raise self._as_student_error(
@@ -5276,6 +5277,9 @@ class DesktopWorkbenchFacade:
         """Signal before joining Qt tasks or taking the student manager lock."""
 
         self._reader_stop_event.set()
+        stop_exports = getattr(self._paper_export_jobs, "shutdown", None)
+        if callable(stop_exports):
+            stop_exports(wait=False)
 
     def student_practice_preview(
         self, *, student_id: str, submission_id: str
@@ -6145,11 +6149,48 @@ class DesktopWorkbenchFacade:
             )
 
         deadline = time.monotonic() + _PAPER_EXPORT_WAIT_SECONDS
-        while job.get("status") not in {"completed", "failed"}:
+        def cancelled_job_error():
+            self._paper_export_jobs.cancel(job_id)
+            # Wait without publication locks or cancellation checkpoints: the
+            # child must be allowed to persist the real cleanup disposition.
+            until = time.monotonic() + _PAPER_EXPORT_CANCEL_WAIT_SECONDS
+            last = None
+            while time.monotonic() < until:
+                try:
+                    last = self._paper_export_jobs.get(job_id)
+                except Exception:
+                    break
+                if last.get("status") in {"cancelled", "failed", "completed"}:
+                    details = (last.get("error") or {}).get("details") or {}
+                    error = ReadCancelled((last.get("error") or {}).get("message_zh"))
+                    for name in ("cleanup_complete", "office_session"):
+                        if name in details:setattr(error, name, details[name])
+                    if last.get("status") == "completed":error.completed_job = last
+                    return error
+                time.sleep(0.05)
+            error = ReadCancelled("已停止等待，未发布本次结果；后台转换清理尚未确认，未强制关闭 Word。")
+            error.cleanup_complete = False
+            error.export_job_id = job_id
+            return error
+
+        while job.get("status") not in {"completed", "failed", "cancelled"}:
+            try:
+                check_read_cancelled()
+            except ReadCancelled:
+                stopped = cancelled_job_error()
+                if hasattr(stopped, "completed_job"):
+                    job = stopped.completed_job
+                    break
+                raise stopped from None
             if time.monotonic() >= deadline:
-                raise DesktopFacadeError(
-                    "paper_export_timeout", "四文件导出等待超时，请稍后在本机重新导出。"
-                )
+                stopped = cancelled_job_error()
+                if hasattr(stopped, "completed_job"):
+                    job = stopped.completed_job
+                    break
+                error = DesktopFacadeError("paper_export_timeout", "四文件导出等待超时。" + stopped.message_zh)
+                for name in ("cleanup_complete", "office_session"):
+                    if hasattr(stopped, name):setattr(error, name, getattr(stopped, name))
+                raise error
             time.sleep(0.05)
             try:
                 job = self._paper_export_jobs.get(job_id)
@@ -6159,6 +6200,13 @@ class DesktopWorkbenchFacade:
                 raise DesktopFacadeError(
                     _error_code(exc), "四文件导出任务状态暂时无法读取。"
                 ) from exc
+        if job.get("status") == "cancelled":
+            raise cancelled_job_error()
+        # The child's durable completed record is authoritative even for old
+        # callers using an ordinary Event without a shared publication lock.
+        # Returning its verified artifacts must not be labelled unpublished.
+        if job.get("status") != "completed":
+            check_read_cancelled()
         if job.get("status") == "failed":
             error = job.get("error")
             code = error.get("code") if isinstance(error, Mapping) else None

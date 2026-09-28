@@ -531,16 +531,18 @@ def test_preview_image_handle_cannot_read_another_file(setup):
         service.image("mixed-preview-../../other", "image-any")
 
 
-def test_new_preview_invalidates_older_approval(setup):
+def test_only_successful_pagination_replaces_older_approval(setup):
     service, _, words, calls, _ = setup
     _add_word(service, words)
     first = service.create_preview(_request(service))
     first = paginate_and_read(service, first)
     service.approve(first.preview_id, first.preview_hash)
-    service.create_preview(_request(service))
+    candidate = service.create_preview(_request(service))
+    assert service.export(first.preview_id, first.preview_hash)["status"] == "completed"
+    paginate_and_read(service, candidate)
     with pytest.raises(MixedPaperError):
         service.export(first.preview_id, first.preview_hash)
-    assert len(calls) == 1
+    assert len(calls) == 2
 
 
 def test_facade_new_methods_delegate_without_constructing_provider(setup, monkeypatch):

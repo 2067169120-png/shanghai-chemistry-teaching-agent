@@ -136,6 +136,9 @@ class _ExamDashboardBase(QDialog):
         self.refresh_models_button.clicked.connect(self.refresh_models);self.ai_button.clicked.connect(self.request_ai);self.to_prep_button.clicked.connect(self.to_preparation)
         self.paper_text.textChanged.connect(self.input_changed);self.notes.textChanged.connect(self.input_changed)
         self.tasks.task_finished.connect(self.task_finished)
+        if hasattr(self.tasks, 'task_cancelled_detail'):
+            self.tasks.task_cancelled_detail.connect(self.task_cancelled)
+        self._close_when_finished=False
         self.refresh_models();self.render()
         for button in self.findChildren(QPushButton):button.setAutoDefault(False)
         for button in (self.history_button,self.template_button,self.save_button,self.export_button,
@@ -180,11 +183,13 @@ class _ExamDashboardBase(QDialog):
     def _busy(self,yes):
         for w in (self.toolbar,self.classes,self.paper_button,self.clear_paper_button,self.paper_text,self.notes,self.model,
                   self.refresh_models_button,self.send_images,self.send_students,self.ai_button,self.to_prep_button):w.setEnabled(not yes)
-        self.stop_button.setEnabled(yes)
+        self.stop_button.setEnabled(yes and getattr(self,'_can_cancel',True))
         if hasattr(self,'followup_panel'):self.followup_panel.setEnabled(not yes)
 
-    def run(self,label,fn,callback):
+    def run(self,label,fn,callback,*,cancellable=True,external_request=False):
         if self._task:return
+        self._can_cancel=cancellable
+        self._external_request=external_request
         self._busy(True);self.status.setText(label+'…')
         def success(value):
             if not self._closed:
@@ -192,15 +197,33 @@ class _ExamDashboardBase(QDialog):
                 except Exception as e:self.status.setText(getattr(e,'message_zh','操作未完成，请核对文件与数据。'))
         def failure(message):
             if not self._closed:self.status.setText(message)
-        self._task=self.tasks.submit_progress(label,fn,on_success=success,on_failure=failure)
+        def operation(report,cancelled):
+            if cancellable:return fn(report,cancelled)
+            from ..reader_cancellation import publication_guard
+            with publication_guard():return fn(report,cancelled)
+        self._task=self.tasks.submit_progress(label,operation,on_success=success,on_failure=failure)
 
     def task_finished(self,identity):
         if identity==self._task:
             self._task=None
             if not self._closed:self._busy(False)
+            if self._close_when_finished:
+                self._close_when_finished=False
+                self.close()
+
+    def task_cancelled(self,identity,_label,message):
+        if identity==self._task and not self._closed:
+            self.status.setText(message+(' 已发给服务商的调用仍可能计费。' if self._external_request else ''))
 
     def cancel(self):
-        if self._task:self.tasks.cancel(self._task);self.status.setText('已请求停止；已发给服务商的调用仍可能计费。')
+        if self._task:
+            if not self._can_cancel:
+                if self._close_when_finished:self.status.setText('正在保存确认，完成后返回。')
+                return
+            if self.tasks.cancel(self._task) is False:return
+            self.stop_button.setEnabled(False)
+            self.status.setText('正在停止本次任务；已有题集与输出保留，等待清理状态…'+
+                (' 已发给服务商的调用仍可能计费。' if self._external_request else ''))
 
     def import_excel(self):
         path,_=QFileDialog.getOpenFileName(self,'选择成绩Excel','','Excel工作簿 (*.xlsx)')
@@ -333,7 +356,7 @@ class _ExamDashboardBase(QDialog):
             self.status.setText('确认期间资料已变化，请重新核对发送内容。');return
         def done(result):
             self.accept_advice_result(result,scope,request_stamp,expected_disk)
-        self.run('API生成讲评草稿',lambda report,cancelled:generate_advice(self.facade,profile.profile_id,profile.revision,payload,pages,confirmed=True,cancelled=cancelled,transport=getattr(self.facade,"_exam_transport",None)),done)
+        self.run('API生成讲评草稿',lambda report,cancelled:generate_advice(self.facade,profile.profile_id,profile.revision,payload,pages,confirmed=True,cancelled=cancelled,transport=getattr(self.facade,"_exam_transport",None)),done,external_request=True)
 
     def bundle(self):
         return {'exam':self.exam,'paper':self.paper,'notes':self.notes.toPlainText(),'advice':self.result,'advice_scope':self.result_scope,'followups':deepcopy(self.followups)}
@@ -399,7 +422,7 @@ class _ExamDashboardBase(QDialog):
 
     def closeEvent(self,event):
         if self._task:
-            self.status.setText('任务进行中，请先停止等待，任务结束后再返回。');event.ignore();return
+            self._close_when_finished=True;self.cancel();event.ignore();return
         if not self.flush_or_discard():event.ignore();return
         self._closed=True;event.accept()
 

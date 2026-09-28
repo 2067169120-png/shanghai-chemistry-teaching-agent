@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .reader_cancellation import ReadCancelled, check_read_cancelled
 
 import base64
 import contextlib
@@ -417,11 +418,14 @@ class LocalPageRenderer:
                 paths, _pdf, _receipt = _render_with_canonical_docx_tool(
                     source_path, work_root / "pages", toolchain=toolchain
                 )
+        except ReadCancelled:
+            raise
         except IntakeImportError:
             raise
         except Exception as exc:  # noqa: BLE001 - third-party renderer boundary
             code = getattr(exc, "code", "page_render_failed")
             raise IntakeImportError(code, "document pages could not be rendered", 409) from None
+        check_read_cancelled()
         return [RenderedPage(path, "image/png") for path in paths]
 
 
@@ -1878,7 +1882,17 @@ class IntakeImportJobManager:
         work_root = self.root / ".tmp" / f"render-{import_id}-{secrets.token_hex(8)}"
         try:
             rendered = self.renderer.render(object_path, mime_type=content_type, work_root=work_root)
+            check_read_cancelled()
             pages = self._finalize_pages(digest, rendered)
+        except ReadCancelled:
+            with self._lock:
+                job = self._load_job(import_id)
+                if job["status"] == "preparing_pages":
+                    job["status"] = "cancelled"
+                    job["source"]["pages"] = []
+                    self._event(job, "page_render_cancelled", {})
+                    self._save_job(job)
+            raise
         except IntakeImportError as exc:
             with self._lock:
                 job = self._load_job(import_id)

@@ -1,0 +1,402 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_review_completed": true,
+  "root_model_review_completed": true,
+  "purpose": "选必二1.1与1.2共14页的7条教材研读候选；保留页码、来源SHA、模型条件和应用建议，不包含教材图或完整原题。",
+  "notes": [
+    {
+      "id": "READ-TB-E2-20260928-ATOMIC-01",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.1",
+      "title": "从线状光谱到玻尔假设",
+      "pdf_pages": [
+        7,
+        8
+      ],
+      "printed_pages": [
+        3,
+        4
+      ],
+      "source_anchors": [
+        "氢原子发射光谱",
+        "玻尔模型",
+        "基态和激发态"
+      ],
+      "summary": "白光连续色带与元素明线图提供模型需要解释的证据。氢放电管直接发光，经狭缝和棱镜后得到发射谱；玻尔模型用离散能量与能态变化解释这些线。",
+      "classroom_check": "在装置图中分别圈出产生光、限定光束、分光和记录的位置；说明棱镜不负责使原子跃迁。",
+      "lecture_package_id": "PKG-020",
+      "lecture_block_indices": [
+        31,
+        32,
+        33,
+        34,
+        162,
+        172,
+        231
+      ],
+      "source_sha256": "cd40c3a4b1af8be6ba3c3c8b4329d1106499ef7329e3b4f396a5983eef8d0981",
+      "source_preview_revision": "d72402504e0944cee0260794a0bc6dd8847273b071f434debd72a691995da69b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          7,
+          8
+        ],
+        "printed_pages": [
+          3,
+          4
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "玻尔确定圆轨道是历史模型；n→∞是极限符号，不是正整数取值。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260928-ATOMIC-02",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.1",
+      "title": "光子能量、端点与波长",
+      "pdf_pages": [
+        9,
+        10
+      ],
+      "printed_pages": [
+        5,
+        6
+      ],
+      "source_anchors": [
+        "氢的可见线跃迁",
+        "光子能量",
+        "里德伯公式"
+      ],
+      "summary": "图示可见氢线对应较高n到n=2的跃迁；末态仍是激发态。先确定初末状态，再由能级差和hc/λ联系能量与波长，不能仅比较起始n。",
+      "classroom_check": "比较5→1和2→1的光波长并说明2→1较长；用nm到m换算复算给定四线的光子能量。",
+      "lecture_package_id": "PKG-020",
+      "lecture_block_indices": [
+        34,
+        45,
+        175,
+        176,
+        206,
+        234
+      ],
+      "source_sha256": "cd40c3a4b1af8be6ba3c3c8b4329d1106499ef7329e3b4f396a5983eef8d0981",
+      "source_preview_revision": "d72402504e0944cee0260794a0bc6dd8847273b071f434debd72a691995da69b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          9,
+          10
+        ],
+        "printed_pages": [
+          5,
+          6
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "只采用指定跃迁与教材常量；没有根据四条醒目线推断可见区全部跃迁或所有城市灯光的原子线机制。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260928-ATOMIC-03",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.1",
+      "title": "轨道描述空间状态，不是经典路径",
+      "pdf_pages": [
+        11,
+        12
+      ],
+      "printed_pages": [
+        7,
+        8
+      ],
+      "source_anchors": [
+        "玻尔模型的局限",
+        "原子轨道",
+        "s/p/d/f",
+        "电子自旋"
+      ],
+      "summary": "现代轨道和电子云描述空间状态及概率分布，形状和方向与量子数相关；每种亚层有相应的空间轨道数。自旋用两个状态表示，不能按地球自转建立机械图景。",
+      "classroom_check": "比较s与三种p图，分别说出形状、取向和轨道数；指出与玻尔圆轨道图的概念区别。",
+      "lecture_package_id": "PKG-020",
+      "lecture_block_indices": [
+        40,
+        41,
+        42,
+        44,
+        58,
+        60,
+        63,
+        64,
+        136
+      ],
+      "source_sha256": "cd40c3a4b1af8be6ba3c3c8b4329d1106499ef7329e3b4f396a5983eef8d0981",
+      "source_preview_revision": "d72402504e0944cee0260794a0bc6dd8847273b071f434debd72a691995da69b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          11,
+          12
+        ],
+        "printed_pages": [
+          7,
+          8
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "不据彩色轨道图补写未读到的波函数相位含义；未独立核验页中Stern–Gerlach历史年份。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260928-ATOMIC-04",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.1",
+      "title": "氢的简并与电子云疏密",
+      "pdf_pages": [
+        13,
+        14
+      ],
+      "printed_pages": [
+        9,
+        10
+      ],
+      "source_anchors": [
+        "氢原子能量只依赖能层",
+        "能级图",
+        "电子云"
+      ],
+      "summary": "教材氢模型的同n轨道等能，跨亚层比较不能直接套用多电子排序。电子云点的疏密反映概率密度；靠近原点的密度较大不等于某个有限球壳内的总概率最大。",
+      "classroom_check": "给“2s一定低于2p”补充物种和近似条件，再解释轮廓外仍可能出现电子。",
+      "lecture_package_id": "PKG-020",
+      "lecture_block_indices": [
+        48,
+        51,
+        58,
+        60,
+        62,
+        63,
+        66,
+        67,
+        68,
+        106,
+        107,
+        108,
+        147,
+        151
+      ],
+      "source_sha256": "cd40c3a4b1af8be6ba3c3c8b4329d1106499ef7329e3b4f396a5983eef8d0981",
+      "source_preview_revision": "d72402504e0944cee0260794a0bc6dd8847273b071f434debd72a691995da69b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          13,
+          14
+        ],
+        "printed_pages": [
+          9,
+          10
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "氢的同n简并按教材忽略精细结构和外场的近似理解；没有把点密度直接当电子数。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260928-ATOMIC-05",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.1",
+      "title": "发射、吸收与元素识别",
+      "pdf_pages": [
+        15
+      ],
+      "printed_pages": [
+        11
+      ],
+      "source_anchors": [
+        "原子发射光谱",
+        "原子吸收光谱",
+        "太阳吸收光谱"
+      ],
+      "summary": "发射谱与连续光通过气态原子后的吸收谱需要不同的光路条件。教材用太阳吸收线说明太阳光不能简单描述为没有谱线结构的纯连续光；特征谱线用于识别元素，定量结论需相应测量条件。",
+      "classroom_check": "给同一个原子分别画出发射谱和吸收谱所需的简化装置；说明颜色、线位置、线强度承担不同信息。",
+      "lecture_package_id": "PKG-020",
+      "lecture_block_indices": [
+        162,
+        164,
+        168,
+        172,
+        178,
+        231,
+        233,
+        235
+      ],
+      "source_sha256": "cd40c3a4b1af8be6ba3c3c8b4329d1106499ef7329e3b4f396a5983eef8d0981",
+      "source_preview_revision": "d72402504e0944cee0260794a0bc6dd8847273b071f434debd72a691995da69b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          15
+        ],
+        "printed_pages": [
+          11
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "未采用讲义无仪器、元素及背景条件的10⁻¹³ kg普遍检测保证。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260928-ATOMIC-06",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.2",
+      "title": "多电子排布的约束与经验",
+      "pdf_pages": [
+        16,
+        17
+      ],
+      "printed_pages": [
+        12,
+        13
+      ],
+      "source_anchors": [
+        "多电子能量",
+        "能量最低原理",
+        "泡利原理",
+        "洪特规则"
+      ],
+      "summary": "基态对应整个原子的低能量状态，排布同时受泡利原理与洪特规则约束；同轨道最多两个相反自旋电子，同一亚层内的等能轨道先以相同自旋单占，再配对。构造原理组织基态排布的经验顺序，不是所有原子永恒不变的轨道能量表。",
+      "classroom_check": "先检查泡利原理，再检查同能轨道的单占规则，最后与该粒子基态比较；不能把违反泡利的图叫作普通激发态。",
+      "lecture_package_id": "PKG-020",
+      "lecture_block_indices": [
+        38,
+        58,
+        64,
+        70,
+        75,
+        83,
+        90
+      ],
+      "source_sha256": "cd40c3a4b1af8be6ba3c3c8b4329d1106499ef7329e3b4f396a5983eef8d0981",
+      "source_preview_revision": "d72402504e0944cee0260794a0bc6dd8847273b071f434debd72a691995da69b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          16,
+          17
+        ],
+        "printed_pages": [
+          12,
+          13
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "“半满、全满较稳定”需同一体系及比较条件；不推广为跨元素、跨电荷的绝对稳定次序。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20260928-ATOMIC-07",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C1:1.2",
+      "title": "排布式、轨道框图与离子计数",
+      "pdf_pages": [
+        18,
+        19,
+        20
+      ],
+      "printed_pages": [
+        14,
+        15,
+        16
+      ],
+      "source_anchors": [
+        "氮的电子排布",
+        "Mn与Cr",
+        "实际测定",
+        "F⁻例题"
+      ],
+      "summary": "上标记录电子数，轨道框图另外显示占据和自旋。教材给Mn和Cr排布，并提醒某些重元素需以实际测定为准；离子必须先按核电荷和电荷数计算电子总数，再写排布。",
+      "classroom_check": "把Mn、Fe五种计数列成表；硫四式分别总计电子并标电荷，说明电子排布本身不足以给出精确电离能。",
+      "lecture_package_id": "PKG-020",
+      "lecture_block_indices": [
+        53,
+        55,
+        64,
+        70,
+        74,
+        76,
+        80,
+        81,
+        83,
+        91,
+        92,
+        95,
+        99
+      ],
+      "source_sha256": "cd40c3a4b1af8be6ba3c3c8b4329d1106499ef7329e3b4f396a5983eef8d0981",
+      "source_preview_revision": "d72402504e0944cee0260794a0bc6dd8847273b071f434debd72a691995da69b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          18,
+          19,
+          20
+        ],
+        "printed_pages": [
+          14,
+          15,
+          16
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "limitation": "教材未给完整解答的练习不作为官方答案；Mn/Fe基态由NIST实际读取的原始数据另作交叉核验。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    }
+  ],
+  "actual_textbook_pdf_pages_read": [
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20
+  ],
+  "source_files_unchanged": true
+}

@@ -6,12 +6,12 @@ from io import BytesIO
 import json
 from pathlib import Path
 import shutil
-import subprocess
 import tempfile
 from uuid import uuid4
 
 from .desktop_lesson_design import candidate_from_design, content_fingerprint, coverage, validate_design
 from .desktop_state import utc_now
+from .reader_cancellation import ReadCancelled, check_read_cancelled, publication_guard
 
 FILES = ("lesson_presentation.pptx", "lesson_plan.docx", "student_worksheet.docx")
 
@@ -92,36 +92,43 @@ def output_root(facade, record=None):
 
 
 def export_design(facade, payload, *, cancelled=lambda: False):
-    from .desktop_preparation_renderer import NativePreparationRenderer
+    from .desktop_preparation_renderer import NativePreparationRenderer, NativePreparationRenderCancelled
+    check_read_cancelled()
     plan = validate_design(payload["lesson_design"])
     c = candidate_from_design(payload)
     used = {im for n in plan["nodes"] for im in n["image_ids"]}
     assets = {x["asset_id"]: x for x in payload.get("image_assets", [])}
     image_data = {key: facade.preparation_image_bytes(assets[key]) for key in used}
     if cancelled():
-        raise ValueError("已取消生成，教学设计保留。")
+        raise ReadCancelled("已取消生成，教学设计与已有成品保留。")
     root = output_root(facade)
     root.mkdir(parents=True, exist_ok=True)
     ident = "OUT-" + uuid4().hex
     target = root / ident
     with tempfile.TemporaryDirectory(prefix=".design-", dir=root) as staging:
         directory = Path(staging)
-        result = NativePreparationRenderer().render(c, output_kind="ppt", output_dir=directory,
-                                                    image_data=image_data, is_cancelled=cancelled)
+        try:
+            NativePreparationRenderer().render(c, output_kind="ppt", output_dir=directory,
+                                               image_data=image_data, is_cancelled=cancelled)
+        except NativePreparationRenderCancelled:
+            raise ReadCancelled("已取消生成，教学设计与已有成品保留。") from None
         # Do not present known-overflow slide output as ready.
         deck = json.loads((directory / "deck.json").read_text(encoding="utf-8"))
         if any(e.get("overflow") for s in deck["slides"] for e in s["elements"]):
             raise ValueError("有页面内容超出可读范围，请拆分长环节后重试；原成品保留。")
         write_documents(payload, directory, image_data)
         if cancelled():
-            raise ValueError("已取消生成，教学设计保留。")
+            raise ReadCancelled("已取消生成，教学设计与已有成品保留。")
         record = {"id": ident, "fingerprint": content_fingerprint(payload), "created_at": utc_now(),
                   "files": [{"name": name, "sha256": sha256((directory / name).read_bytes()).hexdigest()}
                             for name in FILES]}
         (directory / "lesson-design.json").write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
         (directory / "output.json").write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
         # Only finished bundles become discoverable. Existing versions are never overwritten.
-        directory.rename(target)
+        with publication_guard():
+            if cancelled():
+                raise ReadCancelled()
+            directory.rename(target)
     return record
 
 
@@ -142,24 +149,25 @@ def checked_file(facade, plan, export_id, name):
 def actual_ppt_preview(facade, plan, export_id):
     """Convert the *actual* PPTX, separately from the renderer's quick PNGs."""
     from .desktop_local_pagination import find_libreoffice
+    from .office_conversion import libreoffice_pdf
+    check_read_cancelled()
     source = checked_file(facade, plan, export_id, "lesson_presentation.pptx")
+    source_sha = sha256(source.read_bytes()).hexdigest()
     office = find_libreoffice()
     if office is None:
         raise ValueError("实际PPTX预览需本机LibreOffice。PPTX仍可用PowerPoint打开；未删除或改写成品。")
-    target = source.parent / "actual-pptx"
-    target.mkdir(exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="shchem-pptx-") as profile:
-        result = subprocess.run([str(office), "-env:UserInstallation=" + Path(profile).as_uri(),
-                                "--headless", "--convert-to", "pdf:impress_pdf_Export",
-                                "--outdir", str(target), str(source)],
-                                capture_output=True, timeout=180,
-                                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-    pdf = target / (source.stem + ".pdf")
-    if result.returncode or not pdf.is_file() or not pdf.read_bytes().startswith(b"%PDF-"):
-        raise ValueError("实际PPTX转换未完成，请用PowerPoint核对原文件。")
-    return {"path": str(pdf), "engine": "LibreOffice Impress",
-            "source_sha256": sha256(source.read_bytes()).hexdigest(),
-            "pdf_sha256": sha256(pdf.read_bytes()).hexdigest()}
+    target = source.parent / ("actual-pptx-" + uuid4().hex)
+    target.mkdir(exist_ok=False)
+    pdf = libreoffice_pdf(source, target, office, export_filter="impress_pdf_Export")
+    check_read_cancelled()
+    if sha256(checked_file(facade, plan, export_id, source.name).read_bytes()).hexdigest() != source_sha:
+        raise ValueError("转换期间原PPTX已变化，未发布本次预览。")
+    receipt = {"path": str(pdf), "engine": "LibreOffice Impress",
+               "source_sha256": source_sha,
+               "pdf_sha256": sha256(pdf.read_bytes()).hexdigest()}
+    with publication_guard():
+        (target / "preview.json").write_text(json.dumps(receipt, ensure_ascii=False), encoding="utf-8")
+    return receipt
 
 
 def copy_output_bundle(facade, plan, export_id, destination):
@@ -173,6 +181,7 @@ def copy_output_bundle(facade, plan, export_id, destination):
     folder = Path(tempfile.mkdtemp(prefix="教学成品-" + export_id[-8:] + "-", dir=parent))
     try:
         for name, source in sources.items():
+            check_read_cancelled()
             shutil.copyfile(source, folder / name)
             expected = next(f["sha256"] for f in record["files"] if f["name"] == name)
             if sha256((folder / name).read_bytes()).hexdigest() != expected:
@@ -186,6 +195,8 @@ def copy_output_bundle(facade, plan, export_id, destination):
             "student_worksheet.docx：学生学习单，发放前请核对材料中未混入答案。\n"
             "在Office中修改这些副本不会回写教学环节，也不改变工作台中保留的原版本。\n",
             encoding="utf-8")
+        with publication_guard():
+            check_read_cancelled()
     except Exception:
         shutil.rmtree(folder, ignore_errors=True)
         raise

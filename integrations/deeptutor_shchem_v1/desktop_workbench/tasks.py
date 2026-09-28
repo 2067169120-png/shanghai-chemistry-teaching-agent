@@ -8,6 +8,7 @@ from collections.abc import Callable
 from typing import Any
 
 from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal, Slot
+from ..reader_cancellation import ReadCancelled, TaskCancellationEvent, read_cancel_scope
 
 
 def _safe_failure_message(error: BaseException) -> str:
@@ -41,6 +42,7 @@ class _WorkerSignals(QObject):
     succeeded = Signal(str, str, object)
     failed = Signal(str, str, str)
     cancelled = Signal(str, str)
+    cancelled_detail = Signal(str, str, str)
     finished = Signal(str)
 
 
@@ -72,22 +74,22 @@ class _FunctionWorker(QRunnable):
     def run(self) -> None:
         _safe_emit(self.signals.started, self.task_id, self.label)
         if self.cancel_event.is_set():
+            _safe_emit(self.signals.cancelled_detail, self.task_id, self.label, ReadCancelled.message_zh)
             _safe_emit(self.signals.cancelled, self.task_id, self.label)
             _safe_emit(self.signals.finished, self.task_id)
             return
         try:
-            if self.progress_aware:
-                result = self.operation(
-                    lambda payload: _safe_emit(
-                        self.signals.progress,
-                        self.task_id,
-                        self.label,
-                        payload,
-                    ),
-                    self.cancel_event.is_set,
-                )
-            else:
-                result = self.operation()
+            with read_cancel_scope(self.cancel_event):
+                if self.progress_aware:
+                    result = self.operation(
+                        lambda payload: _safe_emit(self.signals.progress, self.task_id, self.label, payload),
+                        self.cancel_event.is_set,
+                    )
+                else:
+                    result = self.operation()
+        except ReadCancelled as exc:
+            _safe_emit(self.signals.cancelled_detail, self.task_id, self.label, exc.message_zh)
+            _safe_emit(self.signals.cancelled, self.task_id, self.label)
         except Exception as exc:  # UI receives only a concise, safe message
             _safe_emit(
                 self.signals.failed,
@@ -97,6 +99,7 @@ class _FunctionWorker(QRunnable):
             )
         else:
             if self.cancel_event.is_set():
+                _safe_emit(self.signals.cancelled_detail, self.task_id, self.label, ReadCancelled.message_zh)
                 _safe_emit(self.signals.cancelled, self.task_id, self.label)
             else:
                 _safe_emit(self.signals.succeeded, self.task_id, self.label, result)
@@ -110,6 +113,7 @@ class DesktopTaskBridge(QObject):
     task_succeeded = Signal(str, str, object)
     task_failed = Signal(str, str, str)
     task_cancelled = Signal(str, str)
+    task_cancelled_detail = Signal(str, str, str)
     task_finished = Signal(str)
 
     def __init__(self, parent: QObject | None = None) -> None:
@@ -134,13 +138,14 @@ class DesktopTaskBridge(QObject):
     ) -> str:
         self._ensure_open()
         task_id = uuid.uuid4().hex
-        cancel_event = threading.Event()
+        cancel_event = TaskCancellationEvent()
         worker = _FunctionWorker(task_id, label, operation, cancel_event)
         worker.signals.started.connect(self.task_started)
         worker.signals.progress.connect(self.task_progress)
         worker.signals.succeeded.connect(self.task_succeeded)
         worker.signals.failed.connect(self.task_failed)
         worker.signals.cancelled.connect(self.task_cancelled)
+        worker.signals.cancelled_detail.connect(self.task_cancelled_detail)
         worker.signals.finished.connect(self._forget)
         worker.signals.finished.connect(self.task_finished)
         if on_success is not None:
@@ -169,7 +174,7 @@ class DesktopTaskBridge(QObject):
 
         self._ensure_open()
         task_id = uuid.uuid4().hex
-        cancel_event = threading.Event()
+        cancel_event = TaskCancellationEvent()
         worker = _FunctionWorker(
             task_id,
             label,
@@ -182,6 +187,7 @@ class DesktopTaskBridge(QObject):
         worker.signals.succeeded.connect(self.task_succeeded)
         worker.signals.failed.connect(self.task_failed)
         worker.signals.cancelled.connect(self.task_cancelled)
+        worker.signals.cancelled_detail.connect(self.task_cancelled_detail)
         worker.signals.finished.connect(self._forget)
         worker.signals.finished.connect(self.task_finished)
         if on_progress is not None:
@@ -201,10 +207,11 @@ class DesktopTaskBridge(QObject):
         self._pool.start(worker)
         return task_id
 
-    def cancel(self, task_id: str) -> None:
+    def cancel(self, task_id: str) -> bool:
         event = self._cancel_events.get(task_id)
         if event is not None:
-            event.set()
+            return event.request_cancel()
+        return False
 
     def cancel_all(self) -> None:
         for event in self._cancel_events.values():
@@ -228,7 +235,7 @@ class DesktopTaskBridge(QObject):
                 # QObject.disconnect() enters PySide's overloaded signature
                 # resolver, which scans imported modules during cold shutdown.
                 # Disconnect the actual signal instances instead.
-                for name in ("started", "progress", "succeeded", "failed", "cancelled", "finished"):
+                for name in ("started", "progress", "succeeded", "failed", "cancelled", "cancelled_detail", "finished"):
                     try:
                         getattr(worker.signals, name).disconnect()
                     except (RuntimeError, TypeError):

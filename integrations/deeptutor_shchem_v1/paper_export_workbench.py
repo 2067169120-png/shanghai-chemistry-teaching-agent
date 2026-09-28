@@ -11,6 +11,8 @@ import threading
 import uuid
 from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
+from contextvars import copy_context
+from .reader_cancellation import ReadCancelled, TaskCancellationEvent, read_cancel_scope, check_read_cancelled, publication_guard
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -1446,6 +1448,7 @@ class PaperExportJobManager:
         )
         self._lock = threading.RLock()
         self._closed = False
+        self._cancel_events = {}
         self._mark_interrupted_jobs()
 
     def _job_root(self, job_id: str) -> Path:
@@ -1489,7 +1492,11 @@ class PaperExportJobManager:
         # stuck in its previous state.  Serialize reads and atomic replaces
         # through the manager's re-entrant lock; start() already holds it.
         with self._lock:
-            _atomic_write_json(self._job_path(str(job["job_id"])), job)
+            if job.get("status") == "completed":
+                with publication_guard():
+                    _atomic_write_json(self._job_path(str(job["job_id"])), job)
+            else:
+                _atomic_write_json(self._job_path(str(job["job_id"])), job)
 
     def _mark_interrupted_jobs(self) -> None:
         for path in self.root.glob("WBEXP-*/job.json"):
@@ -1563,15 +1570,15 @@ class PaperExportJobManager:
                 "private_paths": {},
             }
             self._write_job(job)
-            self._executor.submit(
-                self._run,
-                job_id,
-                deepcopy(job),
-                theme_catalog_loader,
-                detail_loader,
-                crop_loader,
-                answer_crop_loader,
-            )
+            event = TaskCancellationEvent()
+            self._cancel_events[job_id] = event
+            def run():
+                # _run owns its terminal-state persistence, including a stop
+                # requested before the first catalog read.
+                with read_cancel_scope(event, check_boundaries=False):
+                    self._run(job_id, deepcopy(job), theme_catalog_loader, detail_loader,
+                              crop_loader, answer_crop_loader)
+            self._executor.submit(copy_context().run, run)
         return self._public_job(job)
 
     def _progress(
@@ -1618,9 +1625,12 @@ class PaperExportJobManager:
             }
             job["private_paths"] = {}
             self._write_job(job)
+            with self._lock:
+                self._cancel_events.pop(job_id, None)
             return
         request = job["request"]
         try:
+            check_read_cancelled()
             self._progress(
                 job, "loading_theme_catalog", 8, "正在读取题篮对应的完整主题与依赖。"
             )
@@ -1699,6 +1709,7 @@ class PaperExportJobManager:
                     409,
                 )
             job["status"] = "completed"
+            check_read_cancelled()
             job["updated_at"] = _utc_now()
             job["progress"] = {
                 "stage": "completed",
@@ -1711,6 +1722,13 @@ class PaperExportJobManager:
             job["error"] = None
             job["private_paths"] = {"output_root": str(output_root)}
             self._write_job(job)
+        except ReadCancelled as exc:
+            diagnostics = {name: getattr(exc, name) for name in ("cleanup_complete", "office_session")
+                           if hasattr(exc, name)}
+            job.update(status="cancelled", artifacts=[], private_paths={}, updated_at=_utc_now(),
+                       progress={"stage": "cancelled", "percent": 100, "message_zh": exc.message_zh},
+                       error={"code": exc.code, "message_zh": exc.message_zh, "details": diagnostics})
+            self._write_job(job)
         except (
             Exception
         ) as exc:  # Every worker failure becomes a bounded persisted state.
@@ -1719,7 +1737,7 @@ class PaperExportJobManager:
             if not isinstance(code, str) or not code:
                 code = "paper_export_failed"
             message = (
-                str(exc)
+                getattr(exc, "message_zh", str(exc))
                 if isinstance(
                     exc,
                     (
@@ -1727,7 +1745,7 @@ class PaperExportJobManager:
                         PaperExportRendererError,
                         PaperExportWorkbenchError,
                     ),
-                )
+                ) or isinstance(getattr(exc, "message_zh", None), str)
                 else "导出失败，请检查题篮后重试。"
             )
             details = getattr(exc, "details", {})
@@ -1744,7 +1762,21 @@ class PaperExportJobManager:
                 "http_status": status if isinstance(status, int) else 409,
                 "details": dict(details) if isinstance(details, Mapping) else {},
             }
+            for name in ("cleanup_complete", "office_session"):
+                if hasattr(exc, name):job["error"]["details"][name] = getattr(exc, name)
+            job["artifacts"] = []
+            job["private_paths"] = {}
             self._write_job(job)
+        finally:
+            with self._lock:
+                self._cancel_events.pop(job_id, None)
+
+    def cancel(self, job_id):
+        with self._lock:
+            event = self._cancel_events.get(job_id)
+            if event is not None:
+                return event.request_cancel()
+            return False
 
     def get(self, job_id: str) -> dict[str, Any]:
         with self._lock:
@@ -1823,7 +1855,11 @@ class PaperExportJobManager:
     def shutdown(self, *, wait: bool = True) -> None:
         with self._lock:
             self._closed = True
-        self._executor.shutdown(wait=wait, cancel_futures=True)
+            for event in self._cancel_events.values():
+                event.set()
+        # Queued workers must run their cancellation path to persist a terminal
+        # state; cancelling Futures alone leaves durable jobs stuck as queued.
+        self._executor.shutdown(wait=wait, cancel_futures=False)
 
 
 __all__ = [

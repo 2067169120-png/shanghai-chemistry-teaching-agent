@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .reader_cancellation import ReadCancelled, check_read_cancelled
 
 """Private, zero-text-recognition student page visual analysis.
 
@@ -1001,6 +1002,9 @@ class StudentVisualAnalysisManager:
                     rendered = self.renderer.render(
                         raw_path, mime_type=content_type, work_root=work_root
                     )
+                    check_read_cancelled()
+                except ReadCancelled:
+                    raise
                 except Exception as exc:  # noqa: BLE001 - renderer plugin boundary
                     render_error = exc
 

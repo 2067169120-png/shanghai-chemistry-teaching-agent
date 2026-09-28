@@ -80,17 +80,25 @@ class LessonDesignDialog(QDialog):
         self.page, self.facade, self.tasks = page, page.facade, page.tasks
         self.history = DesignHistory(page._lesson_design or new_design(page._payload()))
         self.loading, self.busy = True, False
+        self._task = None
+        self._close_when_finished = False
+        self._stopping = False
+        self._cancellable = False
+        if hasattr(self.tasks, "task_finished"):
+            self.tasks.task_finished.connect(self.task_finished)
+        if hasattr(self.tasks, "task_cancelled_detail"):
+            self.tasks.task_cancelled_detail.connect(self.task_cancelled)
         self.current = None
         self.setWindowTitle("教学设计 · " + (page.topic.text() or "未命名课题"))
         self.resize(1200, 790)
-        self.setMinimumSize(800, 650)
+        self.setMinimumSize(320, 400)
         root = QVBoxLayout(self)
         heading = label("教学设计  /  目标、活动与评价")
         heading.setObjectName("CardTitle")
         root.addWidget(heading)
         self.tabs = QTabWidget()
         root.addWidget(self.tabs, 1)
-        main = QSplitter()
+        main = self.main_splitter = QSplitter()
         self.tabs.addTab(main, "教学环节")
         left = QWidget(); l = QVBoxLayout(left)
         self.nodes = QListWidget()
@@ -107,7 +115,8 @@ class LessonDesignDialog(QDialog):
             ("撤销", lambda: self.travel(False)), ("重做", lambda: self.travel(True)))):
             b = QPushButton(name); b.setObjectName("QuietButton")
             b.clicked.connect(action); actions.addWidget(b, i//2, i%2)
-        main.addWidget(left)
+        self.node_scroll = page_scroll(left)
+        main.addWidget(self.node_scroll)
         self.properties = QTabWidget()
         main.addWidget(self.properties)
         main.setSizes([250, 900])
@@ -118,6 +127,7 @@ class LessonDesignDialog(QDialog):
         self.minutes = QSpinBox(); self.minutes.setRange(-1, 180)
         self.minutes.setSpecialValueText("未估时"); self.minutes.setSuffix(" 分钟")
         w = QWidget(); f = QFormLayout(w)
+        f.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         f.addRow("环节名称", self.title_edit); f.addRow("课堂作用", self.kind); f.addRow("预计用时", self.minutes)
         for key, text in (("teacher_action", "教师活动"), ("student_task", "学生任务")):
             e = QPlainTextEdit(); e.setMinimumHeight(100); e.setAccessibleName(text)
@@ -162,7 +172,7 @@ class LessonDesignDialog(QDialog):
         self.source.setReadOnly(True); self.source.setMinimumHeight(90)
         g.addWidget(label("当前备课资料 · 原文与考试讲评摘要（引用后保留快照）"))
         g.addWidget(self.source, 1)
-        self.tabs.addTab(goals_page, "目标与资料")
+        self.tabs.addTab(page_scroll(goals_page), "目标与资料")
         out = QWidget(); o = QVBoxLayout(out)
         self.report = QPlainTextEdit(); self.report.setReadOnly(True); o.addWidget(self.report, 1)
         self.outputs = QComboBox(); o.addWidget(self.outputs)
@@ -177,17 +187,22 @@ class LessonDesignDialog(QDialog):
         self.selected_output_status = label("")
         o.addWidget(self.selected_output_status)
         self.outputs.currentIndexChanged.connect(self.show_selected_output)
-        self.tabs.addTab(out, "输出与检查")
+        self.tabs.addTab(page_scroll(out), "输出与检查")
         self.status = label("本地编辑，不调用模型。保存草稿沿用原备课；未保存编辑进入原恢复副本。")
         root.addWidget(self.status)
-        bottom = QHBoxLayout(); root.addLayout(bottom)
+        self.stop_button = QPushButton("停止本次任务")
+        self.stop_button.clicked.connect(self.cancel)
+        self.stop_button.hide()
+        root.addWidget(self.stop_button)
+        bottom = self.bottom_actions = QGridLayout(); root.addLayout(bottom)
         self.save = QPushButton("保存草稿"); self.save.clicked.connect(self.save_draft)
         self.generate = QPushButton("生成教案 / PPT / 学习单"); self.generate.setObjectName("PrimaryAction")
         self.generate.clicked.connect(self.generate_outputs)
         self.preview = QPushButton("核对实际PPTX"); self.preview.clicked.connect(self.preview_ppt)
         self.return_button = QPushButton("返回"); self.return_button.clicked.connect(self.reject)
-        for b in (self.save, self.generate, self.preview, self.return_button):
-            bottom.addWidget(b)
+        self._bottom_buttons = (self.save, self.generate, self.preview, self.return_button)
+        for i, b in enumerate(self._bottom_buttons):
+            bottom.addWidget(b, 0, i)
         self.nodes.currentRowChanged.connect(self.select_node)
         self.goals.currentRowChanged.connect(self.select_goal)
         self.title_edit.textEdited.connect(lambda v: self.change({"title": v}))
@@ -203,6 +218,20 @@ class LessonDesignDialog(QDialog):
         self.loading = False
         self.refresh_lists()
         self.sync_page()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if not hasattr(self, "_bottom_buttons"):
+            return
+        narrow = event.size().width() < 700
+        self.nodes.setMaximumHeight(96 if narrow else 16777215)
+        self.main_splitter.setOrientation(Qt.Orientation.Vertical if narrow else Qt.Orientation.Horizontal)
+        if narrow:
+            self.main_splitter.setSizes([120, 200])
+        for button in self._bottom_buttons:
+            self.bottom_actions.removeWidget(button)
+        for i, button in enumerate(self._bottom_buttons):
+            self.bottom_actions.addWidget(button, i // 2 if narrow else 0, i % 2 if narrow else i)
 
     @staticmethod
     def checked(widget):
@@ -384,30 +413,65 @@ class LessonDesignDialog(QDialog):
             return
         plan = deepcopy(self.history.value)
         self.run("正在导出所选版本…", lambda: copy_output_bundle(self.facade, plan, identity, destination),
-                 lambda folder: self.status.setText("已导出到：" + folder + "；PPT备注含教师信息，外部修改不回写教学设计。"))
+                 lambda folder: self.status.setText("已导出到：" + folder + "；PPT备注含教师信息，外部修改不回写教学设计。"),
+                 cancellable=True)
 
     def set_busy(self, value):
         self.busy = value
-        for w in (self.tabs, self.save, self.generate, self.preview, self.return_button):
+        self.stop_button.setVisible(value and self._cancellable)
+        self.stop_button.setEnabled(value and self._cancellable and not self._stopping)
+        for w in (self.tabs, self.save, self.generate, self.preview):
             w.setEnabled(not value)
+        self.return_button.setText(("停止并返回" if self._cancellable else "完成后返回") if value else "返回")
         self.preview.setEnabled(not value and self.outputs.count() > 0)
         self.show_selected_output()
 
-    def run(self, text, operation, success):
+    def run(self, text, operation, success, *, cancellable=False):
+        if self.busy:
+            return
+        self._cancellable = cancellable
         self.set_busy(True); self.status.setText(text)
         def finish(value):
-            self.set_busy(False); success(value)
+            if not self._stopping:
+                self.set_busy(False); success(value)
         def fail(message):
             self.set_busy(False); self.status.setText(message + "；当前输入与已有成品保留。")
         # Translate known local errors without exposing generic task-bridge errors.
         def work():
             try:
-                return operation()
+                if cancellable:
+                    return operation()
+                # Short durable operations have no Stop action. Closing waits
+                # for their callback; global shutdown cannot relabel a commit.
+                from ..reader_cancellation import publication_guard
+                with publication_guard():
+                    return operation()
             except (ValueError, OSError, subprocess.SubprocessError) as exc:
                 from ..desktop_preparation import DesktopPreparationError
                 raise DesktopPreparationError("lesson_design_operation", str(exc)) from exc
         import subprocess
-        self.tasks.submit(text, work, on_success=finish, on_failure=fail)
+        self._task = self.tasks.submit(text, work, on_success=finish, on_failure=fail)
+
+    def cancel(self):
+        if self._task and self._cancellable and not self._stopping:
+            if self.tasks.cancel(self._task) is False:
+                return
+            self._stopping = True
+            self.stop_button.setEnabled(False)
+            self.status.setText("正在停止本次任务；当前输入与已有成品保留…")
+
+    def task_cancelled(self, identity, _label, message):
+        if identity == self._task:
+            self.status.setText(message)
+
+    def task_finished(self, identity):
+        if identity == self._task:
+            self._task = None
+            self._stopping = False
+            self.set_busy(False)
+            if self._close_when_finished:
+                self._close_when_finished = False
+                self.reject()
 
     def save_draft(self):
         self.sync_page()
@@ -427,7 +491,10 @@ class LessonDesignDialog(QDialog):
             self.outputs.setCurrentIndex(self.outputs.findData(record["id"]))
             self.tabs.setCurrentIndex(2)
             self.status.setText("三类文件已生成；请查看版式并保存草稿。PPT备注含教师答案，不是匿名学生文件。")
-        self.run("正在生成三类文件（本地，不调用模型）…", lambda: export_design(self.facade, payload), done)
+        from ..reader_cancellation import cancellation_requested
+        self.run("正在生成三类文件（本地，不调用模型）…",
+                 lambda: export_design(self.facade, payload, cancelled=cancellation_requested), done,
+                 cancellable=True)
 
     def open_file(self, name):
         try:
@@ -439,13 +506,27 @@ class LessonDesignDialog(QDialog):
     def preview_ppt(self):
         plan = deepcopy(self.history.value); identity = self.outputs.currentData()
         self.run("正在转换实际PPTX…", lambda: actual_ppt_preview(self.facade, plan, identity),
-                 lambda report: ActualPptPreview(report, self).exec())
+                 lambda report: ActualPptPreview(report, self).exec(), cancellable=True)
 
     def reject(self):
         if self.busy:
+            self._close_when_finished = True
+            self.cancel()
+            if not self._cancellable:
+                self.status.setText("正在保存；完成后返回，保存结果会保留。")
             return
         self.sync_page()
         if self.page.recovery is not None and not self.page.recovery.flush():
             self.status.setText("恢复副本未保存成功。请先保存草稿或重试；当前输入仍在。")
             return
         super().reject()
+
+    def closeEvent(self, event):
+        if self.busy:
+            self._close_when_finished = True
+            self.cancel()
+            if not self._cancellable:
+                self.status.setText("正在保存；完成后返回，保存结果会保留。")
+            event.ignore()
+        else:
+            super().closeEvent(event)

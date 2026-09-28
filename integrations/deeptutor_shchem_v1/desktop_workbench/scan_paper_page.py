@@ -67,16 +67,18 @@ class ScanNumberPanel(MixedPaperPanel):
                     self._number_failed(generation, '已取消图片题号调整，原图和选题顺序不变。')
                     return
                 self.status.setText('正在生成调整题号后的实际分页…')
-                self.tasks.submit('生成图片换号后的试卷',
+                self._operation_task = self.tasks.submit('生成图片换号后的试卷',
                     lambda: RasterPaperService(self.facade).prepare_corrected(preview.preview_id, preview.preview_hash, edits),
                     on_success=lambda result: self._number_ready(generation, result),
                     on_failure=lambda message: self._number_failed(generation, message))
+                self._update_actions()
 
             dialog.finished.connect(finished)
             dialog.show()
 
-        self.tasks.submit('准备图片题号', prepare, on_success=ready,
+        self._operation_task = self.tasks.submit('准备图片题号', prepare, on_success=ready,
                           on_failure=lambda message: self._number_failed(generation, message))
+        self._update_actions()
 
     def _number_failed(self, generation, message):
         if self._closed or generation != self._generation:
@@ -93,6 +95,7 @@ class ScanNumberPanel(MixedPaperPanel):
         dialog = MixedPaperPaginationDialog(preview.preview_model, self.tasks,
             lambda key: self.facade.paper_preview_image(preview.preview_id, key), self)
         self._preview_dialog = dialog
+        self.status.setText('图片题号调整后的两版分页已生成，请逐页核对并确认；尚未导出。')
         dialog.preview_confirmed.connect(lambda: self._approve(dialog, generation, preview))
         dialog.show()
         self._update_actions()

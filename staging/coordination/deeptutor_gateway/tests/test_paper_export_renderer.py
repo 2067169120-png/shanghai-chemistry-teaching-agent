@@ -15,7 +15,7 @@ from PIL import Image
 from integrations.deeptutor_shchem_v1 import paper_export_renderer as renderer
 
 
-def test_external_renderer_commands_request_no_visible_windows(monkeypatch) -> None:
+def test_external_renderer_commands_use_owned_runner(monkeypatch) -> None:
     observed: dict[str, object] = {}
 
     def fake_run(command, **kwargs):
@@ -23,13 +23,12 @@ def test_external_renderer_commands_request_no_visible_windows(monkeypatch) -> N
         observed.update(kwargs)
         return renderer.subprocess.CompletedProcess(command, 0, stdout="", stderr="")
 
-    monkeypatch.setattr(renderer.subprocess, "run", fake_run)
+    from integrations.deeptutor_shchem_v1 import owned_process
+    monkeypatch.setattr(owned_process, "run_owned", fake_run)
     completed = renderer._run_command(["synthetic-render-tool"], timeout=1)
     assert completed.returncode == 0
     assert observed["command"] == ["synthetic-render-tool"]
-    assert observed["creationflags"] == getattr(
-        renderer.subprocess, "CREATE_NO_WINDOW", 0
-    )
+    assert observed["timeout"] == 1
 
 
 def _all_docx_text(path: Path) -> str:

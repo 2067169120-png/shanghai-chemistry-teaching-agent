@@ -2138,17 +2138,8 @@ def _fresh_directory(path: Path, output_root: Path) -> None:
 
 
 def _run_command(command: Sequence[str], *, env: Mapping[str, str] | None = None, timeout: int = 180) -> subprocess.CompletedProcess[str]:
-    completed = subprocess.run(
-        list(command),
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        env=dict(env) if env is not None else None,
-        timeout=timeout,
-        check=False,
-        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-    )
+    from .owned_process import run_owned
+    completed = run_owned(command, env=env, timeout=timeout)
     if completed.returncode != 0:
         safe_tail = (completed.stderr or completed.stdout)[-1200:]
         raise PaperExportRendererError(
@@ -2158,48 +2149,8 @@ def _run_command(command: Sequence[str], *, env: Mapping[str, str] | None = None
 
 
 def _word_com_pdf(docx_path: Path, pdf_path: Path) -> str:
-    powershell = r"""
-$ErrorActionPreference = 'Stop'
-$word = $null
-$doc = $null
-try {
-  $inputPath = [Environment]::GetEnvironmentVariable('SHCHEM_WORD_INPUT', 'Process')
-  $outputPath = [Environment]::GetEnvironmentVariable('SHCHEM_WORD_OUTPUT', 'Process')
-  $word = New-Object -ComObject Word.Application
-  $word.Visible = $false
-  $word.DisplayAlerts = 0
-  $doc = $word.Documents.Open($inputPath, $false, $true)
-  $doc.ExportAsFixedFormat($outputPath, 17)
-} finally {
-  if ($null -ne $doc) { $doc.Close(0) }
-  if ($null -ne $word) { $word.Quit() }
-  if ($null -ne $doc) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($doc) }
-  if ($null -ne $word) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($word) }
-  [GC]::Collect()
-  [GC]::WaitForPendingFinalizers()
-}
-"""
-    encoded = base64.b64encode(powershell.encode("utf-16le")).decode("ascii")
-    env = os.environ.copy()
-    env["SHCHEM_WORD_INPUT"] = str(docx_path.resolve())
-    env["SHCHEM_WORD_OUTPUT"] = str(pdf_path.resolve())
-    _run_command(
-        [
-            "powershell.exe",
-            "-STA",
-            "-NoProfile",
-            "-NonInteractive",
-            "-EncodedCommand",
-            encoded,
-        ],
-        env=env,
-        timeout=180,
-    )
-    if not pdf_path.is_file() or pdf_path.stat().st_size == 0:
-        raise PaperExportRendererError(
-            "word_pdf_missing", "Word 未生成可用的 PDF 文件。"
-        )
-    return "Word COM 只读打开 DOCX 并导出 PDF。"
+    from .office_conversion import word_pdf
+    return word_pdf(docx_path, pdf_path)
 
 
 def _load_render_docx_module(script_path: Path) -> Any:

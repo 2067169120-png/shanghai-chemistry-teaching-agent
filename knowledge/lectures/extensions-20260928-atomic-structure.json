@@ -1,0 +1,776 @@
+{
+  "schema_version": "shchem.lecture-source-extension.v1",
+  "purpose": "原子结构与原子光谱的来源绑定教学参考候选：新增10条与两节40分钟流程；旧M1显式补足模型适用条件。",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_review_completed": true,
+  "root_model_review_completed": true,
+  "entries": [
+    {
+      "package_id": "PKG-020",
+      "source_sha256": "cd40c3a4b1af8be6ba3c3c8b4329d1106499ef7329e3b4f396a5983eef8d0981",
+      "source_preview_revision": "d72402504e0944cee0260794a0bc6dd8847273b071f434debd72a691995da69b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "knowledge": [
+        {
+          "summary": "能量量子化表示允许的能量取值分立，不表示任意相邻能级间隔都相等。在氢原子的教材模型中，束缚态以有限正整数n编号，n增大时能级逐渐密集；n→∞表示趋近电离极限，∞不是一个正整数，也不是“最高的束缚轨道”。",
+          "block_indices": [
+            32,
+            34,
+            36
+          ]
+        }
+      ],
+      "methods": [
+        {
+          "summary": "电子排布题先列计数口径：总电子数、占据的空间轨道数、未成对电子数、占据的nℓ亚层数和最大n层电子数。按泡利原理与洪特规则读基态Mn的[Ar]3d⁵4s²和Fe的[Ar]3d⁶4s²，分别得到25/26、15/15、5/4、7/7、2/2；“7个亚层标签”不能直接改称任意条件下7个精确能量值。",
+          "block_indices": [
+            64,
+            70,
+            95,
+            99
+          ]
+        },
+        {
+          "summary": "先数电子再判粒子和状态：硫题四式[Ne]3s²3p⁴、[Ne]3s²3p²、[Ne]3s²3p²4s¹、[Ne]3s²3p³4s¹各有16、14、15、16个电子，对应S、S²⁺、S⁺、S。后两式含被提升至4s的电子，应与相同电荷粒子的基态排布比较；不能把四式都当成中性硫，也不能只靠电荷数给出精确失电子能量。",
+          "block_indices": [
+            91,
+            92
+          ]
+        },
+        {
+          "summary": "光子计算先定初、末能态，再用E光子=hν=hc/λ。发射时原子ΔE=E末−E初<0，而光子能量取其绝对值；吸收时原子能量增加。将nm换成m后，410.1、434.1、486.1、656.3 nm四线的单光子能量约为4.84、4.58、4.09、3.03×10⁻¹⁹ J；同一模型中能级差越大，波长越短。",
+          "block_indices": [
+            34,
+            45,
+            175
+          ]
+        },
+        {
+          "summary": "识别光谱实验时分清四步：发光或选择性吸收产生待测光，狭缝限定入射光束，棱镜或光栅按波长分光，接收器记录谱线。源图为氢放电管直接发光后分光，观察发射谱；吸收谱需考查连续光通过气态原子的装置条件。线的位置用于元素识别，强度或吸收量的定量解释还需相应实验条件。",
+          "block_indices": [
+            162,
+            172,
+            231,
+            233,
+            235
+          ]
+        }
+      ],
+      "pitfalls": [
+        {
+          "summary": "概率密度和概率不能混写。若轮廓约定包围90%的总概率，90%描述该空间区域内概率的总和，不是“概率密度为90%”；轮廓外仍可有非零概率。电子云的疏密表示单位体积内出现机会的差异；原子轨道表示空间状态，不能简单等同为伸展方向或电子的确定运动路径。",
+          "block_indices": [
+            60,
+            62,
+            63,
+            147,
+            151
+          ]
+        },
+        {
+          "summary": "发射光不要求电子每次都回到基态。教材氢原子可见线的3、4、5、6→2跃迁，末态n=2仍是激发态；一般应说从较高能态跃迁到较低能态并辐射。源图只画“基态↔激发态”可作简例，不能将它扩成全部原子发射过程，也不能据此解释所有霓虹可见谱线。",
+          "block_indices": [
+            45,
+            173,
+            175,
+            176,
+            206,
+            234
+          ]
+        },
+        {
+          "summary": "构造顺序是书写基态排布的经验工具，具体排布以实验为准。不能把Mn中构造顺序后填3d直接改写为一切情境下3d轨道能量均高于4s，也不能由半满、全满直接推出不同原子、离子或不同电子数体系的绝对稳定次序。比较时须说明对象，并区分轨道能量与整个原子的总能量。",
+          "block_indices": [
+            70,
+            74,
+            75,
+            76,
+            83
+          ]
+        }
+      ],
+      "teaching_flow": [
+        {
+          "summary": "40分钟：0—6分钟比较玻尔圆轨道与电子云；6—14分钟用氢同n简并和多电子亚层排序练习补充条件；14—24分钟给Mn、Fe画占据表并区分五种计数；24—32分钟数硫四式的电子、标电荷和激发；32—40分钟修订“概率密度90%”“半满必更稳定”等断言，提交带模型条件的解释。",
+          "block_indices": [
+            31,
+            32,
+            40,
+            41,
+            42,
+            44,
+            48,
+            51,
+            58,
+            60,
+            62,
+            64,
+            66,
+            67,
+            68,
+            70,
+            75,
+            76,
+            83,
+            91,
+            92,
+            95,
+            99,
+            106,
+            107,
+            108,
+            136,
+            147,
+            151
+          ]
+        },
+        {
+          "summary": "40分钟：0—6分钟比较连续色带和分立谱线；6—14分钟读氢放电管装置并区分发光、分光、记录；14—24分钟对四条氢线计算光子能量；24—32分钟用3→2跃迁修订“发射必回基态”，再与吸收谱装置比较；32—40分钟对汞、锶图指出可用于识别的谱线差异，并说明有限图示及检测限断言的条件。",
+          "block_indices": [
+            34,
+            45,
+            162,
+            164,
+            165,
+            166,
+            167,
+            168,
+            169,
+            170,
+            172,
+            173,
+            175,
+            176,
+            178,
+            206,
+            231,
+            233,
+            234,
+            235
+          ]
+        }
+      ],
+      "textbook_links": [
+        {
+          "volume_id": "TB-E2",
+          "section_key": "TB-E2-C1:1.1",
+          "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+          "pdf_pages": [
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "printed_pages": [
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ],
+          "lecture_block_indices": [
+            31,
+            32,
+            34,
+            36,
+            40,
+            41,
+            42,
+            44,
+            45,
+            48,
+            51,
+            58,
+            60,
+            62,
+            63,
+            64,
+            66,
+            67,
+            68,
+            70,
+            75,
+            76,
+            83,
+            91,
+            92,
+            95,
+            99,
+            106,
+            107,
+            108,
+            136,
+            147,
+            151,
+            162,
+            164,
+            165,
+            166,
+            167,
+            168,
+            169,
+            170,
+            172,
+            173,
+            175,
+            176,
+            178,
+            206,
+            231,
+            233,
+            234,
+            235
+          ],
+          "review_method": "page_images_read_by_model",
+          "candidate_only": true,
+          "human_reviewed": false
+        },
+        {
+          "volume_id": "TB-E2",
+          "section_key": "TB-E2-C1:1.2",
+          "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+          "pdf_pages": [
+            16,
+            17,
+            18,
+            19,
+            20
+          ],
+          "printed_pages": [
+            12,
+            13,
+            14,
+            15,
+            16
+          ],
+          "lecture_block_indices": [
+            31,
+            32,
+            40,
+            41,
+            42,
+            44,
+            48,
+            51,
+            58,
+            60,
+            62,
+            64,
+            66,
+            67,
+            68,
+            70,
+            74,
+            75,
+            76,
+            83,
+            91,
+            92,
+            95,
+            99,
+            106,
+            107,
+            108,
+            136,
+            147,
+            151
+          ],
+          "review_method": "page_images_read_by_model",
+          "candidate_only": true,
+          "human_reviewed": false
+        }
+      ]
+    }
+  ],
+  "source_review": {
+    "source_sha256": "cd40c3a4b1af8be6ba3c3c8b4329d1106499ef7329e3b4f396a5983eef8d0981",
+    "source_preview_revision": "d72402504e0944cee0260794a0bc6dd8847273b071f434debd72a691995da69b",
+    "source_extraction_revision": "20260909-editable-chemistry-v2",
+    "candidate_only": true,
+    "human_reviewed": false,
+    "root_review_completed": true,
+    "root_model_review_completed": true,
+    "native_text_blocks_actually_read": 248,
+    "textbook_pdf_pages_actually_viewed": [
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "root_word_assets_actually_viewed": 16,
+    "source_word_assets_total": 52,
+    "root_word_assets_not_viewed": 36,
+    "all_13_candidate_required_assets_root_viewed": true,
+    "unread_OLE_binaries": 5,
+    "special_font_symbols_not_decoded": 2,
+    "field_boundaries_not_executed": 12,
+    "field_instructions_not_executed": 4,
+    "full_original_Word_pagination_reviewed": false,
+    "original_sources_modified": false,
+    "existing_card_correction": {
+      "id": "PKG020-OLD-M01-CORRECTION",
+      "record_id": "LECT-PKG-020",
+      "group": "methods",
+      "zero_based_position": 0,
+      "old": {
+        "summary": "比较轨道能量先明确固定条件：同层比较s、p、d、f；同类型比较能层高低；同层同能级的不同方向轨道能量相等。",
+        "block_indices": [
+          66,
+          67,
+          68,
+          106,
+          107,
+          108
+        ]
+      },
+      "new": {
+        "summary": "比较轨道能量先固定同一原子及模型条件。在教材孤立多电子原子的近似中，同一能层通常按ns<np<nd<nf比较，同类轨道随n增大能量升高，同一n和同一亚层的不同方向轨道等能。氢原子及氢样单电子离子在忽略精细结构、外场等影响的模型中，轨道能量只取决于n，同n的s、p、d等简并，不能套用前述亚层分裂次序。",
+        "block_indices": [
+          48,
+          51,
+          58,
+          66,
+          67,
+          68,
+          106,
+          107,
+          108
+        ]
+      },
+      "reason": "旧方法虽然说固定条件，却未说明多电子原子；教材PDF13明确氢同n简并，PDF16明确多电子模型需额外因素。NIST细结构/外场资料进一步限定简并的近似含义。",
+      "textbook_pdf_pages": [
+        11,
+        13,
+        16
+      ],
+      "primary_reference_ids": [
+        "OPENSTAX-6.3",
+        "NIST-CENTRAL-FIELD",
+        "NIST-ZEEMAN"
+      ],
+      "status": "explicit_root_adopted_candidate_correction",
+      "source_sha256": "cd40c3a4b1af8be6ba3c3c8b4329d1106499ef7329e3b4f396a5983eef8d0981",
+      "source_preview_revision": "d72402504e0944cee0260794a0bc6dd8847273b071f434debd72a691995da69b",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    "source_issue_handling": [
+      {
+        "id": "PKG020-SOURCE-ISSUE-01",
+        "source_blocks": [
+          23,
+          80,
+          91,
+          95,
+          239,
+          240,
+          241,
+          242,
+          243,
+          244,
+          245,
+          246,
+          247
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "保留作讲义内标注；不由此确认原题年份、学校来源、上海卷式或官方采分点。",
+        "status": "provenance_unverified_excluded"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-02",
+        "source_blocks": [
+          32
+        ],
+        "textbook_pdf_pages": [
+          8,
+          9,
+          13
+        ],
+        "decision": "以n为有限正整数、n→∞为电离极限说明；不静默改原文。",
+        "status": "qualification_or_source_error_identified"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-03",
+        "source_blocks": [
+          34
+        ],
+        "textbook_pdf_pages": [
+          8,
+          9
+        ],
+        "decision": "保留原字符串，以教材不同能态之间跃迁及源b45作候选依据；不声称已找到作者定稿。",
+        "status": "textual_anomaly_preserved"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-04",
+        "source_blocks": [
+          32,
+          36
+        ],
+        "textbook_pdf_pages": [
+          8,
+          9,
+          13
+        ],
+        "decision": "明确离散不等于等间隔，以氢E_n及相邻差独立复算。",
+        "status": "qualification_or_source_error_identified"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-05",
+        "source_blocks": [
+          38
+        ],
+        "textbook_pdf_pages": [
+          16,
+          17
+        ],
+        "decision": "基态比较整个粒子总能量；仍需泡利与洪特限制，不能把全部电子塞进1s。",
+        "status": "qualification_or_source_error_identified"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-06",
+        "source_blocks": [
+          46
+        ],
+        "textbook_pdf_pages": [
+          8,
+          9,
+          10,
+          20
+        ],
+        "decision": "不采纳两个泛化句；只采用已由教材明确支持的电子能态变化与原子能量差。",
+        "status": "overgeneralization_excluded"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-07",
+        "source_blocks": [
+          48,
+          51,
+          58,
+          66,
+          67,
+          68,
+          106,
+          107,
+          108
+        ],
+        "textbook_pdf_pages": [
+          11,
+          13,
+          16
+        ],
+        "decision": "旧M1单列显式修订；无外场、忽略精细结构等是简并近似的条件，不能混同物种与不同模型。",
+        "status": "qualification_or_source_error_identified"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-08",
+        "source_blocks": [
+          62,
+          63
+        ],
+        "textbook_pdf_pages": [
+          11,
+          12,
+          13,
+          14
+        ],
+        "decision": "将90%解释为条件性轮廓约定下区域总概率；区分空间状态、取向、密度与经典路径。",
+        "status": "qualification_or_source_error_identified"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-09",
+        "source_blocks": [
+          70,
+          71,
+          72,
+          73,
+          74,
+          75,
+          76,
+          99
+        ],
+        "textbook_pdf_pages": [
+          12,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
+        "decision": "独立输出总电子、占据轨道、未成对电子、nℓ标签、最大n层电子五列；不把亚层标签数当成精确测量能量数，不采用Mn无条件最高能级电子数。",
+        "status": "qualification_or_source_error_identified"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-10",
+        "source_blocks": [
+          90
+        ],
+        "textbook_pdf_pages": [
+          8,
+          11,
+          16
+        ],
+        "decision": "该论据不采用；未把放射性推断为电子激发或电子基态。",
+        "status": "unsupported_inference_excluded"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-11",
+        "source_blocks": [
+          91,
+          92,
+          93,
+          94
+        ],
+        "textbook_pdf_pages": [
+          18,
+          20
+        ],
+        "decision": "独立数16/14/15/16电子及0/+2/+1/0电荷；不把原答案B当成已验证完整电离能比较。",
+        "status": "partial_independent_solution_scope"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-12",
+        "source_blocks": [
+          96,
+          103
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "仅记录完整原字节与XML绑定；不依据后文答案补写该处题面，不采用依赖这两个公式的论点。",
+        "status": "unread_formula_excluded"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-13",
+        "source_blocks": [
+          120,
+          123
+        ],
+        "textbook_pdf_pages": [
+          11,
+          13,
+          14
+        ],
+        "decision": "不采用确定位置的推广，保留教材层级及概率模型条件。",
+        "status": "qualification_or_source_error_identified"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-14",
+        "source_blocks": [
+          124,
+          125,
+          126,
+          127,
+          128,
+          129,
+          130,
+          131,
+          132,
+          133
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "原题文已读，但该组整题答案及图像推理未作为新知识依据。",
+        "status": "unread_visual_and_external_context_excluded"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-15",
+        "source_blocks": [
+          140
+        ],
+        "textbook_pdf_pages": [
+          11,
+          13
+        ],
+        "decision": "经典确定轨迹措辞不采纳；本轮无据此新增的Na计算候选。",
+        "status": "qualification_or_source_error_identified"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-16",
+        "source_blocks": [
+          164,
+          165
+        ],
+        "textbook_pdf_pages": [
+          7,
+          15
+        ],
+        "decision": "区分连续背景与叠加的吸收线；不声称太阳光是毫无吸收线的纯连续谱。",
+        "status": "qualification_or_source_error_identified"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-17",
+        "source_blocks": [
+          175,
+          176
+        ],
+        "textbook_pdf_pages": [
+          7,
+          9,
+          10
+        ],
+        "decision": "采用四条给定波长作指定计算；系列与端点只按教材图示说明。",
+        "status": "qualification_or_source_error_identified"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-18",
+        "source_blocks": [
+          178
+        ],
+        "textbook_pdf_pages": [
+          14,
+          15
+        ],
+        "decision": "不作为普遍检测保证；只保留特征谱线可用于元素识别的结论。",
+        "status": "unqualified_numeric_claim_excluded"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-19",
+        "source_blocks": [
+          180,
+          184,
+          189,
+          197,
+          217
+        ],
+        "textbook_pdf_pages": [
+          8,
+          14,
+          15
+        ],
+        "decision": "不从宏观发光名称推断同一微观机制；也不把发射过程本身与整个燃烧反应的性质混同。",
+        "status": "underconditioned_mechanism_excluded"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-20",
+        "source_blocks": [
+          173,
+          192,
+          204,
+          206,
+          211,
+          234,
+          237
+        ],
+        "textbook_pdf_pages": [
+          8,
+          9,
+          10
+        ],
+        "decision": "用实际阅读的教材氢3/4/5/6→2反例，保留基态/激发态简图的有限范围；本代理候选不依赖尚未自行访问的氖线数值。",
+        "status": "qualification_or_source_error_identified"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-21",
+        "source_blocks": [
+          220,
+          224
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "不采用该历史断言，不将原文静默替换成铯/铷；parent另做的RSC读取不冒充本代理实际访问。",
+        "status": "historical_claim_unverified_excluded"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-22",
+        "source_blocks": [
+          229
+        ],
+        "textbook_pdf_pages": [],
+        "decision": "本轮原子结构与光谱候选不采用普遍冷却结晶结论。",
+        "status": "out_of_scope_conditional_claim"
+      },
+      {
+        "id": "PKG020-SOURCE-ISSUE-23",
+        "source_blocks": [],
+        "textbook_pdf_pages": [
+          16,
+          17,
+          19,
+          20
+        ],
+        "decision": "不把半满/全满跨粒子推广为绝对稳定排序；采用实际测定优先与全原子总能量口径。",
+        "status": "qualification_or_source_error_identified"
+      }
+    ],
+    "external_fact_sources": [
+      {
+        "title": "NIST Atomic Data for Manganese",
+        "url": "https://physics.nist.gov/PhysRefData/Handbook/Tables/manganesetable1.htm",
+        "used_for": "Z=25、基态[Ar]3d5 4s2；不采用旧原子量或电离能数值。"
+      },
+      {
+        "title": "NIST Atomic Data for Iron",
+        "url": "https://physics.nist.gov/PhysRefData/Handbook/Tables/irontable1.htm",
+        "used_for": "Z=26、基态[Ar]3d6 4s2。"
+      },
+      {
+        "title": "NIST Atomic Data for Sulfur",
+        "url": "https://physics.nist.gov/PhysRefData/Handbook/Tables/sulfurtable1.htm",
+        "used_for": "Z=16与S、S+基态排布；未确定原题四种态的精确失电子能量。"
+      },
+      {
+        "title": "NIST Atomic States, Shells, and Configurations",
+        "url": "https://www.nist.gov/pml/atomic-spectroscopy-compendium-basic-ideas-notation-data-and-formulas/atomic-spectroscopy-10",
+        "used_for": "中心场近似、亚层与轨道标签、氢精细与超精细结构对简并说法的限定。"
+      },
+      {
+        "title": "NIST Zeeman Effect",
+        "url": "https://www.nist.gov/pml/atomic-spectroscopy-compendium-basic-ideas-notation-data-and-formulas/atomic-spectroscopy-zeeman",
+        "used_for": "外磁场可使磁子能级分裂；简并陈述需模型条件。"
+      },
+      {
+        "title": "OpenStax Chemistry 2e 6.3",
+        "url": "https://openstax.org/books/chemistry-2e/pages/6-3-development-of-quantum-theory",
+        "used_for": "核对氢同n简并、多电子亚层分裂及波函数概率解释；未复制原图或章节文本。"
+      },
+      {
+        "title": "NIST Ne I Persistent Lines",
+        "url": "https://physics.nist.gov/PhysRefData/Handbook/Tables/neontable3.htm",
+        "used_for": "5852.4879 Å线的下态能量135888.7173 cm^-1高于基态；发射不必终到基态。"
+      },
+      {
+        "title": "NIST Ne I Energy Levels",
+        "url": "https://physics.nist.gov/PhysRefData/Handbook/Tables/neontable5.htm",
+        "used_for": "Ne I基态2p6、能量0 cm^-1，用于前述反例。"
+      }
+    ],
+    "reader_scope": {
+      "exact_support_blocks": 59,
+      "exact_disjoint_ranges": 29,
+      "range_limit_per_request": 32,
+      "executable_request_range_counts": [
+        29
+      ],
+      "note_counts": [
+        18
+      ],
+      "unique_reference_count": 18,
+      "materials_characters": [
+        18205
+      ],
+      "include_images_in_consumer_check": false,
+      "note": "一次精确请求可包含全部18条；13个必要图及14页教材图另行实际查看。七条研读笔记单独保存，未声称增加教材concept。"
+    },
+    "book2skills_used": false,
+    "provider_calls": 0
+  }
+}
