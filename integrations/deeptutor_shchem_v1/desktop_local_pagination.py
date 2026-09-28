@@ -32,7 +32,9 @@ def find_libreoffice() -> Path | None:
 
 def render_docx(docx_path, output_dir, *, toolchain=None):
     from .desktop_mixed_paper_pagination import MixedPaperPaginationError
-    from .reader_cancellation import check_read_cancelled
+    from .reader_cancellation import check_read_cancelled, ReadCancelled
+    from .office_conversion import libreoffice_pdf, OfficeConversionError
+    from .owned_process import ProcessTimeout
 
     check_read_cancelled()
     try:
@@ -46,21 +48,14 @@ def render_docx(docx_path, output_dir, *, toolchain=None):
     pdf = output / (docx.stem + ".pdf")
     office = find_libreoffice()
     if office is not None:
-        with tempfile.TemporaryDirectory(prefix="shchem-office-") as profile:
-            command = [str(office), "-env:UserInstallation=" + Path(profile).as_uri(),
-                       "--headless", "--convert-to", "pdf:writer_pdf_Export",
-                       "--outdir", str(output), str(docx)]
-            try:
-                subprocess.run(command, check=True, capture_output=True, timeout=180,
-                               creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-            except (OSError, subprocess.SubprocessError):
-                raise MixedPaperPaginationError("local_pagination_conversion_failed",
-                    "LibreOffice 未完成转换。请确认原文档可打开，关闭异常转换进程后重试；未生成可确认的分页。") from None
+        libreoffice_pdf(docx, output, office)
         backend = "libreoffice"
     elif os.name == "nt":
         from .paper_export_renderer import _word_com_pdf
         try:
             _word_com_pdf(docx, pdf)
+        except (ReadCancelled, ProcessTimeout, OfficeConversionError):
+            raise
         except Exception:
             raise MixedPaperPaginationError("local_pagination_office_missing",
                 "试卷真实分页需要本机 Microsoft Word 或 LibreOffice。请安装其中一种后重新预览，题篮保持不变。") from None

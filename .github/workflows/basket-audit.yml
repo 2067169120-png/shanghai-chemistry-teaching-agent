@@ -18,6 +18,8 @@ jobs:
   verify:
     runs-on: windows-latest
     timeout-minutes: 20
+    env:
+      PYTEST_ADDOPTS: '-p staging.coordination.deeptutor_gateway.tests.no_office_plugin'
     steps:
       - uses: actions/checkout@v7
         with:
@@ -39,6 +41,26 @@ jobs:
           python -m compileall -q integrations runtime/deeptutor_shchem
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python runtime/deeptutor_shchem/documentation_policy.py
+          exit $LASTEXITCODE
+      - name: Owned converter cancellation, publication and cold shutdown
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: >-
+          python -m pytest -q
+          staging/coordination/deeptutor_gateway/tests/test_owned_process.py
+          staging/coordination/deeptutor_gateway/tests/test_office_conversion.py
+          staging/coordination/deeptutor_gateway/tests/test_office_cancel_publication.py
+          staging/coordination/deeptutor_gateway/tests/test_desktop_reader_cancellation.py
+          staging/coordination/deeptutor_gateway/tests/test_office_cancel_ui.py
+          --junitxml=candidate-qa/conversion-cancellation.xml
+      - name: Stop controls at double scaling
+        env:
+          QT_QPA_PLATFORM: offscreen
+          QT_SCALE_FACTOR: '2'
+        run: |
+          python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_office_cancel_ui.py --junitxml=candidate-qa/conversion-cancellation-2x.xml
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m staging.coordination.deeptutor_gateway.tests.office_cancel_ui_qa --output candidate-qa/conversion-cancellation-2x
           exit $LASTEXITCODE
       - name: Isolated core, native basket and existing selection regressions
         env:

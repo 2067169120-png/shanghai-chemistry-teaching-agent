@@ -1,4 +1,5 @@
 from __future__ import annotations
+from .reader_cancellation import ReadCancelled, check_read_cancelled
 
 """Formal multi-file, page-pixel visual intake candidate core (v2).
 
@@ -1743,6 +1744,9 @@ def _render_source_pages(
             )
         try:
             rendered = list(renderer.render(source, source_role=source_role))
+            check_read_cancelled()
+        except ReadCancelled:
+            raise
         except IntakeBatchV2Error:
             raise
         except Exception:  # noqa: BLE001 - renderer is an injected plugin boundary.

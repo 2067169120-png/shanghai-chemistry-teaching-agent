@@ -10,35 +10,88 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import ContextVar, copy_context
-from threading import Event
+from threading import Event, RLock
 from typing import Any, Iterator
 
-_stop_event: ContextVar[Event | None] = ContextVar("shchem_read_stop", default=None)
+_stop_events: ContextVar[tuple[Any, ...]] = ContextVar("shchem_read_stop", default=())
+
+
+class TaskCancellationEvent(Event):
+    """Linearize a user stop with a task's final durable publication."""
+    def __init__(self):
+        super().__init__()
+        self._publication_lock = RLock()
+        self._published = False
+
+    def request_cancel(self):
+        with self._publication_lock:
+            if self._published:
+                return False
+            super().set()
+            return True
+
+    def set(self):
+        self.request_cancel()
+
+
+@contextmanager
+def publication_guard():
+    """Only final publications use this guard, never intermediate cache writes.
+
+    If cancellation wins, no write starts. If publication wins, a late Stop
+    cannot falsely label the committed task cancelled. Failure leaves it open.
+    """
+    signals = sorted({x for x in _stop_events.get() if isinstance(x, TaskCancellationEvent)}, key=id)
+    for signal in signals:
+        signal._publication_lock.acquire()
+    try:
+        check_read_cancelled()
+        yield
+        for signal in signals:
+            signal._published = True
+    finally:
+        for signal in reversed(signals):
+            signal._publication_lock.release()
 
 
 class ReadCancelled(RuntimeError):
     code = "desktop_read_cancelled"
-    message_zh = "工作台正在关闭，已停止读取本地资料。"
+    message_zh = "本次任务已取消，未发布新的结果。"
 
-    def __init__(self) -> None:
+    def __init__(self, message: str | None = None) -> None:
+        if message:
+            self.message_zh = message
         super().__init__(self.message_zh)
 
 
 def check_read_cancelled() -> None:
-    event = _stop_event.get()
-    if event is not None and event.is_set():
+    if cancellation_requested():
         raise ReadCancelled()
 
 
+def cancellation_requested() -> bool:
+    signals = _stop_events.get()
+    # A durable final publication already won the race. A later facade-wide
+    # shutdown must not relabel the committed task cancelled on scope exit.
+    if any(isinstance(signal, TaskCancellationEvent) and signal._published for signal in signals):
+        return False
+    return any(signal.is_set() if hasattr(signal, "is_set") else signal()
+               for signal in signals)
+
+
 @contextmanager
-def read_cancel_scope(event: Event) -> Iterator[None]:
-    token = _stop_event.set(event)
+def read_cancel_scope(event: Any, *, check_boundaries=True) -> Iterator[None]:
+    # A facade shutdown scope must never mask its caller's per-task stop signal.
+    signals = _stop_events.get()
+    token = _stop_events.set(signals + ((event,) if event is not None and event not in signals else ()))
     try:
-        check_read_cancelled()
+        if check_boundaries:
+            check_read_cancelled()
         yield
-        check_read_cancelled()
+        if check_boundaries:
+            check_read_cancelled()
     finally:
-        _stop_event.reset(token)
+        _stop_events.reset(token)
 
 
 class ReaderThreadPoolExecutor(ThreadPoolExecutor):

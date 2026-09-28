@@ -76,6 +76,7 @@ def test_two_tasks_have_independent_active_preview_pointers(selected):
     other = deepcopy(task); other['id'] = 'b' * 32
     a = session_for(engine, task); b = session_for(engine, other)
     p = preview_for(a, task); q = preview_for(b, other)
+    p = paginate_and_read(a.service, p); q = paginate_and_read(b.service, q)
     a.service._load(p.preview_id, require_current=True)
     b.service._load(q.preview_id, require_current=True)
     with pytest.raises(MixedPaperError):
@@ -192,6 +193,7 @@ def test_task_request_version_blocks_old_preview_but_attempt_history_does_not(se
     with pytest.raises(MixedPaperError):
         current.service._load(preview.preview_id)
     fresh = preview_for(current, changed)
+    fresh = paginate_and_read(current.service, fresh)
     with pytest.raises(MixedPaperError):
         a.service._load(preview.preview_id, require_current=True)
     assert current.service._load(fresh.preview_id, require_current=True)

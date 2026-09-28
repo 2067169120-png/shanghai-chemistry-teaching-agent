@@ -246,7 +246,8 @@ class _ExamFollowupPanelBase(QWidget):
         def prepare(report,cancelled):
             facade=paper_session(self.d.facade, task)
             request=practice_request(task,facade.basket(),facade.paper_basket_projection())
-            if cancelled():raise ExamError('本次预览已取消。')
+            from ..reader_cancellation import ReadCancelled
+            if cancelled():raise ReadCancelled()
             content=facade.create_paper_preview(request)
             return facade.prepare_mixed_paper_pagination(content.preview_id,content.preview_hash)
         def ready(value):
@@ -266,7 +267,7 @@ class _ExamFollowupPanelBase(QWidget):
                     if self.preview is not value:raise ExamError('旧预览的确认结果已忽略，请核对当前版本。')
                     if result.get('status')=='approved':
                         self.approved=True;dialog.mark_confirmed();self.show_task()
-                self.d.run('确认本任务两版分页',lambda report,cancelled:session.approve_paper_preview(value.preview_id,value.preview_hash),done)
+                self.d.run('确认本任务两版分页',lambda report,cancelled:session.approve_paper_preview(value.preview_id,value.preview_hash),done,cancellable=False)
             dialog.preview_confirmed.connect(approve);dialog.show()
         self.d.run('生成本任务学生与教师版真实分页',prepare,ready)
 

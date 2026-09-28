@@ -2005,6 +2005,12 @@ class MixedPaperPanel(QWidget):
         self._busy = False
         self._closed = False
         self._preview = None
+        self._operation_task = None
+        self._cancel_requested = False
+        if hasattr(tasks, "task_cancelled_detail"):
+            tasks.task_cancelled_detail.connect(self._operation_cancelled)
+        if hasattr(tasks, "task_finished"):
+            tasks.task_finished.connect(self._operation_finished)
         self._preview_dialog = None
         self._approved = False
         self._loaded_once = False
@@ -2148,6 +2154,10 @@ class MixedPaperPanel(QWidget):
         outer.addWidget(self.scroll, 1)
         self.status.setAccessibleName("当前卷草稿保存与预览状态")
         outer.addWidget(self.status)
+        self.cancel_button = _quiet_button("停止本次任务")
+        self.cancel_button.setAccessibleName("停止本次分页或文件导出，保留当前卷和已有成品")
+        self.cancel_button.clicked.connect(self._cancel_operation)
+        outer.addWidget(self.cancel_button)
         self.undo_button = _quiet_button("撤销上一步（Ctrl+Alt+Z）")
         self.undo_button.setAccessibleName("撤销当前卷上一步已保存编辑")
         self.undo_button.clicked.connect(self._undo)
@@ -2192,6 +2202,30 @@ class MixedPaperPanel(QWidget):
     def _current_key(self):
         item = self.sections.currentItem()
         return item.data(Qt.ItemDataRole.UserRole) if item else None
+
+    def _cancel_operation(self):
+        if self._operation_task is None or self._cancel_requested:
+            return
+        if self.tasks.cancel(self._operation_task) is False:
+            self.status.setText("本次结果已完成核对，正在显示结果。")
+            return
+        self._cancel_requested = True
+        self._generation += 1
+        self.status.setText("正在停止本次任务；已有卷稿与成品保留，等待转换器报告清理状态…")
+        self._update_actions()
+
+    def _operation_cancelled(self, identity, _label, message):
+        if identity == self._operation_task and not self._closed:
+            self.status.setText(message)
+
+    def _operation_finished(self, identity):
+        if identity != self._operation_task:
+            return
+        self._operation_task = None
+        self._cancel_requested = False
+        if not self._closed:
+            self._busy = getattr(self, "_number_dialog", None) is not None
+            self._update_actions()
 
     def _open_details(self):
         if self._busy or self._saving or self._closed:
@@ -2706,6 +2740,8 @@ class MixedPaperPanel(QWidget):
         self._update_actions()
 
     def _update_actions(self):
+        self.cancel_button.setVisible(self._busy and self._operation_task is not None)
+        self.cancel_button.setEnabled(not self._cancel_requested)
         enabled = self._loaded_once and not self._busy and not self._saving and not self._restore_failed
         history = self._draft_session.undo_count if self._draft_session is not None else 0
         action = self._draft_session.undo_action if history else ""
@@ -2785,6 +2821,7 @@ class MixedPaperPanel(QWidget):
                 self,
             )
             self._preview_dialog = dialog
+            self.status.setText("两版分页已生成，请逐页核对并确认；尚未导出。")
             dialog.preview_confirmed.connect(
                 lambda: self._approve(dialog, generation, value)
             )
@@ -2813,12 +2850,13 @@ class MixedPaperPanel(QWidget):
                     raise RuntimeError("真实分页未绑定本次新版本，不能确认。")
                 return result
 
-            self.tasks.submit(
+            self._operation_task = self.tasks.submit(
                 "生成学生与教师版真实分页",
                 prepare,
                 on_success=ready,
                 on_failure=failed,
             )
+            self._update_actions()
         except Exception:
             failed("预览任务未启动，请重试。")
 
@@ -2908,7 +2946,7 @@ class MixedPaperPanel(QWidget):
                 self._update_actions()
 
         try:
-            self.tasks.submit(
+            self._operation_task = self.tasks.submit(
                 "导出混合组卷 DOCX 和 PDF",
                 lambda: self.facade.export_paper_preview(
                     value.preview_id, value.preview_hash, draft
@@ -2916,6 +2954,7 @@ class MixedPaperPanel(QWidget):
                 on_success=ready,
                 on_failure=failed,
             )
+            self._update_actions()
         except Exception:
             failed("导出任务未启动，请重试。")
 
@@ -2927,6 +2966,7 @@ class MixedPaperPanel(QWidget):
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(Path(path).resolve())))
 
     def closeEvent(self, event):
+        self._cancel_operation()
         self._closed = True
         self._load_epoch += 1
         self._generation += 1
@@ -2953,6 +2993,13 @@ class PaperPage(QWidget):
         super().__init__(parent)
         self.facade = facade
         self.tasks = tasks
+        self._export_task = None
+        self._export_stopping = False
+        self._legacy_closed = False
+        if hasattr(tasks, "task_cancelled_detail"):
+            tasks.task_cancelled_detail.connect(self._legacy_cancelled)
+        if hasattr(tasks, "task_finished"):
+            tasks.task_finished.connect(self._legacy_finished)
         basket = facade.basket()
         self._mixed_panel = None
         self._mixed_basket = None
@@ -3176,6 +3223,11 @@ class PaperPage(QWidget):
         actions.addWidget(self.export_button)
         actions.addWidget(self.preview_state, 1)
         root.addLayout(actions)
+
+        self.cancel_export_button = _quiet_button("停止本次导出")
+        self.cancel_export_button.clicked.connect(self._cancel_export)
+        self.cancel_export_button.hide()
+        root.addWidget(self.cancel_export_button)
 
         self.mock_mode.toggled.connect(self._mode_changed)
         self.practice_mode.toggled.connect(self._mode_changed)
@@ -3794,6 +3846,8 @@ class PaperPage(QWidget):
             dialog.mark_confirmed()
 
     def _export(self) -> None:
+        if self._export_task is not None:
+            return
         if not self.model.can_export or self._last_preview is None:
             QMessageBox.information(self, "需要先预览", "请先生成并确认整卷预览，再导出。")
             return
@@ -3803,14 +3857,45 @@ class PaperPage(QWidget):
             return
         self.export_button.setEnabled(False)
         self.preview_state.setText("正在保存导出稿…")
-        self.tasks.submit(
+        identity, fingerprint = self._last_preview.preview_id, self.model.preview_hash or ""
+        payload = deepcopy(self.model.draft_payload())
+        self._export_task = self.tasks.submit(
             "导出整卷预览稿",
-            lambda: exporter(self._last_preview.preview_id, self.model.preview_hash or "", self.model.draft_payload()),
+            lambda: exporter(identity, fingerprint, payload),
             on_success=self._exported,
             on_failure=self._export_failed,
         )
+        self.cancel_export_button.show()
+
+    def _cancel_export(self):
+        if self._export_task is not None and not self._export_stopping:
+            if self.tasks.cancel(self._export_task) is False:
+                return
+            self._export_stopping = True
+            self.cancel_export_button.setEnabled(False)
+            self.preview_state.setText("正在停止本次导出；已有文件保留…")
+
+    def _legacy_cancelled(self, identity, _label, message):
+        if identity == self._export_task and not self._legacy_closed:
+            self.preview_state.setText(message)
+
+    def _legacy_finished(self, identity):
+        if identity == self._export_task:
+            self._export_task = None
+            self._export_stopping = False
+            if not self._legacy_closed:
+                self.cancel_export_button.hide()
+                self.cancel_export_button.setEnabled(True)
+                self.export_button.setEnabled(self.model.can_export)
+
+    def closeEvent(self, event):
+        self._cancel_export()
+        self._legacy_closed = True
+        super().closeEvent(event)
 
     def _exported(self, value: Any) -> None:
+        if self._legacy_closed or self._export_stopping:
+            return
         self.export_button.setEnabled(True)
         if isinstance(value, Mapping):
             self.preview_state.setText(str(value.get("message_zh") or "导出稿已保存，可在个人草稿中查看。"))
@@ -3818,6 +3903,8 @@ class PaperPage(QWidget):
             self.preview_state.setText("导出稿已保存，可在个人草稿中查看。")
 
     def _export_failed(self, message: str) -> None:
+        if self._legacy_closed:
+            return
         self.export_button.setEnabled(True)
         self.preview_state.setText(message)
 

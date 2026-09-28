@@ -5,7 +5,7 @@ from .desktop_raster_numbers import image_catalog, apply_to_documents
 
 class RasterPaperService(MixedPaperService):
     def inspect_images(self, preview_id, preview_hash):
-        folder, _, snapshot = self._load(preview_id, require_current=True)
+        folder, _, snapshot = self._load(preview_id, require_current=True, allow_candidate=True)
         if snapshot['preview_hash'] != preview_hash or snapshot.get('pagination_binding'):
             raise MixedPaperError('预览已改变，请按当前题序重新准备题图。')
         if snapshot['preview_model']['blockers']:

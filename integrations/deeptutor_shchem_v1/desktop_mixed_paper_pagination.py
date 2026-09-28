@@ -3,8 +3,8 @@
 Only prepare_pages invokes a renderer. Readers verify the frozen manifest and
 all artifacts, never rerender or substitute a content-only preview. Source and
 settings identity belong to the caller, which should bind manifest_sha256.
-Cancellation is cooperative before/after each conversion; this module cannot
-interrupt an already running Word/LibreOffice conversion.
+External conversions inherit cancellation; only proven private converters are
+reclaimed. An unverified or adopted Word instance is preserved with diagnostics.
 """
 from __future__ import annotations
 
@@ -82,6 +82,8 @@ def _docx_valid(path):
 
     try:
         _validate_docx_container(path)
+    except ReadCancelled:
+        raise
     except Exception as exc:
         raise MixedPaperPaginationError(getattr(exc, "code", "pagination_docx_invalid"),
                                        "待分页 DOCX 不完整或含不允许的宏、外部关系。") from None
@@ -375,13 +377,15 @@ def prepare_pages(docx_paths, output_root, *, toolchain=None, renderer=None, max
         cancelled = isinstance(exc, ReadCancelled)
         code = getattr(exc, "code", "pagination_render_failed")
         code = code if isinstance(code, str) and re.fullmatch(r"[a-z0-9_]{1,100}", code) else "pagination_render_failed"
-        message = ("分页已在协作取消检查点停止；不会自动终止已运行的 Word 转换。" if cancelled else
+        message = (exc.message_zh if cancelled or getattr(exc, "cleanup_complete", None) is False else
                    "缺少本地分页工具，请检查 render_docx.py、Python 和 Poppler；未生成可确认分页。"
                    if code == "renderer_tool_missing" else
                    "真实分页未完成，已保留诊断和中间文件；不能确认或导出为完成成品。")
         diagnostic = {"schema_version": SCHEMA_VERSION, "status": "cancelled" if cancelled else "failed",
                       "stage": stage, "audience": audience, "error_code": code, "error_type": type(exc).__name__,
                       "message_zh": message, "ready": False, "automatic_retry": False, "gates": deepcopy(_GATES)}
+        diagnostic["cleanup_complete"] = getattr(exc, "cleanup_complete", None)
+        diagnostic["office_session"] = getattr(exc, "office_session", None)
         try:
             with (root / FAILURE_FILENAME).open("xb") as stream:
                 stream.write(_canonical(diagnostic))
@@ -389,4 +393,7 @@ def prepare_pages(docx_paths, output_root, *, toolchain=None, renderer=None, max
             pass
         if isinstance(exc, (MixedPaperPaginationError, ReadCancelled)):
             raise
-        raise MixedPaperPaginationError(code, message) from None
+        error = MixedPaperPaginationError(code, message)
+        for name in ("cleanup_complete", "office_session"):
+            if hasattr(exc, name):setattr(error, name, getattr(exc, name))
+        raise error from None
