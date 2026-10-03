@@ -597,7 +597,9 @@ class PreparationPage(QWidget):
         from ..desktop_blueprint_drafts import BlueprintDraftError
         from ..desktop_blueprint_preparation import append_reference
 
-        source_label = "图片题" if isinstance(reference, dict) and reference.get("source_kind") == "personal_visual" else "Word"
+        source_label = {"personal_visual": "图片题", "textbook": "教材"}.get(
+            reference.get("source_kind") if isinstance(reference, dict) else None, "Word"
+        )
         if (
             self._save_task_id
             or self._library_image_task_id

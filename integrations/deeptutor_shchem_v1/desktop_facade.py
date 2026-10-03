@@ -6507,6 +6507,14 @@ class DesktopWorkbenchFacade:
     def preparation_textbook_book_source(self, source_id, revision):
         return self.textbook_workspace().read_book(source_id, revision)
 
+    def textbook_question_selection(self, concept_id, revision):
+        from .desktop_textbook_teaching_bridge import question_selection
+        return question_selection(self, concept_id, revision)
+
+    def textbook_preparation_selection(self, concept_id, revision):
+        from .desktop_textbook_teaching_bridge import preparation_selection
+        return preparation_selection(self, concept_id, revision)
+
     def textbook_candidate_source(self, concept_id, revision):
         return self.textbook_workspace().read_candidate(concept_id, revision)
 

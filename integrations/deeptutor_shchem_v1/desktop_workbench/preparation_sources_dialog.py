@@ -552,6 +552,29 @@ class PreparationSourcesDialog(QDialog):
         )
         self._selection_changed()
 
+    def preselect_concepts(self, selections: list[dict[str, str]]) -> bool:
+        """Select exact handoff revisions, retaining preview and confirmation."""
+        visible = {}
+        for index in range(self.concept_list.count()):
+            item = self.concept_list.item(index)
+            value = item.data(Qt.ItemDataRole.UserRole + 1)
+            if isinstance(value, Mapping):
+                visible[value.get("concept_id")] = (item, value)
+        if not selections or any(
+            not isinstance(selected, Mapping)
+            or selected.get("concept_id") not in visible
+            or visible[selected["concept_id"]][1].get("revision") != selected.get("revision")
+            for selected in selections
+        ):
+            set_status(self.status, "error", "教材选择已变化，未自动选择其他知识点；请重新打开研读页核对。")
+            return False
+        for selected in selections:
+            item, _value = visible[selected["concept_id"]]
+            item.setCheckState(Qt.CheckState.Checked)
+        self.concept_list.setCurrentItem(visible[selections[0]["concept_id"]][0])
+        self.concept_list.scrollToItem(self.concept_list.currentItem())
+        return True
+
     def _update_original_button(self, *_args):
         self.original_button.setEnabled(
             self.concept_list.currentItem() is not None

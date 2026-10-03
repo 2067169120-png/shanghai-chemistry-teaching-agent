@@ -1,5 +1,5 @@
 """Volume/chapter/section navigation, candidate evidence and intact local books."""
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QBoxLayout,
     QFileDialog,
@@ -27,11 +27,16 @@ class _CandidateSourceFacade:
 
 
 class TextbookStudyPage(QWidget):
+    questions_requested = Signal(dict)
+    preparation_requested = Signal(dict)
+    lecture_requested = Signal(str)
+
     def __init__(self, facade, tasks, parent=None):
         super().__init__(parent)
         self.facade, self.tasks = facade, tasks
         self.catalog = None
         self._loading = False
+        self._link_pending = False
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         content = QWidget()
@@ -101,6 +106,16 @@ class TextbookStudyPage(QWidget):
         self.section_button.clicked.connect(lambda: self.open_source(section=True))
         box.addWidget(self.open_button)
         box.addWidget(self.section_button)
+        self.question_button = QPushButton("查本教材单元的题目")
+        self.question_button.setObjectName("QuietButton")
+        self.question_button.clicked.connect(lambda: self._request_teaching("questions"))
+        self.preparation_button = QPushButton("用此知识点备课…")
+        self.preparation_button.clicked.connect(lambda: self._request_teaching("preparation"))
+        self.lecture_button = QPushButton("查相关讲义…")
+        self.lecture_button.setObjectName("QuietButton")
+        self.lecture_button.clicked.connect(self._request_lecture)
+        for button in (self.question_button, self.preparation_button, self.lecture_button):
+            box.addWidget(button)
         self.splitter.addWidget(detail)
         self.splitter.setStretchFactor(0, 2)
         self.splitter.setStretchFactor(1, 3)
@@ -188,6 +203,9 @@ class TextbookStudyPage(QWidget):
         selected = self._selection()
         self.open_button.setEnabled(False)
         self.section_button.setEnabled(False)
+        self.question_button.setEnabled(False)
+        self.preparation_button.setEnabled(False)
+        self.lecture_button.setEnabled(False)
         if not selected:
             self.evidence.setPlainText("选择左侧知识点查看摘要与证据；选择已导入原书可连续阅读完整PDF。")
             return
@@ -206,6 +224,9 @@ class TextbookStudyPage(QWidget):
         self.open_button.setText("查看知识点原页")
         self.open_button.setEnabled(bool(native or book))
         self.section_button.setEnabled(bool(native))
+        self.question_button.setEnabled(bool(native) and not self._link_pending)
+        self.preparation_button.setEnabled(bool(native) and not self._link_pending)
+        self.lecture_button.setEnabled(True)
         self.evidence.setPlainText(row["title"] + "\n\n知识摘要（候选）：\n" + row["summary"]
             + "\n\n来源：" + str(source.get("title", "待核对"))
             + "\nPDF文件页序：" + pages + "\n印刷页码：" + printed
@@ -213,6 +234,38 @@ class TextbookStudyPage(QWidget):
             + "\n来源内容校验：" + source["sha256"]
             + "\n\n原页：" + ("可打开并核对来源版本" if native or book else "对应原PDF尚未导入")
             + "\n审核：候选，未获教师审核\n本摘要不能代替教材原句，阅读不会提升教学或发布权限。")
+
+    def _request_lecture(self):
+        selected = self._selection()
+        if selected and selected["kind"] == "candidate":
+            self.lecture_requested.emit(selected["row"]["title"])
+
+    def _request_teaching(self, kind):
+        selected = self._selection()
+        if not selected or selected["kind"] != "candidate" or self._link_pending:
+            return
+        identity = selected["concept_id"], selected["revision"]
+        loader = getattr(self.facade, "textbook_question_selection" if kind == "questions" else "textbook_preparation_selection", None)
+        if not callable(loader):
+            self.status.setText("当前版本尚未提供该教学连接，请更新程序后重试。")
+            return
+        self._link_pending = True
+        self._selected()
+        def finish(value=None, message=None):
+            self._link_pending = False
+            current = self._selection() or {}
+            self._selected()
+            if (current.get("concept_id"), current.get("revision")) != identity:
+                return
+            if message is not None:
+                self.status.setText(message)
+            elif kind == "questions":
+                self.questions_requested.emit(value)
+            else:
+                self.preparation_requested.emit(value)
+        self.tasks.submit("核对教材教学关联", lambda: loader(*identity),
+            on_success=lambda value: finish(value=value),
+            on_failure=lambda message: finish(message=message), origin_route="textbooks")
 
     def open_source(self, *, section=False):
         selected = self._selection()

@@ -48,6 +48,8 @@ jobs:
           --output desktop-qa/teacher-workspace --version teacher-workspace.v1
           staging/coordination/deeptutor_gateway/tests/test_teacher_workspace.py
           staging/coordination/deeptutor_gateway/tests/test_textbook_workspace.py
+          staging/coordination/deeptutor_gateway/tests/test_textbook_teaching_bridge.py
+          staging/coordination/deeptutor_gateway/tests/test_textbook_handoff_ui.py
           staging/coordination/deeptutor_gateway/tests/test_teacher_workspace_ui.py
           staging/coordination/deeptutor_gateway/tests/test_local_material_import_cli.py
           staging/coordination/deeptutor_gateway/tests/test_complete_readme.py

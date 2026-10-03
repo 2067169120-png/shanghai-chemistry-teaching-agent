@@ -220,6 +220,10 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.library_page.preparation_image_requested.connect(self._library_image_to_preparation)
         self.library_page.preparation_reference_requested.connect(self._library_reference_to_preparation)
         self.library_page.word_reference_requested.connect(self._word_to_preparation)
+        self.textbook_page.questions_requested.connect(self._textbook_to_questions)
+        self.textbook_page.preparation_requested.connect(self._textbook_to_preparation)
+        self.textbook_page.lecture_requested.connect(self._textbook_to_lecture)
+        self.library_page.textbook_requested.connect(lambda: self.navigate("textbooks"))
         self._paper_reference_loading = False
         self.paper_page.preparation_requested.connect(self._paper_to_preparation)
         self.tasks.task_started.connect(self._task_started)
@@ -350,6 +354,8 @@ class TeacherWorkbenchWindow(QMainWindow):
         from PySide6.QtCore import QSignalBlocker
         from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
         page=self.library_page
+        if hasattr(page, "textbook_context"):
+            page.textbook_context.hide()
         if not hasattr(page,'exam_context'):
             page.exam_context=QWidget();box=QHBoxLayout(page.exam_context)
             page.exam_context_label=QLabel();page.exam_context_label.setWordWrap(True)
@@ -460,6 +466,36 @@ class TeacherWorkbenchWindow(QMainWindow):
     def _word_to_preparation(self, reference: dict) -> None:
         if self.preparation_page.import_word_reference(reference):
             self.navigate("preparation")
+
+    def _textbook_to_questions(self, request: dict) -> None:
+        page = self.library_page
+        if hasattr(page, "exam_context"):
+            page.exam_context.hide()
+        page.apply_textbook_selection(request)
+        self.navigate("library")
+
+    def _textbook_to_preparation(self, concept: dict) -> None:
+        from .preparation_sources_dialog import PreparationSourcesDialog
+        dialog = PreparationSourcesDialog(self.facade, self)
+        try:
+            if not dialog.preselect_concepts([concept]):
+                self.textbook_page.status.setText("教材版本已变化，请刷新后重新选择。")
+                return
+            if dialog.exec() == QDialog.DialogCode.Accepted and dialog.reference is not None:
+                reference = {**dialog.reference, "source_kind": "textbook"}
+                if self.preparation_page.import_word_reference(reference):
+                    self.navigate("preparation")
+        finally:
+            dialog.deleteLater()
+
+    def _textbook_to_lecture(self, topic: str) -> None:
+        from .lecture_library_dialog import LectureLibraryDialog
+        dialog = LectureLibraryDialog(self.facade, self.tasks, self, lesson_topic=topic)
+        try:
+            if dialog.exec() == QDialog.DialogCode.Accepted and dialog.reference is not None:
+                self._word_to_preparation(dialog.reference)
+        finally:
+            dialog.deleteLater()
 
     def _library_image_to_preparation(self, selection: dict) -> None:
         if self.preparation_page.import_library_image(selection):
