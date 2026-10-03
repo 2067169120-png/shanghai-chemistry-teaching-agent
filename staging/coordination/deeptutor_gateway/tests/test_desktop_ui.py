@@ -12,11 +12,11 @@ WORKSPACE = Path(__file__).resolve().parents[4]
 UI_ROOT = WORKSPACE / "integrations" / "deeptutor_shchem_v1" / "desktop_workbench"
 
 
-def test_ui_shell_keeps_five_primary_tasks_and_global_actions() -> None:
+def test_ui_shell_keeps_seven_primary_tasks_and_global_actions() -> None:
     from integrations.deeptutor_shchem_v1.desktop_facade import PRIMARY_NAVIGATION
 
-    assert PRIMARY_NAVIGATION == ("首页", "题库", "组卷", "学生分析", "备课")
-    assert len(PRIMARY_NAVIGATION) == 5
+    assert PRIMARY_NAVIGATION == ("工作台", "资料与题库", "备课与讲评", "组卷与作业", "作业批改", "学情与复练", "教材研读")
+    assert len(PRIMARY_NAVIGATION) == 7
     assert "导入资料" not in PRIMARY_NAVIGATION
     assert "设置" not in PRIMARY_NAVIGATION
 

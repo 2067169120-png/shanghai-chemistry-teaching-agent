@@ -8,6 +8,9 @@ from .components import section_title
 from .teacher_help import TeacherHelpDialog as HelpDialog
 
 COMMANDS = (
+    ("grading", "作业批改", "作业批次 / 单份作答 / 同屏评分 / 继续批改"),
+    ("textbooks", "教材研读", "册章节目次 / 整本PDF / 教材原页 / 知识候选"),
+    ("tasks", "任务中心", "处理进度 / 失败 / 停止 / 中断 / 恢复"),
     ("exam-analysis", "考试分析", "Excel成绩 / 试卷 / 可视化 / 班级讲评 / 月考后先讲什么"),
     ("home", "首页", "最近备课 / 继续编辑 / 选题篮"), ("library", "题库", "教材 / 知识点 / 原题 / 找题"),
     ("paper", "组卷", "题篮 / 学生版 / 教师版 / 出一份练习卷 / 打印"),
@@ -24,6 +27,9 @@ COMMANDS = (
 ) + tuple(("template:" + item.key, item.title, "教学模板 · " + " / ".join(item.tags)) for item in TEMPLATES)
 
 ICON_PATHS = {
+    "grading": '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 9 2 2 4-4M8 16h8"/>',
+    "textbooks": '<path d="M12 5C9 3 5 3 2 4v15c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1-7-1-10 1v15"/>',
+    "tasks": '<circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 3"/>',
     "home": '<path d="M3 11 12 3l9 8M6 10v11h12V10M10 21v-7h4v7"/>',
     "library": '<rect x="4" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="18" rx="1"/><path d="m17 4 4 16M5 7h3m3 0h3"/>',
     "paper": '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',

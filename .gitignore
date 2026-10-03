@@ -87,6 +87,7 @@
 !/runtime/deeptutor_shchem/desktop_build.ps1
 !/runtime/deeptutor_shchem/desktop_requirements.txt
 !/runtime/deeptutor_shchem/verify_desktop_package.ps1
+!/runtime/deeptutor_shchem/import_local_materials.py
 # Legacy web launchers depend on private runtime configuration and stay local.
 !/启动沪上化学智研台桌面版.vbs
 !/关闭沪上化学智研台桌面版.vbs
@@ -121,6 +122,9 @@
 !/docs/desktop-integration-20260914.md
 !/docs/screenshots/desktop-home.png
 !/docs/screenshots/library-progress.png
+!/docs/screenshots/teacher-workspace-textbooks.png
+!/docs/screenshots/teacher-workspace-evidence.png
+!/docs/qa/2026-10-03-teacher-workspace-import.md
 !/docs/qa/0.1.83-windows-smoke.json
 !/runtime/deeptutor_shchem/desktop_ci_smoke.py
 !/runtime/deeptutor_shchem/publish_desktop_screenshots.py

@@ -24,7 +24,7 @@ from .tasks import DesktopTaskBridge
 class TextbookSourceDialog(QDialog):
     def __init__(self, facade, concept, parent=None, *, tasks=None, excerpt=None, reading_mode="concept"):
         super().__init__(parent)
-        if reading_mode not in {"concept", "section"} or (reading_mode == "section" and excerpt is not None):
+        if reading_mode not in {"concept", "section", "book"} or (reading_mode != "concept" and excerpt is not None):
             raise ValueError("整节阅读不接受知识点摘录或未知阅读范围。")
         self.reading_mode = reading_mode
         self.facade = facade
@@ -38,6 +38,8 @@ class TextbookSourceDialog(QDialog):
         self.excerpt = dict(excerpt) if excerpt is not None else None
         self.excerpt_panel = None
         self.setWindowTitle("阅读本节 · 只读教材原页" if reading_mode == "section" else "查看教材原页 · 本地核对")
+        if reading_mode == "book":
+            self.setWindowTitle("阅读整本教材 · 本地原文件")
         self.resize(960, 850)
         self.setMinimumSize(400, 500)
         root = QVBoxLayout(self)
@@ -114,7 +116,7 @@ class TextbookSourceDialog(QDialog):
         self.excerpt_button.setObjectName("QuietButton")
         self.excerpt_button.clicked.connect(self._edit_excerpt)
         root.addWidget(self.excerpt_button)
-        self.excerpt_button.setVisible(reading_mode != "section")
+        self.excerpt_button.setVisible(reading_mode == "concept")
         close = QPushButton("关闭，返回选材")
         close.setObjectName("QuietButton")
         close.clicked.connect(self.reject)
@@ -131,11 +133,11 @@ class TextbookSourceDialog(QDialog):
             self.excerpt_button,
         ):
             control.setEnabled(enabled)
-        if self.reading_mode == "section":
+        if self.reading_mode != "concept":
             self.excerpt_button.setEnabled(False)
 
     def _edit_excerpt(self):
-        if self.reading_mode == "section" or not self._loaded_pages or self._source is None:
+        if self.reading_mode != "concept" or not self._loaded_pages or self._source is None:
             return
         if self.excerpt_panel is None:
             from .textbook_excerpt_widget import TextbookExcerptWidget
@@ -171,12 +173,13 @@ class TextbookSourceDialog(QDialog):
         if self._closed:
             return
         def read():
-            operation = (self.facade.preparation_textbook_section_source if self.reading_mode == "section"
+            operation = (self.facade.preparation_textbook_book_source if self.reading_mode == "book"
+                         else self.facade.preparation_textbook_section_source if self.reading_mode == "section"
                          else self.facade.preparation_textbook_source)
             return operation(self.concept["concept_id"], self.concept["revision"])
 
         self.tasks.submit(
-            "读取本节教材原页" if self.reading_mode == "section" else "读取教材原页",
+            "读取整本教材" if self.reading_mode == "book" else "读取本节教材原页" if self.reading_mode == "section" else "读取教材原页",
             read,
             on_success=self._source_ready,
             on_failure=self._failed,
@@ -204,7 +207,7 @@ class TextbookSourceDialog(QDialog):
         else:
             self.heading.setText(source["title"] + " · " + source["source_name"])
             self.summary.setPlainText(
-                '整理出的知识摘要（请对照原页，不是教材原句）：\n' + source["statement"]
+                ('原文件阅读范围：\n' if self.reading_mode == "book" else '整理出的知识摘要（请对照原页，不是教材原句）：\n') + source["statement"]
             )
         self.buffer.setData(QByteArray(source["pdf_bytes"]))
         self.buffer.open(QIODevice.OpenModeFlag.ReadOnly)
@@ -227,7 +230,7 @@ class TextbookSourceDialog(QDialog):
         self._loaded_pages = True
         for index, page in enumerate(self._source["pdf_pages"]):
             label = (f"PDF第{page}页 · 印刷第{self._source['printed_pages'][index]}页"
-                     if self.reading_mode == "section" else f"关联PDF第{page}页")
+                     if self.reading_mode == "section" else f"PDF文件第{page}页" if self.reading_mode == "book" else f"关联PDF第{page}页")
             self.pages.addItem(label, page)
         self._set_controls(True)
         self._source_page()

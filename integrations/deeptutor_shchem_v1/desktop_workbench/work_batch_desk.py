@@ -170,7 +170,7 @@ class BatchStudentReviewDesk(StudentReviewDesk):
 
 
 class WorkBatchDialog(QDialog):
-    def __init__(self,facade,tasks,parent=None):
+    def __init__(self,facade,tasks,parent=None,*,selected_batch_id=None):
         super().__init__(parent)
         self.facade=facade;self.tasks=tasks;self.store=WorkBatchStore(facade)
         self._batch=None;self._members=[];self._current_index=-1;self.desk=None
@@ -198,7 +198,7 @@ class WorkBatchDialog(QDialog):
         self.next.clicked.connect(lambda:self.choose_student(self._current_index+1))
         self.new.clicked.connect(lambda:self.manage_batch(False));self.edit.clicked.connect(lambda:self.manage_batch(True))
         for b in self.findChildren(QPushButton):b.setAutoDefault(False)
-        self.reload_batches()
+        self.reload_batches(selected_batch_id)
 
     def open_summary(self):
         if not self._batch or not self._flush():return

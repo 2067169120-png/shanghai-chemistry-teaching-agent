@@ -7,7 +7,7 @@ import sys
 from PySide6.QtCore import QByteArray, Qt
 from PySide6.QtGui import QCloseEvent, QKeySequence, QResizeEvent, QShortcut
 from PySide6.QtWidgets import (
-    QApplication, QButtonGroup, QFrame, QHBoxLayout, QLabel, QMainWindow,
+    QApplication, QButtonGroup, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QFrame, QHBoxLayout, QLabel, QLineEdit, QMainWindow,
     QPushButton, QSizePolicy, QStackedWidget, QStatusBar, QVBoxLayout, QWidget,
 )
 
@@ -26,12 +26,17 @@ from .studio_templates import TemplatePage, TemplatePreviewDialog
 from .studio_navigation import CommandPalette, HelpDialog, studio_icon
 from .my_work_page import MyWorkPage
 from .classroom_page import ClassroomPage
+from .grading_page import GradingPage
+from .textbook_study_page import TextbookStudyPage
+from .task_center_page import TaskCenterPage
+from ..desktop_teacher_workspace import TeacherWorkspaceStore
 
-ROUTE_ORDER = ("home", "library", "paper", "student", "preparation")
-EXTRA_ROUTES = ("templates", "classroom", "mywork")
+ROUTE_ORDER = ("home", "library", "preparation", "paper", "grading", "student", "textbooks")
+SHORTCUT_ROUTES = ("home", "library", "paper", "student", "preparation", "grading", "textbooks")
+EXTRA_ROUTES = ("templates", "classroom", "mywork", "tasks")
 ALL_ROUTES = ROUTE_ORDER + EXTRA_ROUTES
-PAGE_TITLES = {"home": "首页", "library": "题库", "paper": "组卷", "student": "学生分析",
-               "preparation": "备课", "templates": "教学模板", "classroom": "课堂工具", "mywork": "我的备课"}
+PAGE_TITLES = dict(zip(ROUTE_ORDER, PRIMARY_NAVIGATION)) | {
+    "templates": "教学模板", "classroom": "课堂工具", "mywork": "作品中心", "tasks": "任务中心"}
 
 
 def install_font_fallbacks() -> str:
@@ -44,7 +49,11 @@ class TeacherWorkbenchWindow(QMainWindow):
     def __init__(self, facade: DesktopWorkbenchFacade, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.facade = facade
-        self.tasks = DesktopTaskBridge(self)
+        self._current_route = "home"
+        state = getattr(facade, "state_store", None)
+        self.workspace_store = TeacherWorkspaceStore(state) if callable(getattr(state, "_update", None)) else None
+        self.tasks = DesktopTaskBridge(self, history_store=self.workspace_store,
+            route_provider=lambda: self._current_route)
         self._font_family = install_font_fallbacks()
         self.setObjectName("TeacherWorkbenchWindow")
         self.setWindowTitle("沪上化学智研台")
@@ -91,7 +100,7 @@ class TeacherWorkbenchWindow(QMainWindow):
             self.nav_buttons.append(button)
             side.addWidget(button)
         self.nav_buttons[0].setChecked(True)
-        section = QLabel("备课与课堂")
+        section = QLabel("工具与作品")
         section.setObjectName("RailSection")
         side.addWidget(section)
         self.rail_sections.append(section)
@@ -121,10 +130,10 @@ class TeacherWorkbenchWindow(QMainWindow):
         work.setSpacing(0)
         top_bar = QFrame()
         top_bar.setObjectName("TopBar")
-        top_bar.setFixedHeight(64)
+        top_bar.setFixedHeight(56)
         top = QHBoxLayout(top_bar)
         top.setContentsMargins(24, 10, 24, 10)
-        self.top_title = QLabel("首页")
+        self.top_title = QLabel("工作台")
         self.top_title.setObjectName("TopTitle")
         top.addWidget(self.top_title)
         top.addStretch(1)
@@ -132,6 +141,11 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.command_button.setObjectName("QuietButton")
         self.command_button.clicked.connect(self.open_commands)
         top.addWidget(self.command_button)
+        self.task_button = QPushButton("任务中心")
+        self.task_button.setObjectName("QuietButton")
+        self.task_button.setAccessibleName("查看任务处理、失败与恢复记录")
+        self.task_button.clicked.connect(lambda: self.navigate("tasks"))
+        top.addWidget(self.task_button)
         self.help_button = QPushButton("帮助")
         self.help_button.setObjectName("QuietButton")
         self.help_button.clicked.connect(self.open_help)
@@ -143,6 +157,23 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.import_button.clicked.connect(self.open_import)
         top.addWidget(self.import_button)
         work.addWidget(top_bar)
+        self.context_bar = QFrame()
+        self.context_bar.setObjectName("ContextBar")
+        context_layout = QHBoxLayout(self.context_bar)
+        context_layout.setContentsMargins(24, 4, 24, 4)
+        self.context_button = QPushButton("教学上下文 · 未指定")
+        self.context_button.setObjectName("QuietButton")
+        self.context_button.setAccessibleName("编辑当前学期、班级与教学任务备注")
+        self.context_button.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.context_button.clicked.connect(self.edit_context)
+        context_layout.addWidget(self.context_button, 1)
+        self.density = QComboBox()
+        self.density.addItem("标准", "standard")
+        self.density.addItem("紧凑", "compact")
+        self.density.setAccessibleName("工作台显示密度")
+        self.density.currentIndexChanged.connect(self._apply_density)
+        context_layout.addWidget(self.density)
+        work.addWidget(self.context_bar)
         self.stack = QStackedWidget()
         self.stack.setObjectName("PageStack")
         self.home_page = HomePage(facade, self.tasks)
@@ -153,9 +184,13 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.template_page = TemplatePage(facade)
         self.classroom_page = ClassroomPage()
         self.my_work_page = MyWorkPage(facade, self.tasks)
+        self.grading_page = GradingPage(facade, self.tasks)
+        self.textbook_page = TextbookStudyPage(facade, self.tasks)
+        self.task_page = TaskCenterPage(self.tasks)
         self.pages = {"home": self.home_page, "library": self.library_page, "paper": self.paper_page,
                       "student": self.student_page, "preparation": self.preparation_page,
-                      "templates": self.template_page, "classroom": self.classroom_page, "mywork": self.my_work_page}
+                      "templates": self.template_page, "classroom": self.classroom_page, "mywork": self.my_work_page,
+                      "grading": self.grading_page, "textbooks": self.textbook_page, "tasks": self.task_page}
         for route in ALL_ROUTES:
             self.stack.addWidget(self.pages[route])
         work.addWidget(self.stack, 1)
@@ -165,6 +200,10 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.home_page.new_requested.connect(self.new_preparation)
         self.home_page.basket_requested.connect(self.open_home_basket)
         self.home_page.preview_requested.connect(self.preview_selected_paper)
+        self.home_page.import_requested.connect(self.open_import)
+        self.grading_page.single_requested.connect(lambda: self.navigate("student"))
+        self.grading_page.batch_requested.connect(self._open_grading_batch)
+        self.task_page.navigate_requested.connect(self.navigate)
         self.template_page.template_requested.connect(self.open_template)
         self.my_work_page.navigate_requested.connect(self.navigate)
         self.my_work_page.open_requested.connect(self.open_work_record)
@@ -188,7 +227,7 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.tasks.task_cancelled.connect(self._task_cancelled)
         self.tasks.task_finished.connect(self._task_finished)
         self._shortcuts: list[QShortcut] = []
-        for index, route in enumerate(ROUTE_ORDER, 1):
+        for index, route in enumerate(SHORTCUT_ROUTES, 1):
             shortcut = QShortcut(QKeySequence(f"Ctrl+{index}"), self)
             shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
             shortcut.activated.connect(lambda value=route: self.navigate(value))
@@ -214,7 +253,63 @@ class TeacherWorkbenchWindow(QMainWindow):
         status.addPermanentWidget(self.version_label)
         status.showMessage("本地工作台已就绪")
         self._restore_window_state()
+        self._refresh_context()
         self.home_page.update_editor(self.preparation_page._payload())
+
+    def _refresh_context(self):
+        context = {}
+        if self.workspace_store is not None:
+            try:
+                context = self.workspace_store.snapshot()["context"]
+            except DesktopStateError:
+                self.statusBar().showMessage("教学上下文无法读取，原记录保留。", 5000)
+        text = " · ".join(context.get(key, "") for key in ("term", "class_label", "work_label") if context.get(key))
+        self.context_button.setText("教学上下文 · " + (text[:36] + ("…" if len(text) > 36 else "") if text else "未指定"))
+        self.context_button.setToolTip((text or "可填写学期、班级和当前教学任务备注") + "\n切换备注不会替换已打开资料，也不改变作答身份。")
+
+    def edit_context(self):
+        if self.workspace_store is None:
+            return
+        try:
+            context = self.workspace_store.snapshot()["context"]
+        except DesktopStateError:
+            self.statusBar().showMessage("教学上下文无法读取，原记录保留。", 5000)
+            return
+        dialog = QDialog(self)
+        dialog.setWindowTitle("当前教学上下文")
+        form = QFormLayout(dialog)
+        fields = {}
+        for key, title, limit in (("term", "学期", 80), ("class_label", "班级备注", 100), ("work_label", "当前任务备注", 120)):
+            field = QLineEdit(context.get(key, ""))
+            field.setMaxLength(limit)
+            fields[key] = field
+            form.addRow(title, field)
+        note = QLabel("这些备注用于辨认任务。切换不会替换已打开的试卷、学生作答或未保存输入。")
+        note.setWordWrap(True)
+        form.addRow(note)
+        actions = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
+        actions.accepted.connect(dialog.accept)
+        actions.rejected.connect(dialog.reject)
+        form.addRow(actions)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            try:
+                self.workspace_store.save_context(**{key: field.text() for key, field in fields.items()})
+                self._refresh_context()
+                self.statusBar().showMessage("教学上下文已保存，已打开资料保持。", 4000)
+            except DesktopStateError:
+                self.statusBar().showMessage("教学上下文未能保存，原记录保留。", 5000)
+        dialog.deleteLater()
+
+    def _apply_density(self):
+        compact = self.density.currentData() == "compact"
+        extra = "QPushButton { padding: 5px 10px; min-height: 20px; } QTreeView::item { min-height: 24px; }" if compact else ""
+        self.setStyleSheet(WORKBENCH_STYLE + extra)
+        for table in (self.grading_page.table, self.task_page.table):
+            table.verticalHeader().setDefaultSectionSize(30 if compact else 42)
+
+    def _open_grading_batch(self, batch_id=""):
+        self.student_page._open_work_batch(batch_id)
+        self.grading_page.refresh()
 
     @property
     def primary_navigation_labels(self) -> tuple[str, ...]:
@@ -282,6 +377,7 @@ class TeacherWorkbenchWindow(QMainWindow):
         if route not in self.pages:
             return
         self.stack.setCurrentWidget(self.pages[route])
+        self._current_route = route
         if route in ROUTE_ORDER:
             self.nav_buttons[ROUTE_ORDER.index(route)].setChecked(True)
         else:
@@ -291,6 +387,12 @@ class TeacherWorkbenchWindow(QMainWindow):
             self.home_page.refresh()
         if route == "mywork":
             self.my_work_page.refresh()
+        if route == "grading":
+            self.grading_page.refresh()
+        if route == "textbooks":
+            self.textbook_page.refresh()
+        if route == "tasks":
+            self.task_page.refresh()
         self.top_title.setText(PAGE_TITLES.get(route, "教师工作台"))
         if route == "paper":
             self.paper_page.update_basket_count()
@@ -400,6 +502,7 @@ class TeacherWorkbenchWindow(QMainWindow):
         # Imports may be saved while the dialog remains open or is cancelled.
         # Refresh projections, not the private source data, on the next visit.
         self.library_page.invalidate_catalogs()
+        self.textbook_page.refresh()
         dialog.deleteLater()
 
     def open_settings(self) -> None:
@@ -443,9 +546,17 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.settings_button.setText("设置")
         self.top_title.setVisible(not compact)
         self.command_button.setText("搜索" if compact else "搜索功能  Ctrl+K")
+        self.task_button.setText("任务" if compact else "任务中心")
+        self.import_button.setText("导入" if compact else "导入资料")
         self.help_button.setVisible(not compact)
         for section in self.rail_sections:
             section.setVisible(not compact)
+        if compact:
+            self.centralWidget().findChild(QFrame, "TopBar").layout().setContentsMargins(8, 6, 8, 6)
+            self.context_bar.layout().setContentsMargins(8, 4, 8, 4)
+        else:
+            self.centralWidget().findChild(QFrame, "TopBar").layout().setContentsMargins(24, 10, 24, 10)
+            self.context_bar.layout().setContentsMargins(24, 4, 24, 4)
         for route, button in zip(ALL_ROUTES, [*self.nav_buttons, *self.studio_nav_buttons.values()]):
             button.setIcon(QIcon() if compact else studio_icon(route))
             button.setStyleSheet("padding: 6px 4px; font-size: 12px; min-height: 22px;" if compact else "")

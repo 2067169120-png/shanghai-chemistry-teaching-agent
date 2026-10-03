@@ -39,6 +39,20 @@ jobs:
           --junitxml=desktop-qa/textbook-reading-hints.xml
       - name: Exercise native Windows Qt routes and capture real screenshots
         run: python runtime/deeptutor_shchem/desktop_ci_smoke.py
+      - name: Check teacher workspace and local material intake in isolated processes
+        env:
+          QT_QPA_PLATFORM: offscreen
+          PYTHONIOENCODING: utf-8
+        run: >-
+          python staging/coordination/deeptutor_gateway/scripts/run_desktop_scoped_tests.py
+          --output desktop-qa/teacher-workspace --version teacher-workspace.v1
+          staging/coordination/deeptutor_gateway/tests/test_teacher_workspace.py
+          staging/coordination/deeptutor_gateway/tests/test_textbook_workspace.py
+          staging/coordination/deeptutor_gateway/tests/test_teacher_workspace_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_local_material_import_cli.py
+          staging/coordination/deeptutor_gateway/tests/test_complete_readme.py
+      - name: Check documentation links and source release boundaries
+        run: python runtime/deeptutor_shchem/documentation_policy.py
       - name: Archive exact tracked source
         if: always()
         run: git archive --format=zip --output=desktop-source.zip HEAD

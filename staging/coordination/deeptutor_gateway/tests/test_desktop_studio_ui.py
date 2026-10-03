@@ -41,12 +41,12 @@ def window(tmp_path):
 
 def test_all_routes_keep_existing_primary_shortcuts(window):
     win, app = window
-    assert len(ROUTE_ORDER) == 5 and len(ALL_ROUTES) == 8
+    assert len(ROUTE_ORDER) == 7 and len(ALL_ROUTES) == 11
     for route in ALL_ROUTES:
         win.navigate(route)
         settle(app)
         assert win.stack.currentWidget() is win.pages[route]
-    assert win.primary_navigation_labels == ("首页", "题库", "组卷", "学生分析", "备课")
+    assert win.primary_navigation_labels == ("工作台", "资料与题库", "备课与讲评", "组卷与作业", "作业批改", "学情与复练", "教材研读")
 
 
 def test_template_ui_preserves_materials_and_blocks_concurrent_edit(window):
@@ -109,7 +109,15 @@ def test_participation_resets_on_roster_change(window):
     assert not panel.groups.toPlainText()
     panel.draw()
     assert "重复" in panel.status.text()
-    assert "04" not in str(win.facade.state_store.snapshot())
+    def strings(value):
+        if isinstance(value, dict):
+            return [text for child in value.values() for text in strings(child)]
+        if isinstance(value, list):
+            return [text for child in value for text in strings(child)]
+        return [value] if isinstance(value, str) else []
+    # Task timestamps and opaque IDs may contain these digits. Classroom data
+    # itself must not be persisted by the new global task receipt history.
+    assert not {"04", "04\n04"}.intersection(strings(win.facade.state_store.snapshot()))
 
 
 def test_feedback_flows_back_to_preparation_without_replacing_sources(window):
