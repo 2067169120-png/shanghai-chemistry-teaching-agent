@@ -2179,12 +2179,13 @@ class StudentPage(QWidget):
             dialog=ExamDashboard(self.facade,self.tasks,window)
             dialog.exec();dialog.deleteLater()
 
-    def _open_work_batch(self) -> None:
+    def _open_work_batch(self, selected_batch_id=None) -> None:
         from .work_batch_desk import WorkBatchDialog
         if self._review_action_task_id:
             set_status(self.status, "attention", "当前评分正在保存，完成后再打开作业批次。")
             return
-        dialog = WorkBatchDialog(self.facade, self.tasks, self.window())
+        dialog = WorkBatchDialog(self.facade, self.tasks, self.window(),
+            selected_batch_id=selected_batch_id if isinstance(selected_batch_id, str) else None)
         dialog.exec()
         dialog.deleteLater()
         # Do not replace the parent page's in-progress teacher inputs on return.

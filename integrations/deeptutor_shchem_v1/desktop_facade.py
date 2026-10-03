@@ -93,7 +93,7 @@ from .word_handout_import import (
     inspect_docx_native_summary,
 )
 
-PRIMARY_NAVIGATION = ("首页", "题库", "组卷", "学生分析", "备课")
+PRIMARY_NAVIGATION = ("工作台", "资料与题库", "备课与讲评", "组卷与作业", "作业批改", "学情与复练", "教材研读")
 DESKTOP_SCOPES = ("master", "wave1", "supplemental")
 PERSONAL_HANDOUT_SCOPE = "personal_handouts"
 DESKTOP_REGISTRY_SCHEMA = "shchem.desktop-product-status.v1"
@@ -6478,6 +6478,37 @@ class DesktopWorkbenchFacade:
         return PreparationSourcesService(self.paths.workspace_root).concept_options(
             query
         )
+
+    def textbook_workspace(self):
+        from .desktop_textbook_workspace import TextbookWorkspaceService
+        return TextbookWorkspaceService(self.paths, self._state)
+
+    def textbook_study_catalog(self):
+        from .desktop_preparation_sources import CONCEPTS, PreparationSourcesService, _digest
+        from .desktop_textbook_workspace import _digest as candidate_digest
+        catalog = self.textbook_workspace().candidate_catalog()
+        # An activated local map can keep its verified section-reading route.
+        # A derived shelf alone never creates or activates a directory.
+        native = {}
+        if (self.paths.workspace_root / CONCEPTS).is_file():
+            native = PreparationSourcesService(self.paths.workspace_root)._concepts()
+        options = {}
+        for candidate in catalog["rows"]:
+            row = native.get(candidate["concept_id"])
+            source = candidate["source"]
+            if (row is not None and source.get("sha256") == row["source_sha256"]
+                    and source.get("pdf_pages") == row.get("pdf_pages")
+                    and source.get("concept_record_sha256") == candidate_digest(row)):
+                options[row["concept_id"]] = {"concept_id": row["concept_id"],
+                    "revision": _digest(row), "title": row["title"]}
+        catalog["native_options"] = options
+        return catalog
+
+    def preparation_textbook_book_source(self, source_id, revision):
+        return self.textbook_workspace().read_book(source_id, revision)
+
+    def textbook_candidate_source(self, concept_id, revision):
+        return self.textbook_workspace().read_candidate(concept_id, revision)
 
     def preparation_textbook_source(
         self, concept_id: str, revision: str

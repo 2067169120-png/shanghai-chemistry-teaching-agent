@@ -43,6 +43,7 @@ class HomePage(QWidget):
     new_requested = Signal()
     basket_requested = Signal()
     preview_requested = Signal()
+    import_requested = Signal()
 
     def __init__(self, facade, tasks, parent=None):
         super().__init__(parent)
@@ -68,6 +69,12 @@ class HomePage(QWidget):
         self.action_row.addWidget(self.new_button)
         self.heading_layout.addLayout(self.action_row)
         root.addLayout(self.heading_layout)
+        self.quick_actions = QBoxLayout(QBoxLayout.Direction.LeftToRight)
+        self.quick_actions.addWidget(button("导入本地资料", self.import_requested.emit))
+        self.quick_actions.addWidget(button("继续作业批改", lambda: self.navigate_requested.emit("grading")))
+        self.quick_actions.addWidget(button("教材研读", lambda: self.navigate_requested.emit("textbooks")))
+        self.quick_actions.addWidget(button("查看处理任务", lambda: self.navigate_requested.emit("tasks")))
+        root.addLayout(self.quick_actions)
         self.editing_strip = CardFrame()
         self.editing_strip.setObjectName("DeskEditing")
         self.editing_layout = edit = QBoxLayout(QBoxLayout.Direction.LeftToRight, self.editing_strip)
@@ -371,6 +378,7 @@ class HomePage(QWidget):
         narrow = QBoxLayout.Direction.TopToBottom if width < 450 else QBoxLayout.Direction.LeftToRight
         self.heading_layout.setDirection(narrow)
         self.action_row.setDirection(narrow)
+        self.quick_actions.setDirection(QBoxLayout.Direction.TopToBottom if width < 720 else QBoxLayout.Direction.LeftToRight)
         self.editing_layout.setDirection(narrow)
         self.work_heading.setDirection(narrow)
         self.recent.setWordWrap(width < 450)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import threading
 import uuid
+from copy import deepcopy
 from collections.abc import Callable
 from typing import Any
 
@@ -115,14 +116,78 @@ class DesktopTaskBridge(QObject):
     task_cancelled = Signal(str, str)
     task_cancelled_detail = Signal(str, str, str)
     task_finished = Signal(str)
+    history_changed = Signal()
 
-    def __init__(self, parent: QObject | None = None) -> None:
+    def __init__(self, parent: QObject | None = None, *, history_store=None, route_provider=None) -> None:
         super().__init__(parent)
         self._pool = QThreadPool(self)
         self._pool.setMaxThreadCount(max(2, min(4, self._pool.maxThreadCount())))
         self._workers: dict[str, _FunctionWorker] = {}
         self._cancel_events: dict[str, threading.Event] = {}
         self._shutting_down = False
+        self.history_store = history_store
+        self.route_provider = route_provider
+        self.history_error = ""
+        self._history = {}
+        if history_store is not None:
+            try:
+                history_store.recover_interrupted()
+                self._history = {row["task_id"]: row for row in history_store.snapshot()["tasks"]}
+            except Exception:
+                self.history_error = "任务历史无法读取；原记录保留，本次任务仅在当前窗口显示。"
+        self.task_started.connect(lambda task_id, _label: self._remember(task_id, "running", "正在处理"))
+        self.task_progress.connect(self._record_progress)
+        self.task_succeeded.connect(lambda task_id, _label, _result: self._remember(task_id, "completed", "处理完成"))
+        self.task_failed.connect(lambda task_id, _label, message: self._remember(task_id, "failed", message))
+        self.task_cancelled_detail.connect(lambda task_id, _label, message: self._remember(task_id, "cancelled", message))
+
+    def records(self):
+        return tuple(deepcopy(list(self._history.values()))[::-1])
+
+    def _register(self, task_id, label, origin_route=None):
+        from ..desktop_state import utc_now
+        route = origin_route or (self.route_provider() if self.route_provider is not None else "home")
+        row = {"task_id": task_id, "label": label, "route": route, "context": {},
+               "status": "queued", "message": "等待处理", "updated_at": utc_now()}
+        if self.history_store is not None and not self.history_error:
+            try:
+                self.history_store.start(task_id, label, route=route)
+                row["context"] = self.history_store.snapshot()["context"]
+            except Exception:
+                self.history_error = "任务记录未能保存；本次任务仅在当前窗口显示，请核对个人资料位置。"
+        self._history[task_id] = row
+        # Limit long-running sessions as well as durable receipts.
+        from ..desktop_teacher_workspace import ACTIVE
+        terminal = [key for key, item in self._history.items() if item["status"] not in ACTIVE]
+        for key in terminal[:-200]:
+            self._history.pop(key, None)
+        self.history_changed.emit()
+
+    def _record_progress(self, task_id, _label, payload):
+        if isinstance(payload, dict):
+            for done_key, total_key in (("completed", "total"), ("files_done", "files_total"), ("completed_pages", "total_pages")):
+                done, total = payload.get(done_key), payload.get(total_key)
+                if type(done) is int and type(total) is int and 0 <= done <= total:
+                    row = self._history.get(task_id)
+                    if row and row["status"] == "running":
+                        self._remember(task_id, "running", f"已处理 {done} / {total}", persist=False)
+                    return
+
+    def _remember(self, task_id, status, message, *, persist=True):
+        from ..desktop_state import utc_now
+        row = self._history.get(task_id)
+        if row is None:
+            return
+        from ..desktop_teacher_workspace import ACTIVE
+        if row["status"] not in ACTIVE and status in ACTIVE:
+            return
+        row.update(status=status, message=message, updated_at=utc_now())
+        if persist and self.history_store is not None and not self.history_error:
+            try:
+                self.history_store.transition(task_id, status, message)
+            except Exception:
+                self.history_error = "任务状态未能保存；本次状态仅在当前窗口显示，请核对个人资料位置。"
+        self.history_changed.emit()
 
     def _ensure_open(self) -> None:
         if self._shutting_down:
@@ -135,6 +200,7 @@ class DesktopTaskBridge(QObject):
         *,
         on_success: Callable[[Any], None] | None = None,
         on_failure: Callable[[str], None] | None = None,
+        origin_route: str | None = None,
     ) -> str:
         self._ensure_open()
         task_id = uuid.uuid4().hex
@@ -158,6 +224,7 @@ class DesktopTaskBridge(QObject):
             )
         self._workers[task_id] = worker
         self._cancel_events[task_id] = cancel_event
+        self._register(task_id, label, origin_route)
         self._pool.start(worker)
         return task_id
 
@@ -169,6 +236,7 @@ class DesktopTaskBridge(QObject):
         on_progress: Callable[[Any], None] | None = None,
         on_success: Callable[[Any], None] | None = None,
         on_failure: Callable[[str], None] | None = None,
+        origin_route: str | None = None,
     ) -> str:
         """Run a cancellable operation that reports thread-safe progress."""
 
@@ -204,13 +272,17 @@ class DesktopTaskBridge(QObject):
             )
         self._workers[task_id] = worker
         self._cancel_events[task_id] = cancel_event
+        self._register(task_id, label, origin_route)
         self._pool.start(worker)
         return task_id
 
     def cancel(self, task_id: str) -> bool:
         event = self._cancel_events.get(task_id)
         if event is not None:
-            return event.request_cancel()
+            accepted = event.request_cancel()
+            if accepted:
+                self._remember(task_id, "cancel_requested", "正在停止，请等待当前步骤安全结束。")
+            return accepted
         return False
 
     def cancel_all(self) -> None:
