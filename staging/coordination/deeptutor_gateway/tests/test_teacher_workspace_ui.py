@@ -51,6 +51,9 @@ def test_seven_routes_preserve_editor_inputs_and_legacy_deep_links(app, tmp_path
             window.navigate(route)
             app.processEvents()
             assert window.stack.currentWidget() is window.pages[route]
+        for index, route in enumerate(("home", "library", "paper", "student", "preparation", "grading", "textbooks")):
+            window._shortcuts[index].activated.emit()
+            assert window.stack.currentWidget() is window.pages[route]
         assert window.preparation_page.topic.text() == "未保存的原课题"
         assert window.preparation_page.materials.toPlainText() == "原材料保留"
         window.workspace_store.save_context(class_label="另一班")
@@ -87,7 +90,7 @@ def test_task_bridge_records_safe_origin_success_and_restart_recovery(app, tmp_p
         assert row["task_id"] == identity
         assert row["context"]["class_label"] == "原班级"
         assert row["route"] == "library"
-        assert "never-persist" not in store.state.path.read_text()
+        assert "never-persist" not in store.state.path.read_text(encoding="utf-8")
         store.start("interrupted", "上次导入", route="textbooks")
     finally:
         bridge.shutdown(1000)

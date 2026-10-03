@@ -32,6 +32,7 @@ from .task_center_page import TaskCenterPage
 from ..desktop_teacher_workspace import TeacherWorkspaceStore
 
 ROUTE_ORDER = ("home", "library", "preparation", "paper", "grading", "student", "textbooks")
+SHORTCUT_ROUTES = ("home", "library", "paper", "student", "preparation", "grading", "textbooks")
 EXTRA_ROUTES = ("templates", "classroom", "mywork", "tasks")
 ALL_ROUTES = ROUTE_ORDER + EXTRA_ROUTES
 PAGE_TITLES = dict(zip(ROUTE_ORDER, PRIMARY_NAVIGATION)) | {
@@ -226,7 +227,7 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.tasks.task_cancelled.connect(self._task_cancelled)
         self.tasks.task_finished.connect(self._task_finished)
         self._shortcuts: list[QShortcut] = []
-        for index, route in enumerate(ROUTE_ORDER, 1):
+        for index, route in enumerate(SHORTCUT_ROUTES, 1):
             shortcut = QShortcut(QKeySequence(f"Ctrl+{index}"), self)
             shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
             shortcut.activated.connect(lambda value=route: self.navigate(value))
