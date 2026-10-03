@@ -113,10 +113,13 @@ class ExamRevisionMixin:
     def check_disk_current(self):
         if self._saved_revision is not None and digest(self.store.load(self.exam['id']))!=self._saved_revision:
             raise ExamError('另一个窗口已保存考试分析，请重新打开核对；未覆盖最新记录。')
+        from ..desktop_batch_exam_freshness import require_batch_current
+        self._batch_source=require_batch_current(self.facade,self.exam)
 
     def current_result(self):
         result = self.result
         if (not self.exam or not isinstance(result,dict) or self.result_scope!=self.classes.currentData()
+                or not self._batch_source['current']
                 or result.get('_local_evidence')!=self.advice_input_stamp()):
             return None
         return result
@@ -132,6 +135,7 @@ class ExamRevisionMixin:
 
     def freshness_text(self):
         if not self.exam:return '尚无考试数据。'
+        if not self._batch_source['current']:return self._batch_source['message']+' 旧AI建议和复练材料需重新核对。'
         allowed = {row['id'] for row in self.report['students']} if self.report else set()
         relevant = [task for task in self.followups if any(
             target.get('exam_student_id') in allowed for target in task.get('targets', []))]
@@ -149,6 +153,9 @@ class ExamRevisionMixin:
         self.problem_note.setText('\n'.join(self.report['warnings'])+'\n'+message)
         self.summary_label.setToolTip(message)
         if hasattr(self,'score_tools'):self.score_tools.setEnabled(not bool(self._task))
+        if hasattr(self,'correct_button'):self.correct_button.setEnabled(self._batch_source['current'] and not bool(self._task))
+        if not self._batch_source['current']:
+            self.ai_button.setEnabled(False)
 
     def recalculate(self):
         if not self.exam or self._task:return
@@ -318,10 +325,16 @@ class FollowupRevisionMixin:
             self.selection_status.setText(self.selection_status.text()+'\n'+status['message'])
             self.preview_button.setEnabled(False); self.export.setEnabled(False)
             self.text.appendPlainText('\n'+task_review_text(self.d.exam,task))
+        source_current=getattr(self.d,'_batch_source',{'current':True})['current']
+        self.new.setEnabled(bool(self.d.exam) and source_current)
+        if not source_current:
+            for button in (self.find,self.link,self.edit_button,self.preview_button,self.export):button.setEnabled(False)
+            self.selection_status.setText(self.selection_status.text()+'\n'+self.d._batch_source['message'])
 
     def current_for(self,expected,*,require_fresh=False):
         current=super().current_for(expected)
         if require_fresh:
+            self.d.check_disk_current()
             status=task_freshness(self.d.exam,current)
             if status['state']!='current':raise ExamError(status['message'])
         return current

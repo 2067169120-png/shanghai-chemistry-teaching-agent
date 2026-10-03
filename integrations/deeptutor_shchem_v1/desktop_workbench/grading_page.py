@@ -18,6 +18,7 @@ from .components import page_scroll, section_title
 class GradingPage(QWidget):
     single_requested = Signal()
     batch_requested = Signal(str)
+    roster_requested = Signal()
 
     def __init__(self, facade, tasks, parent=None):
         super().__init__(parent)
@@ -31,6 +32,8 @@ class GradingPage(QWidget):
         outer.addWidget(page_scroll(content))
         root.addWidget(section_title("作业批改", "按作业批次继续核对，或导入一份学生作答。原页、暂存输入和教师正式评分分别保存。"))
         actions = self.actions = QBoxLayout(QBoxLayout.Direction.LeftToRight)
+        roster = QPushButton("班级名册与作业收交")
+        roster.clicked.connect(self.roster_requested.emit)
         batch = QPushButton("打开作业批次，继续批改")
         batch.clicked.connect(self._request_batch)
         single = QPushButton("导入 / 复核单份作答")
@@ -39,7 +42,7 @@ class GradingPage(QWidget):
         refresh = QPushButton("刷新")
         refresh.setObjectName("QuietButton")
         refresh.clicked.connect(self.refresh)
-        for button in (batch, single, refresh):
+        for button in (roster, batch, single, refresh):
             actions.addWidget(button)
         root.addLayout(actions)
         self.status = QLabel("正在读取已保存作业批次…")
@@ -55,7 +58,7 @@ class GradingPage(QWidget):
         self.table.verticalHeader().hide()
         self.table.cellDoubleClicked.connect(lambda *_: self._request_batch())
         root.addWidget(self.table, 1)
-        note = QLabel("批次中的作答数表示已明确关联的提交。未交、缺页与免交需要单独核对，不能按空值记零分。")
+        note = QLabel("在“班级名册与作业收交”按名单登记已交、未交、缺席和免交，再把已交作答打开为批改批次。空值不记零分。")
         note.setWordWrap(True)
         root.addWidget(note)
         QTimer.singleShot(0, self.refresh)

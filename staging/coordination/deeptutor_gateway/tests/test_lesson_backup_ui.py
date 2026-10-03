@@ -44,7 +44,7 @@ def test_real_save_check_restore_buttons_keep_current_state(window,tmp_path,monk
     dialog=dialog_for(win);dialog.show();archive=tmp_path/'备份.zip';parent=tmp_path/'restore';parent.mkdir()
     try:
         dialog.plan_button.click();settle(app,lambda:dialog.plan is not None and dialog._active is None)
-        before=win.facade.state_store.path.read_bytes();payload=deepcopy(win.preparation_page._payload())
+        before=win.facade.state_store.snapshot();payload=deepcopy(win.preparation_page._payload())
         monkeypatch.setattr(QFileDialog,'getSaveFileName',lambda *a,**k:(str(archive),''))
         dialog.save_button.click();settle(app,lambda:dialog._active is None and archive.exists())
         dialog.tabs.setCurrentIndex(1)
@@ -53,7 +53,13 @@ def test_real_save_check_restore_buttons_keep_current_state(window,tmp_path,monk
         monkeypatch.setattr(QFileDialog,'getExistingDirectory',lambda *a,**k:str(parent))
         dialog.restore_button.click();settle(app,lambda:dialog._active is None and dialog.restored_directory is not None)
         assert Path(dialog.restored_directory).is_dir() and dialog.open_button.isEnabled()
-        assert win.facade.state_store.path.read_bytes()==before and win.preparation_page._payload()==payload
+        after=win.facade.state_store.snapshot()
+        # Backup jobs add durable task receipts; every teaching domain and the
+        # navigation context must remain unchanged in the active profile.
+        for field in ('updated_at','teacher_workspace'):
+            original=before.pop(field,None);current=after.pop(field,None)
+            if field=='teacher_workspace':assert (original or {}).get('context',{})==(current or {}).get('context',{})
+        assert after==before and win.preparation_page._payload()==payload
         calls=[]
         monkeypatch.setattr(QProcess,'startDetached',lambda *a:calls.append(a) or (True,123))
         dialog.open_button.click()

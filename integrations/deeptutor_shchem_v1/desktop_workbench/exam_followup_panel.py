@@ -148,6 +148,8 @@ class _ExamFollowupPanelBase(QWidget):
         self.refresh(task['id']); return True
 
     def new_task(self):
+        try:self.d.check_disk_current()
+        except ExamError as error:self.d.status.setText(error.message_zh);return
         number=self.question.currentData()
         if not self.d.exam or number is None:return
         eligible=[s for s in self.d.report['students'] if not s['absent'] and s['scores'].get(number) is not None]

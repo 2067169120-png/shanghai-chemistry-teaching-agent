@@ -88,13 +88,21 @@ def run_desktop_workbench(
         QMessageBox.critical(None, "无法启动", str(exc))
         return 2
     arguments = list(sys.argv if argv is None else argv)
+    # The data workspace may be a different checkout. Recovery windows must
+    # start this running source, while their evidence stays in the copied data.
+    if not getattr(sys, 'frozen', False):
+        paths=replace(paths,source_root=Path(__file__).resolve().parents[3])
     if "--personal-state" in arguments:
         try:
             from ..desktop_backup import restored_profile
             index = arguments.index("--personal-state")
             state_root = restored_profile(arguments[index + 1])
+            running_source_root = paths.source_root
             paths = DesktopPaths.from_workspace(paths.workspace_root, state_root=state_root)
-            paths = replace(paths, shchem_root=state_root / "library" / "sh-chem-db")
+            library = (paths.content_root / "sh-chem-db" if paths.content_root != paths.workspace_root
+                       else state_root / "library" / "sh-chem-db")
+            paths = replace(paths, workspace_root=paths.content_root, shchem_root=library,
+                            source_root=running_source_root)
         except (ValueError, IndexError, OSError):
             QMessageBox.critical(None, "无法打开恢复副本", "请选择通过本工作台校验恢复的独立目录。")
             return 2

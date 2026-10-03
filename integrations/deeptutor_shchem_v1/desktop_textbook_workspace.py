@@ -213,7 +213,7 @@ class TextbookWorkspaceService:
                 raise PreparationSourceError("教材候选快照记录无法读取，请核对备份。")
             path = self.root / (snapshot["sha256"] + ".jsonl")
         else:
-            path = self.paths.workspace_root / "knowledge" / "textbook" / "knowledge.jsonl"
+            path = self.paths.content_root / "knowledge" / "textbook" / "knowledge.jsonl"
         try:
             from .model_provider_settings import _assert_components_not_reparse
             _assert_components_not_reparse(path)
@@ -229,7 +229,7 @@ class TextbookWorkspaceService:
             "sha256": hashlib.sha256(raw).hexdigest(), "count": len(rows)}
 
     def import_candidates(self):
-        path = self.paths.workspace_root / "knowledge" / "textbook" / "knowledge.jsonl"
+        path = self.paths.content_root / "knowledge" / "textbook" / "knowledge.jsonl"
         from .model_provider_settings import _assert_components_not_reparse
         _assert_components_not_reparse(path)
         with path.open("rb") as handle:

@@ -85,6 +85,13 @@ class DesktopPaths:
     settings_root: Path
     drafts_root: Path
     task_root: Path
+    source_root: Path | None = None
+
+    @property
+    def content_root(self) -> Path:
+        """A restored content snapshot is independent of the running source."""
+        root = self.state_root / "library" / "workspace"
+        return root if (self.state_root / "restored-profile.json").is_file() and root.is_dir() else self.workspace_root
 
     @classmethod
     def from_workspace(
@@ -107,6 +114,7 @@ class DesktopPaths:
             settings_root=state / "model-settings",
             drafts_root=state / "drafts",
             task_root=state / "tasks",
+            source_root=root,
         )
 
     @classmethod
@@ -124,7 +132,8 @@ class DesktopPaths:
 
     @property
     def uses_personal_library(self) -> bool:
-        return self.shchem_root == self.state_root / "library" / "sh-chem-db"
+        return self.shchem_root in {self.state_root / "library" / "sh-chem-db",
+                                   self.state_root / "library" / "workspace" / "sh-chem-db"}
 
     def validate_read_roots(self) -> None:
         # Only the app-owned empty library may be created. Existing source

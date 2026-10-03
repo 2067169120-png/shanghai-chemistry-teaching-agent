@@ -21,7 +21,8 @@ def _native_selection(facade, concept_id, revision):
     option = catalog.get("native_options", {}).get(concept_id)
     if candidate is None or candidate_digest(candidate) != revision or option is None:
         raise PreparationSourceError("教材候选或原始概念绑定已变化，请刷新后重选；未扩大关联范围。")
-    native = PreparationSourcesService(facade.paths.workspace_root)._concepts().get(concept_id)
+    root=getattr(facade.paths,'content_root',facade.paths.workspace_root)
+    native = PreparationSourcesService(root)._concepts().get(concept_id)
     if native is None or _digest(native) != option["revision"]:
         raise PreparationSourceError("教材概念版本已变化，请刷新后重选。")
     if any(candidate["curriculum"].get(key) != native.get(key)
@@ -39,7 +40,8 @@ def preparation_selection(facade, concept_id, revision):
 def question_selection(facade, concept_id, revision):
     native, _option = _native_selection(facade, concept_id, revision)
     node_key = native.get("section_key") or native.get("supplement_node_key")
-    nodes = _directory(load_attribute_catalog(facade.paths.workspace_root))
+    root=getattr(facade.paths,'content_root',facade.paths.workspace_root)
+    nodes = _directory(load_attribute_catalog(root))
     node = nodes.get(node_key)
     if node is None or any(native.get(key) != node.get(key) for key in ("volume_id", "chapter_id")):
         raise PreparationSourceError("该知识点没有可核对的教材单元关联，未放宽成全章或全册；请先核对目录映射。")

@@ -203,6 +203,7 @@ class TeacherWorkbenchWindow(QMainWindow):
         self.home_page.import_requested.connect(self.open_import)
         self.grading_page.single_requested.connect(lambda: self.navigate("student"))
         self.grading_page.batch_requested.connect(self._open_grading_batch)
+        self.grading_page.roster_requested.connect(self.open_classroom_registry)
         self.task_page.navigate_requested.connect(self.navigate)
         self.template_page.template_requested.connect(self.open_template)
         self.my_work_page.navigate_requested.connect(self.navigate)
@@ -335,6 +336,21 @@ class TeacherWorkbenchWindow(QMainWindow):
         dialog.exec()
         dialog.deleteLater()
         self.home_page.refresh()
+
+    def open_classroom_registry(self):
+        from .classroom_dialog import ClassroomDialog
+        try:
+            dialog = ClassroomDialog(self.facade, self)
+        except Exception as exc:
+            self.grading_page.status.setText(getattr(exc, "message_zh", "班级记录暂时无法读取，请核对个人资料目录。"))
+            return
+        requested = []
+        dialog.batch_requested.connect(requested.append)
+        dialog.exec()
+        dialog.deleteLater()
+        self.grading_page.refresh()
+        if requested:
+            self._open_grading_batch(requested[-1])
 
     def open_exam_dialog(self, *, exam=None, identity=None, task_id=None):
         from .exam_dashboard import ExamDashboard

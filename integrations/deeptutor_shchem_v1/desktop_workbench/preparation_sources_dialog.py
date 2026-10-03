@@ -223,6 +223,15 @@ class PreparationSourcesDialog(QDialog):
         self.section_read_button.setEnabled(False)
         self.section_read_button.clicked.connect(self._show_textbook_section)
         concept_layout.addWidget(self.section_read_button)
+        self.asset_catalog_button = QPushButton("浏览教材素材…")
+        self.asset_catalog_button.setObjectName("QuietButton")
+        self.asset_catalog_button.setAccessibleName("浏览包括复习与附录的教材素材候选，只查看原页，不改变勾选")
+        self.asset_catalog_button.setEnabled(
+            callable(getattr(self.facade, "preparation_textbook_asset_options", None))
+            and callable(getattr(self.facade, "preparation_textbook_asset_source", None))
+        )
+        self.asset_catalog_button.clicked.connect(self._show_textbook_assets)
+        concept_layout.addWidget(self.asset_catalog_button)
         self.concept_hint = QLabel("正在读取本地教材知识点…")
         self.concept_hint.setObjectName("MutedLabel")
         self.concept_hint.setWordWrap(True)
@@ -597,6 +606,15 @@ class PreparationSourcesDialog(QDialog):
         dialog = TextbookSourceDialog(self.facade, concept, self, reading_mode="section")
         dialog.exec()
         # Section reading has no selection, excerpt or model-material action.
+        dialog.deleteLater()
+
+    def _show_textbook_assets(self):
+        if not self.asset_catalog_button.isEnabled():
+            return
+        from .textbook_asset_catalog_dialog import TextbookAssetCatalogDialog
+
+        dialog = TextbookAssetCatalogDialog(self.facade, self)
+        dialog.exec()
         dialog.deleteLater()
 
     def _show_textbook_source(self):

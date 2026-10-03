@@ -1,7 +1,8 @@
 """Explicit local lesson backups. Restore only into a new personal-state directory.
 
-No recursive copying of the user's state tree: student domains, model settings,
-credentials, logs, executables and the original question bank are never selected.
+The default lesson-only plan does not select student domains or the original
+question bank. Explicit business plans use separate bounded selection rules.
+Model settings, credentials, logs and executables are outside both scopes.
 Source documents are not inferred from names; missing lesson images are rebound
 only after their original content hash and dimensions have been verified.
 """
@@ -201,8 +202,12 @@ def _node_output_totals(names):
             "node_output_files": sum(len(files) for files in bundles.values())}
 
 
-def plan_backup(state_root, *, include_images=False, include_tasks=False, cancel=None):
+def plan_backup(state_root, *, include_images=False, include_tasks=False,
+                include_business=False, content_root=None, cancel=None):
     """Freeze the selected records. Copy operations later recheck file versions."""
+    if include_business:
+        from .desktop_business_backup import plan_business_backup
+        return plan_business_backup(state_root, content_root=content_root, cancel=cancel)
     root = Path(state_root).resolve()
     _source(root, "desktop-state.v1.json")
     snapshot = DesktopStateStore(root).snapshot()
@@ -358,6 +363,9 @@ def _publish_file(temporary, destination):
 
 
 def create_backup(plan: BackupPlan, destination, *, cancel=None):
+    if getattr(plan, "kind", None) == "business":
+        from .desktop_business_backup import create_business_backup
+        return create_business_backup(plan, destination, cancel=cancel)
     destination = Path(destination).absolute()
     if destination.exists():
         raise BackupError("该备份文件已存在，请使用新文件名；没有覆盖旧备份。")
@@ -473,7 +481,21 @@ def _manifest(archive):
     return manifest
 
 
+def _is_business_backup(filename):
+    try:
+        with ZipFile(filename) as archive:
+            if "manifest.json" not in archive.namelist() or archive.getinfo("manifest.json").file_size > 32 * 1024 * 1024:
+                return False
+            manifest=_json(archive.read("manifest.json"))
+            return isinstance(manifest,dict) and manifest.get("schema_version")=="shchem.business-backup.v1"
+    except (OSError, BadZipFile, ValueError, KeyError, TypeError, RuntimeError) as exc:
+        raise BackupError("备份清单无法读取，请核对文件；当前资料未改变。") from exc
+
+
 def inspect_backup(filename, *, cancel=None):
+    if _is_business_backup(filename):
+        from .desktop_business_backup import inspect_business_backup
+        return inspect_business_backup(filename,cancel=cancel)
     try:
         with ZipFile(filename) as archive:
             manifest = _manifest(archive)
@@ -510,6 +532,9 @@ def inspect_backup(filename, *, cancel=None):
 
 def restore_backup(filename, destination, *, expected_manifest: str, cancel=None):
     """A fresh profile, never merge into or replace an existing directory."""
+    if _is_business_backup(filename):
+        from .desktop_business_backup import restore_business_backup
+        return restore_business_backup(filename, destination, expected_manifest=expected_manifest, cancel=cancel)
     target = Path(destination).absolute()
     if target.exists() or target.is_symlink():
         raise BackupError("恢复目标已存在。请选择新的子目录，不覆盖或合并任何现有资料。")
@@ -647,6 +672,10 @@ def reconnect_lesson_image(state_root, asset, source):
 
 def summary_text(report):
     s = report["summary"]
+    if "domains" in s:
+        return (f"教学业务文件 {s['files']}项 · {s['bytes']/(1024*1024):.2f}MB\n"+
+                "\n".join(f"{label}：{count}文件" for label,count in s["domains"].items())+
+                "\n\n"+"\n".join(report["warnings"]))
     return (f"备课草稿 {s['drafts']} 份 · 已结束任务 {s['tasks']} 份 · 题篮引用 {s['basket_references']} 项\n"
             f"文件 {s['files']} 个 · 未压缩 {s['bytes'] / (1024 * 1024):.2f} MB\n"
             f"图片打包 {s.get('images_included', 0)} / 引用 {s.get('images_referenced', 0)} 张 · "
