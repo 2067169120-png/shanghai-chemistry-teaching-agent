@@ -113,8 +113,9 @@ class ExamRevisionMixin:
     def check_disk_current(self):
         if self._saved_revision is not None and digest(self.store.load(self.exam['id']))!=self._saved_revision:
             raise ExamError('另一个窗口已保存考试分析，请重新打开核对；未覆盖最新记录。')
-        from ..desktop_batch_exam_freshness import require_batch_current
-        self._batch_source=require_batch_current(self.facade,self.exam)
+        from ..desktop_batch_exam_freshness import batch_source_status
+        self._batch_source=batch_source_status(self.facade,self.exam)
+        if not self._batch_source['current']:raise ExamError(self._batch_source['message'])
 
     def current_result(self):
         result = self.result

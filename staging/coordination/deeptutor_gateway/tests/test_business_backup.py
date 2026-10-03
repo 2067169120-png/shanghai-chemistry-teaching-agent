@@ -9,6 +9,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 import pytest
 
 from test_student_review_desk_core import case  # noqa: F401
+from test_textbook_section_reader import section_fixture  # noqa: F401
 from test_classroom_registry import submitted_work
 from integrations.deeptutor_shchem_v1.desktop_backup import (
     BackupError, create_backup, inspect_backup, manifest_revision, plan_backup, restore_backup, restored_profile,
@@ -294,3 +295,38 @@ def test_restored_bootstrap_keeps_running_source_when_data_checkout_is_different
     assert captured[0].state_root == target.resolve()
     assert captured[0].workspace_root == (target / "library/workspace" if business else root)
     assert captured[0].shchem_root == (target / "library/workspace/sh-chem-db" if business else target / "library/sh-chem-db")
+
+
+def test_registered_original_pdfs_outside_question_bank_reopen_after_restore(section_fixture, tmp_path):
+    from integrations.deeptutor_shchem_v1.desktop_preparation_sources import PreparationSourcesService
+    f = section_fixture
+    raw = f.book.read_bytes()
+    for volume in f.registry["volumes"]:
+        (f.root / volume["source_path"]).write_bytes(raw)
+    before = (f.book.read_bytes(), f.registry_path.read_bytes())
+    plan = plan_business_backup(tmp_path / "state", content_root=f.root)
+    assert sum(entry.name.startswith(CONTENT + "books/") for entry in plan.files) == 5
+    archive = tmp_path / "registered-originals.zip"
+    create_backup(plan, archive)
+    manifest = inspect_backup(archive)
+    target = tmp_path / "restored-originals"
+    restore_backup(archive, target, expected_manifest=manifest_revision(manifest))
+    restored_root = target / CONTENT
+    service = PreparationSourcesService(restored_root)
+    selected = service.concept_options()[0]
+    source = service.textbook_section_source(**{key:selected[key] for key in ("concept_id","revision")})
+    assert source["pdf_bytes"] == raw and source["pdf_pages"] == list(range(7,16))
+    assert (f.book.read_bytes(), f.registry_path.read_bytes()) == before
+    f.book.unlink()
+    with pytest.raises(BackupError):
+        plan_business_backup(tmp_path / "state", content_root=f.root)
+
+
+def test_changed_registered_original_is_blocked_before_creating_backup(section_fixture, tmp_path):
+    f = section_fixture
+    raw = f.book.read_bytes()
+    for volume in f.registry["volumes"]:
+        (f.root / volume["source_path"]).write_bytes(raw)
+    f.book.write_bytes(raw + b"changed")
+    with pytest.raises(BackupError, match="摘要"):
+        plan_business_backup(tmp_path / "state", content_root=f.root)

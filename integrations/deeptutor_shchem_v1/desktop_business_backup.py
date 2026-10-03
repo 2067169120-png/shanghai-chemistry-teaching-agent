@@ -97,8 +97,11 @@ def _allowed(name):
         return True
     if any(name.startswith(prefix + "/") for prefix in STATE_DIRS):
         return True
-    return name.startswith(CONTENT) and any(
-        name[len(CONTENT) :].startswith(prefix + "/") for prefix in CONTENT_DIRS
+    if not name.startswith(CONTENT):
+        return False
+    return (
+        any(name[len(CONTENT) :].startswith(prefix + "/") for prefix in CONTENT_DIRS)
+        or Path(name).suffix.casefold() == ".pdf"
     )
 
 
@@ -251,6 +254,31 @@ class BusinessBackupPlan:
         }
 
 
+def _registered_textbooks(content):
+    if content is None:
+        return {}
+    from . import curriculum_workbench as curriculum
+    from .desktop_textbook_asset_catalog import _directory, _source_relative
+
+    directory = content / "sh-chem-db" / curriculum.DIRECTORY_RELATIVE
+    if not directory.exists():
+        return {}
+    try:
+        registry, _, _ = _directory(content)
+        sources = {}
+        for volume in registry["volumes"]:
+            relative = _source_relative(volume["source_path"]).as_posix()
+            if not _source(content, relative).is_file():
+                raise BackupError("教材目录登记的原书缺失，请补回原文件再备份。")
+            previous = sources.get(relative)
+            if previous is not None and previous != volume["source_sha256"]:
+                raise BackupError("同一路径的教材原书摘要不一致，请核对目录。")
+            sources[relative] = volume["source_sha256"]
+        return sources
+    except (ValueError, RuntimeError, OSError, KeyError, TypeError) as exc:
+        raise BackupError("教材目录原书位置无法核对，请检查已登记原书后备份。") from exc
+
+
 def _inventory(state, content=None):
     rows, skipped = {}, 0
 
@@ -293,6 +321,10 @@ def _inventory(state, content=None):
     if content:
         for prefix in CONTENT_DIRS:
             collect(content, prefix, CONTENT)
+        # Native concept and asset readers consume the activated original PDF
+        # paths as well as the independently archived personal book copies.
+        for relative in _registered_textbooks(content):
+            collect(content, relative, CONTENT)
     return rows, skipped
 
 
@@ -307,6 +339,7 @@ def plan_business_backup(state_root, *, content_root=None, cancel=None):
     snapshot = DesktopStateStore(state).snapshot()
     _reject_sensitive_fields(snapshot)
     rows, skipped = _inventory(state, content)
+    textbooks = _registered_textbooks(content)
     files = []
     for name, (root, relative) in sorted(rows.items()):
         _check_cancel(cancel)
@@ -324,6 +357,12 @@ def plan_business_backup(state_root, *, content_root=None, cancel=None):
                     path.read_bytes(), source_record=name.startswith(CONTENT)
                 )
             digest, size = _hash_file(path, cancel)
+            if (
+                name.startswith(CONTENT)
+                and name.removeprefix(CONTENT) in textbooks
+                and digest != textbooks[name.removeprefix(CONTENT)]
+            ):
+                raise BackupError("教材原书内容与登记摘要不一致，请核对后再备份。")
             files.append(PlannedFile(name, digest, size, source=path))
     if "desktop-state.v1.json" not in rows:
         raw = _bytes(snapshot)
