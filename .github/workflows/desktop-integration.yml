@@ -42,6 +42,7 @@ jobs:
       - name: Check teacher workspace and local material intake in isolated processes
         env:
           QT_QPA_PLATFORM: offscreen
+          PYTHONIOENCODING: utf-8
         run: >-
           python staging/coordination/deeptutor_gateway/scripts/run_desktop_scoped_tests.py
           --output desktop-qa/teacher-workspace --version teacher-workspace.v1

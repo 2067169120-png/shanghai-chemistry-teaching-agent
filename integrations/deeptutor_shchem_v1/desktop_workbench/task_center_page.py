@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .components import section_title
+from .components import page_scroll, section_title
 
 STATUS_LABELS = {"queued": "等待处理", "running": "正在处理", "cancel_requested": "正在停止",
     "completed": "已完成", "failed": "失败，待处理", "cancelled": "已停止", "interrupted": "中断，待核对"}
@@ -25,8 +25,12 @@ class TaskCenterPage(QWidget):
     def __init__(self, tasks, parent=None):
         super().__init__(parent)
         self.tasks = tasks
-        root = QVBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        content = QWidget()
+        root = QVBoxLayout(content)
         root.setContentsMargins(24, 20, 24, 20)
+        outer.addWidget(page_scroll(content))
         root.addWidget(section_title("任务中心", "查看处理状态和原教学上下文；中断后先回原页面核对已保存结果。"))
         self.filter = QComboBox()
         self.filter.addItem("全部任务", "all")
@@ -36,6 +40,7 @@ class TaskCenterPage(QWidget):
         self.filter.currentIndexChanged.connect(self.refresh)
         root.addWidget(self.filter)
         self.table = QTableWidget(0, 4)
+        self.table.setMinimumHeight(200)
         self.table.setHorizontalHeaderLabels(["任务", "状态", "教学上下文", "更新时间"])
         self.table.setAccessibleName("当前与历史任务")
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -93,6 +98,8 @@ class TaskCenterPage(QWidget):
         self._selection()
         if not rows:
             self.detail.setText(self.tasks.history_error or "当前筛选没有任务。导入、读取或导出后，这里会显示处理状态。")
+        elif self.selected() is None:
+            self.detail.setText(self.tasks.history_error or "选择任务查看处理状态，或返回原页面核对已保存结果。")
 
     def _selection(self):
         row = self.selected()

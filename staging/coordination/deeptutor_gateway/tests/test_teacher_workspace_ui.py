@@ -156,3 +156,34 @@ def test_grading_overview_returns_the_selected_stable_batch_id(app):
     finally:
         page.close()
         bridge.shutdown(1000)
+
+
+def test_task_center_updates_empty_state_and_returns_to_origin_without_rerunning(app):
+    from integrations.deeptutor_shchem_v1.desktop_workbench.task_center_page import (
+        TaskCenterPage,
+    )
+    bridge = DesktopTaskBridge(route_provider=lambda: "library")
+    page = TaskCenterPage(bridge)
+    page.resize(248, 410)
+    page.show()
+    try:
+        assert "没有任务" in page.detail.text()
+        bridge.submit("读取新资料", lambda: None)
+        settle(app, lambda: bridge.records()[0]["status"] == "completed")
+        assert page.table.rowCount() == 1
+        assert "没有任务" not in page.detail.text()
+        assert page.table.height() >= 200
+        requests = []
+        page.navigate_requested.connect(requests.append)
+        page.table.selectRow(0)
+        page.return_button.click()
+        assert requests == ["library"]
+        assert bridge.records()[0]["status"] == "completed"
+        page.filter.setCurrentIndex(2)
+        assert page.table.rowCount() == 0
+        assert "没有任务" in page.detail.text()
+        page.filter.setCurrentIndex(0)
+        assert page.table.rowCount() == 1
+    finally:
+        page.close()
+        bridge.shutdown(1000)
