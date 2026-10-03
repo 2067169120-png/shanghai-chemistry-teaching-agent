@@ -220,7 +220,9 @@ def _run_flow(**case):
         [str(executable), "-STA", "-NoProfile", "-NonInteractive", "-EncodedCommand",
          base64.b64encode(_HARNESS.encode("utf-16le")).decode("ascii")],
         input=selection._SCRIPT, text=True, encoding="utf-8", capture_output=True,
-        env={**os.environ, "SHCHEM_LIFECYCLE_CASE": json.dumps(case)}, timeout=15,
+        # Windows CI can cold-start PowerShell well above 15 seconds. Keep a
+        # bounded launch budget without changing the lifecycle assertions.
+        env={**os.environ, "SHCHEM_LIFECYCLE_CASE": json.dumps(case)}, timeout=45,
         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
     )
     assert result.returncode == 0, result.stderr
