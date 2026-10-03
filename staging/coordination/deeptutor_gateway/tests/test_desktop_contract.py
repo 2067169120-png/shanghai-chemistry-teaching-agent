@@ -46,8 +46,8 @@ def _attribute_calls(node: ast.AST, name: str) -> list[ast.Call]:
     ]
 
 
-def test_primary_navigation_is_exactly_five_teacher_tasks() -> None:
-    assert PRIMARY_NAVIGATION == ("首页", "题库", "组卷", "学生分析", "备课")
+def test_primary_navigation_is_exactly_seven_teacher_tasks() -> None:
+    assert PRIMARY_NAVIGATION == ("工作台", "资料与题库", "备课与讲评", "组卷与作业", "作业批改", "学情与复练", "教材研读")
     assert len(PRIMARY_NAVIGATION) <= 7
     assert "导入资料" not in PRIMARY_NAVIGATION
     assert "设置" not in PRIMARY_NAVIGATION
@@ -87,14 +87,17 @@ def test_desktop_entry_and_sources_contain_no_browser_or_local_service_surface()
         for value in forbidden:
             assert value not in folded, f"{value!r} leaked into {path.name}"
         if "<ht" + "ml" in folded:
-            # QTextDocument's limited rich text is a native Qt renderer, not a
-            # web page. Only the local, escaped Word reader may own a document.
-            assert path == INTEGRATION_ROOT / "desktop_workbench/word_lesson_reader.py"
-            assert "class _localdocument(qtextdocument):" in folded
-            assert "class _localbrowser(qtextbrowser):" in folded
-            assert "self.browser.setopenlinks(false)" in folded
-            assert "self.browser.setopenexternallinks(false)" in folded
-            assert "def loadresource(" in folded
+            # The Word reader uses native Qt rich text; the exam report writes
+            # an offline export. Neither adds an embedded browser to the UI.
+            assert path.relative_to(INTEGRATION_ROOT).as_posix() in {
+                "desktop_workbench/word_lesson_reader.py", "desktop_exam_report.py",
+            }
+            if path.name == "word_lesson_reader.py":
+                assert "class _localdocument(qtextdocument):" in folded
+                assert "class _localbrowser(qtextbrowser):" in folded
+                assert "self.browser.setopenlinks(false)" in folded
+                assert "self.browser.setopenexternallinks(false)" in folded
+                assert "def loadresource(" in folded
 
 
 def test_importing_desktop_facade_does_not_load_legacy_entry_modules() -> None:
@@ -170,7 +173,7 @@ def test_desktop_import_surface_previews_analysis_handouts_and_folder_selection(
     tasks = (INTEGRATION_ROOT / "desktop_workbench" / "tasks.py").read_text(
         encoding="utf-8"
     )
-    assert "预览指定一轮复习解析版（98 份）" in dialogs
+    assert "打开旧版一轮复习资料包" in dialogs
     corpus = _method(dialogs, "ImportDialog", "_run_one_round_corpus")
     assert _attribute_calls(corpus, "teaching_pack_analysis_files")
     for method in (corpus, _method(dialogs, "ImportDialog", "_save")):
@@ -229,4 +232,6 @@ def test_desktop_theme_is_application_wide_for_native_dialogs() -> None:
     )
     assert "application.setStyleSheet(WORKBENCH_STYLE)" in app
     assert "QDialog" in window
-    assert "QWidget#PageViewport" in window
+    style = (INTEGRATION_ROOT / "desktop_workbench/studio_style.py").read_text(encoding="utf-8")
+    assert "QWidget#PageViewport" in style
+    assert "WORKBENCH_STYLE" in window

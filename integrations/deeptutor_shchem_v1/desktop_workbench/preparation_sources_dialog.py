@@ -223,6 +223,15 @@ class PreparationSourcesDialog(QDialog):
         self.section_read_button.setEnabled(False)
         self.section_read_button.clicked.connect(self._show_textbook_section)
         concept_layout.addWidget(self.section_read_button)
+        self.asset_catalog_button = QPushButton("浏览教材素材…")
+        self.asset_catalog_button.setObjectName("QuietButton")
+        self.asset_catalog_button.setAccessibleName("浏览包括复习与附录的教材素材候选，只查看原页，不改变勾选")
+        self.asset_catalog_button.setEnabled(
+            callable(getattr(self.facade, "preparation_textbook_asset_options", None))
+            and callable(getattr(self.facade, "preparation_textbook_asset_source", None))
+        )
+        self.asset_catalog_button.clicked.connect(self._show_textbook_assets)
+        concept_layout.addWidget(self.asset_catalog_button)
         self.concept_hint = QLabel("正在读取本地教材知识点…")
         self.concept_hint.setObjectName("MutedLabel")
         self.concept_hint.setWordWrap(True)
@@ -552,6 +561,29 @@ class PreparationSourcesDialog(QDialog):
         )
         self._selection_changed()
 
+    def preselect_concepts(self, selections: list[dict[str, str]]) -> bool:
+        """Select exact handoff revisions, retaining preview and confirmation."""
+        visible = {}
+        for index in range(self.concept_list.count()):
+            item = self.concept_list.item(index)
+            value = item.data(Qt.ItemDataRole.UserRole + 1)
+            if isinstance(value, Mapping):
+                visible[value.get("concept_id")] = (item, value)
+        if not selections or any(
+            not isinstance(selected, Mapping)
+            or selected.get("concept_id") not in visible
+            or visible[selected["concept_id"]][1].get("revision") != selected.get("revision")
+            for selected in selections
+        ):
+            set_status(self.status, "error", "教材选择已变化，未自动选择其他知识点；请重新打开研读页核对。")
+            return False
+        for selected in selections:
+            item, _value = visible[selected["concept_id"]]
+            item.setCheckState(Qt.CheckState.Checked)
+        self.concept_list.setCurrentItem(visible[selections[0]["concept_id"]][0])
+        self.concept_list.scrollToItem(self.concept_list.currentItem())
+        return True
+
     def _update_original_button(self, *_args):
         self.original_button.setEnabled(
             self.concept_list.currentItem() is not None
@@ -574,6 +606,15 @@ class PreparationSourcesDialog(QDialog):
         dialog = TextbookSourceDialog(self.facade, concept, self, reading_mode="section")
         dialog.exec()
         # Section reading has no selection, excerpt or model-material action.
+        dialog.deleteLater()
+
+    def _show_textbook_assets(self):
+        if not self.asset_catalog_button.isEnabled():
+            return
+        from .textbook_asset_catalog_dialog import TextbookAssetCatalogDialog
+
+        dialog = TextbookAssetCatalogDialog(self.facade, self)
+        dialog.exec()
         dialog.deleteLater()
 
     def _show_textbook_source(self):

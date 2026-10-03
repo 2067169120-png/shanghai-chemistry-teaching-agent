@@ -12,10 +12,13 @@ from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QLabel,
+    QListWidget,
+    QListWidgetItem,
     QPlainTextEdit,
     QPushButton,
     QTabWidget,
     QVBoxLayout,
+    QWidget,
 )
 
 from .tasks import DesktopTaskBridge
@@ -24,8 +27,8 @@ from .tasks import DesktopTaskBridge
 class TextbookSourceDialog(QDialog):
     def __init__(self, facade, concept, parent=None, *, tasks=None, excerpt=None, reading_mode="concept"):
         super().__init__(parent)
-        if reading_mode not in {"concept", "section"} or (reading_mode == "section" and excerpt is not None):
-            raise ValueError("整节阅读不接受知识点摘录或未知阅读范围。")
+        if reading_mode not in {"concept", "section", "book", "asset"} or (reading_mode != "concept" and excerpt is not None):
+            raise ValueError("整节、整书或素材阅读不接受知识点摘录或未知阅读范围。")
         self.reading_mode = reading_mode
         self.facade = facade
         self.concept = dict(concept)
@@ -38,6 +41,10 @@ class TextbookSourceDialog(QDialog):
         self.excerpt = dict(excerpt) if excerpt is not None else None
         self.excerpt_panel = None
         self.setWindowTitle("阅读本节 · 只读教材原页" if reading_mode == "section" else "查看教材原页 · 本地核对")
+        if reading_mode == "book":
+            self.setWindowTitle("阅读整本教材 · 本地原文件")
+        if reading_mode == "asset":
+            self.setWindowTitle("教材素材 · 只读原页")
         self.resize(960, 850)
         self.setMinimumSize(400, 500)
         root = QVBoxLayout(self)
@@ -60,7 +67,23 @@ class TextbookSourceDialog(QDialog):
             self.summary_tabs.setTabText(0, "阅读范围")
             self.summary.setAccessibleName("本节阅读范围与原知识点范围")
             self.summary_tabs.setAccessibleName("本节阅读范围与候选研读提示")
+        elif reading_mode == "asset":
+            self.summary_tabs.setTabText(0, "素材范围")
+            self.summary.setAccessibleName("所选教材素材的整页定位与候选说明")
         self.summary_tabs.addTab(self.reading_hints, "研读提示")
+        self.asset_list = QListWidget()
+        self.asset_list.setAccessibleName("当前阅读范围的教材素材候选，双击或按回车查看原页")
+        self.asset_list.itemActivated.connect(self._asset_page)
+        self.asset_details = QPlainTextEdit()
+        self.asset_details.setReadOnly(True)
+        self.asset_details.setAccessibleName("当前教材页的素材索引，整页锚点未裁切，待教师核对")
+        asset_panel = QWidget()
+        asset_layout = QHBoxLayout(asset_panel)
+        asset_layout.setContentsMargins(0, 0, 0, 0)
+        asset_layout.addWidget(self.asset_list, 1)
+        asset_layout.addWidget(self.asset_details, 2)
+        self.summary_tabs.addTab(asset_panel, "素材索引（候选）")
+        self.summary_tabs.setAccessibleName("教材阅读范围、研读提示与素材索引")
         root.addWidget(self.summary_tabs)
         controls = QHBoxLayout()
         self.pages = QComboBox()
@@ -109,12 +132,14 @@ class TextbookSourceDialog(QDialog):
         self.status.setWordWrap(True)
         if reading_mode == "section":
             self.status.setText("本节阅读依据教材目录。研读提示为候选，待教师核对；阅读不会勾选材料或确认摘录。")
+        elif reading_mode == "asset":
+            self.status.setText("本窗口只查看所选素材的整页原文。素材尚未裁切、待教师核对；查看不会加入备课材料。")
         root.addWidget(self.status)
         self.excerpt_button = QPushButton("摘录/修改教材原句…")
         self.excerpt_button.setObjectName("QuietButton")
         self.excerpt_button.clicked.connect(self._edit_excerpt)
         root.addWidget(self.excerpt_button)
-        self.excerpt_button.setVisible(reading_mode != "section")
+        self.excerpt_button.setVisible(reading_mode == "concept")
         close = QPushButton("关闭，返回选材")
         close.setObjectName("QuietButton")
         close.clicked.connect(self.reject)
@@ -129,13 +154,14 @@ class TextbookSourceDialog(QDialog):
             self.previous,
             self.next,
             self.excerpt_button,
+            self.asset_list,
         ):
             control.setEnabled(enabled)
-        if self.reading_mode == "section":
+        if self.reading_mode != "concept":
             self.excerpt_button.setEnabled(False)
 
     def _edit_excerpt(self):
-        if self.reading_mode == "section" or not self._loaded_pages or self._source is None:
+        if self.reading_mode != "concept" or not self._loaded_pages or self._source is None:
             return
         if self.excerpt_panel is None:
             from .textbook_excerpt_widget import TextbookExcerptWidget
@@ -161,7 +187,7 @@ class TextbookSourceDialog(QDialog):
         self.excerpt_button.show()
 
     def _excerpt_applied(self, value):
-        if self.reading_mode == "section":
+        if self.reading_mode != "concept":
             return
         self.excerpt = value
         self._release()
@@ -171,12 +197,17 @@ class TextbookSourceDialog(QDialog):
         if self._closed:
             return
         def read():
-            operation = (self.facade.preparation_textbook_section_source if self.reading_mode == "section"
+            if self.reading_mode == "asset":
+                return self.facade.preparation_textbook_asset_source(
+                    self.concept["visual_asset_id"], self.concept["revision"]
+                )
+            operation = (self.facade.preparation_textbook_book_source if self.reading_mode == "book"
+                         else self.facade.preparation_textbook_section_source if self.reading_mode == "section"
                          else self.facade.preparation_textbook_source)
             return operation(self.concept["concept_id"], self.concept["revision"])
 
         self.tasks.submit(
-            "读取本节教材原页" if self.reading_mode == "section" else "读取教材原页",
+            {"book": "读取整本教材", "section": "读取本节教材原页", "asset": "读取教材素材原页"}.get(self.reading_mode, "读取教材原页"),
             read,
             on_success=self._source_ready,
             on_failure=self._failed,
@@ -186,7 +217,25 @@ class TextbookSourceDialog(QDialog):
         if self._closed:
             return
         self._source = source
-        if self.reading_mode == "section":
+        if self.reading_mode == "asset":
+            if (source.get("reading_mode") != "asset"
+                    or source.get("visual_asset_id") != self.concept.get("visual_asset_id")
+                    or source.get("revision") != self.concept.get("revision")
+                    or len(source.get("pdf_pages", [])) != 1
+                    or type(source["pdf_pages"][0]) is not int
+                    or source["pdf_pages"][0] < 1):
+                self._failed("素材原页范围未能核对，请返回后重新选择。")
+                return
+            page = source["pdf_pages"][0]
+            printed = source.get("printed_page")
+            printed_label = str(printed) if type(printed) is int else "待核对"
+            self.heading.setText("教材素材 · " + source["volume_title"] + "\n" + source["title"])
+            self.summary.setPlainText(
+                source["source_name"] + f"\nPDF文件第{page}页；印刷页码：{printed_label}"
+                + "\n候选说明：" + source["statement"]
+                + "\n整页定位，尚未裁切。当前窗口不提供摘录或选材。"
+            )
+        elif self.reading_mode == "section":
             if source.get("reading_mode") != "section":
                 self._failed("本节阅读范围未能核对，请返回后重新选择。")
                 return
@@ -204,7 +253,7 @@ class TextbookSourceDialog(QDialog):
         else:
             self.heading.setText(source["title"] + " · " + source["source_name"])
             self.summary.setPlainText(
-                '整理出的知识摘要（请对照原页，不是教材原句）：\n' + source["statement"]
+                ('原文件阅读范围：\n' if self.reading_mode == "book" else '整理出的知识摘要（请对照原页，不是教材原句）：\n') + source["statement"]
             )
         self.buffer.setData(QByteArray(source["pdf_bytes"]))
         self.buffer.open(QIODevice.OpenModeFlag.ReadOnly)
@@ -226,12 +275,31 @@ class TextbookSourceDialog(QDialog):
             return
         self._loaded_pages = True
         for index, page in enumerate(self._source["pdf_pages"]):
-            label = (f"PDF第{page}页 · 印刷第{self._source['printed_pages'][index]}页"
-                     if self.reading_mode == "section" else f"关联PDF第{page}页")
+            if self.reading_mode == "asset":
+                printed = self._source.get("printed_page")
+                label = f"PDF第{page}页 · 印刷{printed if type(printed) is int else '待核对'}"
+            else:
+                label = (f"PDF第{page}页 · 印刷第{self._source['printed_pages'][index]}页"
+                         if self.reading_mode == "section" else f"PDF文件第{page}页" if self.reading_mode == "book" else f"关联PDF第{page}页")
             self.pages.addItem(label, page)
+        self.asset_list.clear()
+        for asset in self._source.get("visual_assets", {}).get("assets", []):
+            if asset["pdf_page"] not in self._source["pdf_pages"]:
+                continue
+            printed_page = str(asset["printed_page"]) if type(asset.get("printed_page")) is int else "待核对"
+            item = QListWidgetItem(
+                asset["label"] + f" · PDF {asset['pdf_page']} / 印刷 {printed_page}"
+            )
+            item.setData(Qt.ItemDataRole.UserRole, asset["pdf_page"])
+            item.setToolTip("双击或按回车查看整页原文；素材候选尚未裁切、未通过教师核对。")
+            self.asset_list.addItem(item)
+        count = self.asset_list.count()
+        self.summary_tabs.setTabText(2, f"素材索引（{count}项候选）" if count else "素材索引（候选）")
         self._set_controls(True)
         self._source_page()
-        if self._reading_hint_count:
+        if self.reading_mode == "asset":
+            self.summary_tabs.setCurrentIndex(2)
+        elif self._reading_hint_count:
             self.summary_tabs.setCurrentIndex(1)
 
     def _source_page(self, *_args):
@@ -240,13 +308,24 @@ class TextbookSourceDialog(QDialog):
             self._jump(page - 1)
 
     def _jump(self, page):
-        if self.reading_mode == "section" and (not self._source or page + 1 not in self._source["pdf_pages"]):
+        if self.reading_mode != "concept" and (not self._source or page + 1 not in self._source["pdf_pages"]):
             return
         if self._loaded_pages and 0 <= page < self.document.pageCount():
             self.view.pageNavigator().jump(page, QPointF())
             self._page_changed(page)
 
     def _page_changed(self, page):
+        if self.reading_mode == "asset" and self._source:
+            anchor = self._source["pdf_pages"][0]
+            if page + 1 != anchor:
+                self._jump(anchor - 1)
+                return
+            printed = self._source.get("printed_page")
+            self.position.setText(f"PDF第{anchor}页 · 印刷{printed if type(printed) is int else '待核对'}")
+            self._update_reading_hints(anchor)
+            self.previous.setEnabled(False)
+            self.next.setEnabled(False)
+            return
         if self.reading_mode == "section" and self._source:
             pages = self._source["pdf_pages"]
             if page + 1 not in pages:
@@ -271,6 +350,7 @@ class TextbookSourceDialog(QDialog):
 
     def _update_reading_hints(self, page):
         from ..desktop_textbook_reading_hints import reading_hints_for_page
+        from ..desktop_textbook_assets import textbook_assets_for_page
 
         source = self._source or {}
         text, count = reading_hints_for_page(
@@ -279,6 +359,15 @@ class TextbookSourceDialog(QDialog):
         self._reading_hint_count = count
         self.reading_hints.setPlainText(text)
         self.summary_tabs.setTabText(1, f"研读提示（{count}）" if count else "研读提示")
+        text, _count = textbook_assets_for_page(
+            source.get("visual_assets", {}), page, source.get("pdf_pages", [])
+        )
+        self.asset_details.setPlainText(text)
+
+    def _asset_page(self, item):
+        page = item.data(Qt.ItemDataRole.UserRole)
+        if self._loaded_pages and self._source and type(page) is int and page in self._source["pdf_pages"]:
+            self._jump(page - 1)
 
     def resizeEvent(self, event):
         # Keep long notes scrollable without taking the PDF/navigation space on

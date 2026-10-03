@@ -39,6 +39,40 @@ jobs:
           --junitxml=desktop-qa/textbook-reading-hints.xml
       - name: Exercise native Windows Qt routes and capture real screenshots
         run: python runtime/deeptutor_shchem/desktop_ci_smoke.py
+      - name: Check teacher workspace and local material intake in isolated processes
+        env:
+          QT_QPA_PLATFORM: offscreen
+          PYTHONIOENCODING: utf-8
+        run: >-
+          python staging/coordination/deeptutor_gateway/scripts/run_desktop_scoped_tests.py
+          --output desktop-qa/teacher-workspace --version teacher-workspace.v1
+          staging/coordination/deeptutor_gateway/tests/test_teacher_workspace.py
+          staging/coordination/deeptutor_gateway/tests/test_textbook_workspace.py
+          staging/coordination/deeptutor_gateway/tests/test_textbook_teaching_bridge.py
+          staging/coordination/deeptutor_gateway/tests/test_textbook_handoff_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_teacher_workspace_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_local_material_import_cli.py
+          staging/coordination/deeptutor_gateway/tests/test_complete_readme.py
+      - name: Check Windows classroom, score freshness, business restore and textbook assets
+        env:
+          QT_QPA_PLATFORM: offscreen
+          PYTHONIOENCODING: utf-8
+        run: >-
+          python staging/coordination/deeptutor_gateway/scripts/run_desktop_scoped_tests.py
+          --output desktop-qa/windows-gap-closure --version windows-gap-closure.v1
+          staging/coordination/deeptutor_gateway/tests/test_classroom_registry.py
+          staging/coordination/deeptutor_gateway/tests/test_classroom_registry_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_exam_mapping_profiles.py
+          staging/coordination/deeptutor_gateway/tests/test_batch_exam_freshness.py
+          staging/coordination/deeptutor_gateway/tests/test_business_backup.py
+          staging/coordination/deeptutor_gateway/tests/test_lesson_backup_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_backup_reopen_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_textbook_assets.py
+          staging/coordination/deeptutor_gateway/tests/test_textbook_assets_ui.py
+          staging/coordination/deeptutor_gateway/tests/test_textbook_asset_catalog.py
+          staging/coordination/deeptutor_gateway/tests/test_textbook_asset_catalog_ui.py
+      - name: Check documentation links and source release boundaries
+        run: python runtime/deeptutor_shchem/documentation_policy.py
       - name: Archive exact tracked source
         if: always()
         run: git archive --format=zip --output=desktop-source.zip HEAD

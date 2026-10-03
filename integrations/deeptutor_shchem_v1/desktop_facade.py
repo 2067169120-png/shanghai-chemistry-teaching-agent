@@ -93,7 +93,7 @@ from .word_handout_import import (
     inspect_docx_native_summary,
 )
 
-PRIMARY_NAVIGATION = ("首页", "题库", "组卷", "学生分析", "备课")
+PRIMARY_NAVIGATION = ("工作台", "资料与题库", "备课与讲评", "组卷与作业", "作业批改", "学情与复练", "教材研读")
 DESKTOP_SCOPES = ("master", "wave1", "supplemental")
 PERSONAL_HANDOUT_SCOPE = "personal_handouts"
 DESKTOP_REGISTRY_SCHEMA = "shchem.desktop-product-status.v1"
@@ -1065,7 +1065,7 @@ class DesktopWorkbenchFacade:
         self._search = search_reader or QuestionSearchWorkbench()
         self._providers = provider_store or ModelProviderSettingsStore(
             paths.settings_root,
-            project_root=paths.workspace_root,
+            project_root=paths.source_root or paths.workspace_root,
         )
         self._state = state_store or DesktopStateStore(paths.state_root)
         self._connection_test_transport = connection_test_transport
@@ -2969,7 +2969,7 @@ class DesktopWorkbenchFacade:
         cache = WordPreviewCache(self.paths.state_root / "word-question-previews")
         preview = cache.load(source.content, source.filename)
         if preview is None:
-            preview = PreparationSourcesService(self.paths.workspace_root).word_preview_bytes(source.content, source.filename)
+            preview = PreparationSourcesService(getattr(self.paths, "content_root", self.paths.workspace_root)).word_preview_bytes(source.content, source.filename)
             if not read_only:
                 cache.save(source.content, source.filename, preview)
         return preview
@@ -3011,7 +3011,7 @@ class DesktopWorkbenchFacade:
 
         source = self._imported_word_source(batch_id, source_id)
         try:
-            return PreparationSourcesService(self.paths.workspace_root).word_asset_bytes(
+            return PreparationSourcesService(getattr(self.paths, "content_root", self.paths.workspace_root)).word_asset_bytes(
                 source.content, asset_id, render_metafiles=True
             )
         except PreparationSourceError:
@@ -3040,7 +3040,7 @@ class DesktopWorkbenchFacade:
         from .desktop_preparation_sources import PreparationSourcesService
 
         source = self._imported_word_source(batch_id, source_id)
-        service = PreparationSourcesService(self.paths.workspace_root)
+        service = PreparationSourcesService(getattr(self.paths, "content_root", self.paths.workspace_root))
         preview = service.word_preview_bytes(source.content, source.filename)
         if source_sha256 != source.source_sha256 or expected_revision != preview["revision"]:
             raise DesktopFacadeError("imported_word_changed", "Word原文或提取结果已变化，请重新预览后再确认。")
@@ -3621,7 +3621,7 @@ class DesktopWorkbenchFacade:
                     curriculum = None
                 self._student_analysis_manager = StudentVisualAnalysisManager(
                     self.paths.state_root / _STUDENT_VISUAL_ROOT_NAME,
-                    project_root=self.paths.workspace_root,
+                    project_root=self.paths.source_root or self.paths.workspace_root,
                     provider_store=self._providers,
                     renderer=self._student_analysis_renderer,
                     transport=self._student_analysis_transport,
@@ -4678,7 +4678,7 @@ class DesktopWorkbenchFacade:
     def _handout_candidates(self):
         from .desktop_handout_candidates import HandoutCandidateService
 
-        return HandoutCandidateService(self.paths.workspace_root, self._state)
+        return HandoutCandidateService(getattr(self.paths, "content_root", self.paths.workspace_root), self._state)
 
     def handout_candidate_catalog(self) -> dict[str, Any]:
         return self._handout_candidates().catalog()
@@ -6470,21 +6470,60 @@ class DesktopWorkbenchFacade:
     def preparation_word_preview(self, path: str) -> dict[str, Any]:
         from .desktop_preparation_sources import PreparationSourcesService
 
-        return PreparationSourcesService(self.paths.workspace_root).word_preview(path)
+        return PreparationSourcesService(getattr(self.paths, "content_root", self.paths.workspace_root)).word_preview(path)
 
     def preparation_concept_options(self, query: str = "") -> list[dict[str, Any]]:
         from .desktop_preparation_sources import PreparationSourcesService
 
-        return PreparationSourcesService(self.paths.workspace_root).concept_options(
+        return PreparationSourcesService(getattr(self.paths, "content_root", self.paths.workspace_root)).concept_options(
             query
         )
+
+    def textbook_workspace(self):
+        from .desktop_textbook_workspace import TextbookWorkspaceService
+        return TextbookWorkspaceService(self.paths, self._state)
+
+    def textbook_study_catalog(self):
+        from .desktop_preparation_sources import CONCEPTS, PreparationSourcesService, _digest
+        from .desktop_textbook_workspace import _digest as candidate_digest
+        catalog = self.textbook_workspace().candidate_catalog()
+        # An activated local map can keep its verified section-reading route.
+        # A derived shelf alone never creates or activates a directory.
+        native = {}
+        if (getattr(self.paths, "content_root", self.paths.workspace_root) / CONCEPTS).is_file():
+            native = PreparationSourcesService(getattr(self.paths, "content_root", self.paths.workspace_root))._concepts()
+        options = {}
+        for candidate in catalog["rows"]:
+            row = native.get(candidate["concept_id"])
+            source = candidate["source"]
+            if (row is not None and source.get("sha256") == row["source_sha256"]
+                    and source.get("pdf_pages") == row.get("pdf_pages")
+                    and source.get("concept_record_sha256") == candidate_digest(row)):
+                options[row["concept_id"]] = {"concept_id": row["concept_id"],
+                    "revision": _digest(row), "title": row["title"]}
+        catalog["native_options"] = options
+        return catalog
+
+    def preparation_textbook_book_source(self, source_id, revision):
+        return self.textbook_workspace().read_book(source_id, revision)
+
+    def textbook_question_selection(self, concept_id, revision):
+        from .desktop_textbook_teaching_bridge import question_selection
+        return question_selection(self, concept_id, revision)
+
+    def textbook_preparation_selection(self, concept_id, revision):
+        from .desktop_textbook_teaching_bridge import preparation_selection
+        return preparation_selection(self, concept_id, revision)
+
+    def textbook_candidate_source(self, concept_id, revision):
+        return self.textbook_workspace().read_candidate(concept_id, revision)
 
     def preparation_textbook_source(
         self, concept_id: str, revision: str
     ) -> dict[str, Any]:
         from .desktop_preparation_sources import PreparationSourcesService
 
-        return PreparationSourcesService(self.paths.workspace_root).textbook_source(
+        return PreparationSourcesService(getattr(self.paths, "content_root", self.paths.workspace_root)).textbook_source(
             concept_id, revision
         )
 
@@ -6493,9 +6532,21 @@ class DesktopWorkbenchFacade:
     ) -> dict[str, Any]:
         from .desktop_preparation_sources import PreparationSourcesService
 
-        return PreparationSourcesService(self.paths.workspace_root).textbook_section_source(
+        return PreparationSourcesService(getattr(self.paths, "content_root", self.paths.workspace_root)).textbook_section_source(
             concept_id, revision
         )
+
+    def preparation_textbook_asset_options(self, query: str = "") -> dict[str, Any]:
+        from .desktop_textbook_asset_catalog import TextbookAssetCatalogService
+
+        return TextbookAssetCatalogService(getattr(self.paths, "content_root", self.paths.workspace_root)).options(query)
+
+    def preparation_textbook_asset_source(
+        self, visual_asset_id: str, revision: str
+    ) -> dict[str, Any]:
+        from .desktop_textbook_asset_catalog import TextbookAssetCatalogService
+
+        return TextbookAssetCatalogService(getattr(self.paths, "content_root", self.paths.workspace_root)).source(visual_asset_id, revision)
 
     def preparation_source_reference(
         self,
@@ -6509,7 +6560,7 @@ class DesktopWorkbenchFacade:
     ) -> dict[str, Any]:
         from .desktop_preparation_sources import PreparationSourcesService
 
-        return PreparationSourcesService(self.paths.workspace_root).reference(
+        return PreparationSourcesService(getattr(self.paths, "content_root", self.paths.workspace_root)).reference(
             word_path,
             word_sha256,
             block_start,

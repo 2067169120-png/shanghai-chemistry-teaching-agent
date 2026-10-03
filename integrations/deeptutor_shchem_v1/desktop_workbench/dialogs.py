@@ -109,6 +109,11 @@ class ImportDialog(QDialog):
         self.corpus_button.setAccessibleName("预览指定上好课资料包的 98 份解析版 Word，再选择导入")
         self.corpus_button.clicked.connect(self._run_one_round_corpus)
         state_layout.addWidget(self.corpus_button)
+        self.textbook_button = QPushButton("导入整本教材PDF…")
+        self.textbook_button.setObjectName("QuietButton")
+        self.textbook_button.setToolTip("保留完整原书供本地阅读；目录、印刷页码及内容另行核对。")
+        self.textbook_button.clicked.connect(self._open_textbook_import)
+        state_layout.addWidget(self.textbook_button)
         self.source_help_card = state_card
 
         self.resume_card = CardFrame()
@@ -333,6 +338,12 @@ class ImportDialog(QDialog):
         self.tasks.task_cancelled.connect(self._task_cancelled)
         self._load_resumable_batches()
         self._load_word_batches()
+
+    def _open_textbook_import(self):
+        from .textbook_import_dialog import TextbookImportDialog
+        dialog = TextbookImportDialog(self.facade, self.tasks, self)
+        dialog.exec()
+        dialog.deleteLater()
 
     def _role_panels(self) -> tuple[FileSelectionPanel, ...]:
         return (self.question_files, self.answer_files, self.handout_files)

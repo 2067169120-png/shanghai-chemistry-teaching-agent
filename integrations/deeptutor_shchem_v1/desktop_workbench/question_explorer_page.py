@@ -84,6 +84,7 @@ class QuestionExplorerPage(QWidget):
     word_reference_requested = Signal(dict)
     preview_requested = Signal()
     assembly_requested = Signal()
+    textbook_requested = Signal()
     PAGE_SIZE = 8
 
     def __init__(self, facade, tasks, parent=None):
@@ -297,6 +298,8 @@ class QuestionExplorerPage(QWidget):
         return row
 
     def scope_changed(self, *_):
+        if hasattr(self, "textbook_context"):
+            self.textbook_context.hide()
         lane = self.scope.currentData()
         try:
             def save(state):
@@ -316,6 +319,31 @@ class QuestionExplorerPage(QWidget):
         self._sessions.pop(self.scope.currentData(), None)
         self._base_facets = {}
         self.load_curriculum()
+        self.search()
+
+    def apply_textbook_selection(self, request):
+        """Replace unrelated filters with a validated exact curriculum path."""
+        if not hasattr(self, "textbook_context"):
+            self.textbook_context = QWidget()
+            box = QBoxLayout(QBoxLayout.Direction.TopToBottom, self.textbook_context)
+            self.textbook_context_label = text_label("", "MutedLabel")
+            box.addWidget(self.textbook_context_label)
+            back = QPushButton("返回教材研读")
+            back.setObjectName("QuietButton")
+            back.clicked.connect(self.textbook_requested)
+            box.addWidget(back)
+            self.layout().insertWidget(0, self.textbook_context)
+        with QSignalBlocker(self.scope), QSignalBlocker(self.query):
+            self.scope.setCurrentIndex(self.scope.findData("word_native"))
+            self.query.clear()
+        self._search_timer.stop()
+        self._base_facets = {}
+        self.curriculum = {}
+        self.filters = {key: set(values) for key, values in request["filters"].items()}
+        self.advanced_button.setText("Word原文与标签管理")
+        self.textbook_context_label.setText("教材关联 · " + request["label"] + "\n" + request["statement"])
+        self.textbook_context.show()
+        self._render_tree()
         self.search()
 
     def load_curriculum(self):
@@ -514,6 +542,8 @@ class QuestionExplorerPage(QWidget):
         data = item.data(0, Qt.ItemDataRole.UserRole)
         if not data or data[0] == "curriculum":
             return
+        if hasattr(self, "textbook_context"):
+            self.textbook_context.hide()
         group, value = data
         chosen = self.filters.setdefault(group, set())
         if item.checkState(0) == Qt.CheckState.Checked:
@@ -525,6 +555,8 @@ class QuestionExplorerPage(QWidget):
     def curriculum_clicked(self, item, _column):
         data = item.data(0, Qt.ItemDataRole.UserRole)
         if data and data[0] == "curriculum":
+            if hasattr(self, "textbook_context"):
+                self.textbook_context.hide()
             self.curriculum = dict(data[1])
             self._curriculum_label = item.text(0)
             self.search()
@@ -553,6 +585,8 @@ class QuestionExplorerPage(QWidget):
         self.chips.addWidget(button)
 
     def remove_filter(self, group, value):
+        if hasattr(self, "textbook_context"):
+            self.textbook_context.hide()
         self.filters[group].discard(value)
         self.search()
 
@@ -561,6 +595,8 @@ class QuestionExplorerPage(QWidget):
         self.search()
 
     def clear_filters(self):
+        if hasattr(self, "textbook_context"):
+            self.textbook_context.hide()
         self.filters, self.curriculum = {}, {}
         self.query.clear()
         self.search()

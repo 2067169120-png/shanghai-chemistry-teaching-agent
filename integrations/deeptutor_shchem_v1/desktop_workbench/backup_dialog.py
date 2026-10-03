@@ -25,15 +25,15 @@ class BackupDialog(QDialog):
         self.plan = self.checked = self.archive_path = self.restored_directory = None
         self._active = None
         self._cancel = threading.Event()
-        self.setWindowTitle("备课作品备份与恢复")
+        self.setWindowTitle("教学资料备份与恢复")
         self.resize(880, 700)
         self.setMinimumSize(500, 420)
         root = QVBoxLayout(self)
         root.setContentsMargins(24, 20, 24, 20)
-        title = QLabel("把备课成果带走，先确认备份范围")
+        title = QLabel("备份教学资料，先确认范围")
         title.setObjectName("CardTitle")
         root.addWidget(title)
-        self.status = QLabel("本地操作，不调用AI。备份含教学正文，请自行妥善保管；原题库与学生档案不在本版范围。")
+        self.status = QLabel("本地操作，不调用AI。默认备份备课作品；需要班级、学生与考试数据时选择扩展备份，并核对实际清单。")
         self.status.setWordWrap(True)
         self.status.setTextFormat(Qt.TextFormat.PlainText)
         root.addWidget(self.status)
@@ -48,6 +48,9 @@ class BackupDialog(QDialog):
         self.images = QCheckBox("包含这些备课引用的本地图片")
         self.outputs = QCheckBox("包含已结束的生成任务、返回稿及成品文件")
         lay.addWidget(self.images); lay.addWidget(self.outputs)
+        self.business = QCheckBox("扩展备份：班级与收交、学生原页与评分、考试复测、教材题库")
+        self.business.setToolTip('本机已归档资料；模型设置和密钥不包含。恢复到新的独立目录。')
+        lay.addWidget(self.business)
         self.plan_output = QPlainTextEdit()
         self.plan_output.setReadOnly(True)
         self.plan_output.setPlaceholderText("先整理清单，查看包括的数量、文件大小和缺失资料。")
@@ -100,6 +103,7 @@ class BackupDialog(QDialog):
         root.addLayout(row)
         self.images.toggled.connect(self.invalidate_plan)
         self.outputs.toggled.connect(self.invalidate_plan)
+        self.business.toggled.connect(self.business_changed)
         self.missing_list.currentItemChanged.connect(lambda *_: self._buttons())
 
     def _button(self, title, slot, row):
@@ -113,6 +117,12 @@ class BackupDialog(QDialog):
         self.plan = None
         self.plan_output.clear()
         self._buttons()
+
+    def business_changed(self, checked):
+        self.images.setEnabled(not checked);self.outputs.setEnabled(not checked)
+        self.status.setText('扩展范围包含本机名册、学生原页、正式评分与已归档教材题库，请核对清单后保存。'
+                            if checked else '默认范围为备课作品；需要班级、学生与考试数据时勾选扩展备份。')
+        self.invalidate_plan()
 
     def _buttons(self):
         busy = self._active is not None
@@ -160,12 +170,19 @@ class BackupDialog(QDialog):
             return
         self.plan = None
         images, tasks = self.images.isChecked(), self.outputs.isChecked()
+        business=self.business.isChecked()
+        content=getattr(self.paths,'content_root',self.paths.workspace_root) if business else None
         def apply(plan):
             self.plan = plan
-            self.plan_output.setPlainText(summary_text(plan.report()))
+            if business:
+                report=plan.report();summary=report['summary']
+                self.plan_output.setPlainText(f"文件 {summary['files']}项 · {summary['bytes']/1024/1024:.1f}MB\n"+
+                    '\n'.join(f'{label}：{count}文件' for label,count in summary['domains'].items())+
+                    '\n\n'+'\n'.join(report['warnings']))
+            else:self.plan_output.setPlainText(summary_text(plan.report()))
             set_status(self.status, "success", "清单已就绪。检查范围与缺失项后，可保存本机备份。")
         self._run("整理备份清单", lambda cancel: plan_backup(self.paths.state_root,
-                  include_images=images, include_tasks=tasks, cancel=cancel), apply)
+                  include_images=images, include_tasks=tasks, include_business=business, content_root=content, cancel=cancel), apply)
 
     def save_backup(self):
         if not self.plan or self._active:
@@ -176,7 +193,7 @@ class BackupDialog(QDialog):
             return
         plan = self.plan
         self._run("写入并校验备份", lambda cancel: create_backup(plan, path, cancel=cancel),
-                  lambda result: set_status(self.status, "success", "备份已保存并通过文件校验：" + Path(result["path"]).name + "。原题库未包含。"))
+                  lambda result: set_status(self.status, "success", "备份已保存并通过文件校验：" + Path(result["path"]).name + "。范围以清单为准。"))
 
     def check_backup(self):
         if self._active:
@@ -235,9 +252,11 @@ class BackupDialog(QDialog):
                 program, args = sys.executable, ["--personal-state", str(root)]
             else:
                 program = sys.executable
-                args = [str(self.paths.workspace_root / "runtime/deeptutor_shchem/desktop_teacher_workbench.pyw"),
+                source_root=self.paths.source_root or self.paths.workspace_root
+                args = [str(source_root / "runtime/deeptutor_shchem/desktop_teacher_workbench.pyw"),
                         "--personal-state", str(root)]
-            success, _pid = QProcess.startDetached(program, args, str(self.paths.workspace_root))
+            source_root=self.paths.source_root or self.paths.workspace_root
+            success, _pid = QProcess.startDetached(program, args, str(source_root))
             if not success:
                 raise OSError("launch failed")
         except Exception:

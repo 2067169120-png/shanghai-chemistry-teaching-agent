@@ -71,7 +71,8 @@ def collect_batch_exams(facade, batch_id, *, cancelled=lambda: False):
             raise ExamError('读取期间教师评分有更新，请重新生成批次统计。')
         cells.sort(key=lambda c: c['identity'])
         group_key = digest([c['identity'] for c in cells])
-        groups.setdefault(group_key, []).append({'member': member, 'revision': review.revision, 'cells': cells})
+        groups.setdefault(group_key, []).append({'member': member, 'revision': review.revision,
+                                                'condition_revision': conditions.get('revision'), 'cells': cells})
     if store.get_batch(batch_id)['revision'] != batch['revision']:
         raise ExamError('读取期间批次成员有调整，请重新生成统计。')
     results = []
@@ -98,7 +99,8 @@ def collect_batch_exams(facade, batch_id, *, cancelled=lambda: False):
         exam['provenance'] = {'kind': 'teacher_work_batch', 'batch_id': batch_id,
                               'batch_revision': batch['revision'], 'paper_group': group_key,
                               'members': [{**{k: e['member'][k] for k in ('student_id', 'submission_id')},
-                                           'review_revision': e['revision'], 'cells': deepcopy(e['cells'])}
+                                           'review_revision': e['revision'],
+                                           'condition_revision': e['condition_revision'], 'cells': deepcopy(e['cells'])}
                                           for e in entries]}
         for i, entry in enumerate(entries, 2):
             for cell in entry['cells']:

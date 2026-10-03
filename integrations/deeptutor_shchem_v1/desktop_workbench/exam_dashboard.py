@@ -73,6 +73,7 @@ class _ExamDashboardBase(QDialog):
         self.store=ExamStore(facade.paths.state_root)
         self.exam=None;self.paper={'text':'','pages':[],'warnings':[]};self.result=None;self.result_scope=None
         self.followups=[];self.pending_handoff=None;self._saved_revision=None
+        self._batch_source={'current':True,'state':'not_applicable','message':''}
         self.report=None;self._task=None;self._closed=False;self.dirty=False;self._rendering=False
         self.setWindowTitle('考试分析 · 成绩、试卷与讲评');self.resize(1320,860);self.setMinimumSize(720,570)
         root=QVBoxLayout(self);root.setContentsMargins(14,12,14,12);root.setSpacing(8)
@@ -106,6 +107,15 @@ class _ExamDashboardBase(QDialog):
         self.knowledge_chart=BarChart('主知识点 · 按有效作答分值加权');it.addWidget(self.knowledge_chart)
         self.tabs.addTab(scroll_widget(items),'题目与知识点')
         students=QWidget();sv=QVBoxLayout(students);notice=QLabel('点击学生行查看复核建议；表格颜色仅辅助阅读。空白为缺失，0分是明确成绩；S编号仅本次导入有效。');notice.setWordWrap(True);sv.addWidget(notice)
+        rosterbar=QHBoxLayout();self.roster_button=QPushButton('关联班级名册…');self.roster_button.setObjectName('QuietButton')
+        self.roster_note=QLabel('尚未关联班级名册');self.roster_note.setWordWrap(True)
+        rosterbar.addWidget(self.roster_button);rosterbar.addWidget(self.roster_note,1);sv.addLayout(rosterbar)
+        self.roster_button.clicked.connect(self.bind_roster)
+        sourcebar=QHBoxLayout();self.source_button=QPushButton('重新读取批次正式评分');self.source_button.setObjectName('QuietButton')
+        self.source_note=QLabel('');self.source_note.setWordWrap(True)
+        sourcebar.addWidget(self.source_button);sourcebar.addWidget(self.source_note,1)
+        root.insertLayout(root.indexOf(self.tabs),sourcebar)
+        self.source_button.clicked.connect(self.refresh_formal_scores)
         self.student_table=QTableView();self.student_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows);self.student_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         self.student_table.clicked.connect(self.select_student);sv.addWidget(self.student_table,1)
         self.student_note=QPlainTextEdit();self.student_note.setReadOnly(True);self.student_note.setMaximumHeight(170);sv.addWidget(self.student_note)
@@ -181,6 +191,8 @@ class _ExamDashboardBase(QDialog):
         for i in range(len(headers)):view.setColumnWidth(i,min(340,max(72,view.columnWidth(i))))
 
     def _busy(self,yes):
+        self.roster_button.setEnabled(not yes and self.exam is not None and hasattr(self.facade,'_state'))
+        self.source_button.setEnabled(not yes and self.exam is not None)
         for w in (self.toolbar,self.classes,self.paper_button,self.clear_paper_button,self.paper_text,self.notes,self.model,
                   self.refresh_models_button,self.send_images,self.send_students,self.ai_button,self.to_prep_button):w.setEnabled(not yes)
         self.stop_button.setEnabled(yes and getattr(self,'_can_cancel',True))
@@ -232,7 +244,7 @@ class _ExamDashboardBase(QDialog):
         self.run('读取成绩Excel',lambda report,cancelled:read_xlsx(path),self.map_excel)
 
     def map_excel(self,book):
-        dialog=ExamImportDialog(book,self)
+        dialog=ExamImportDialog(book,self,state=getattr(self.facade,'_state',None))
         if dialog.exec()==QDialog.DialogCode.Accepted:self.accept_exam(dialog.exam)
         dialog.deleteLater()
 
@@ -257,6 +269,19 @@ class _ExamDashboardBase(QDialog):
 
     def render(self):
         ready=self.exam is not None
+        from ..desktop_batch_exam_freshness import batch_source_status
+        self._batch_source=batch_source_status(self.facade,self.exam)
+        batch_source=self._batch_source['state']!='not_applicable'
+        self.source_button.setVisible(batch_source);self.source_note.setVisible(batch_source)
+        self.source_button.setEnabled(ready and not self._task);self.source_note.setText(self._batch_source['message'])
+        self.roster_button.setEnabled(ready and not self._task and hasattr(self.facade,'_state'))
+        if ready and hasattr(self.facade,'_state'):
+            try:
+                from ..desktop_classroom_registry import ClassroomRegistry
+                binding=ClassroomRegistry(self.facade).exam_binding(self.exam)
+                rows=binding.get('rows',{})
+                self.roster_note.setText(f"有效关联 {sum(row['valid'] for row in rows.values())} / {len(self.exam['students'])}行 · "+binding['reason'])
+            except Exception as exc:self.roster_note.setText(getattr(exc,'message_zh','名册关联暂时无法读取'))
         for w in (self.save_button,self.export_button,self.paper_button,self.ai_button,self.to_prep_button):w.setEnabled(ready and not self._task)
         if not ready:
             self.ai_result.setPlainText(advice_text(None));return
@@ -283,6 +308,23 @@ class _ExamDashboardBase(QDialog):
         self.set_table(self.problem_table,['Excel行','字段','需核对内容'],[(i['row'],i['field'],i['detail']) for i in self.report['issues']])
         self.ai_result.setPlainText(advice_text(self.current_result()))
         if hasattr(self,'followup_panel'):self.followup_panel.refresh()
+
+    def bind_roster(self):
+        if not self.exam or self._task:return
+        from .classroom_dialog import ExamRosterBindingDialog
+        try:
+            dialog=ExamRosterBindingDialog(self.facade,self.exam,self)
+            dialog.exec();dialog.deleteLater();self.render()
+        except Exception as exc:self.status.setText(getattr(exc,'message_zh','名册关联暂时无法读取'))
+
+    def refresh_formal_scores(self):
+        if not self.exam or self._task or not self.flush_or_discard():return
+        from ..desktop_batch_exam_freshness import refresh_batch_exam
+        current=deepcopy(self.exam)
+        def ready(exam):
+            self.accept_exam(exam)
+            self.status.setText('已按当前正式评分建立新分析快照；旧分析、建议和复测记录保留在历史中。')
+        self.run('重新读取批次正式评分',lambda report,cancelled:refresh_batch_exam(self.facade,current,cancelled=cancelled),ready)
 
     def select_student(self,index):
         if self.report and 0<=index.row()<len(self.report['students']):

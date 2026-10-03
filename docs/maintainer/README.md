@@ -4,7 +4,7 @@
 
 ## 版本边界
 
-2026-09-28 本轮基于 PR #53 合入 main 的 `89c7da3`，完善分页导航、按需读页、缓存释放和高分屏显示，同时冻结下一批教材与题库阅读材料。见[最新验收记录](../qa/2026-09-28-preview-navigation.md)与[当前闭环记录](../WORKFLOW_STATUS.md)。任务停止、原子结构研读及6题补缺保留[上一轮验收](../qa/2026-09-28-office-cancel-atomic.md)。普通回归与真实Office检查分别记录，合成PDF仅验证阅读器，不证明实际PPTX转换或PowerPoint呈现一致。已发布 v0.1.101 包仍是原版本；源码更新不替换旧 EXE。
+2026-10-03 本轮基于 main `e08c3e7`，新增教师七入口、上下文备注、任务中心、教材研读和本地批量导入。见[最新验收记录](../qa/2026-10-03-teacher-workspace-import.md)与[当前闭环记录](../WORKFLOW_STATUS.md)。分页导航、缓存与高分屏的历史验证保留[原记录](../qa/2026-09-28-preview-navigation.md)。普通回归与真实Office检查分别记录，合成PDF仅验证阅读器，不证明实际PPTX转换或PowerPoint呈现一致。已发布 v0.1.101 包仍是原版本；源码更新不替换旧 EXE。
 
 目录修复支持缺失或不可解析的 `scope.json`、`active-attempts.json` 及未完成修复留下的阻断状态，只从身份完全匹配、机器复核已保存的页组记录重建。教师每组选一份记录，预览后明确确认；保存前重核版本并锁定批次，保留旧目录的精确字节与旧记录。修复不调用模型，返回普通预览后才可另行确认发送。合法 JSON 中的范围身份冲突、非法活动版本结构、重复键、链接或超限仍阻断；不可变汇总候选的版本历史损坏、化学语义和题目层级修复仍未覆盖，C02 保持部分完成。
 
@@ -51,3 +51,17 @@ python -m pytest -q staging/coordination/deeptutor_gateway/tests/test_complete_r
 ```
 
 普通维护 CI 保持内容只读。完整 Office／EXE 检查与显式发布分开，不改旧标签或重发固定版本。
+
+## 教师工作台与本地批量导入维护入口
+
+维护源码包含七个主入口、上下文备注、任务状态历史及教材研读目录。上下文不是班级名册，任务历史不自动重跑操作；备课 ZIP 与新的教材 ZIP 仍分域保存。[2026-10-03 实施与验证](../qa/2026-10-03-teacher-workspace-import.md)记录方案覆盖范围、实际导入和未挂载资料。
+
+批量导入使用和 Qt 相同的服务，默认只预览；确认保存时加 `--apply`。支持 `--workspace` 指定资料根、`--state-root` 指定个人资料位置、`--recursive` 扫描子目录和 `--report` 保存回执。题库模式将 Word 作为讲义、PDF/图像作为题目；不推测答案文件关联，不自动识别扫描图，也不启动模型。
+
+```powershell
+python runtime/deeptutor_shchem/import_local_materials.py --kind question-bank --folder "D:/教学资料/讲义" --recursive
+python runtime/deeptutor_shchem/import_local_materials.py --kind textbooks --folder "D:/教学资料/教材" --recursive
+python runtime/deeptutor_shchem/import_local_materials.py --kind knowledge-candidates --apply
+```
+
+教材备份恢复的独立目录可用既有入口启动：`python runtime/deeptutor_shchem/desktop_teacher_workbench.pyw --personal-state "恢复目录"`。不要将教材备份当成全业务备份；题库原件、学生提交与评分另按各域保管。
