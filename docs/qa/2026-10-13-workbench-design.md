@@ -232,7 +232,7 @@ E02＝r1九页／设置／草稿／作品／备份等限定合成smoke；E04＝r
 
 知识版编译EXE的普通factory额外启闭一次，PID35664自然exit0，无QA flag、无Office；两个导入批次与199份公开seed SHA保持。可能使用已有缓存，不据此声明G05冷性能通过；被遮挡的桌面截图已拒绝且未随包交付，不计实际教材窗口视觉验收。最终知识版清单明确：整个profile及state均不存在才初始化，已有profile不合并或覆盖；原candidate audit清单较弱的初始化文字未复制到公开ZIP。
 
-**GitHub上传与发布已实际成功。** [v0.1.103发行页](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/releases/tag/v0.1.103)，Release ID411475324，published_at为2026-10-13T09:04:31Z，draft=false。普通ZIP、知识ZIP、SHA256SUMS.txt与RELEASE-MANIFEST.json共四个资产的实际大小／GitHub digest与本机值精确匹配；两ZIP的上表字节与SHA保持原值。权威回执为本轮根`publication-remote-draft-verification.json`、`publication-success-release.json`。源码tag对应commit **f5ae07c7a3caba21228b74bb03f48710da3aeb25**，标签不移动；源代码包由Root单独负责，不在本代理的ZIP构建声明中。
+**GitHub上传与发布已实际成功。** [v0.1.103发行页](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/releases/tag/v0.1.103)，Release ID411475324，published_at为2026-10-13T09:04:31Z，draft=false。普通ZIP、知识ZIP、SHA256SUMS.txt与RELEASE-MANIFEST.json共四个资产的实际大小／GitHub digest与本机值精确匹配；两ZIP的上表字节与SHA保持原值。权威回执为本轮根`publication-remote-draft-verification.json`、`publication-success-release.json`。源码tag对应commit **f5ae07c7a3caba21228b74bb03f48710da3aeb25**，标签不移动；源码可从仓库与标签的GitHub Source code入口获取；两个已校验ZIP为Windows可运行包。
 
 ## 发布后Git文档闭包与CI补齐
 
@@ -240,7 +240,7 @@ GitHub干净检出发现本机可达、但因ignore未入Git的文档引用：16
 
 84文档正文／165图注已读；179图经30张缩略联系表、11张原图与214图注快速检查，0具体隐私阻断。唯一JSON仅保存15张已引用图的源路径／文件名／surface／SHA／size，Root批准为类型例外；没有原始日志、profile、真实学生资料、凭据值或README副本进入清单。该审查不计逐像素/OCR或化学教学质量认证，历史alpha／透明panel范围说明保留。
 
-本次本机policy与14项README检查的通过记录保留；干净Git检出的引用闭包由Root按264文件清单补齐，**PR #59与CI结果仍待实际验收**，不据本机通过或Release成功预填PR／CI通过。Root仅在desktop-integration.yml的pip install追加PySide6==6.11.2，与实际EXE依赖一致；测试替身仅调整lambda签名，不把PySide6 6.12推断为唯一根因。生产682源码及已冻结EXE保持，旧v0.1.101附件、标签和历史证据不重写。
+本次本机policy与14项README检查的通过记录保留；干净Git检出的引用闭包由Root按264文件清单补齐，**PR #59已实际合并，最终头2e16fa06的七种CI全部通过**，不据本机通过或Release成功预填PR／CI通过。desktop-integration.yml、local-continuation.yml与basket-audit.yml的pip安装均固定PySide6==6.11.2，与实际EXE依赖一致；测试替身仅调整lambda签名，不把PySide6 6.12推断为唯一根因。生产682源码及已冻结EXE保持，旧v0.1.101附件、标签和历史证据不重写。
 
 知识readerproof SHA **4d4c217cb624e71fc30fab513c3e0f53484d58b775da1617f6a9a21129ba1115**；原seedmanifest SHA **7b5be6d09c6cecb1773d0a0d0c2b21ee91ad1fdf94b9302a6afb7b14e478835f**，作为历史candidate引用，最终发行清单按整个profile不存在才初始化的启动器契约，不沿用原清单较弱的state不存在表述。实质知识单元回执SHA **5bf44e1c7b9b4cfb24939e7a7dc37b81a6917a1d135769a2ed6c2a19be15a6b1**。
 
@@ -252,3 +252,10 @@ GitHub干净检出发现本机可达、但因ignore未入Git的文档引用：16
 f5ae07c7的原七类CI失败留账：缺文档链接、过期allow_builtin测试替身，以及95断言通过后的Qt进程exit1。98d37da7文档、教师手册、Windows工作台、复练Office与改分检查已成功；Home的原标签216项和后续115断言已通过，但后者进程exit1。GitHub安装6.12.0，本机及本次EXE为6.11.2；版本差异已确认，不能据此认证唯一根因。Windows工作台、Home与Basket检查现统一6.11.2，保留全部原检查与后续步骤。最终各次状态及合并结果以[PR59检查记录](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/pull/59/checks)为准，当前页不预报尚未执行的PASS。
 
 v0.1.103标签固定在f5ae07c7a3caba21228b74bb03f48710da3aeb25；默认分支后续只补充这些文档、测试替身与CI依赖固定，682生产源码保持本次构建对应。当前教师指南以默认分支为入口，标签保留当时冻结状态；源码Git换行规范和本机精确构建SHA分别记账。
+
+
+## 最终默认分支交付
+
+[PR #59](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/pull/59)已实际合并到main，合并提交 **a641a6ab02e166ccc66c6db9aeb802f8e0efc8e1**，merged_at **2026-10-13T09:39:38Z**。最终源头 **2e16fa06c0b91349759cc0d06bb4b58e634911ae** 的七种GitHub工作流共8个job全部自然SUCCESS，0失败／0取消，最后完成2026-10-13T09:35:24Z；包含文档、Windows工作台、Basket／状态、Home／续做、复练Office、改分及教师帮助。原始状态与逐step回执在本轮根`publication-preflight/pr59-checks-2e16fa06/`，合并前Root又核对准确head、全部SUCCESS和CLEAN。
+
+默认README的v0.1.103普通包与知识版下载已生效，当前教师章节与图片引用已纳入Git；旧tag与附件保留。最后本机资料保护复核1938项元数据＋31完整SHA、0差异，回执为前次根`protection/final-github-workbench-20261013.json`。本段仅补交付事实，软件仍为同一0.1.103构建；72项中上列高级功能与课堂质量的剩余范围继续保留。
