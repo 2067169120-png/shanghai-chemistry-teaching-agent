@@ -56,10 +56,13 @@ def run_probe(output):
             document.add_paragraph('【答案】合成参考说明，不是正式化学题或课堂评价。')
         path=temp/'多图验收讲义.docx';document.save(path);original=path.read_bytes()
         facade.save_visual_import_batch(handout_files=(path,),source_type='教师讲义')
-        calls={'catalog':0,'resolve':0}
-        original_catalog=facade.word_question_catalog
+        calls={'catalog':0,'resolve':0,'detail':0}
+        original_catalog=facade.word_question_listing
         def catalog():calls['catalog']+=1;return original_catalog()
-        facade.word_question_catalog=catalog
+        facade.word_question_listing=catalog
+        original_detail=facade.word_question_detail
+        def detail(*a,**kw):calls['detail']+=1;return original_detail(*a,**kw)
+        facade.word_question_detail=detail
         service=facade._word_questions();original_resolve=service._resolve
         def resolve(*a,**kw):calls['resolve']+=1;return original_resolve(*a,**kw)
         service._resolve=resolve
@@ -72,7 +75,9 @@ def run_probe(output):
             start=perf_counter();win.navigate('library')
             settle(lambda:not page._loading and len(page.cards)==8 and page.cards[0].ready and bool(page._reader.load_metrics))
             first_complete=(perf_counter()-start)*1000
-            assert len(page._reader.required)==8 and calls=={'catalog':1,'resolve':1},calls
+            # One current question expansion and one grouped image resolution;
+            # the listing no longer expands all sixteen question bodies.
+            assert len(page._reader.required)==8 and calls=={'catalog':1,'resolve':2,'detail':1},calls
             assert page._reader.loaded_tabs=={0}
             first=deepcopy(page.load_metrics);first['word_images']=deepcopy(page._reader.load_metrics)
             # Data-ready is not enough: the teacher must actually see the title,
@@ -128,7 +133,7 @@ def run_probe(output):
                 'synthetic_questions':16,'first_visible_images':8,'first_page_ready_ms':round(first_complete,2),
                 'first_load':first,'next_page':paging,'diagnostic_sample':copied,
                 'checks':{'hidden_page_no_catalog':True,'one_resolution_for_eight_images':True,
-                  'answer_tab_lazy':True,'paging_reuses_index':True,'source_preference_retained':True,
+                  'answer_tab_lazy':True,'question_body_lazy':True,'paging_reuses_index':True,'source_preference_retained':True,
                   'import_invalidates_index':True,'generic_files_before_old_pack':True,
                   'region_archive_roundtrip':True,'source_and_basket_unchanged':True,'diagnostic_no_content':True,'card_contents_visible':True},
                 'screenshots':screenshots,'uncaught_errors':errors,'model_calls':0,

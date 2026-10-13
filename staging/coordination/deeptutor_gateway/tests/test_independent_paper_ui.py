@@ -90,6 +90,7 @@ def test_second_new_does_not_overwrite_first_and_empty_basket_can_continue(works
     panel = create(workspace)
     first = panel.facade.paper_id
     panel.title.setText("第一份合成卷")
+    panel.title.editingFinished.emit()
     old = store.draft_snapshot(first + ":" + DRAFT_ID)
     panel = create(workspace)
     assert panel.facade.paper_id != first

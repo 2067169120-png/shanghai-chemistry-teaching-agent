@@ -35,6 +35,7 @@ from .model_provider_probe import (
     ProbeTransportResponse,
     SyntheticProbeRequest,
 )
+from .desktop_model_usage import UsageRequestMetadata, make_usage_metadata
 from .model_provider_settings import (
     ModelProviderProbeContext,
     ModelProviderSettingsError,
@@ -130,6 +131,7 @@ class VisualProviderRequest:
     api_style: str
     base_url_policy: str
     endpoint_scope: str
+    usage_metadata: UsageRequestMetadata | None = None
 
     def __repr__(self) -> str:
         return (
@@ -183,6 +185,7 @@ class PinnedVisualTransport:
             endpoint_scope=request.endpoint_scope,
             method="POST",
             request_kind="synthetic_probe",
+            usage_metadata=request.usage_metadata,
         )
         return self._transport.send(
             outbound,
@@ -1084,6 +1087,7 @@ def _build_visual_request(
         api_style=api_style,
         base_url_policy=context.base_url_policy,
         endpoint_scope=endpoint_scope,
+        usage_metadata=make_usage_metadata(context, "visual_import", None),
     )
 
 

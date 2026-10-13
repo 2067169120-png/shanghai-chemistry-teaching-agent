@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 from .components import set_status
 
 
-def open_textbook_section_materials(page, selection, *, on_handoff=None):
+def open_textbook_section_materials(page, selection, *, on_handoff=None, before_handoff=None):
     """Keep source reading detached, then use the studio's batch transaction.
 
     GUI changes revoke the scope permanently. Worker checks read only Events;
@@ -145,12 +145,16 @@ def open_textbook_section_materials(page, selection, *, on_handoff=None):
             if outcome != QDialog.DialogCode.Accepted or not dialog.requests:
                 report('info', '已返回教材；授课清单可重新选取。')
                 return
+            if before_handoff is not None and not before_handoff():
+                report('attention', '组卷修改尚未保存，本次选材未加入；请处理后重新选择。')
+                return
             request = {'context': deepcopy(context), 'requests': deepcopy(dialog.requests)}
             # The existing transaction owns all publication and the one undo.
             cleanup()
             page._source_material_insertion = deepcopy(insertion)
+            handoff_options = {'before_handoff': before_handoff} if before_handoff is not None else {}
             accepted = page._import_material_batch(request, prepare,
-                '正在核对本节授课清单并加入当前备课…')
+                '正在核对本节授课清单并加入当前备课…', **handoff_options)
             if accepted and on_handoff is not None:
                 on_handoff()
         except (ValueError, OSError, RuntimeError, KeyError, TypeError) as exc:

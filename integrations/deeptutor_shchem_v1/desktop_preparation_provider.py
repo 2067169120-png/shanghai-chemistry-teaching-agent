@@ -573,6 +573,7 @@ class StructuredPreparationProvider:
                     else preparation_candidate_schema()
                 ),
                 "schema_name": "shchem_preparation_candidate_v1",
+                "task_type": "preparation",
             }
             if pages:
                 outbound = build_structured_visual_request(

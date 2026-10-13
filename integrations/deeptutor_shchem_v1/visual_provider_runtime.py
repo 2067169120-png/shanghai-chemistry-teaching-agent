@@ -26,6 +26,7 @@ from .intake_imports import (
     _egress_image,
 )
 from .model_provider_settings import MAX_MODEL_TOKEN_LIMIT, ModelProviderProbeContext
+from .desktop_model_usage import make_usage_metadata
 
 MAX_VISUAL_REQUEST_BYTES = 48 * 1024 * 1024
 MAX_VISUAL_RESPONSE_BYTES = 2 * 1024 * 1024
@@ -295,6 +296,16 @@ def _check_input_budget(
         )
 
 
+def _usage_estimate(context: ModelProviderProbeContext, prompt: str,
+                    schema: Mapping[str, Any], schema_name: str,
+                    pages: Sequence[tuple[str, bytes]]) -> int | None:
+    if getattr(context, "usage_root", None) is None:
+        return None
+    auxiliary_text = canonical_json_bytes({"schema": dict(schema), "schema_name": schema_name,
+                                           "model": context.model_id}).decode("utf-8")
+    return estimate_input_tokens(prompt + auxiliary_text, pages)
+
+
 def build_structured_visual_request(
     context: ModelProviderProbeContext,
     *,
@@ -303,6 +314,7 @@ def build_structured_visual_request(
     schema_name: str,
     pages: Sequence[tuple[str, bytes]],
     max_output_tokens: int = 8000,
+    task_type: str = "unknown",
 ) -> VisualProviderRequest:
     """Attach page bytes directly to a strict multimodal request.
 
@@ -415,6 +427,8 @@ def build_structured_visual_request(
         api_style=api_style,
         base_url_policy=context.base_url_policy,
         endpoint_scope=endpoint_scope,
+        usage_metadata=make_usage_metadata(context, task_type,
+                                           _usage_estimate(context, prompt, schema, schema_name, pages)),
     )
 
 
@@ -447,6 +461,7 @@ def build_structured_text_request(
     schema: Mapping[str, Any],
     schema_name: str,
     max_output_tokens: int = 16000,
+    task_type: str = "unknown",
 ) -> VisualProviderRequest:
     """Build one strict, text-only structured-output request.
 
@@ -542,6 +557,8 @@ def build_structured_text_request(
         api_style=api_style,
         base_url_policy=context.base_url_policy,
         endpoint_scope=endpoint_scope,
+        usage_metadata=make_usage_metadata(context, task_type,
+                                           _usage_estimate(context, prompt, schema, schema_name, ())),
     )
 
 

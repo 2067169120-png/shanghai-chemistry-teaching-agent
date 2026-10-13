@@ -1,4 +1,4 @@
-"""One durable public basket; undo belongs only to the currently open window."""
+"""One durable public basket with bounded history across window restarts."""
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
@@ -66,11 +66,16 @@ class ExplorerBasketDialog(QDialog):
         self.undo_button.setAutoDefault(False)
         self.undo_button.clicked.connect(self.undo)
         content.addWidget(self.undo_button)
-        self.history_status = text_label("本窗口暂无可撤销操作", "MutedLabel")
-        self.history_status.setAccessibleName("本窗口撤销记录")
+        self.redo_button = QPushButton("重做上一步（Ctrl+Y）")
+        self.redo_button.setObjectName("QuietButton")
+        self.redo_button.setAutoDefault(False)
+        self.redo_button.clicked.connect(self.redo)
+        content.addWidget(self.redo_button)
+        self.history_status = text_label("题篮暂无可撤销操作", "MutedLabel")
+        self.history_status.setAccessibleName("题篮撤销与重做记录")
         content.addWidget(self.history_status)
         self.history_hint = text_label(
-            "仅可撤销本窗口最近30次移出或调序。关闭、读取失败或其他操作更新题篮后，记录失效。", "MutedLabel",
+            "最近30步移出或调序随题篮保存，重新打开后可撤销或重做。来源变化、记录损坏或外部更新后须重新核对。", "MutedLabel",
         )
         content.addWidget(self.history_hint)
         self.retry = QPushButton("重新读取题篮")
@@ -104,6 +109,9 @@ class ExplorerBasketDialog(QDialog):
         self.undo_shortcut = QShortcut(QKeySequence.StandardKey.Undo, self)
         self.undo_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
         self.undo_shortcut.activated.connect(self.undo)
+        self.redo_shortcut = QShortcut(QKeySequence("Ctrl+Y"), self)
+        self.redo_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        self.redo_shortcut.activated.connect(self.redo)
         self.list.currentRowChanged.connect(self.update_actions)
         self.refresh()
 
@@ -151,7 +159,7 @@ class ExplorerBasketDialog(QDialog):
         if self.list.currentItem() is not None:
             self.list.scrollToItem(self.list.currentItem())
         self.heading.setText(f"选题篮  ·  {len(rows)} 项")
-        self.status.setText("题篮已更新；本窗口旧撤销记录已失效。" if snapshot.history_reset else self.DEFAULT_STATUS)
+        self.status.setText("题篮或历史已更新，请核对当前已保存题目和可用历史。" if snapshot.history_reset else self.DEFAULT_STATUS)
         self.retry.hide()
         self.update_actions()
         return True
@@ -168,17 +176,21 @@ class ExplorerBasketDialog(QDialog):
         action = self._session.undo_action if history else ""
         self.undo_button.setEnabled(ready and history > 0)
         self.undo_shortcut.setEnabled(ready and history > 0)
-        self.undo_button.setAccessibleName(f"撤销本窗口上一步{action}，快捷键 Ctrl+Z")
-        self.history_status.setText(f"可撤销 {history} 步 · 上一步：{action}" if history else "本窗口暂无可撤销操作")
+        redo = self._session.redo_count if self._session is not None else 0
+        self.redo_button.setEnabled(ready and redo > 0)
+        self.redo_shortcut.setEnabled(ready and redo > 0)
+        self.undo_button.setAccessibleName(f"撤销题篮上一步{action}，快捷键 Ctrl+Z")
+        self.redo_button.setAccessibleName("重做题篮上一步，快捷键 Ctrl+Y")
+        self.history_status.setText(f"可撤销 {history} 步 · 可重做 {redo} 步" + (f" · 上一步：{action}" if history else ""))
         self.retry.setEnabled(not self._busy)
         self.back.setEnabled(not self._busy)
         self.selection_status.setText(
             "上次显示仅供核对 · 操作已暂停" if not self._readable else
             f"当前第 {index + 1} 项 / 共 {n} 项" if index >= 0 else
-            "题篮为空 · 可撤销本窗口移出，或继续选题"
+            "题篮为空 · 可撤销移出，或继续选题"
         )
 
-    def _perform(self, operation, *, undo=False):
+    def _perform(self, operation, *, undo=False, redo=False):
         if self._busy or not self._readable:
             return
         self._busy = True
@@ -195,6 +207,7 @@ class ExplorerBasketDialog(QDialog):
                 if refreshed and not self._last_read_history_reset:
                     self.status.setText(
                         f"已撤销{result['action']}，原题身份与顺序已恢复。" if undo else
+                        f"已重做{result['action']}并保存。" if redo else
                         f"已保存{result['action']}，可撤销上一步。"
                     )
                 self.basket_changed.emit(self.list.count() if refreshed else result["count"])
@@ -211,6 +224,10 @@ class ExplorerBasketDialog(QDialog):
     def undo(self):
         if self._session is not None and self._session.undo_count:
             self._perform(self._session.undo, undo=True)
+
+    def redo(self):
+        if self._session is not None and self._session.redo_count:
+            self._perform(self._session.redo, redo=True)
 
     def preview_paper(self):
         if not self._busy and self.refresh() and self.list.count():

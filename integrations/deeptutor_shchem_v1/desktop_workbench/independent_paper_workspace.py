@@ -109,6 +109,8 @@ class IndependentPaperWorkspace(QWidget):
     def _run(self, operation, *, preview=False):
         if self._busy or self._closed:
             return
+        if not self.prepare_leave():
+            return
         self._busy = True
         self._epoch += 1
         epoch = self._epoch
@@ -121,7 +123,9 @@ class IndependentPaperWorkspace(QWidget):
             self._busy = False
             old = self._mixed_panel
             if old is not None:
-                old.close()
+                if not old.prepare_leave() or not old.close():
+                    self._actions()
+                    return
                 self.layout().removeWidget(old)
                 old.deleteLater()
             panel = self.panel_type(session, self.tasks, PaperComposerModel(), self)
@@ -203,9 +207,13 @@ class IndependentPaperWorkspace(QWidget):
         else:
             self._mixed_panel._open_details()
 
+    def prepare_leave(self):
+        return self._mixed_panel is None or self._mixed_panel.prepare_leave()
+
     def closeEvent(self, event):
+        if not self.prepare_leave() or (self._mixed_panel is not None and not self._mixed_panel.close()):
+            event.ignore()
+            return
         self._closed = True
         self._epoch += 1
-        if self._mixed_panel is not None:
-            self._mixed_panel.close()
         super().closeEvent(event)

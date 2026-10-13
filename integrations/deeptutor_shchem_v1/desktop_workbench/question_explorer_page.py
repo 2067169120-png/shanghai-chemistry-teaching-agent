@@ -103,6 +103,7 @@ class QuestionExplorerPage(QWidget):
         self._active_card = None
         self._catalogs = {}
         self._sessions = {}
+        self._word_maintenance_epoch = self._current_maintenance_epoch()
         self._started = False
         self._needs_reload = False
         self.load_metrics = {}
@@ -276,6 +277,7 @@ class QuestionExplorerPage(QWidget):
         self.word_composition_button.setVisible(self.scope.currentData() == "word_native")
 
     def showEvent(self, event):
+        self._check_maintenance_epoch()
         self.refresh_basket()
         super().showEvent(event)
         if not self._started:
@@ -296,6 +298,34 @@ class QuestionExplorerPage(QWidget):
             self.reload(reading_position=position)
         else:
             self._needs_reload = True
+
+    def _current_maintenance_epoch(self):
+        reader = getattr(self.facade, "desktop_cache_epoch", None)
+        return reader("word") if callable(reader) else None
+
+    def _check_maintenance_epoch(self):
+        if self._word_maintenance_epoch != self._current_maintenance_epoch():
+            self.invalidate_cache_projection()
+            return True
+        return False
+
+    def invalidate_cache_projection(self):
+        """Drop Word search sessions without changing basket/query/facet IDs."""
+        self._word_maintenance_epoch = self._current_maintenance_epoch()
+        self._catalogs.pop("word_native", None)
+        self._sessions.pop("word_native", None)
+        if self.scope.currentData() == "word_native":
+            self._epoch += 1
+            self._loading = False
+            self._search_timer.stop()
+            self.close_reader()
+            self._clear_cards()
+            self._entries = []
+            self._base_facets = {}
+            self._needs_reload = True
+            self.previous.setEnabled(False)
+            self.next.setEnabled(False)
+            self.result_summary.setText("缓存已清理 · 需重新读取；筛选条件与题篮保留")
 
     def _reading_context(self):
         return (self.scope.currentData(), self.query.text().strip(),
@@ -416,6 +446,8 @@ class QuestionExplorerPage(QWidget):
     def search(self, *_args, reset=True, reading_position=None):
         if self._closed:
             return
+        self._check_maintenance_epoch()
+        self._needs_reload = False
         self._search_timer.stop()
         self._cancel_reading_restore()
         if reset:
@@ -432,6 +464,7 @@ class QuestionExplorerPage(QWidget):
         self.result_summary.setText("正在筛选本地题目…")
         self._render_chips()
         lane, query, page = self.scope.currentData(), self.query.text().strip(), self._page
+        maintenance_epoch = self._current_maintenance_epoch()
         selection = {key: sorted(values) for key, values in self.filters.items() if values}
         selector = dict(self.curriculum)
         cursor = self._cursors[page] if lane not in PERSONAL_LANES else None
@@ -441,7 +474,7 @@ class QuestionExplorerPage(QWidget):
             check_cancelled(cancelled)
             read_started = perf_counter()
             if lane in PERSONAL_LANES:
-                loader = self.facade.word_question_catalog if lane == "word_native" else self.facade.personal_visual_questions
+                loader = getattr(self.facade, "word_question_listing", self.facade.word_question_catalog) if lane == "word_native" else self.facade.personal_visual_questions
                 index, metrics = session.get(loader, cancelled=cancelled)
                 value = index.search(selection, query, page, self.PAGE_SIZE, cancelled=cancelled)
                 value["performance"].update(metrics)
@@ -458,6 +491,11 @@ class QuestionExplorerPage(QWidget):
             return value, None
         def done(result):
             if self._closed or epoch != self._epoch:
+                return
+            if lane == "word_native" and maintenance_epoch != self._current_maintenance_epoch():
+                self.invalidate_cache_projection()
+                if self.isVisible():
+                    self.search(reset=False)
                 return
             value, catalog = result
             if catalog is not None:
@@ -681,6 +719,10 @@ class QuestionExplorerPage(QWidget):
         self._active_card = None
 
     def expand(self, card):
+        if card.entry["lane"] == "word_native" and self._check_maintenance_epoch():
+            if self.isVisible():
+                self.search(reset=False)
+            return
         self._cancel_reading_restore()
         same = card is self._active_card
         self.close_reader()
@@ -693,10 +735,33 @@ class QuestionExplorerPage(QWidget):
         entry = card.entry
         card.note.setText("正在加载完整题面…")
         if entry["lane"] in PERSONAL_LANES:
-            reader = PersonalQuestionReader(entry, self.facade, self.tasks, card.reader_host)
-            self.attach_reader(card, reader)
-            reader.readiness_changed.connect(lambda ready: self.reader_ready(epoch, card, ready))
-            self.reader_ready(epoch, card, reader.ready_to_select)
+            def attach_personal(detail_entry):
+                if self._closed or epoch != self._reader_epoch or self._active_card is not card:
+                    return
+                if entry["lane"] == "word_native" and self._check_maintenance_epoch():
+                    if self.isVisible():
+                        self.search(reset=False)
+                    return
+                reader = PersonalQuestionReader(detail_entry, self.facade, self.tasks, card.reader_host)
+                self.attach_reader(card, reader)
+                reader.readiness_changed.connect(lambda ready: self.reader_ready(epoch, card, ready))
+                self.reader_ready(epoch, card, reader.ready_to_select)
+            if entry["lane"] == "word_native" and entry["payload"].get("lightweight"):
+                row = entry["payload"]
+                def word_ready(detail):
+                    if detail.get("key") != row["key"] or detail.get("revision") != row["revision"]:
+                        word_failed("题目已变化，请重新检索。")
+                        return
+                    attach_personal({**entry, "payload": detail})
+                def word_failed(message):
+                    if epoch == self._reader_epoch and not self._closed:
+                        card.note.setText(str(message))
+                        self.reader_ready(epoch, card, False)
+                        self._queue_reading_restore(reader_failed=True)
+                self._detail_task = self.tasks.submit("读取Word完整题面", lambda: self.facade.word_question_detail(row["key"], row["revision"]),
+                    on_success=word_ready, on_failure=word_failed)
+            else:
+                attach_personal(entry)
         else:
             def ready(detail):
                 if self._closed or epoch != self._reader_epoch or self._active_card is not card:
@@ -731,6 +796,10 @@ class QuestionExplorerPage(QWidget):
     def reader_ready(self, epoch, card, ready):
         if self._closed or epoch != self._reader_epoch or card is not self._active_card:
             return
+        if card.entry["lane"] == "word_native" and self._check_maintenance_epoch():
+            if self.isVisible():
+                self.search(reset=False)
+            return
         message = "题面与公共材料已加载。" if ready else "题面仍在加载或有原图缺口，可到原文与标签入口核对。"
         position = (self._reading_position() if self._reading_restore is None
                     and self._reading_restore_epoch == self._epoch
@@ -744,6 +813,10 @@ class QuestionExplorerPage(QWidget):
             self._queue_reading_restore()
 
     def add(self, card):
+        if card.entry["lane"] == "word_native" and self._check_maintenance_epoch():
+            if self.isVisible():
+                self.search(reset=False)
+            return
         if not card.ready or card is not self._active_card or card.entry["key"] in self._adding:
             return
         entry = card.entry

@@ -2142,6 +2142,12 @@ class MixedPaperPanel(QWidget):
         self._artifact_paths = {}
         self._draft_session = None
         self._saving = False
+        self._pending_title_fields = set()
+        self._pending_title_failed = False
+        self._title_recovery = None
+        self._title_buffer_error = False
+        self._last_title_binding = None
+        self._title_recovered_needs_save = False
         self._details_dialog = None
         self._details_epoch = 0
         self._details_loading = False
@@ -2161,6 +2167,8 @@ class MixedPaperPanel(QWidget):
         )
         self.title = QLineEdit(legacy_model.title or "化学巩固练习")
         self.subtitle = QLineEdit(legacy_model.subtitle)
+        self.title.setMaxLength(120)
+        self.subtitle.setMaxLength(180)
         self.mode = QComboBox()
         self.mode.addItem("平时练习", "daily_practice")
         self.mode.addItem("模拟考试", "mock_exam")
@@ -2181,6 +2189,17 @@ class MixedPaperPanel(QWidget):
             field.setAccessibleName(caption)
             form.addRow(caption, field)
         root.addLayout(form)
+        self.title_recovery_note = _label("", "MutedLabel")
+        self.title_recovery_note.hide()
+        root.addWidget(self.title_recovery_note)
+        self.save_recovered_title_button = _quiet_button("保存恢复的题名或范围说明")
+        self.save_recovered_title_button.clicked.connect(self._save_explicitly)
+        self.save_recovered_title_button.hide()
+        root.addWidget(self.save_recovered_title_button)
+        self.discard_title_buffer_button = _quiet_button("放弃旧版题名恢复缓冲")
+        self.discard_title_buffer_button.clicked.connect(self._discard_title_buffer)
+        self.discard_title_buffer_button.hide()
+        root.addWidget(self.discard_title_buffer_button)
         self.show_scores = QCheckBox("学生题面额外显示分数")
         self.show_scores.setChecked(legacy_model.show_question_scores)
         root.addWidget(self.show_scores)
@@ -2243,7 +2262,7 @@ class MixedPaperPanel(QWidget):
             "请先查看完整题面、答案与共同材料，再确认导出。", "MutedLabel"
         )
         self.history_note = _label(
-            "仅撤销本次工作台打开期间最近30次已保存编辑；关闭、读取失败或来源变化后记录失效。", "MutedLabel")
+            "最近30步已保存编辑随本卷保留，重新打开后可撤销或重做；来源变化或外部更新时请重新核对。", "MutedLabel")
         root.addWidget(self.history_note)
         self.reload_button = _quiet_button("重新读取已保存草稿")
         self.reload_button.clicked.connect(self.load)
@@ -2285,27 +2304,36 @@ class MixedPaperPanel(QWidget):
         self.undo_button = _quiet_button("撤销上一步（Ctrl+Alt+Z）")
         self.undo_button.setAccessibleName("撤销当前卷上一步已保存编辑")
         self.undo_button.clicked.connect(self._undo)
+        self.redo_button = _quiet_button("重做上一步（Ctrl+Alt+Y）")
+        self.redo_button.setAccessibleName("重做当前卷上一步已保存编辑")
+        self.redo_button.clicked.connect(self._redo)
         self.save_button = None
         if self._independent:
             self.undo_button.setText("撤销上一步")
-            self.undo_button.setToolTip("撤销本次打开期间最近一次已保存编辑（Ctrl+Alt+Z）")
+            self.undo_button.setToolTip("撤销当前卷最近一次已保存编辑，重新打开后仍可使用（Ctrl+Alt+Z）")
+            self.redo_button.setText("重做上一步")
             self.save_button = _quiet_button("保存当前卷")
             self.save_button.setAutoDefault(False)
             self.save_button.clicked.connect(self._save_explicitly)
             saved_actions = QHBoxLayout()
             saved_actions.addWidget(self.save_button, 1)
             saved_actions.addWidget(self.undo_button, 1)
+            saved_actions.addWidget(self.redo_button, 1)
             outer.addLayout(saved_actions)
         else:
             outer.addWidget(self.undo_button)
+            outer.addWidget(self.redo_button)
         self.back_button = _quiet_button("返回题库")
         self.back_button.clicked.connect(self._return_to_library)
         outer.addWidget(self.back_button)
         self.undo_shortcut = QShortcut(QKeySequence("Ctrl+Alt+Z"), self)
         self.undo_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
         self.undo_shortcut.activated.connect(self._undo)
+        self.redo_shortcut = QShortcut(QKeySequence("Ctrl+Alt+Y"), self)
+        self.redo_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        self.redo_shortcut.activated.connect(self._redo)
         for button in (self.up_button, self.down_button, self.remove_button, self.restore_button,
-                       self.reload_button, self.restart_button, self.preview_button, self.export_button, self.undo_button, self.back_button, self.details_button):
+                       self.reload_button, self.restart_button, self.preview_button, self.export_button, self.undo_button, self.redo_button, self.back_button, self.details_button):
             button.setAutoDefault(False)
         self.sections.currentRowChanged.connect(self._selection_changed)
         self.up_button.clicked.connect(lambda: self._move(-1))
@@ -2314,8 +2342,10 @@ class MixedPaperPanel(QWidget):
         self.restore_button.clicked.connect(self._restore)
         self.points.valueChanged.connect(self._settings_changed)
         self.space.valueChanged.connect(self._settings_changed)
-        self.title.textChanged.connect(self._edited)
-        self.subtitle.textChanged.connect(self._edited)
+        self.title.textChanged.connect(lambda _value: self._title_edited("title"))
+        self.subtitle.textChanged.connect(lambda _value: self._title_edited("subtitle"))
+        self.title.editingFinished.connect(self._flush_pending_title)
+        self.subtitle.editingFinished.connect(self._flush_pending_title)
         self.mode.currentIndexChanged.connect(self._edited)
         self.duration.valueChanged.connect(self._edited)
         self.show_scores.toggled.connect(self._edited)
@@ -2353,6 +2383,8 @@ class MixedPaperPanel(QWidget):
 
     def _open_details(self):
         if self._busy or self._saving or self._closed:
+            return
+        if not self._flush_pending_title():
             return
         from .paper_details_dialog import PaperDetailsDialog
         if self._details_dialog is None:
@@ -2440,14 +2472,14 @@ class MixedPaperPanel(QWidget):
         except Exception:
             failed(None)
 
-    def _save(self, *, action="修改卷面设置", remember=True, selected=None):
+    def _save(self, *, action="修改卷面设置", remember=True, selected=None, settings_ui=None):
         if self._saving or self._restore_failed or not self._loaded_once or self._draft_session is None:
             return False
         self._saving = True
         self._update_actions()
         try:
             result = self._draft_session.save(
-                {**self.model.draft(), "settings_ui": self._request_settings()},
+                {**self.model.draft(), "settings_ui": settings_ui or self._request_settings()},
                 action=action, selected=selected or self._current_key(), remember=remember,
             )
         except Exception:
@@ -2457,16 +2489,47 @@ class MixedPaperPanel(QWidget):
             self._saving = False
             self._update_actions()
         self._update_actions()
-        if result["changed"] and remember:
+        if self._pending_title_fields:
+            saved_ui = self._draft_session.current.record["payload"]["settings_ui"]
+            if all(saved_ui.get(field, "") == getattr(self, field).text().strip()
+                   for field in self._pending_title_fields):
+                self._pending_title_fields.clear()
+                self._pending_title_failed = False
+                self._title_recovered_needs_save = False
+                self.save_recovered_title_button.hide()
+                self._update_actions()
+        if self._pending_title_fields:
+            self._record_title_buffer()
+        elif self._title_recovery is not None:
+            try:
+                saved_ui = self._draft_session.current.record["payload"]["settings_ui"]
+                if self._title_recovery.clear(saved_ui):
+                    self.title_recovery_note.hide()
+                    self.discard_title_buffer_button.hide()
+                    self._title_buffer_error = False
+                else:
+                    self.title_recovery_note.setText("当前卷已保存；另一版本的题名恢复缓冲已保留，重读后核对。")
+                    self.title_recovery_note.show()
+            except Exception:
+                self.title_recovery_note.setText("当前卷已保存；恢复缓冲清理未完成，原缓冲保留。")
+                self.title_recovery_note.show()
+        if self._pending_title_fields:
+            self.status.setText("保存期间收到的新题名或范围说明尚未保存；请结束编辑或再次保存。")
+        elif result["changed"] and remember:
             self.status.setText(f"已保存{action}，可撤销；请重新核对预览。")
         self.draft_saved.emit()
         return True
 
     def _save_explicitly(self):
+        if not self._flush_pending_title(explicit=True):
+            return
         if self._save(remember=False):
             self.status.setText("当前卷已保存；之后改变公共题篮不会改动此卷。")
 
     def _draft_failed(self, message, *, preserve_recovery=False):
+        if self._pending_title_fields:
+            self._pending_title_failed = True
+            message = "题名或范围说明尚未保存；" + message
         if self._draft_session is not None:
             self._draft_session.invalidate(preserve_recovery=preserve_recovery)
         self._restore_failed = True
@@ -2479,6 +2542,8 @@ class MixedPaperPanel(QWidget):
         self.scope_changed.emit()
 
     def _return_to_library(self):
+        if not self.prepare_leave():
+            return
         navigate = getattr(self.window(), "navigate", None)
         if callable(navigate):
             navigate("library")
@@ -2534,19 +2599,29 @@ class MixedPaperPanel(QWidget):
             failed(None)
 
     def _undo(self):
-        if self._busy or self._saving or self._restore_failed or self._draft_session is None or not self._draft_session.undo_count:
+        self._travel_history(False)
+
+    def _redo(self):
+        self._travel_history(True)
+
+    def _travel_history(self, redo):
+        if not self._flush_pending_title():
+            return
+        count = (self._draft_session.redo_count if redo else self._draft_session.undo_count) if self._draft_session is not None else 0
+        if self._busy or self._saving or self._restore_failed or not count:
             return
         self._busy = True
         self._update_actions()
         try:
-            result = self._draft_session.undo()
+            result = self._draft_session.redo() if redo else self._draft_session.undo()
             self._invalidate_preview()
             self._apply_record(result["record"])
             self._render(result["selected"])
-            self.status.setText(f"已撤销{result['action']}并保存；请重新核对预览。")
+            verb = "重做" if redo else "撤销"
+            self.status.setText(f"已{verb}{result['action']}并保存；请重新核对预览。")
             self.draft_saved.emit()
         except Exception:
-            self._draft_failed("撤销未能确认保存，旧记录已失效；请重新读取已保存草稿。")
+            self._draft_failed("历史操作未能确认保存；请重新读取已保存草稿并核对可用记录。")
         finally:
             self._busy = False
             self._update_actions()
@@ -2561,6 +2636,8 @@ class MixedPaperPanel(QWidget):
         }
 
     def request(self):
+        if not self._flush_pending_title():
+            raise DesktopFacadeError("paper_title_unsaved", "题名或范围说明尚未保存，请先重新核对。")
         return {
             "schema_version": "shchem.desktop-mixed-paper-request.v1",
             **self._request_settings(),
@@ -2574,6 +2651,10 @@ class MixedPaperPanel(QWidget):
 
     def load(self):
         if self._closed:
+            return
+        recovering_title = (self._pending_title_failed or self._title_recovered_needs_save) and bool(self._pending_title_fields)
+        pending_text = {field: getattr(self, field).text() for field in self._pending_title_fields}
+        if not recovering_title and not self._flush_pending_title():
             return
         self._load_epoch += 1
         epoch = self._load_epoch
@@ -2600,11 +2681,21 @@ class MixedPaperPanel(QWidget):
                 if not self._restore_initial(current["record"]):
                     raise ValueError("invalid restored draft")
                 self._loaded_once = True
+                if recovering_title:
+                    self._rendering = True
+                    try:
+                        for field, text in pending_text.items():
+                            getattr(self, field).setText(text)
+                    finally:
+                        self._rendering = False
+                    self._pending_title_failed = False
                 self._render()
-                saved = self._save(remember=False)
+                saved = True if recovering_title else self._save(remember=False)
                 if saved:
-                    self.status.setText("已读取当前草稿；旧撤销记录已失效。" if current["history_reset"]
+                    self.status.setText("已核对已保存草稿；保留的题名或范围说明仍未保存，请结束编辑或点击保存。" if recovering_title else
+                                        "已读取当前草稿；旧撤销记录已失效。" if current["history_reset"]
                                         else "当前草稿已保存；可调整本卷并重新核对预览。")
+                    self._restore_title_buffer()
                     self._show_current_details()
             except Exception:
                 recovery = not self._independent and self._draft_session is not None and self._draft_session.can_restart
@@ -2810,6 +2901,8 @@ class MixedPaperPanel(QWidget):
             return
         if self.model.items[key]["kind"] == "personal_visual_theme":
             return
+        if not self._flush_pending_title():
+            return
         self.model.settings[key] = (
             {"points": self.points.value()}
             if self.model.items[key]["kind"] == "word_question"
@@ -2824,6 +2917,8 @@ class MixedPaperPanel(QWidget):
     def _move(self, direction):
         if self._busy or self._saving or self._restore_failed:
             return
+        if not self._flush_pending_title():
+            return
         key = self._current_key()
         if self.model.move(key, direction):
             self._edited(action="调整题目顺序", selected=key)
@@ -2833,12 +2928,16 @@ class MixedPaperPanel(QWidget):
         key = self._current_key()
         if self._busy or self._saving or self._restore_failed or key not in self.model.order:
             return
+        if not self._flush_pending_title():
+            return
         self.model.remove(key)
         self._edited(action="移出本卷题目", selected=key)
         self._render()
 
     def _restore(self):
         if self._busy or self._saving or self._restore_failed or not self.model.excluded:
+            return
+        if not self._flush_pending_title():
             return
         self.model.restore_excluded()
         self._edited(action="恢复本卷移除项")
@@ -2855,8 +2954,122 @@ class MixedPaperPanel(QWidget):
         if self._preview_dialog is not None:
             self._preview_dialog.reject()
             self._preview_dialog = None
+    def _title_edited(self, field):
+        if self._rendering or self._restore_failed or self._closed or not self._loaded_once:
+            return
+        self._pending_title_fields.add(field)
+        self._load_epoch += 1
+        self._invalidate_preview()
+        self._busy = False
+        self.status.setText("题名或范围说明尚未保存；结束编辑、操作或离开页面前将合并保存。")
+        self._record_title_buffer()
+        self._update_actions()
+
+    def _title_binding(self):
+        from ..desktop_paper_history import digest, target
+        current = self._draft_session.current if self._draft_session is not None else None
+        if current is None or current.record is None:
+            return deepcopy(self._last_title_binding)
+        self._last_title_binding = {"draft": target(current), "basis_sha256": digest(self._draft_session._history_basis())}
+        return deepcopy(self._last_title_binding)
+
+    def _title_recovery_service(self):
+        if self._title_recovery is None:
+            from ..desktop_paper_title_recovery import PaperTitleRecovery
+            store = self._draft_session.store
+            self._title_recovery = PaperTitleRecovery(store.root,
+                getattr(store, "paper_history_scope", "public-mixed-paper"))
+        return self._title_recovery
+
+    def _record_title_buffer(self):
+        if self._title_buffer_error:
+            self.status.setText("题名或范围说明尚未保存，恢复缓冲未能确认；当前文字保留，请显式保存或重读核对。")
+            return False
+        if not self._pending_title_fields:
+            return False
+        try:
+            recovery = self._title_recovery_service()
+            if not recovery.initialized:
+                recovery.read(self._title_binding())
+            recovery.write({field: getattr(self, field).text() for field in self._pending_title_fields},
+                           self._title_binding())
+            return True
+        except Exception:
+            self._title_buffer_error = True
+            self.status.setText("题名或范围说明尚未保存，恢复缓冲也未能确认；当前文字保留，请显式保存或重读核对。")
+            return False
+
+    def _restore_title_buffer(self):
+        result = self._title_recovery_service().read(self._title_binding())
+        self._title_buffer_error = result["status"] in {"stale", "invalid"}
+        if result["status"] == "matched":
+            already_pending = bool(self._pending_title_fields)
+            if not self._pending_title_fields:
+                self._rendering = True
+                try:
+                    for field, text in result["texts"].items():
+                        getattr(self, field).setText(text)
+                finally:
+                    self._rendering = False
+                self._pending_title_fields.update(result["texts"])
+                self._pending_title_failed = False
+                self._title_recovered_needs_save = True
+                self._invalidate_preview()
+            self.status.setText("已核对已保存草稿；保留的题名或范围说明仍未保存，请显式保存。" if already_pending else
+                                "已恢复尚未正式保存的题名或范围说明；请点击保存确认。")
+            self.save_recovered_title_button.setVisible(self._title_recovered_needs_save)
+            self.title_recovery_note.hide()
+            self.discard_title_buffer_button.hide()
+        elif result["status"] in {"stale", "invalid"}:
+            texts = result["texts"]
+            self.title_recovery_note.setText("存在另一版本或无法核验的题名缓冲，原文件保留，未套用到本卷。" +
+                ("\n题名：" + texts.get("title", "") + "\n范围说明：" + texts.get("subtitle", "") if texts else ""))
+            self.title_recovery_note.show()
+            self.discard_title_buffer_button.setVisible(result.get("can_discard", False))
+        else:
+            self.title_recovery_note.hide()
+            self.discard_title_buffer_button.hide()
+        self._update_actions()
+
+    def _discard_title_buffer(self):
+        try:
+            if not self._title_recovery_service().clear(discard=True):
+                raise ValueError("recovery changed")
+        except Exception:
+            self.status.setText("恢复缓冲已变化或无法清理；原缓冲及当前文字均保留，请重新读取。")
+            return
+        self._title_buffer_error = False
+        self.title_recovery_note.hide()
+        self.discard_title_buffer_button.hide()
+        if self._pending_title_fields:
+            self._record_title_buffer()
+        self.status.setText("旧版恢复缓冲已放弃；当前文字仍需正式保存。" if self._pending_title_fields else "旧版恢复缓冲已放弃，已保存草稿保持不变。")
+
+    def _flush_pending_title(self, *, explicit=False):
+        if not self._pending_title_fields:
+            return True
+        if self._title_recovered_needs_save and not explicit:
+            self.status.setText("恢复的题名或范围说明尚未正式保存；请先点击保存确认，再继续操作。")
+            return False
+        if self._closed or self._saving or self._restore_failed or self._pending_title_failed:
+            self.status.setText("题名或范围说明尚未保存，已暂停离开或切换；请重新读取核对后保存。")
+            return False
+        current = self._draft_session.current if self._draft_session is not None else None
+        if current is None or current.record is None:
+            return False
+        settings = deepcopy(current.record["payload"]["settings_ui"])
+        for field in self._pending_title_fields:
+            settings[field] = getattr(self, field).text().strip()
+        saved = self._save(action="修改题名或范围说明", settings_ui=settings)
+        return saved and not self._pending_title_fields
+
+    def prepare_leave(self):
+        return self._flush_pending_title()
+
     def _edited(self, *_args, action="修改卷面设置", selected=None):
         if self._rendering or self._saving or self._restore_failed:
+            return
+        if not self._flush_pending_title():
             return
         self._invalidate_preview()
         self._busy = False
@@ -2869,11 +3082,15 @@ class MixedPaperPanel(QWidget):
         enabled = self._loaded_once and not self._busy and not self._saving and not self._restore_failed
         history = self._draft_session.undo_count if self._draft_session is not None else 0
         action = self._draft_session.undo_action if history else ""
-        self.undo_button.setEnabled(enabled and history > 0)
+        self.undo_button.setEnabled(enabled and (history > 0 or bool(self._pending_title_fields)))
         if self.save_button is not None:
             self.save_button.setEnabled(enabled)
-        self.undo_shortcut.setEnabled(enabled and history > 0)
+        self.save_recovered_title_button.setEnabled(enabled)
+        self.undo_shortcut.setEnabled(enabled and (history > 0 or bool(self._pending_title_fields)))
         self.undo_button.setAccessibleName(f"撤销当前卷上一步{action}，Ctrl+Alt+Z")
+        redo = self._draft_session.redo_count if self._draft_session is not None else 0
+        self.redo_button.setEnabled(enabled and redo > 0)
+        self.redo_shortcut.setEnabled(enabled and redo > 0)
         self.reload_button.setEnabled(not self._busy and not self._saving)
         self.details_button.setEnabled(self._loaded_once and not self._busy and not self._saving)
         recovery = not self._independent and self._draft_session is not None and self._draft_session.can_restart
@@ -2889,7 +3106,7 @@ class MixedPaperPanel(QWidget):
             self.show_scores,
             self.sections,
         ):
-            field.setEnabled(enabled)
+            field.setEnabled(enabled and (not self._title_recovered_needs_save or field in (self.title, self.subtitle)))
         self.preview_button.setEnabled(enabled and bool(self.model.order))
         self.export_button.setEnabled(
             enabled and self._approved and self._preview is not None
@@ -2905,6 +3122,8 @@ class MixedPaperPanel(QWidget):
         self.space.setEnabled(enabled and bool(key) and kind == "core_theme")
 
     def _preview_request(self):
+        if not self._flush_pending_title():
+            return
         if self._busy or self._restore_failed or not self.model.order:
             return
         self._invalidate_preview()
@@ -3024,6 +3243,8 @@ class MixedPaperPanel(QWidget):
             failed("预览确认未保存，请重试。")
 
     def _export_request(self):
+        if not self._flush_pending_title():
+            return
         if self._busy or not self._approved or self._preview is None:
             return
         value, generation, draft = (
@@ -3090,6 +3311,9 @@ class MixedPaperPanel(QWidget):
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(Path(path).resolve())))
 
     def closeEvent(self, event):
+        if not self.prepare_leave():
+            event.ignore()
+            return
         self._cancel_operation()
         self._closed = True
         self._load_epoch += 1
@@ -3107,6 +3331,9 @@ class PaperPage(QWidget):
     """Three-pane native assembly page used by ``TeacherWorkbenchWindow``."""
 
     preparation_requested = Signal(dict)
+
+    def prepare_leave(self):
+        return self._mixed_panel is None or self._mixed_panel.prepare_leave()
 
     def __init__(
         self,

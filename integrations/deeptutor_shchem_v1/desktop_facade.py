@@ -1065,6 +1065,7 @@ class DesktopWorkbenchFacade:
         self._providers = provider_store or ModelProviderSettingsStore(
             paths.settings_root,
             project_root=paths.workspace_root,
+            usage_root=paths.state_root / "model-usage-v1",
         )
         self._state = state_store or DesktopStateStore(paths.state_root)
         self._connection_test_transport = connection_test_transport
@@ -1127,6 +1128,7 @@ class DesktopWorkbenchFacade:
         self._library_views: dict[str, tuple[Any, ...]] = {}
         self._library_view_lock = threading.RLock()
         self._student_practice = DesktopStudentPractice(self)
+        self._cache_maintenance_service()
 
     @staticmethod
     def _with_presentation_snapshot(catalog: dict[str, Any]) -> dict[str, Any]:
@@ -1582,9 +1584,10 @@ class DesktopWorkbenchFacade:
             return self._read_curriculum_catalog(force_refresh=force_refresh)
 
     def _read_curriculum_catalog(self, *, force_refresh: bool) -> dict[str, Any]:
-        if not force_refresh and self._curriculum_catalog_cache is not None:
+        cached = self._curriculum_catalog_cache
+        if not force_refresh and cached is not None:
             return json.loads(
-                json.dumps(self._curriculum_catalog_cache, ensure_ascii=False)
+                json.dumps(cached, ensure_ascii=False)
             )
         try:
             value = self._curriculum.catalog()
@@ -1707,8 +1710,15 @@ class DesktopWorkbenchFacade:
         return tuple(self._state.basket())
 
     def open_basket_session(self):
-        """A window-local undo history backed by the shared durable basket CAS."""
-        return self._state.open_basket_session()
+        """Reopen durable basket history and verify original sources on restore."""
+        from .desktop_mixed_paper_service import MixedPaperService
+        from .desktop_paper_history import sources
+        from .desktop_state import BasketEditSession
+        def verify(rows):
+            with read_cancel_scope(self._reader_stop_event):
+                resolved, _, _, _ = MixedPaperService(self)._resolve(rows)
+                return sources(resolved)
+        return BasketEditSession(self._state, source_validator=verify)
 
     def _mixed_paper_call(self, method: str, *args: Any) -> Any:
         from .desktop_mixed_paper_pagination import MixedPaperPaginationError
@@ -2107,6 +2117,43 @@ class DesktopWorkbenchFacade:
             and {"vision", "structured_output"}.issubset(profile.capabilities)
             for profile in self.list_provider_profiles()
         )
+
+    def _model_usage_store(self):
+        from .desktop_model_usage import ModelUsageStore
+        return ModelUsageStore(self.paths.state_root / "model-usage-v1")
+
+    def model_usage_summary(self) -> dict[str, Any]:
+        return self._model_usage_store().summary()
+
+    def model_usage_calls(self, limit: int = 500) -> list[dict[str, Any]]:
+        return self._model_usage_store().list_calls(limit=limit)
+
+    def model_usage_prices(self) -> list[dict[str, Any]]:
+        return self._model_usage_store().prices()
+
+    def _model_usage_profile(self, profile_id: str) -> Mapping[str, Any]:
+        profile = next((value for value in self._providers.list_metadata()
+                        if value.get("profile_id") == profile_id), None)
+        if profile is None:
+            raise DesktopFacadeError("model_not_configured", "请选择已保存的模型配置。")
+        return profile
+
+    def save_model_usage_price(self, profile_id: str, *, currency: str,
+                              input_price_per_million: str, output_price_per_million: str,
+                              cached_input_price_per_million: str | None = None) -> dict[str, Any]:
+        profile = self._model_usage_profile(profile_id)
+        return self._model_usage_store().set_price(
+            profile_id, str(profile["provider_id"]), str(profile["model_id"]), currency=currency,
+            input_price_per_million=input_price_per_million, output_price_per_million=output_price_per_million,
+            cached_input_price_per_million=cached_input_price_per_million,
+        )
+
+    def remove_model_usage_price(self, profile_id: str) -> None:
+        profile = self._model_usage_profile(profile_id)
+        self._model_usage_store().remove_price(profile_id, str(profile["provider_id"]), str(profile["model_id"]))
+
+    def export_model_usage(self, destination: str | Path) -> Path:
+        return self._model_usage_store().export(destination)
 
     def test_provider_connection(
         self,
@@ -2847,7 +2894,8 @@ class DesktopWorkbenchFacade:
         )
 
     def _restore_visual_import_sources(
-        self, descriptor: Mapping[str, Any], *, source_ids: set[str] | None = None
+        self, descriptor: Mapping[str, Any], *, source_ids: set[str] | None = None,
+        progress=None,
     ) -> tuple[DesktopSourceFile, ...]:
         raw_sources = descriptor.get("sources")
         if not isinstance(raw_sources, list) or not raw_sources:
@@ -2873,7 +2921,9 @@ class DesktopWorkbenchFacade:
                 or not source_ids.issubset({str(item.get("source_file_id")) for item in raw_sources if isinstance(item, Mapping)})
             ):
                 raise ValueError("selected source missing")
+            selected_count = (len(source_ids) if source_ids is not None else len(raw_sources))
             for item in raw_sources:
+                check_read_cancelled()
                 if not isinstance(item, Mapping):
                     raise TypeError("source descriptor invalid")
                 if source_ids is not None and str(item.get("source_file_id")) not in source_ids:
@@ -2887,6 +2937,7 @@ class DesktopWorkbenchFacade:
                 if path.is_symlink() or not path.is_file():
                     raise ValueError("source archive missing")
                 content = path.read_bytes()
+                check_read_cancelled()
                 if hashlib.sha256(content).hexdigest() != digest or len(
                     content
                 ) != item.get("size_bytes"):
@@ -2902,12 +2953,21 @@ class DesktopWorkbenchFacade:
                         source_file_id=str(item["source_file_id"]),
                     )
                 )
+                if progress and (len(sources) % 5 == 0 or len(sources) == selected_count):
+                    progress({"message": f"已核对原文件 {len(sources)}/{selected_count}…"})
+                    check_read_cancelled()
         except (KeyError, OSError, TypeError, ValueError) as exc:
             raise DesktopFacadeError(
                 "visual_import_source_archive_invalid",
                 "已保存批次的原文件归档不完整或已变化。",
             ) from exc
         return tuple(sources)
+
+    def _restore_visual_import_sources_progress(self, descriptor, progress, *, source_ids=None):
+        """Optional source port used by catalogues that expose read progress."""
+        return self._restore_visual_import_sources(
+            descriptor, source_ids=source_ids, progress=progress,
+        )
 
     def _imported_word_source(self, batch_id: str, source_id: str):
         descriptor = self._saved_visual_import_batch(batch_id)
@@ -3108,9 +3168,12 @@ class DesktopWorkbenchFacade:
     def _word_questions(self):
         from .desktop_word_questions import WordQuestionService
 
-        if not hasattr(self, "_word_question_service"):
-            self._word_question_service = WordQuestionService(self)
-        return self._word_question_service
+        service = self.__dict__.get("_word_question_service")
+        if service is None:
+            # Publish once and return the captured instance: maintenance may
+            # detach the attribute between lookups, never this local reader.
+            service = self.__dict__.setdefault("_word_question_service", WordQuestionService(self))
+        return service
 
     def word_question_catalog(self):
         return self._word_questions().catalog()
@@ -3119,6 +3182,19 @@ class DesktopWorkbenchFacade:
         """Read the complete source-bound catalogue with cooperative progress."""
         with read_cancel_scope(cancelled):
             return self._word_questions().catalog(progress=progress)
+
+    def word_question_listing(self):
+        """Search catalogue metadata without expanding every source body."""
+        return self._word_questions().catalog_listing()
+
+    def word_question_listing_progress(self, progress, cancelled):
+        """Build the lightweight listing with the normal cancellation scope."""
+        with read_cancel_scope(cancelled):
+            return self._word_questions().catalog_listing(progress=progress)
+
+    def word_question_detail(self, key, revision):
+        """Read one current source-bound question after a search selection."""
+        return self._word_questions().question(key, revision)
 
     def _word_semantic_tags(self):
         from .desktop_word_semantic_tags import WordSemanticTagService
@@ -3860,6 +3936,25 @@ class DesktopWorkbenchFacade:
         review = value.get("review") if isinstance(value, Mapping) else None
         count = review.get("distinct_match_count") if isinstance(review, Mapping) else 0
         return count if type(count) is int and count >= 0 else 0
+
+    def student_roster_store(self):
+        """Teacher-only roster, isolated with this copy's private student data."""
+        from .desktop_student_roster import DesktopStudentRosterStore
+        manager = self._student_manager_instance()
+        return DesktopStudentRosterStore(manager.root, profiles=self.student_profiles,
+                                         submission=self.student_submission)
+
+    def student_rosters(self):
+        return self.student_roster_store().entries()
+
+    def save_student_roster(self, roster, *, expected_revision=None):
+        return self.student_roster_store().save(roster, expected_revision=expected_revision)
+
+    def student_local_identity(self, student_id):
+        """Explicit local aliases only; never changes the anonymous profile DTO."""
+        return tuple((roster['label'], member['local_alias'], member['id'])
+                     for roster in self.student_rosters() for member in roster['members']
+                     if member['profile_student_id'] == student_id)
 
     def student_profiles(self) -> tuple[StudentProfileSummary, ...]:
         manager = self._student_manager_instance()
@@ -7405,6 +7500,70 @@ class DesktopWorkbenchFacade:
     @property
     def state_store(self) -> DesktopStateStore:
         return self._state
+
+    def _cache_maintenance_service(self):
+        from .desktop_cache_maintenance import DesktopCacheMaintenance
+        if not hasattr(self, "_desktop_cache_maintenance"):
+            self._desktop_cache_maintenance = DesktopCacheMaintenance(
+                self.paths.state_root, busy=self._cache_maintenance_busy,
+                invalidate=self._invalidate_maintained_caches,
+            )
+        return self._desktop_cache_maintenance
+
+    def _cache_maintenance_busy(self):
+        # Direct facade callers share the same conservative busy rule as the
+        # settings UI. Never cancel readers or reset their stop-event here.
+        import sys
+        current = threading.get_ident()
+        modules = {
+            "desktop_word_questions", "desktop_word_catalog_index", "desktop_word_preview_cache",
+            "desktop_registry_cache", "desktop_mixed_paper_service", "desktop_word_semantic_tags",
+            "desktop_word_source_locations", "desktop_word_source_reference",
+            "desktop_explorer_index",
+        }
+        for thread_id, frame in sys._current_frames().items():
+            if thread_id == current:
+                continue
+            while frame is not None:
+                module = frame.f_globals.get("__name__", "").rsplit(".", 1)[-1]
+                if module in modules or (module == "desktop_facade" and frame.f_code.co_name in {
+                    "imported_word_preview", "_read_desktop_registry", "load_desktop_registry"}):
+                    return True
+                frame = frame.f_back
+        return False
+
+    def _invalidate_maintained_caches(self, categories):
+        if categories.intersection({"word_previews", "word_catalog"}):
+            # Detach once before waiting for the captured service's lock. A
+            # concurrent factory may create a fresh instance while this old
+            # one drains; never delete that new instance after the wait.
+            service = self.__dict__.pop("_word_question_service", None)
+            if service is not None:
+                with service._lock:
+                    service._cache.clear()
+                    service._locations.clear()
+                    service._last_index_statistics.clear()
+                # New listings receive a new service and search-provider
+                # identity. Teacher attributes, range drafts and history stay.
+        if "registry" in categories:
+            self._curriculum_catalog_cache = None
+            with self._library_view_lock:
+                self._library_views.clear()
+
+    def plan_desktop_cache_cleanup(self):
+        return self._cache_maintenance_service().plan()
+
+    def clear_desktop_caches(self, plan_id, revision, categories):
+        return self._cache_maintenance_service().execute(plan_id, revision, categories)
+
+    def desktop_cache_epoch(self, scope="word"):
+        value = self._cache_maintenance_service().epoch(scope)
+        if scope == "word":
+            previous = getattr(self, "_desktop_observed_word_cache_epoch", None)
+            if previous is not None and previous != value:
+                self._invalidate_maintained_caches({"word_previews", "word_catalog"})
+            self._desktop_observed_word_cache_epoch = value
+        return value
 
 
 def build_default_facade(paths: DesktopPaths | None = None) -> DesktopWorkbenchFacade:

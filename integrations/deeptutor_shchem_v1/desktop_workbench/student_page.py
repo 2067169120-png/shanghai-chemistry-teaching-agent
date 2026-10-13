@@ -853,7 +853,7 @@ class StudentPage(QWidget):
         identity_title.setObjectName("CardTitle")
         identity_layout.addWidget(identity_title)
         privacy = QLabel(
-            "只使用系统生成的匿名代号；不要输入姓名、学号、手机号或班级名单。"
+            "分析档案使用系统生成的匿名代号。班级与学生别名请在本地名册维护，明确绑定后仅供本机识别，不随API请求发送。"
         )
         privacy.setWordWrap(True)
         privacy.setAccessibleName("学生身份匿名化提醒")
@@ -872,7 +872,16 @@ class StudentPage(QWidget):
         self.new_student_button.clicked.connect(self._new_student)
         self.identity_row.addWidget(_stacked_field("匿名学生", self.student_combo), 1)
         self.identity_row.addWidget(self.new_student_button)
+        self.roster_button = QPushButton("本地班级名册")
+        self.roster_button.setObjectName("QuietButton")
+        self.roster_button.clicked.connect(self._open_local_roster)
+        self.roster_button.setEnabled(callable(getattr(facade, "student_roster_store", None)))
+        self.identity_row.addWidget(self.roster_button)
         identity_layout.addLayout(self.identity_row)
+        self.local_identity_label = QLabel("")
+        self.local_identity_label.setWordWrap(True)
+        self.local_identity_label.setAccessibleName("已明确绑定的本地学生身份")
+        identity_layout.addWidget(self.local_identity_label)
         self.content_layout.addWidget(self.identity_card)
 
         self.files_heading = QLabel("2　本机材料")
@@ -1224,6 +1233,30 @@ class StudentPage(QWidget):
         self._render_recent(())
         self._load_recent()
         self._update_prepare_enabled()
+        self._refresh_local_identity()
+
+    def _refresh_local_identity(self) -> None:
+        student = self._selected_student()
+        operation = getattr(self.facade, "student_local_identity", None)
+        if student is None or not callable(operation):
+            self.local_identity_label.setText("")
+            return
+        try:
+            values = operation(str(_field(student, "student_id")))
+            self.local_identity_label.setText("本地名册：" + "；".join(
+                f"{class_label} · {alias} · 成员{member_id[:8]}" for class_label, alias, member_id in values)
+                if values else "当前匿名档案尚未显式关联本地名册成员。")
+        except Exception:
+            self.local_identity_label.setText("本地名册暂时无法读取；匿名档案身份保留，不按姓名猜测。")
+
+    def _open_local_roster(self) -> None:
+        try:
+            from .student_roster_dialog import StudentRosterDialog
+            dialog = StudentRosterDialog(self.facade, self)
+            dialog.exec(); dialog.deleteLater()
+            self._refresh_local_identity()
+        except Exception as error:
+            self.status.setText(getattr(error, "message_zh", "本地名册暂时无法打开。"))
 
     def _selected_student(self) -> object | None:
         return self.student_combo.currentData()

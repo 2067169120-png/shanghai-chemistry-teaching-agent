@@ -310,6 +310,18 @@ def _search_text(row, attributes, mappings):
     return "\n".join(parts).casefold()
 
 
+def matches_query_text(row, query, metadata_text):
+    """Lightweight rows search bound postings; complete rows retain old text."""
+    if not isinstance(query, str):
+        return False
+    normalized = query.strip().casefold()
+    if not normalized or normalized in metadata_text:
+        return True
+    provider = row.get("search_provider")
+    return bool(row.get("lightweight") and callable(getattr(provider, "matches", None))
+                and provider.matches(row.get("key"), row.get("revision"), normalized))
+
+
 def compile_question_matcher(selection, catalog):
     """Compile one request's directory and selected IDs, with no global cache.
 
@@ -375,7 +387,4 @@ def _matches_compiled(row, chosen, knowledge_mode, query, nodes):
         for path in paths
     ):
         return False
-    return isinstance(query, str) and (
-        not query.strip()
-        or query.strip().casefold() in _search_text(row, attributes, mappings)
-    )
+    return matches_query_text(row, query, _search_text(row, attributes, mappings))

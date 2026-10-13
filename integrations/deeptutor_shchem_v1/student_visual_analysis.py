@@ -2473,6 +2473,7 @@ class StudentVisualAnalysisManager:
                     prompt=self._visual_prompt(frozen, pages),
                     schema=student_visual_provider_schema(schema),
                     schema_name="shchem_student_visual_analysis_candidate",
+                    task_type="student_analysis",
                     pages=[(page["mime_type"], page["body"]) for page in pages],
                 )
                 api_style = request.api_style

@@ -69,10 +69,10 @@ def test_saved_edits_undo_restore_only_current_draft_and_preserve_sources(opened
     original_basis = deepcopy(before.record["source_basis"])
     assert session.save(edited(payload, kind), action=kind, selected=payload["order"][0])["changed"]
     assert store.draft_snapshot(DRAFT_ID).record["payload"] == edited(payload, kind)
-    # A freshly opened editor sees the committed edit; it inherits no undo.
+    # A freshly opened editor recovers the history bound to the saved edit.
     second = service.open_draft_session()
     assert second.read(service.projection())["record"]["payload"] == edited(payload, kind)
-    assert second.undo_count == 0
+    assert second.undo_count == 1
     store.save_window_state(geometry="new-window", layout="new-layout")
     result = session.undo()
     assert result["selected"] == payload["order"][0]
@@ -139,7 +139,7 @@ def test_external_same_draft_changes_are_not_overwritten(opened, operation):
 
 @pytest.mark.parametrize("when", ["before", "after"])
 @pytest.mark.parametrize("action", ["save", "undo"])
-def test_uncertain_save_requires_reread_and_never_replays_history(opened, monkeypatch, when, action):
+def test_uncertain_save_requires_explicit_reread_before_recovering_bound_history(opened, monkeypatch, when, action):
     service, store, session, payload = opened
     session.save(edited(payload, "move"))
     original, calls = store._write_unlocked, []
@@ -157,10 +157,12 @@ def test_uncertain_save_requires_reread_and_never_replays_history(opened, monkey
     assert len(calls) == 1
     monkeypatch.setattr(store, "_write_unlocked", original)
     session.read(service.projection())
-    assert session.undo_count == 0
+    expected = 1 if when == "before" else (0 if action == "undo" else 2)
+    assert session.undo_count == expected
+    assert session.redo_count == (1 if when == "after" and action == "undo" else 0)
 
 
-def test_read_failure_retires_history_and_preserves_raw_bad_record(opened):
+def test_read_failure_invalidates_session_and_preserves_raw_bad_record(opened):
     service, store, session, payload = opened
     projection = service.projection()
     session.save(edited(payload, "move"))
@@ -171,8 +173,9 @@ def test_read_failure_retires_history_and_preserves_raw_bad_record(opened):
     assert store.path.read_bytes() == b"{broken" and session.undo_count == 0
     store.path.write_bytes(valid)
     session.read(projection)
-    with pytest.raises(DesktopStateError):
-        session.undo()
+    assert session.undo_count == 1
+    session.undo()
+    assert store.draft_snapshot(DRAFT_ID).record["payload"] == initial_payload(projection)
 
 
 @pytest.mark.parametrize("corrupt", [None, "bad", {"payload": []}, {"payload": {"schema_version": "unknown"}}])
@@ -203,7 +206,7 @@ def test_source_projection_refresh_clears_history_without_rebinding_existing_sou
     assert store.path.read_bytes() == frozen
 
 
-def test_window_close_reopen_restores_current_draft_without_history(opened):
+def test_window_close_reopen_restores_current_draft_with_bound_history(opened):
     service, store, session, payload = opened
     session.save(edited(payload, "layout"))
     frozen = store.path.read_bytes()
@@ -212,7 +215,9 @@ def test_window_close_reopen_restores_current_draft_without_history(opened):
         session.undo()
     second = service.open_draft_session()
     assert second.read(service.projection())["record"]["payload"] == edited(payload, "layout")
-    assert second.undo_count == 0 and store.path.read_bytes() == frozen
+    assert second.undo_count == 1 and store.path.read_bytes() == frozen
+    second.undo()
+    assert store.draft_snapshot(DRAFT_ID).record["payload"] == payload
 
 
 def test_old_approved_preview_cannot_export_after_edit_then_undo_same_payload(opened):
@@ -412,6 +417,10 @@ def test_history_limit_and_visual_metadata_restore_without_source_changes(opened
     projection = {"schema_version": "shchem.desktop-mixed-basket.v1", "basket_sha256": store.basket_snapshot().content_sha256,
                   "items": [{"key": "visual-synthetic", "kind": "personal_visual_theme", "source_ref": {"selections": [{"key": "v", "revision": "v1"}]},
                              "settings": {"use_source_scores": True}, "content": {}}]}
+    # This projection intentionally has no source image package. Exercise the
+    # state-only session here; production source verification has separate
+    # actual source-builder coverage in test_persistent_paper_history.
+    session = MixedPaperDraftSession(store)
     session.read(projection)
     payload = initial_payload(projection)
     session.save(payload, remember=False)

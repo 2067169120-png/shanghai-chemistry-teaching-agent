@@ -22,6 +22,8 @@ from pathlib import Path
 from typing import Any, Protocol
 from urllib.parse import urlsplit
 
+from .desktop_model_usage import UsageRequestMetadata, make_usage_metadata, record_transport_call
+
 from .model_provider_settings import (
     ModelProviderProbeContext,
     ModelProviderSettingsError,
@@ -134,6 +136,7 @@ class SyntheticProbeRequest:
     endpoint_scope: str = "public_https"
     method: str = "POST"
     request_kind: str = "synthetic_probe"
+    usage_metadata: UsageRequestMetadata | None = None
 
     def __repr__(self) -> str:
         return (
@@ -427,6 +430,7 @@ def _build_request(context: ModelProviderProbeContext) -> SyntheticProbeRequest:
         api_style=api_style,
         base_url_policy=context.base_url_policy,
         endpoint_scope=endpoint_scope,
+        usage_metadata=make_usage_metadata(context, "connection_test", len(FIXED_SYNTHETIC_PROMPT_BYTES) + 1024),
     )
 
 
@@ -764,6 +768,10 @@ class PinnedHttpsProbeTransport:
                 )
         connection: http.client.HTTPConnection | None = None
         model_invoked = False
+        audit_recorded = False
+        audit_http_status: int | None = None
+        audit_outcome = "failed"
+        audit_body: bytes | None = None
         try:
             connect_timeout = min(
                 _CONNECT_TIMEOUT_SECONDS,
@@ -847,10 +855,32 @@ class PinnedHttpsProbeTransport:
             connection.endheaders(request.body if request.method == "POST" else None)
             model_invoked = request.request_kind == "synthetic_probe"
             response = connection.getresponse()
+            audit_http_status = int(response.status)
             status_error = self._status_error(
                 int(response.status), model_invoked=model_invoked
             )
             if status_error is not None:
+                # An error envelope can still report billable provider usage.
+                # Read it only within the existing response bounds; preserve the
+                # original sanitized status error and never issue another request.
+                try:
+                    error_type = response.getheader("Content-Type") or ""
+                    error_encoding = response.getheader("Content-Encoding")
+                    error_length = response.getheader("Content-Length")
+                    safe_length = error_length is None or 0 <= int(error_length) <= self._max_response_bytes
+                    if (request.usage_metadata is not None
+                            and error_type.split(";", 1)[0].strip().lower() == "application/json"
+                            and error_encoding in {None, "identity"} and safe_length):
+                        error_body = response.read(self._max_response_bytes + 1)
+                        if len(error_body) <= self._max_response_bytes:
+                            audit_recorded = True
+                            record_transport_call(
+                                request.usage_metadata, api_style=request.api_style, raw=error_body,
+                                outcome="failed", model_invoked=model_invoked, http_status=audit_http_status,
+                                latency_ms=max(0, round((self._monotonic() - started) * 1000)),
+                            )
+                except Exception:
+                    pass
                 raise status_error
             content_type = response.getheader("Content-Type")
             content_encoding = response.getheader("Content-Encoding")
@@ -887,7 +917,20 @@ class PinnedHttpsProbeTransport:
                     response_body_sha256=hashlib.sha256(body).hexdigest(),
                     response_bytes=len(body),
                 )
+            audit_body = body
+            network_latency_ms = max(0, round((self._monotonic() - started) * 1000))
+            # Keep the original network deadline boundary independent of the
+            # time spent writing local accounting metadata.
             _remaining(deadline_monotonic, self._monotonic)
+            # Record the original provider envelope before cancellation or any
+            # downstream candidate parser can discard a completed response.
+            audit_recorded = True
+            record_transport_call(
+                request.usage_metadata, api_style=request.api_style, raw=body,
+                outcome="response_received", model_invoked=model_invoked,
+                http_status=audit_http_status,
+                latency_ms=network_latency_ms,
+            )
             if cancel_event.is_set():
                 raise ModelProviderProbeError(
                     "cancelled", "synthetic probe was cancelled", 409,
@@ -901,11 +944,12 @@ class PinnedHttpsProbeTransport:
                 content_type=content_type,
                 content_encoding=content_encoding,
                 body=body,
-                latency_ms=max(0, round((self._monotonic() - started) * 1000)),
+                latency_ms=network_latency_ms,
                 model_invoked=model_invoked,
             )
         except ModelProviderProbeError as exc:
             exc.model_invoked = exc.model_invoked or model_invoked
+            audit_outcome = "cancelled" if exc.code == "cancelled" else "failed"
             raise
         except socket.gaierror:
             raise ModelProviderProbeError(
@@ -933,6 +977,13 @@ class PinnedHttpsProbeTransport:
                 model_invoked=model_invoked,
             ) from None
         finally:
+            if not audit_recorded:
+                record_transport_call(
+                    request.usage_metadata, api_style=request.api_style, raw=audit_body,
+                    outcome=audit_outcome if model_invoked else "not_sent",
+                    model_invoked=model_invoked, http_status=audit_http_status,
+                    latency_ms=max(0, round((self._monotonic() - started) * 1000)),
+                )
             if connection is not None:
                 with contextlib.suppress(OSError):
                     connection.close()

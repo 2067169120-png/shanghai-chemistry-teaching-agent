@@ -254,7 +254,7 @@ class DesktopStateStore:
         with self._lock:
             return deepcopy(self._read_unlocked())
 
-    def _update(self, operation: Callable[[dict[str, Any]], None | bool], *, basket_write=False) -> dict[str, Any]:
+    def _update(self, operation: Callable[[dict[str, Any]], None | bool], *, basket_write=False, finalize=None) -> dict[str, Any]:
         with self._lock, _state_file_lock(self.path):
             token = self._disk_token()
             value = self._read_unlocked()
@@ -273,6 +273,8 @@ class DesktopStateStore:
                 for key in changed_drafts:
                     revisions[key] = uuid.uuid4().hex
                 value["draft_revisions"] = revisions
+            if finalize is not None:
+                finalize(value)
             _basket_snapshot(value)
             self._write_unlocked(value, expected_token=token)
             return deepcopy(value)
@@ -407,32 +409,37 @@ class DesktopStateStore:
 
 
 class BasketEditSession:
-    """Only this session's successful moves/removals can be undone.
-
-    Full rows stay in private memory; callers cannot supply a restoration
-    payload. A revision/content mismatch or uncertain I/O retires all history.
-    Draft/window changes do not invalidate basket history and are never undone.
-    """
+    """Durable bounded moves/removals; callers cannot supply restore rows."""
 
     HISTORY_LIMIT = 30
 
-    def __init__(self, store: DesktopStateStore):
+    def __init__(self, store: DesktopStateStore, source_validator=None):
+        from .desktop_paper_history import BASKET_HISTORY_ID, PaperHistory
         self._store = store
+        self._source_validator = source_validator
+        self._journal = PaperHistory(store, BASKET_HISTORY_ID, "public-basket")
         self._current: BasketSnapshot | None = None
-        self._history: list[tuple[BasketSnapshot, str, str]] = []
         self._closed = False
 
     @property
     def undo_count(self) -> int:
-        return len(self._history)
+        return len(self._journal.undo)
 
     @property
     def undo_action(self) -> str:
-        return self._history[-1][2] if self._history else ""
+        return self._journal.undo[-1]["action"] if self._journal.undo else ""
+
+    @property
+    def redo_count(self) -> int:
+        return len(self._journal.redo)
+
+    @property
+    def redo_action(self) -> str:
+        return self._journal.redo[-1]["action"] if self._journal.redo else ""
 
     def invalidate(self) -> None:
         self._current = None
-        self._history.clear()
+        self._journal.clear()
 
     def close(self) -> None:
         self.invalidate()
@@ -445,15 +452,39 @@ class BasketEditSession:
     def read(self) -> BasketSnapshot:
         self._require_open()
         try:
-            current = self._store.basket_snapshot()
+            value = self._store.snapshot()
+            current = _basket_snapshot(value)
+            self._journal.read(value, current, {}, lambda rows: _basket_rows({"basket": rows}))
         except Exception:
             self.invalidate()
             raise
         reset = bool(self._current and not _same_basket(self._current, current))
-        if self._current is not None and not _same_basket(self._current, current):
-            self.invalidate()
         self._current = current
-        return BasketSnapshot(deepcopy(current.rows), current.revision, current.content_sha256, reset)
+        return BasketSnapshot(deepcopy(current.rows), current.revision, current.content_sha256,
+                              reset or self._journal.reset)
+
+    def _verified_sources(self, rows):
+        if self._source_validator is not None:
+            return self._source_validator(deepcopy(list(rows)))
+        return None
+
+    def _commit(self, rows, undo, redo, expected_sources=None):
+        actual_sources = self._verified_sources(rows)
+        if expected_sources is not None and actual_sources != expected_sources:
+            raise BasketConflictError("原题内容或来源依据已变化，不能恢复旧题篮记录；已保存题篮保留。")
+        def operation(value):
+            if not _same_basket(_basket_snapshot(value), self._current):
+                raise BasketConflictError("题篮已被其他操作更新，请重新读取；当前状态未覆盖。")
+            self._journal.stage(value, undo, redo)
+            value["basket"] = deepcopy(rows)
+        try:
+            value = self._store._update(operation, basket_write=True,
+                finalize=lambda value: self._journal.finalize(value, _basket_snapshot(value), {}))
+        except OSError as exc:
+            raise DesktopStateError("题篮与撤销历史保存未能确认，请重新读取后核对。") from exc
+        self._current = _basket_snapshot(value)
+        self._journal.read(value, self._current, {}, lambda rows: _basket_rows({"basket": rows}))
+        return self._current
 
     def change(self, key: str, delta: int) -> dict[str, Any]:
         self._require_open()
@@ -464,8 +495,7 @@ class BasketEditSession:
         before = self._current
         action = {-1: "上移", 1: "下移", 0: "移出"}[delta]
 
-        def operation(value):
-            rows = value["basket"]
+        def operation(rows):
             index = next((i for i, row in enumerate(rows) if row["key"] == key), None)
             if index is None:
                 raise BasketConflictError("选中的题目已不在当前题篮，请重新读取。")
@@ -478,32 +508,48 @@ class BasketEditSession:
                 rows.pop(index)
 
         try:
-            current = self._store._compare_basket(before, operation)
+            from .desktop_paper_history import entry
+            rows = deepcopy(list(before.rows))
+            if operation(rows) is False:
+                current = self._store._compare_basket(before, lambda value: False)
+            else:
+                verified = self._verified_sources(before.rows)
+                expected = {row["key"]: verified[row["key"]] for row in rows} if verified is not None else None
+                current = self._commit(rows, self._journal.undo + [entry(list(before.rows), action, key, verified)], [], expected)
         except Exception:
             self.invalidate()
             raise
         changed = not _same_basket(before, current)
-        if changed:
-            self._history.append((before, key, action))
-            self._history = self._history[-self.HISTORY_LIMIT:]
         self._current = current
         return {"changed": changed, "count": len(current.rows), "selected_key": key, "action": action}
 
     def undo(self) -> dict[str, Any]:
         self._require_open()
-        if self._current is None or not self._history:
-            raise DesktopStateError("本窗口没有可撤销的操作。")
-        before, selected, action = self._history[-1]
+        return self._travel(False)
+
+    def redo(self) -> dict[str, Any]:
+        return self._travel(True)
+
+    def _travel(self, redo):
+        self._require_open()
+        stack = self._journal.redo if redo else self._journal.undo
+        if self._current is None or not stack:
+            raise DesktopStateError("当前题篮没有可重做的操作。" if redo else "当前题篮没有可撤销的操作。")
+        step = stack[-1]
         try:
-            current = self._store._compare_basket(
-                self._current, lambda value: value.__setitem__("basket", deepcopy(list(before.rows))),
-            )
+            if self._source_validator is not None and step["source_basis"] is None:
+                raise BasketConflictError("旧撤销记录缺少可核验的原题依据，已保存题篮保留；请重新核对来源。")
+            from .desktop_paper_history import entry
+            reverse = entry(list(self._current.rows), step["action"], step["selected"],
+                            self._verified_sources(self._current.rows))
+            undo = self._journal.undo + [reverse] if redo else self._journal.undo[:-1]
+            forward = self._journal.redo[:-1] if redo else self._journal.redo + [reverse]
+            current = self._commit(step["state"], undo, forward, step["source_basis"])
         except Exception:
             self.invalidate()
             raise
-        self._history.pop()
         self._current = current
-        return {"changed": True, "count": len(current.rows), "selected_key": selected, "action": action}
+        return {"changed": True, "count": len(current.rows), "selected_key": step["selected"], "action": step["action"]}
 
 
 __all__ = ["STATE_SCHEMA", "DesktopStateError", "BasketConflictError", "BasketSnapshot", "DraftConflictError", "DraftSnapshot",

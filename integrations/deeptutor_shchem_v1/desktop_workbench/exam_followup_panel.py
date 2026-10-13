@@ -186,7 +186,7 @@ class _ExamFollowupPanelBase(QWidget):
                 if self.d._task:QTimer.singleShot(30,leave)
                 else:self.d.close()
             QTimer.singleShot(0,leave)
-        loader=self.d.facade.word_question_catalog if lane=='word_native' else self.d.facade.personal_visual_questions
+        loader=getattr(self.d.facade,'word_question_listing',self.d.facade.word_question_catalog) if lane=='word_native' else self.d.facade.personal_visual_questions
         self.d.run('读取现有题库标签',lambda report,cancelled:loader(),ready)
 
     def link_questions(self):
@@ -295,7 +295,26 @@ class _ExamFollowupPanelBase(QWidget):
         dialog=QDialog(self);dialog.setWindowTitle('记录实际复测（不是预测提分）');dialog.resize(510,380)
         box=QVBoxLayout(dialog);form=QFormLayout();box.addLayout(form)
         student=QComboBox()
-        for target in task['targets']:student.addItem(target['local_label'],target['exam_student_id'])
+        for target in task['targets']:student.addItem(target.get('reviewed_local_alias',target.get('local_alias',target['local_label'])),target['exam_student_id'])
+        submission=QComboBox();submission.addItem('明确不关联复测附件',None)
+        roster_store=None
+        operation=getattr(self.d.facade,'student_roster_store',None)
+        if callable(operation):
+            try:roster_store=operation()
+            except Exception:pass
+        def refresh_submissions():
+            submission.clear();submission.addItem('明确不关联复测附件',None)
+            target=next((t for t in task['targets'] if t['exam_student_id']==student.currentData()),{})
+            binding=target.get('reviewed_identity_binding',target.get('identity_binding')) or {}
+            owner=binding.get('profile_student_id')
+            if not owner or roster_store is None:return
+            try:
+                for work in self.d.facade.student_submissions(student_id=owner,limit=100):
+                    identity=work.get('submission_id') if isinstance(work,dict) else work.submission_id
+                    created=work.get('created_at','') if isinstance(work,dict) else work.created_at
+                    submission.addItem(f'{created} · {identity[:8]}',identity)
+            except Exception:pass
+        student.currentIndexChanged.connect(refresh_submissions);refresh_submissions()
         when=QDateEdit();when.setCalendarPopup(True);when.setDisplayFormat('yyyy-MM-dd');when.setDate(QDate.currentDate())
         status=QComboBox()
         for text,value in [('已作答并评分','completed'),('未作答','not_attempted'),('资料不全','missing')]:status.addItem(text,value)
@@ -303,7 +322,7 @@ class _ExamFollowupPanelBase(QWidget):
         for widget in (score,maximum):widget.setRange(0,10000);widget.setDecimals(2)
         score.lineEdit().clear();maximum.lineEdit().clear()
         note=QLineEdit();note.setPlaceholderText('依据哪次作答/哪些题，哪些地方仍需核对')
-        for label,widget in [('学生',student),('实际日期',when),('情况',status),('本次实得分',score),('实际满分',maximum),('观察依据',note)]:form.addRow(label,widget)
+        for label,widget in [('学生',student),('可选：当前档案复测作答',submission),('实际日期',when),('情况',status),('本次实得分',score),('实际满分',maximum),('观察依据',note)]:form.addRow(label,widget)
         msg=QLabel('未作答/资料不全不记零分；本次题目与原考试不同，不直接计算“提升多少分”。');msg.setWordWrap(True);box.addWidget(msg)
         buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel)
         buttons.rejected.connect(dialog.reject);box.addWidget(buttons)
@@ -311,8 +330,8 @@ class _ExamFollowupPanelBase(QWidget):
             try:
                 if status.currentData()=='completed' and (not score.text().strip() or not maximum.text().strip()):
                     raise ExamError('请明确填写本次实得分和实际满分，空白不按0分保存。')
-                current = self.current_for(task)
-                record=record_attempt(current,student.currentData(),when.date().toString('yyyy-MM-dd'),status.currentData(),score.value(),maximum.value(),note.text())
+                current = self.current_for(task, require_fresh=True)
+                record=record_attempt(current,student.currentData(),when.date().toString('yyyy-MM-dd'),status.currentData(),score.value(),maximum.value(),note.text(),submission_id=submission.currentData(),roster_store=roster_store)
                 if self.store(record, expected=current):dialog.accept()
             except ExamError as error:msg.setText(error.message_zh)
         buttons.accepted.connect(save);dialog.exec();dialog.deleteLater()

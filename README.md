@@ -61,7 +61,7 @@ Word 导入预览会区分重复文件和同名新版本。重复文件可继续
 
 在 **题库** 按来源、章节或知识点找题，阅读完整题面与答案后加入选题篮。在 **组卷** 点 **从题篮新建**，调整题序、配分、答题区和卷面设置，再 **保存当前卷**。已保存卷与公共题篮分别保存，下次选择 **继续所选卷**。
 
-维护源码支持题篮 **Ctrl+Z** 和当前卷 **Ctrl+Alt+Z**，各保留本次窗口最近 30 步。**查看当前卷细目表** 按卷内顺序显示登记的主题、小题、作答单元和分值，缺失层级或分值另列。两版预览可跳页、放大、定位待核页面，逐页确认后导出。[组卷、撤销与细目](docs/teacher/lesson-and-paper.md#paper)
+本轮维护源码支持题篮 **Ctrl+Z／Ctrl+Y** 和当前卷 **Ctrl+Alt+Z／Ctrl+Alt+Y**，最近 30 步已保存编辑可跨重开撤销与重做。**查看当前卷细目表** 按卷内顺序显示登记的主题、小题、作答单元和分值，缺失层级或分值另列。两版预览可跳页、放大、定位待核页面，逐页确认后导出。[组卷、撤销与细目](docs/teacher/lesson-and-paper.md#paper)
 
 图、公式或对象看不清时，从题面、答案或完整教案打开 **核对公式与对象**，按原图及段落位置核对；可定位的文件支持在 Word 中选中。维护源码的 **检查本地题库进度** 可返回原题修订标签或裁片；AI 标签建议先查看变化和依据，再明确保存。[公式定位](docs/teacher/lesson-and-paper.md#formula-location) · [题库整理](docs/teacher/lesson-and-paper.md#library-review)
 
@@ -121,6 +121,8 @@ Word 导入预览会区分重复文件和同名新版本。重复文件可继续
 <a id="verification"></a><a id="workflow-status"></a><a id="visual-composition"></a><a id="documentation"></a>
 ## 版本与维护信息
 
-v0.1.103使用本轮维护源码，包含本节选材、素材画布、独立题集等改进；历史 v0.1.101 保留原功能范围。知识版可使用教材书架与已登记讲义，旧全试卷的册章映射尚未迁入时用关键词查题；Word 的实际分页由本机 Office 完成。Excel 对比重导、全业务迁移、复杂 Word 对象兼容与跨设备表现按实际验收范围记录。
+v0.1.103使用10月13日发行时冻结的源码，包含本节选材、素材画布、独立题集等改进；历史 v0.1.101 保留原功能范围。知识版可使用教材书架与已登记讲义，旧全试卷的册章映射尚未迁入时用关键词查题；Word 的实际分页由本机 Office 完成。Excel 对比重导、全业务迁移、复杂 Word 对象兼容与跨设备表现按实际验收范围记录。
+
+后续维护分支新增持久题目索引、跨重启撤销重做、成绩列映射方案、本地班级名册与明确学生绑定、缺考等整班状态，以及设置中的 [用量与费用](docs/teacher/getting-started.md#usage) 和 [缓存维护](docs/teacher/save-and-support.md#cache-maintenance)。这些改动尚未进入上方 v0.1.103 下载包；操作与专项验收见 [本轮记录](docs/qa/2026-10-13-full-closure-continuation.md)。
 
 [维护者入口](docs/maintainer/README.md) · [当前功能与限制](docs/WORKFLOW_STATUS.md) · [原 59 项与 X01—X10](docs/roadmaps/audit-followup.md)

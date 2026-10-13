@@ -55,8 +55,9 @@ def personal_results(catalog: Mapping, lane: str, selection: Mapping, query: str
     for row in rows:
         if lane == "word_native":
             # This is a search excerpt, not a reconstructed Word layout.
-            excerpt = "\n".join(str(block.get("text", "")) for block in
-                                row.get("context_blocks", []) + row.get("question_blocks", []))
+            excerpt = (str(row.get("excerpt", "")) if row.get("lightweight") else
+                       "\n".join(str(block.get("text", "")) for block in
+                                 row.get("context_blocks", []) + row.get("question_blocks", [])))
         else:
             excerpt = "\n".join(filter(None, [row.get("shared_text"), row.get("question_text")]))
         entries.append({"key": row["key"], "lane": lane, "title": row.get("title", "未命名题目"),

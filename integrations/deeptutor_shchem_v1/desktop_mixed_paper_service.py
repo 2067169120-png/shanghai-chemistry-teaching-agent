@@ -352,7 +352,7 @@ class MixedPaperService:
 
     def open_draft_session(self):
         from .desktop_mixed_paper_drafts import MixedPaperDraftSession
-        return MixedPaperDraftSession(self.state)
+        return MixedPaperDraftSession(self.state, projection_loader=self.projection)
 
     def _save_preview_records(self, records, snapshot, *, expected_hash=None, expected_record=None, activate_candidate=False):
         """Final draft/preview gates share the state writer's OS transaction."""

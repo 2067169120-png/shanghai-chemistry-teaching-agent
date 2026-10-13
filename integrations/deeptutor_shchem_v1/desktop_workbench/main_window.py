@@ -257,7 +257,8 @@ class TeacherWorkbenchWindow(QMainWindow):
         return tuple(button.text() for button in self.nav_buttons)
 
     def new_preparation(self):
-        self.navigate("preparation")
+        if not self.navigate("preparation"):
+            return
         recovery = self.preparation_page.recovery
         if recovery is not None:
             recovery.new_blank()
@@ -287,12 +288,16 @@ class TeacherWorkbenchWindow(QMainWindow):
         if self.preparation_page.studio_busy():
             self._refresh_textbook_preparation_context()
             return
+        if not self._prepare_paper_navigation("preparation"):
+            return
         self.preparation_page._open_draft()
         self._refresh_textbook_preparation_context()
 
     def _new_textbook_preparation(self):
         if self.preparation_page.studio_busy():
             self._refresh_textbook_preparation_context()
+            return
+        if not self._prepare_paper_navigation("preparation"):
             return
         recovery = self.preparation_page.recovery
         if recovery is not None:
@@ -313,6 +318,8 @@ class TeacherWorkbenchWindow(QMainWindow):
         from .exam_dashboard import ExamDashboard
         dialog=ExamDashboard(self.facade,self.tasks,self)
         def append(text):
+            if not self._prepare_paper_navigation('preparation'):
+                return
             if self.preparation_page.import_word_reference({'materials':text,'warnings':[]}):
                 dialog.status.setText('已追加到备课材料；未调用模型，请核对并保存。')
         dialog.preparation_requested.connect(append)
@@ -324,6 +331,8 @@ class TeacherWorkbenchWindow(QMainWindow):
         if handoff:self.open_exam_practice(handoff)
 
     def open_exam_practice(self, request):
+        if not self._prepare_paper_navigation('library'):
+            return
         from PySide6.QtCore import QSignalBlocker
         from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
         page=self.library_page
@@ -343,16 +352,26 @@ class TeacherWorkbenchWindow(QMainWindow):
         page._base_facets={}
         page.advanced_button.setText('Word原文与标签管理' if request['lane']=='word_native' else '题图与标签管理')
         page.filters={'knowledge':{request['knowledge']}};page.curriculum={};page.query.clear()
-        self.navigate('library')
+        if not self.navigate('library'):
+            return
         page.search()
 
     def preview_selected_paper(self):
         self.navigate("paper")
         self.paper_page.request_layout_preview()
 
-    def navigate(self, route: str) -> None:
-        if route not in self.pages:
-            return
+    def _prepare_paper_navigation(self, route: str) -> bool:
+        """Resolve paper edits before a handoff can change another page."""
+        if self.stack.currentWidget() is self.paper_page and route != "paper":
+            prepare = getattr(self.paper_page, "prepare_leave", None)
+            if callable(prepare) and not prepare():
+                self.nav_buttons[ROUTE_ORDER.index("paper")].setChecked(True)
+                return False
+        return True
+
+    def navigate(self, route: str) -> bool:
+        if route not in self.pages or not self._prepare_paper_navigation(route):
+            return False
         self.stack.setCurrentWidget(self.pages[route])
         if route in ROUTE_ORDER:
             self.nav_buttons[ROUTE_ORDER.index(route)].setChecked(True)
@@ -372,15 +391,19 @@ class TeacherWorkbenchWindow(QMainWindow):
             self.paper_page.update_basket_count()
         if route == "library" and not self.library_page.cards and not self.library_page._loading:
             self.library_page.search()
+        return True
 
     def open_template(self, key: str, topic: str = "") -> None:
         dialog = TemplatePreviewDialog(key, self, topic=topic)
         if dialog.exec() == dialog.DialogCode.Accepted:
-            if self.preparation_page.apply_studio_template(key, dialog.topic.text(), dialog.audience.text()):
+            if (self._prepare_paper_navigation("preparation")
+                    and self.preparation_page.apply_studio_template(key, dialog.topic.text(), dialog.audience.text())):
                 self.navigate("preparation")
         dialog.deleteLater()
 
     def append_classroom_feedback(self, text: str) -> None:
+        if not self._prepare_paper_navigation("preparation"):
+            return
         if self.preparation_page.append_classroom_feedback(text):
             self.navigate("preparation")
 
@@ -395,7 +418,8 @@ class TeacherWorkbenchWindow(QMainWindow):
         if self.preparation_page.studio_busy():
             self.statusBar().showMessage("请等待当前备课保存或生成结束。", 5000)
             return
-        self.navigate("preparation")
+        if not self.navigate("preparation"):
+            return
         if record["kind"] == "draft":
             self.preparation_page._open_draft(record["value"]["draft_id"])
         else:
@@ -432,11 +456,14 @@ class TeacherWorkbenchWindow(QMainWindow):
         dialog.deleteLater()
 
     def _word_to_preparation(self, reference: dict) -> None:
+        if not self._prepare_paper_navigation("preparation"):
+            return
         if self.preparation_page.import_word_reference(reference):
             self.navigate("preparation")
 
     def _word_cards_to_preparation(self, result: dict) -> None:
-        self.navigate("preparation")
+        if not self.navigate("preparation"):
+            return
         self.preparation_page.import_word_cards(result)
 
     def _open_handout_materials(self) -> bool:
@@ -446,21 +473,29 @@ class TeacherWorkbenchWindow(QMainWindow):
         opener = getattr(self.library_page, "open_handout_materials", None)
         if not callable(opener):
             return False
-        self.navigate("library")
+        if not self.navigate("library"):
+            return False
         opener()
         return True
 
     def _handout_materials_to_preparation(self, request: dict) -> bool:
+        if not self._prepare_paper_navigation("preparation"):
+            return False
         accepted = self.preparation_page.import_handout_materials(request)
         if accepted:
             self.navigate("preparation")
         return bool(accepted)
 
     def _textbook_section_materials(self, selection: dict) -> bool:
+        if not self._prepare_paper_navigation("preparation"):
+            return False
         return bool(self.preparation_page.open_textbook_section_materials(
-            selection, on_handoff=lambda: self.navigate('preparation')))
+            selection, on_handoff=lambda: self.navigate('preparation'),
+            before_handoff=lambda: self._prepare_paper_navigation('preparation')))
 
     def _linked_question_to_preparation(self, request: dict) -> bool:
+        if not self._prepare_paper_navigation("preparation"):
+            return False
         accepted = self.preparation_page.import_linked_question(request)
         if accepted:
             self.navigate("preparation")
@@ -485,6 +520,8 @@ class TeacherWorkbenchWindow(QMainWindow):
             dialog.deleteLater()
 
     def _textbook_to_preparation(self, reference: dict) -> None:
+        if not self._prepare_paper_navigation("preparation"):
+            return
         value = dict(reference, source_kind="textbook")
         if self.preparation_page.import_word_reference(value):
             self.textbook_page.reference_appended()
@@ -493,29 +530,40 @@ class TeacherWorkbenchWindow(QMainWindow):
             self.textbook_page.reference_rejected()
 
     def _textbook_image_to_preparation(self, request: dict) -> None:
+        if not self._prepare_paper_navigation("preparation"):
+            return
         if self.preparation_page.import_textbook_image(request):
             self.navigate("preparation")
 
     def _textbook_cards_to_preparation(self, result: dict) -> None:
-        self.navigate('preparation')
+        if not self.navigate('preparation'):
+            return
         if self.preparation_page.import_textbook_cards(result):
             self.textbook_page.cards_appended()
         else:
             self.textbook_page.cards_rejected()
 
     def _textbook_images_to_preparation(self, requests: list[dict]) -> None:
+        if not self._prepare_paper_navigation("preparation"):
+            return
         if self.preparation_page.import_textbook_images(requests):
             self.navigate("preparation")
 
     def _textbook_crops_to_composition(self, requests: list[dict]) -> None:
+        if not self._prepare_paper_navigation('preparation'):
+            return
         if self.preparation_page.import_textbook_crops_for_composition(requests):
             self.navigate('preparation')
 
     def _library_image_to_preparation(self, selection: dict) -> None:
+        if not self._prepare_paper_navigation("preparation"):
+            return
         if self.preparation_page.import_library_image(selection):
             self.navigate("preparation")
 
     def _library_reference_to_preparation(self, detail) -> None:
+        if not self._prepare_paper_navigation("preparation"):
+            return
         if self.preparation_page.import_library_reference(detail):
             self.navigate("preparation")
 
@@ -539,6 +587,8 @@ class TeacherWorkbenchWindow(QMainWindow):
 
     def _paper_reference_ready(self, snapshot: dict) -> None:
         self._paper_reference_loading = False
+        if not self._prepare_paper_navigation("preparation"):
+            return
         if self.preparation_page.import_paper_reference(snapshot):
             self.navigate("preparation")
 
@@ -546,6 +596,9 @@ class TeacherWorkbenchWindow(QMainWindow):
         dialog = ImportDialog(self.facade, self.tasks, self)
         dialog.basket_changed.connect(self.paper_page.update_basket_count)
         result = dialog.exec()
+        if not self._prepare_paper_navigation("library"):
+            dialog.deleteLater()
+            return
         # Saved imports survive cancellation. Invalidate before an explicit
         # library handoff so its first search reads the current local profile.
         self.library_page.invalidate_catalogs()
@@ -612,6 +665,11 @@ class TeacherWorkbenchWindow(QMainWindow):
         super().resizeEvent(event)
 
     def closeEvent(self, event: QCloseEvent) -> None:
+        prepare = getattr(self.paper_page, "prepare_leave", None)
+        if callable(prepare) and not prepare():
+            self.navigate("paper")
+            event.ignore()
+            return
         if self.preparation_page.recovery is not None and not self.preparation_page.recovery.prepare_close():
             event.ignore()
             return

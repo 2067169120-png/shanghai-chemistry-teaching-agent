@@ -1,4 +1,4 @@
-"""One source-bound mixed-paper draft, with session-local durable undo."""
+"""One source-bound mixed-paper draft, with profile-bound durable undo/redo."""
 from __future__ import annotations
 
 from copy import deepcopy
@@ -89,30 +89,42 @@ def validate_payload(payload, items=None):
 class MixedPaperDraftSession:
     HISTORY_LIMIT = 30
 
-    def __init__(self, store):
+    def __init__(self, store, projection_loader=None):
+        from .desktop_paper_history import PAPER_HISTORY_ID, PaperHistory
         self.store = store
+        self._projection_loader = projection_loader
+        self._journal = PaperHistory(store, PAPER_HISTORY_ID,
+                                     getattr(store, "paper_history_scope", "public-mixed-paper"))
+        self._source_fingerprint = {}
         self.current = None
         self.items = {}
         self.basis = {}
         self.basket = None
-        self.history = []
         self.closed = False
         self._recovery = None
 
     @property
     def undo_count(self):
-        return len(self.history)
+        return len(self._journal.undo)
 
     @property
     def undo_action(self):
-        return self.history[-1][1] if self.history else ""
+        return self._journal.undo[-1]["action"] if self._journal.undo else ""
+
+    @property
+    def redo_count(self):
+        return len(self._journal.redo)
+
+    @property
+    def redo_action(self):
+        return self._journal.redo[-1]["action"] if self._journal.redo else ""
 
     @property
     def can_restart(self):
         return not self.closed and self._recovery is not None
 
     def invalidate(self, *, preserve_recovery=False):
-        self.history.clear()
+        self._journal.clear()
         self.current = None
         if not preserve_recovery:
             self._recovery = None
@@ -156,10 +168,11 @@ class MixedPaperDraftSession:
             reset = self.current is not None and (
                 binding(self.current) != binding(current) or self.basis != basis
                 or self.basket.revision != basket.revision)
-            if reset:
-                self.history.clear()
             self.current, self.items, self.basis, self.basket = current, items, basis, basket
-            return {"record": deepcopy(current.record), "history_reset": reset}
+            from .desktop_paper_history import sources
+            self._source_fingerprint = sources(rows)
+            self._journal.read(value, current, self._history_basis(), self._validate_history_record)
+            return {"record": deepcopy(current.record), "history_reset": reset or self._journal.reset}
         except Exception:
             self.invalidate(preserve_recovery=True)
             raise
@@ -196,11 +209,14 @@ class MixedPaperDraftSession:
                     raise DesktopStateError("旧稿保留记录未能创建，请重新读取。")
                 value["drafts"][archive_id] = deepcopy(before.record)
                 value["drafts"][DRAFT_ID] = deepcopy(record)
+                value["drafts"].pop(self._journal.identity, None)
 
             value = self.store._update(replace)
             self.current = _draft_snapshot(value, DRAFT_ID)
             self.items, self.basis, self.basket = items, basis, basket
-            self.history.clear()
+            from .desktop_paper_history import sources
+            self._source_fingerprint = sources(rows)
+            self._journal.read(value, self.current, self._history_basis(), self._validate_history_record)
             self._recovery = None
             return {"record": deepcopy(self.current.record), "archive_id": archive_id}
         except Exception:
@@ -212,10 +228,50 @@ class MixedPaperDraftSession:
         if self.basket is None or (basket.revision, basket.content_sha256) != (self.basket.revision, self.basket.content_sha256):
             raise DraftConflictError("来源题篮已变化，请重新读取；旧撤销记录已失效。")
 
+    def _history_basis(self):
+        return {"basket_revision": self.basket.revision, "basket_sha256": self.basket.content_sha256,
+                "sources": deepcopy(self._source_fingerprint)}
+
+    def _validate_history_record(self, record):
+        if not isinstance(record, dict) or record.get("kind") != "paper":
+            raise DesktopStateError("历史草稿无法核验。")
+        validate_payload(record.get("payload"), self.items)
+        if (set(record["payload"]["order"] + record["payload"]["excluded"]) != set(self.items)
+                or record.get("source_basis", self.basis) != self.basis):
+            raise DesktopStateError("历史草稿的原题身份不一致。")
+
+    def _verify_sources(self):
+        if self._projection_loader is None:
+            return
+        from .desktop_paper_history import sources
+        projection = self._projection_loader()
+        if (projection.get("basket_sha256") != self.basket.content_sha256
+                or sources(projection.get("items", [])) != self._source_fingerprint):
+            raise DraftConflictError("当前卷的原件、题目范围或来源依据已变化；已保存草稿保留，请重新读取。")
+
+    def _commit(self, record, undo, redo):
+        self._verify_sources()
+        def operation(value):
+            self._guard(value)
+            actual = _draft_snapshot(value, DRAFT_ID)
+            if binding(actual) != binding(self.current):
+                raise DraftConflictError("当前草稿已被其他操作修改，请重新读取。")
+            self._journal.stage(value, undo, redo)
+            value["drafts"][DRAFT_ID] = deepcopy(record)
+        try:
+            value = self.store._update(operation, finalize=lambda value: self._journal.finalize(
+                value, _draft_snapshot(value, DRAFT_ID), self._history_basis()))
+        except OSError as exc:
+            raise DesktopStateError("当前卷与撤销历史保存未能确认，请重新读取后核对。") from exc
+        self.current = _draft_snapshot(value, DRAFT_ID)
+        self._journal.read(value, self.current, self._history_basis(), self._validate_history_record)
+        return self.current
+
     def check(self):
         try:
             if self.closed or self.current is None:
                 raise DesktopStateError("请先重新读取已保存草稿。")
+            self._verify_sources()
             value = self.store.snapshot()
             self._guard(value)
             check_binding_value(value, binding(self.current))
@@ -234,11 +290,15 @@ class MixedPaperDraftSession:
             before = self.current
             record = {**(before.record or {}), "kind": "paper", "status": "draft",
                       "payload": deepcopy(payload), "source_basis": deepcopy(self.basis)}
-            current = self.store.compare_draft(before, record, guard=self._guard)
+            if record == before.record:
+                current = self.store.compare_draft(before, record, guard=self._guard)
+            else:
+                from .desktop_paper_history import entry
+                undo = self._journal.undo
+                if remember and before.record is not None:
+                    undo = undo + [entry(before.record, action, selected)]
+                current = self._commit(record, undo, [])
             changed = binding(current) != binding(before)
-            if changed and remember and before.record is not None:
-                self.history.append((before.record, action, selected))
-                self.history = self.history[-self.HISTORY_LIMIT:]
             self.current = current
             return {"changed": changed, "binding": binding(current)}
         except Exception:
@@ -246,14 +306,24 @@ class MixedPaperDraftSession:
             raise
 
     def undo(self):
+        return self._travel(False)
+
+    def redo(self):
+        return self._travel(True)
+
+    def _travel(self, redo):
         try:
-            if self.closed or self.current is None or not self.history:
-                raise DesktopStateError("本次编辑没有可撤销操作。")
-            record, action, selected = self.history[-1]
-            current = self.store.compare_draft(self.current, record, guard=self._guard)
-            self.history.pop()
-            self.current = current
-            return {"record": deepcopy(current.record), "action": action, "selected": selected}
+            stack = self._journal.redo if redo else self._journal.undo
+            if self.closed or self.current is None or not stack:
+                raise DesktopStateError("当前卷没有可重做操作。" if redo else "当前卷没有可撤销操作。")
+            from .desktop_paper_history import entry
+            step = stack[-1]
+            self._validate_history_record(step["state"])
+            reverse = entry(self.current.record, step["action"], step["selected"])
+            undo = self._journal.undo + [reverse] if redo else self._journal.undo[:-1]
+            forward = self._journal.redo[:-1] if redo else self._journal.redo + [reverse]
+            current = self._commit(step["state"], undo, forward)
+            return {"record": deepcopy(current.record), "action": step["action"], "selected": step["selected"]}
         except Exception:
             self.invalidate()
             raise

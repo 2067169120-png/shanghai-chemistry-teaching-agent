@@ -52,6 +52,8 @@ class HomePage(QWidget):
         self._task_id = None
         self._registry_loading = False
         self._registry_loaded = False
+        self._registry_cache_epoch = self._current_registry_cache_epoch()
+        self._registry_request_epoch = 0
         self.records = []
         content = QWidget()
         self.content_layout = root = QVBoxLayout(content)
@@ -327,19 +329,51 @@ class HomePage(QWidget):
             self.open_requested.emit(self.records[row])
 
     def _diagnostics_toggled(self, expanded):
+        self._check_registry_cache_epoch()
         if expanded and not self._registry_loaded:
             self._load_registry()
 
     def _load_registry(self, force=False):
+        self._check_registry_cache_epoch()
         if self._registry_loading:
             return
         self._registry_loading = True
+        self._registry_request_epoch += 1
+        request_epoch = self._registry_request_epoch
+        cache_epoch = self._current_registry_cache_epoch()
         self.registry_refresh.setEnabled(False)
         self.registry_text.setText("正在读取题库与教材目录…")
         self.tasks.submit("读取资料状态", lambda: self.facade.load_desktop_registry(force_refresh=force),
-                          on_success=self._registry_ready, on_failure=self._registry_failed)
+                          on_success=lambda registry: self._registry_ready(registry, request_epoch, cache_epoch),
+                          on_failure=lambda message: self._registry_failed(message, request_epoch, cache_epoch))
 
-    def _registry_ready(self, registry):
+    def _current_registry_cache_epoch(self):
+        reader = getattr(self.facade, "desktop_cache_epoch", None)
+        return reader("registry") if callable(reader) else None
+
+    def _check_registry_cache_epoch(self):
+        if self._registry_cache_epoch != self._current_registry_cache_epoch():
+            self.invalidate_cache_projection()
+            return True
+        return False
+
+    def invalidate_cache_projection(self):
+        self._registry_cache_epoch = self._current_registry_cache_epoch()
+        self._registry_request_epoch += 1
+        self._registry_loaded = False
+        self._registry_loading = False
+        self.registry_refresh.setEnabled(True)
+        self.registry_text.setText("首页资料统计缓存已清理；点击刷新后从资料重新读取。")
+
+    def showEvent(self, event):
+        self._check_registry_cache_epoch()
+        super().showEvent(event)
+
+    def _registry_ready(self, registry, request_epoch=None, cache_epoch=None):
+        if request_epoch is not None and (request_epoch != self._registry_request_epoch
+                or cache_epoch != self._current_registry_cache_epoch()):
+            self._check_registry_cache_epoch()
+            return
         self._registry_loading = False
         self._registry_loaded = True
         self.registry_refresh.setEnabled(True)
@@ -354,7 +388,11 @@ class HomePage(QWidget):
         lines.append("未连接原库不影响个人备课；个人导入及标签缺项可在“题库进度”中检查。")
         self.registry_text.setText("\n".join(lines))
 
-    def _registry_failed(self, message):
+    def _registry_failed(self, message, request_epoch=None, cache_epoch=None):
+        if request_epoch is not None and (request_epoch != self._registry_request_epoch
+                or cache_epoch != self._current_registry_cache_epoch()):
+            self._check_registry_cache_epoch()
+            return
         self._registry_loading = False
         self.registry_refresh.setEnabled(True)
         self.registry_text.setText(message)

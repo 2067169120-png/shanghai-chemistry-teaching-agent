@@ -10,6 +10,7 @@ import re
 from uuid import uuid4
 
 from .desktop_mixed_paper_drafts import DRAFT_ID, DRAFT_SCHEMA, digest, validate_payload
+from .desktop_paper_history import PAPER_HISTORY_ID
 from .desktop_mixed_paper_service import MixedPaperService, _ACTIVE
 from .desktop_state import (
     DesktopStateError, DesktopStateStore, DraftConflictError, _basket_snapshot,
@@ -105,6 +106,7 @@ class _PaperState:
         self._selection = _draft_snapshot(value, identity)
         self.record = _record(value, identity)
         self._prefix = identity + ":"
+        self.paper_history_scope = "independent-paper:" + identity
 
     def _view(self, value):
         current = _draft_snapshot(value, self.identity)
@@ -115,7 +117,7 @@ class _PaperState:
         _record(value, self.identity)
         drafts = {key[len(self._prefix):]: deepcopy(record) for key, record in value["drafts"].items()
                   if key.startswith(self._prefix)}
-        if any(key not in {DRAFT_ID, _ACTIVE} and not _PREVIEW.fullmatch(key) for key in drafts):
+        if any(key not in {DRAFT_ID, _ACTIVE, PAPER_HISTORY_ID} and not _PREVIEW.fullmatch(key) for key in drafts):
             raise DesktopStateError("此卷含无法核验的作用域记录，请保留后核对。")
         _validate_draft(drafts.get(DRAFT_ID), self.record)
         revisions = {key[len(self._prefix):]: revision for key, revision in value.get("draft_revisions", {}).items()
@@ -130,7 +132,7 @@ class _PaperState:
     def basket(self):
         return self.snapshot()["basket"]
 
-    def _update(self, operation, *, basket_write=False):
+    def _update(self, operation, *, basket_write=False, finalize=None):
         if basket_write:
             raise DesktopStateError("当前卷不能修改公共题篮或已保存的来源引用。")
 
@@ -150,6 +152,10 @@ class _PaperState:
                 record = scoped["drafts"][key]
                 if key == DRAFT_ID:
                     _validate_draft(record, self.record)
+                elif key == PAPER_HISTORY_ID:
+                    if (finalize is None or not isinstance(record, dict)
+                            or set(record) != {"pending", "undo", "redo"} or record["pending"] is not True):
+                        raise DesktopStateError("当前卷不能导入未经核验的撤销历史。")
                 elif key == _ACTIVE:
                     if (not isinstance(record, dict) or set(record) != {"preview_id", "preview_hash"}
                             or record.get("preview_id") not in scoped["drafts"]
@@ -168,7 +174,12 @@ class _PaperState:
             for key in changed:
                 value["drafts"][self._prefix + key] = deepcopy(scoped["drafts"][key])
 
-        return self._view(self._parent._update(transact))
+        def finish(value):
+            scoped = self._view(value)
+            finalize(scoped)
+            value["drafts"][self._prefix + PAPER_HISTORY_ID] = deepcopy(scoped["drafts"][PAPER_HISTORY_ID])
+
+        return self._view(self._parent._update(transact, finalize=finish if finalize is not None else None))
 
     # Reuse the established CAS implementation; it only needs snapshot/_update.
     compare_draft = DesktopStateStore.compare_draft

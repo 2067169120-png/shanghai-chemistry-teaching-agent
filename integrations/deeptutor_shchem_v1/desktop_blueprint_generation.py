@@ -252,6 +252,7 @@ def run_blueprint_request(
     transport: Any = None,
     should_cancel: Callable[[], bool] | None = None,
     max_output_tokens: int = 24000,
+    task_type: str = "blueprint_generation",
 ) -> dict[str, Any]:
     """Shared one-shot text transport; caller supplies the result contract."""
     cancelled = should_cancel or (lambda: False)
@@ -265,6 +266,7 @@ def run_blueprint_request(
             prompt=prompt,
             schema=schema,
             schema_name=schema_name,
+            task_type=task_type,
             max_output_tokens=max_output_tokens,
         )
         response = (transport or PinnedVisualTransport(total_timeout_seconds=300)).send(

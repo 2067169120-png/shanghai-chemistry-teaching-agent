@@ -101,7 +101,7 @@ def test_keyboard_draft_undo_restores_saved_settings_from_focused_field(panel, q
     assert "撤销当前卷上一步" in widget.undo_button.accessibleName()
 
 
-def test_noop_and_other_draft_changes_preserve_history_reopen_clears_it(panel, qt_app):
+def test_noop_other_draft_changes_and_reopen_preserve_bound_history(panel, qt_app):
     widget, facade, tasks = panel
     initial = facade.state_store.path.read_bytes()
     widget._move(-1)
@@ -116,7 +116,7 @@ def test_noop_and_other_draft_changes_preserve_history_reopen_clears_it(panel, q
     second.load()
     tasks.flush()
     assert second.model.order == saved(facade)["payload"]["order"]
-    assert not second.undo_button.isEnabled()
+    assert second.undo_button.isEnabled()
     second.close()
 
 
@@ -141,7 +141,8 @@ def test_failed_or_conflicting_undo_blocks_edit_and_reread_is_real_recovery(pane
     store.write_error = store.read_error = False
     widget.reload_button.click()
     tasks.flush()
-    assert not widget._restore_failed and not widget.undo_button.isEnabled()
+    assert not widget._restore_failed
+    assert widget.undo_button.isEnabled() == (failure != "external")
     assert widget.model.order == saved(facade)["payload"]["order"]
 
 

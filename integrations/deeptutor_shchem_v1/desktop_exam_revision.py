@@ -61,8 +61,9 @@ def correct_score(exam, student_id, field, value, reason):
     """
     reason = _reason(reason)
     student = _unique(exam['students'], 'id', student_id, '学生')
-    if student['absent']:
-        raise ExamError('缺考记录不能直接改成得分；请先核对缺考状态并重新导入。')
+    from .desktop_student_roster import exam_status
+    if exam_status(student) != 'present':
+        raise ExamError('缺考、免考或未录入记录不能直接改成得分；请先明确核对为实到状态，再按原作答录分。')
     is_total = field == '__total__'
     if is_total and full_mapping(exam):
         raise ExamError('完整题目映射的总分由各题重算，请修改对应题目，不单独覆盖总分。')
@@ -95,13 +96,14 @@ def correct_score(exam, student_id, field, value, reason):
             total_policy = 'partial_mapping_total_requires_confirmation'
     affected_fields = {field, '总分'} if not is_total else {'总分'}
     changed['issues'] = [issue for issue in changed['issues']
-                         if not (issue.get('row') == row['excel_row']
+                         if not ((issue.get('student_id') == student_id or
+                                  (row['excel_row'] is not None and issue.get('row') == row['excel_row']))
                                  and issue.get('field') in affected_fields)]
     if value is None:
-        changed['issues'].append({'row': row['excel_row'], 'field': '总分' if is_total else field,
+        changed['issues'].append({'row': row['excel_row'], 'student_id': student_id, 'field': '总分' if is_total else field,
                                   'detail': '教师已标记缺失；不按0分统计'})
     if row['total'] is None and not is_total:
-        changed['issues'].append({'row': row['excel_row'], 'field': '总分',
+        changed['issues'].append({'row': row['excel_row'], 'student_id': student_id, 'field': '总分',
             'detail': '小题修改后总分待核对：映射不完整或仍有缺失，不沿用旧总分'})
     changed.setdefault('score_changes', []).append({
         'at': now(), 'student_id': student_id, 'field': field, 'reason': reason,
@@ -113,6 +115,7 @@ def correct_score(exam, student_id, field, value, reason):
 
 
 def task_basis(exam, task):
+    from .desktop_student_roster import exam_status, identity_evidence
     if task.get('exam_id') != exam.get('id'):
         raise ExamError('任务与当前考试身份不一致，不能重新绑定到另一次考试。')
     question = _unique(exam['questions'], 'question', task.get('question'), '原考试题目')
@@ -126,10 +129,13 @@ def task_basis(exam, task):
             raise ExamError('任务学生身份异常，请重新核对。')
         seen.add(identity)
         row = _unique(exam['students'], 'id', identity, '任务学生')
+        if any(snapshot['exam_class']==row['class'] for snapshot in exam.get('roster_snapshots',[])) and not row.get('identity_binding'):
+            raise ExamError('任务学生尚未明确绑定本次名册，须先核对身份。')
         if target.get('local_label') != row['local_label']:
             raise ExamError('学生标识已变化，不能仅凭本次导入S编号自动迁移；请重建任务。')
         rows.append({key: row[key] for key in ('id', 'local_label', 'class', 'excel_row', 'absent', 'total')}
-                    | {'score': row['scores'].get(task['question'])})
+                    | {'score': row['scores'].get(task['question']), 'attendance_status': exam_status(row),
+                       'attendance_revision': row.get('attendance_revision'), 'identity_binding': identity_evidence(row)})
     return {'exam_id': exam['id'], 'question': deepcopy(question), 'students': rows,
             'thresholds': [exam['maximum'], exam['pass_score'], exam['excellent_score']]}
 
@@ -169,7 +175,7 @@ def task_freshness(exam, task):
     try:
         current = task_basis(exam, task)
         previous = recorded_basis(task)
-        if any(row['absent'] or row['score'] is None for row in current['students']):
+        if any(row.get('attendance_status','absent' if row['absent'] else 'present') != 'present' or row['score'] is None for row in current['students']):
             return {'state': 'blocked', 'message': '当前任务学生缺考或本题得分缺失；请补充证据，不能确认旧复练依据。'}
         if previous is None:
             return {'state': 'unverified', 'message': '旧任务缺少完整成绩版本依据，须明确核对后继续使用。'}
@@ -194,6 +200,11 @@ def review_task(exam, task, reason):
         'evidence': _stamp(task_basis(exam, task)),
         'decision': 'teacher_retains_plan_after_review',
     })
+    for target in result['targets']:
+        row = _unique(exam['students'], 'id', target['exam_student_id'], '任务学生')
+        if target.get('reviewed_identity_binding',target.get('identity_binding')) != row.get('identity_binding'):
+            target['reviewed_identity_binding'] = deepcopy(row.get('identity_binding'))
+            target['reviewed_local_alias'] = row.get('local_alias',row['local_label'])
     return result
 
 
