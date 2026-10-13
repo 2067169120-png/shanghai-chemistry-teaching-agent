@@ -7,14 +7,14 @@
 | 字段 | 当前可核事实／最终回执 |
 | --- | --- |
 | 版本与BuildTag | **0.1.103／v0.1.103-20261013-full-r1**；自然构建exit0 |
-| EXE SHA-256及两种ZIP | **e5374dbc3e3a1da809041766dc565fb0407fc57e8b74de48f2cbe3443021af42**；512包文件／186108950字节；两ZIP已本地封口，大小、SHA及成员核对见[实际ZIP](#final-zips)，GitHub发布尚未发生 |
+| EXE SHA-256及两种ZIP | **e5374dbc3e3a1da809041766dc565fb0407fc57e8b74de48f2cbe3443021af42**；512包文件／186108950字节；两ZIP已本地封口并随v0.1.103实际公开，大小、SHA及成员核对见[实际ZIP](#final-zips) |
 | 最终源码ledger | **4e696080f63abac32078a6d20d50d5efa3cc3a3888f378174249bdf53848f780**；682源码／503 AST／157资源（119知识资源） |
 | 源码对应、受影响检查与组件承接 | 当前C与682源码copy全部SHA对应；r4共有673成员未改、精确7改＋2新增知识笔记；88 UI／11既有资源／22资源负例检查通过，新包普通冷启动0／九页资源探针0／4自有Word严格退出通过 |
 | 真实SourceFirst／完整来源恢复与知识seed | **PASS_requested_instrumented_QA_scope**，七check全部true；真实3材7资产／B37／完整undo-redo／保存重开／98原Word ZIP／生产恢复／第二factory两课全字节。知识搬迁机器读取通过：196原件SHA、5册、129不可变资料、全196目录与所选原文／图像；首次全目录567.954s |
 | 最终资料保护 | **通过**：全部新UI／Office／MainQA结束后，1938 profile元数据＋31完整SHA、0差异；迁E兼容junction的路径变化单列 |
 | 文档policy／完整README检查 | **本次通过**：Root精确合入七文档后，documentation_policy.py自然exit0，完整README测试14 passed（控制台1.79s；`docs/readme-final-v1.xml`）。后续发行链接或文案编辑按改动再做必要核对，不提前计入本次结果 |
 
-公开v0.1.101旧Release和附件保留。本轮v0.1.103远端发布尚未发生时，不能把准备好的ZIP或候选下载地址计为发行成功。
+v0.1.103已于2026-10-13T09:04:31Z实际公开，Release ID411475324；[发行页](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/releases/tag/v0.1.103)与四个发行资产的实际大小／digest已核对。旧v0.1.101 Release及附件保留，标签与旧证据不改写。
 
 ## 已核基线与本轮改动
 
@@ -232,6 +232,14 @@ E02＝r1九页／设置／草稿／作品／备份等限定合成smoke；E04＝r
 
 知识版编译EXE的普通factory额外启闭一次，PID35664自然exit0，无QA flag、无Office；两个导入批次与199份公开seed SHA保持。可能使用已有缓存，不据此声明G05冷性能通过；被遮挡的桌面截图已拒绝且未随包交付，不计实际教材窗口视觉验收。最终知识版清单明确：整个profile及state均不存在才初始化，已有profile不合并或覆盖；原candidate audit清单较弱的初始化文字未复制到公开ZIP。
 
-**GitHub上传与发布尚未发生。** 本次回执为本地封口证据；[预定发布页](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/releases/tag/v0.1.103)及标签版教师文档仅在发布后生效，实际发布URL和下载核验等待Root回执。源代码包由Root单独负责，不在本代理的ZIP构建或验证声明中。
+**GitHub上传与发布已实际成功。** [v0.1.103发行页](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/releases/tag/v0.1.103)，Release ID411475324，published_at为2026-10-13T09:04:31Z，draft=false。普通ZIP、知识ZIP、SHA256SUMS.txt与RELEASE-MANIFEST.json共四个资产的实际大小／GitHub digest与本机值精确匹配；两ZIP的上表字节与SHA保持原值。权威回执为本轮根`publication-remote-draft-verification.json`、`publication-success-release.json`。源码tag对应commit **f5ae07c7a3caba21228b74bb03f48710da3aeb25**，标签不移动；源代码包由Root单独负责，不在本代理的ZIP构建声明中。
+
+## 发布后Git文档闭包与CI补齐
+
+GitHub干净检出发现本机可达、但因ignore未入Git的文档引用：165 Markdown可达，1114本地链接，471缺失引用去重为264文件。84 Markdown、179 PNG及Root明确批准的1份截图来源JSON均在docs/，总38337117字节；精确path／size／SHA清单为本轮根`documentation-publication-review/allowlist.json`，SHA **e081a70075fb8c2ae9059838c66c3e7659d43a4a7c5296e99e1a1defd0e0f06d**。
+
+84文档正文／165图注已读；179图经30张缩略联系表、11张原图与214图注快速检查，0具体隐私阻断。唯一JSON仅保存15张已引用图的源路径／文件名／surface／SHA／size，Root批准为类型例外；没有原始日志、profile、真实学生资料、凭据值或README副本进入清单。该审查不计逐像素/OCR或化学教学质量认证，历史alpha／透明panel范围说明保留。
+
+本次本机policy与14项README检查的通过记录保留；干净Git检出的引用闭包由Root按264文件清单补齐，**PR #59与CI结果仍待实际验收**，不据本机通过或Release成功预填PR／CI通过。Root仅在desktop-integration.yml的pip install追加PySide6==6.11.2，与实际EXE依赖一致；测试替身仅调整lambda签名，不把PySide6 6.12推断为唯一根因。生产682源码及已冻结EXE保持，旧v0.1.101附件、标签和历史证据不重写。
 
 知识readerproof SHA **4d4c217cb624e71fc30fab513c3e0f53484d58b775da1617f6a9a21129ba1115**；原seedmanifest SHA **7b5be6d09c6cecb1773d0a0d0c2b21ee91ad1fdf94b9302a6afb7b14e478835f**，作为历史candidate引用，最终发行清单按整个profile不存在才初始化的启动器契约，不沿用原清单较弱的state不存在表述。实质知识单元回执SHA **5bf44e1c7b9b4cfb24939e7a7dc37b81a6917a1d135769a2ed6c2a19be15a6b1**。
