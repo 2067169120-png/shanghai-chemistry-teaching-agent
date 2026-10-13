@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from copy import deepcopy
 
 import pytest
 
@@ -142,6 +143,105 @@ def test_native_whitespace_and_table_or_formula_text_are_preserved(reader):
     assert reader._blocks[1]["text"] == original
     assert original in reader.browser.toPlainText()
     assert "<table" not in reader.browser.toHtml()
+
+
+def test_independent_full_heading_navigation_keeps_source_and_duplicate_title_identity(reader, monkeypatch):
+    source = _source()
+    source.update(source_sha256='a' * 64, revision='b' * 64)
+    original = deepcopy(source)
+    headings = [
+        {'id': 'word-heading-b2', 'level': 3, 'start': 2, 'end': 2, 'title': '完整原知识'},
+        {'id': 'word-heading-b7', 'level': 9, 'start': 7, 'end': 7, 'title': '完整原知识'},
+    ]
+    reader.set_source(source, navigation_sections=headings)
+    assert reader._source == source == original
+    assert reader._navigation_sections == headings
+    assert reader.section_picker.count() == 3
+    assert '原区块 2—2 · 可查看1张原图' in reader.section_picker.itemText(1)
+    assert '原区块 7—7 · 可查看2张原图' in reader.section_picker.itemText(2)
+    visited = []
+    monkeypatch.setattr(reader, 'scroll_to_block', lambda index: visited.append(index))
+    reader.section_picker.setCurrentIndex(1)
+    reader.section_picker.setCurrentIndex(2)
+    assert visited == [2, 7]
+    headings[0]['title'] = '改变外部显示副本'
+    assert reader._navigation_sections[0]['title'] == '完整原知识'
+    reader.set_source(source)
+    assert reader._navigation_sections == original['sections']
+
+
+def test_picture_labels_clean_only_bound_tokens_and_keep_native_text_and_image_actions(reader):
+    from integrations.deeptutor_shchem_v1.desktop_workbench.word_source_display import block_display_label
+    marker = '【待查看原文：图片或图形】'
+    source = _source()
+    source['blocks'][1].update(text=marker + '知识点2 氢键', label='2 · ' + marker + '知识点2 氢键')
+    source['sections'] = [{'start': 2, 'end': 2, 'title': marker + '知识点2 氢键'}]
+    original = deepcopy(source)
+    reader.set_source(source)
+    assert block_display_label(reader._blocks[2], reader._assets.values()) == '2 · 知识点2 氢键'
+    assert marker not in reader.section_picker.itemText(1)
+    assert '2 · 知识点2 氢键' in reader.browser.toPlainText()
+    assert marker + '知识点2 氢键' in reader.browser.toPlainText()
+    assert reader._source == source == original
+    requested = []
+    reader.image_requested.connect(requested.append)
+    reader.browser.anchorClicked.emit(QUrl(_href(reader, 'image', 'internal/png&?2')))
+    assert requested == ['internal/png&?2']
+
+
+@pytest.mark.parametrize('case', ['missing', 'unknown_object', 'literal_with_image', 'duplicate_asset'])
+def test_unmatched_or_literal_picture_tokens_remain_in_labels(reader, case):
+    from integrations.deeptutor_shchem_v1.desktop_workbench.word_source_display import block_display_label
+    marker = '【待查看原文：图片或图形】'
+    source = _source()
+    source['assets'] = [deepcopy(source['assets'][0])]
+    text = marker
+    if case == 'missing':
+        source['assets'] = []
+    elif case == 'unknown_object':
+        text = '【待查看原文：特殊正文容器】'
+    elif case == 'literal_with_image':
+        # A literal token plus the token for the actual embedded picture.
+        text = '字面文字' + marker + '；来源图片' + marker
+    else:
+        source['assets'].append(deepcopy(source['assets'][0]))
+    source['blocks'][1].update(text=text, label='2 · ' + text)
+    source['sections'] = [{'start': 2, 'end': 2, 'title': text}]
+    original = deepcopy(source)
+    reader.set_source(source)
+    assert block_display_label(reader._blocks[2], reader._assets.values()) == '2 · ' + text
+    assert text in reader.section_picker.itemText(1)
+    assert reader._source == source == original
+
+
+@pytest.mark.parametrize('case', ['picture', 'missing', 'unknown_mime', 'literal_with_image'])
+def test_picture_selection_view_only_suppresses_confirmed_image_only_body(qt_app, case):
+    marker = '【待查看原文：图片或图形】'
+    source = _source()
+    source['assets'] = [deepcopy(source['assets'][0])]
+    text = marker
+    if case == 'missing':
+        source['assets'] = []
+    elif case == 'unknown_mime':
+        source['assets'][0]['mime_type'] = 'application/octet-stream'
+    elif case == 'literal_with_image':
+        text = '字面引用' + marker + '；实际图片' + marker
+    source['blocks'][1].update(text=text, label='2 · ' + text)
+    original = deepcopy(source)
+    widget = WordLessonReader(image_selection_only=True)
+    try:
+        widget.set_source(source)
+        rendered = widget.browser.toPlainText()
+        if case == 'picture':
+            assert marker not in rendered and '区块 2 · 原图' in rendered
+        else:
+            assert text in rendered and '2 · ' + text in rendered
+        assert widget._source == source == original
+        assert 2 in widget._block_anchors
+    finally:
+        widget.close()
+        widget.deleteLater()
+        qt_app.processEvents()
 
 
 def test_untrusted_html_links_styles_and_images_are_literal_text(reader, monkeypatch):

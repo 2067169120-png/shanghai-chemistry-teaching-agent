@@ -479,6 +479,7 @@ def test_main_window_navigates_only_after_accepted_successful_append(
 
         def __init__(self, *_args):
             self.preparation_reference = reference
+            self.open_textbooks_requested = False
             self.basket_changed = SimpleNamespace(connect=lambda _slot: None)
 
         def exec(self):

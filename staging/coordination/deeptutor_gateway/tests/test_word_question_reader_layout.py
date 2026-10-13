@@ -57,10 +57,11 @@ def test_status_and_close_fully_visible_with_actual_wrapped_text(qt_app, width, 
 
 def test_empty_height_reacts_to_loading_filter_and_selected_preview_without_resize(qt_app):
     fixture, tasks = ReaderFixture(saved=[{"key": "Q2", "revision": "revision-Q2", "points": 4}]), QueuedTasks()
-    dialog = WordQuestionDialog(fixture, tasks, required_source_id="MISSING")
+    dialog = WordQuestionDialog(fixture, tasks)
     dialog.resize(360, 520); dialog.show(); settle(qt_app)
     empty_height = dialog.tabs.minimumHeight()
     tasks.flush(); settle(qt_app)
+    dialog.search.setText('不存在的记录'); dialog._filter_items(); settle(qt_app)
     assert dialog.tabs.minimumHeight() == empty_height == dialog.tabs.maximumHeight()
     assert dialog.question_list.count() == 0 and len(dialog.selections) == 1
     dialog.preparation_toggle.click(); dialog.include_images.setChecked(False)
@@ -72,6 +73,19 @@ def test_empty_height_reacts_to_loading_filter_and_selected_preview_without_resi
     assert dialog.tabs.minimumHeight() == empty_height
     assert fixture.saved == [{"key": "Q2", "revision": "revision-Q2", "points": 4}]
     dialog.close(); tasks.flush()
+
+
+def test_missing_source_keeps_other_saved_choices_outside_this_import(qt_app):
+    saved = [{"key": "Q2", "revision": "revision-Q2", "points": 4}]
+    fixture, tasks = ReaderFixture(saved=saved), QueuedTasks()
+    dialog = WordQuestionDialog(fixture, tasks, required_source_id="MISSING")
+    dialog.resize(360, 520); dialog.show(); tasks.flush(); settle(qt_app)
+    assert dialog.question_list.count() == 0 and dialog.selections == []
+    assert not dialog.preview_button.isEnabled() and not dialog.import_button.isEnabled()
+    assert fixture.saved == saved
+    assert not any(call[0] in {"save", "basket", "reference"} for call in fixture.calls)
+    dialog.close(); tasks.flush()
+    assert fixture.saved == saved
 
 
 @pytest.mark.parametrize("width", [360, 420])

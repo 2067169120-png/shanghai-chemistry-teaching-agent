@@ -1,0 +1,394 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-ALCOHOL-PHENOL-01",
+      "title": "通式不能代替官能团判断",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.1",
+      "pdf_pages": [
+        51,
+        53
+      ],
+      "printed_pages": [
+        47,
+        49
+      ],
+      "source_anchors": [
+        "通式不能代替官能团判断"
+      ],
+      "summary": "本节从羟基连接位置与羟基数分类，再介绍醚。C₂H₆O可写乙醇CH₃CH₂OH，也可写甲醚CH₃OCH₃；分子式相同不等于官能团相同。无环饱和一元醇通式不能推广到环状或多元醇。",
+      "classroom_check": "把乙醇、甲醚、乙二醇的分子式、羟基数与连接方式分栏填写。",
+      "limitation": "按本节常见醇、酚、醚讨论，未据此重建全部有机物分类。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          51,
+          53
+        ],
+        "printed_pages": [
+          47,
+          49
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-022",
+      "lecture_block_indices": [
+        36,
+        37,
+        39,
+        74,
+        192,
+        260
+      ],
+      "source_sha256": "6dc0a132c5a1716c195fba215943d3e917e5d3aea3b559db5dfcfee43f1f9dc9",
+      "source_preview_revision": "36cb6cb199a99d0b5a168bf454e5eff318830e45d481d545dc231542775851ec",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-ALCOHOL-PHENOL-02",
+      "title": "沸点比较保留相近分子质量与单位",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.1",
+      "pdf_pages": [
+        51,
+        52
+      ],
+      "printed_pages": [
+        47,
+        48
+      ],
+      "source_anchors": [
+        "沸点比较保留相近分子质量与单位"
+      ],
+      "summary": "表3.1并列甲醇与乙烷、乙醇与丙烷的相对分子质量和沸点；正文用分子间氢键解释差别，并比较乙醇与乙二醇。水溶性还涉及醇羟基与水形成氢键。",
+      "classroom_check": "读出乙醇78.5°C、丙烷−42.1°C并注明来自该表；比较时同时写分子质量、羟基数和具体结构。",
+      "limitation": "只复核表中有限样本，不以羟基数单独预测所有醇的沸点；必修二乙醇数据栏为78.3°C，版内差异保留。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          51,
+          52
+        ],
+        "printed_pages": [
+          47,
+          48
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-022",
+      "lecture_block_indices": [
+        39,
+        42,
+        43,
+        45,
+        46
+      ],
+      "source_sha256": "6dc0a132c5a1716c195fba215943d3e917e5d3aea3b559db5dfcfee43f1f9dc9",
+      "source_preview_revision": "36cb6cb199a99d0b5a168bf454e5eff318830e45d481d545dc231542775851ec",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-ALCOHOL-PHENOL-03",
+      "title": "乙醇两种脱水分别写温度与断键",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.1",
+      "pdf_pages": [
+        52
+      ],
+      "printed_pages": [
+        48
+      ],
+      "source_anchors": [
+        "乙醇两种脱水分别写温度与断键"
+      ],
+      "summary": "乙醇在浓硫酸作用下170°C分子内脱水形成乙烯；140°C时可分子间脱水形成乙醚。前者生成碳碳双键，后者形成C—O—C连接，反应对象和产物不同。",
+      "classroom_check": "把浓硫酸、140°C或170°C、乙醚或乙烯及水写在各自路线中，再核对消去所需相邻氢。",
+      "limitation": "这两个温度属于本页乙醇例子，不推广为所有醇的固定反应温度。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          52
+        ],
+        "printed_pages": [
+          48
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-022",
+      "lecture_block_indices": [
+        59,
+        61,
+        62,
+        63,
+        64,
+        69,
+        70,
+        74,
+        112,
+        113,
+        114
+      ],
+      "source_sha256": "6dc0a132c5a1716c195fba215943d3e917e5d3aea3b559db5dfcfee43f1f9dc9",
+      "source_preview_revision": "36cb6cb199a99d0b5a168bf454e5eff318830e45d481d545dc231542775851ec",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-ALCOHOL-PHENOL-04",
+      "title": "氧化先看羟基所在碳上的氢",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.1",
+      "pdf_pages": [
+        53,
+        57
+      ],
+      "printed_pages": [
+        49,
+        53
+      ],
+      "source_anchors": [
+        "氧化先看羟基所在碳上的氢"
+      ],
+      "summary": "教材分别展示1-丙醇氧化为丙醛、2-丙醇氧化为丙酮，写出Cu与加热条件；例题再用1-丁醇、2-丁醇和2-甲基-1-丙醇区分氧化与消去。",
+      "classroom_check": "在—CH₂OH与—CHOH—上标出参与本模型氧化的氢，随后按具体氧化剂核对主要产物。",
+      "limitation": "不把生成醛或酮视为所有醇的共同特征；强氧化条件的产物须另核。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          53,
+          57
+        ],
+        "printed_pages": [
+          49,
+          53
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-022",
+      "lecture_block_indices": [
+        48,
+        52,
+        54,
+        57,
+        106,
+        107,
+        108,
+        109,
+        110,
+        260
+      ],
+      "source_sha256": "6dc0a132c5a1716c195fba215943d3e917e5d3aea3b559db5dfcfee43f1f9dc9",
+      "source_preview_revision": "36cb6cb199a99d0b5a168bf454e5eff318830e45d481d545dc231542775851ec",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-ALCOHOL-PHENOL-05",
+      "title": "与钠反应推羟基数先核样品含水情况",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.3",
+      "pdf_pages": [
+        96
+      ],
+      "printed_pages": [
+        92
+      ],
+      "source_anchors": [
+        "与钠反应推羟基数先核样品含水情况"
+      ],
+      "summary": "教材用1.15 g乙醇与足量钠产生标准状况0.28 L氢气的数据推断结构，并并列无水乙醇和水与钠反应的实验。乙醇的羟基氢与烃中的氢表现不同。",
+      "classroom_check": "先列n(乙醇)与n(H₂)之比2∶1，再指出加入水会使按纯醇反推羟基数的依据失效。",
+      "limitation": "只作已给数据的读图与计量分析，实际实验另由教师按学校要求安排。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          96
+        ],
+        "printed_pages": [
+          92
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-022",
+      "lecture_block_indices": [
+        78,
+        140,
+        141,
+        142,
+        143,
+        263,
+        264
+      ],
+      "source_sha256": "6dc0a132c5a1716c195fba215943d3e917e5d3aea3b559db5dfcfee43f1f9dc9",
+      "source_preview_revision": "36cb6cb199a99d0b5a168bf454e5eff318830e45d481d545dc231542775851ec",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-ALCOHOL-PHENOL-06",
+      "title": "苯酚的浑浊变化需区分溶解与成盐",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.1",
+      "pdf_pages": [
+        55,
+        56
+      ],
+      "printed_pages": [
+        51,
+        52
+      ],
+      "source_anchors": [
+        "苯酚的浑浊变化需区分溶解与成盐"
+      ],
+      "summary": "教材先比较苯酚在不同温度下的物理性质，再记录加NaOH后形成苯酚钠而澄清、通CO₂重新得到苯酚而浑浊。不能仅把澄清或浑浊现象等同一种原因。",
+      "classroom_check": "将温度、试剂、现象及是否生成新物质分别记录；在对应式中保留苯酚、苯酚钠和NaHCO₃名称。",
+      "limitation": "教材列苯酚熔点41°C而讲义196写43°C，差异保持待核；不从气体用量直接推断任意混合碱液的唯一产物。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          55,
+          56
+        ],
+        "printed_pages": [
+          51,
+          52
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-022",
+      "lecture_block_indices": [
+        196,
+        197,
+        204,
+        205,
+        209,
+        210,
+        211,
+        212,
+        241,
+        242
+      ],
+      "source_sha256": "6dc0a132c5a1716c195fba215943d3e917e5d3aea3b559db5dfcfee43f1f9dc9",
+      "source_preview_revision": "36cb6cb199a99d0b5a168bf454e5eff318830e45d481d545dc231542775851ec",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-ALCOHOL-PHENOL-07",
+      "title": "苯酚溴代保留羟基显色保留试剂",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.1",
+      "pdf_pages": [
+        56,
+        57
+      ],
+      "printed_pages": [
+        52,
+        53
+      ],
+      "source_anchors": [
+        "苯酚溴代保留羟基显色保留试剂"
+      ],
+      "summary": "教材展示苯酚与浓溴水生成2,4,6-三溴苯酚白色沉淀，结构图中羟基保留；又记录苯酚稀溶液与FeCl₃溶液显紫色。",
+      "classroom_check": "先标被替换的邻、对位碳氢键，修正讲义255图将它写成O—H的笔误；检验记录区分褪色、沉淀与显色。",
+      "limitation": "不把紫色视为所有酚类的固定颜色，也不把溴水褪色当作苯酚的唯一证据。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          56,
+          57
+        ],
+        "printed_pages": [
+          52,
+          53
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-022",
+      "lecture_block_indices": [
+        215,
+        216,
+        217,
+        220,
+        221,
+        227,
+        228,
+        229,
+        230,
+        243,
+        255,
+        444
+      ],
+      "source_sha256": "6dc0a132c5a1716c195fba215943d3e917e5d3aea3b559db5dfcfee43f1f9dc9",
+      "source_preview_revision": "36cb6cb199a99d0b5a168bf454e5eff318830e45d481d545dc231542775851ec",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-ALCOHOL-PHENOL-08",
+      "title": "芳香醇与酚先看羟基连接再读试剂",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.1",
+      "pdf_pages": [
+        58
+      ],
+      "printed_pages": [
+        54
+      ],
+      "source_anchors": [
+        "芳香醇与酚先看羟基连接再读试剂"
+      ],
+      "summary": "练习以含苯环的同分异构体比较与Na、NaOH及浓溴水的反应，要求同时核对羟基连接位置和剩余取代位置。含苯环而羟基连侧链碳的结构不能直接归为酚。",
+      "classroom_check": "结合讲义311图，把醇羟基、酚羟基、羧基分开标注，再分别填写NaOH与NaHCO₃水溶液的产物。",
+      "limitation": "多官能团计量只限结构与条件已给的样品，不用单一官能团模板代替整分子判断。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          58
+        ],
+        "printed_pages": [
+          54
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-022",
+      "lecture_block_indices": [
+        36,
+        39,
+        192,
+        260,
+        263,
+        311,
+        312,
+        313,
+        315
+      ],
+      "source_sha256": "6dc0a132c5a1716c195fba215943d3e917e5d3aea3b559db5dfcfee43f1f9dc9",
+      "source_preview_revision": "36cb6cb199a99d0b5a168bf454e5eff318830e45d481d545dc231542775851ec",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    }
+  ]
+}

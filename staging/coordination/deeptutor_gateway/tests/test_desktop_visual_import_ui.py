@@ -391,7 +391,7 @@ def test_three_role_lists_keep_order_filter_formats_and_save_offline_args(
     assert callable(call["progress_callback"])
     assert callable(call["should_cancel"])
     assert "离线保存完成" in dialog.status.text()
-    assert "可完整读取的 Word 来源 1 份" in dialog.status.text()
+    assert "当次快速导入统计：完整读取 Word 来源 1 份；" in dialog.status.text()
     assert not dialog.word_reference_button.isHidden()
     assert "待视觉资料 2" in dialog.status.text()
     assert dialog.provider_card.isVisible() is False  # dialog itself was never shown

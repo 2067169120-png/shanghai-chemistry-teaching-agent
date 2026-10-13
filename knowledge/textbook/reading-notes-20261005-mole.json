@@ -1,0 +1,372 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-MOLE-01",
+      "title": "先说清所计数的微粒",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.2",
+      "pdf_pages": [
+        20
+      ],
+      "printed_pages": [
+        15
+      ],
+      "summary": "物质的量把宏观用量与微粒数联系起来。使用摩尔前先指定实体：原子、分子、离子或其他明确组合；粒子种类改变，同一样品的计数结果也会改变。",
+      "classroom_check": "让学生分别给碳原子、二氧化碳分子和氯化钠中的两类离子写出计数对象，再判断一句“1 mol粒子”还缺什么信息。",
+      "limitation": "微粒对象必须明确；不能把离子晶体说成由氯化钠分子构成。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          20
+        ],
+        "printed_pages": [
+          15
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-MOLE-02",
+      "title": "区分物质的量、微粒数与常数",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.2",
+      "pdf_pages": [
+        20,
+        24
+      ],
+      "printed_pages": [
+        15,
+        19
+      ],
+      "summary": "n表示物质的量，N表示所指定微粒的数目，N_A是带有mol⁻¹单位的比例常数。通过N=nN_A换算时，常数的单位使mol消去，得到粒子数。",
+      "classroom_check": "把n、N、N_A分别配上含义与单位，并用量纲检查N=nN_A。",
+      "limitation": "教材写出精确定义值，也使用6.02×10²³作计算近似；保留题给精度，不能把近似值当成定义值。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          20,
+          24
+        ],
+        "printed_pages": [
+          15,
+          19
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-MOLE-03",
+      "title": "一份样品可以有不同的计数对象",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.2",
+      "pdf_pages": [
+        20,
+        26
+      ],
+      "printed_pages": [
+        15,
+        21
+      ],
+      "summary": "分子数、原子数与各类离子数需要分开表达。分子中指定原子的个数、化学式中的离子配比会影响从样品物质的量到相应微粒数的换算。",
+      "classroom_check": "给氧气的物质的量，让学生分别填写氧分子数和氧原子数，并解释为什么二者不同。",
+      "limitation": "先辨物质结构和所问对象，不能只看到物质的量就直接乘N_A。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          20,
+          26
+        ],
+        "printed_pages": [
+          15,
+          21
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-MOLE-04",
+      "title": "摩尔质量要带单位",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.2",
+      "pdf_pages": [
+        21,
+        22
+      ],
+      "printed_pages": [
+        16,
+        17
+      ],
+      "summary": "摩尔质量M描述每摩尔指定物质的质量。以g·mol⁻¹表示时，常见物质的M在数值上可与相对原子质量或相对分子质量对应；二者的含义和单位仍需区分。",
+      "classroom_check": "把铁、乙醇的相对质量与摩尔质量并列，让学生补单位，再用n=m/M核对单位约去的过程。",
+      "limitation": "相对质量无量纲；写出M时要注明所指物质和单位，m与M使用一致的质量单位。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          21,
+          22
+        ],
+        "printed_pages": [
+          16,
+          17
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-MOLE-05",
+      "title": "用物质的量组织连续换算",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.2",
+      "pdf_pages": [
+        22,
+        25
+      ],
+      "printed_pages": [
+        17,
+        20
+      ],
+      "summary": "先由m/M得到n，再用nN_A求微粒数；气体体积还要选用与给定温度和压强相符的V_m。把n放在换算路径中间，有助于明确每一步使用的物理量。",
+      "classroom_check": "让学生先画m→n→N或m→n→V的箭头图，再在每条箭头旁写公式和适用条件。",
+      "limitation": "有气体体积时还必须核验状态、温度和压强；不把所有体积换算都套入22.4。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          22,
+          25
+        ],
+        "printed_pages": [
+          17,
+          20
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-MOLE-06",
+      "title": "从表格比较固液气的体积",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.2",
+      "pdf_pages": [
+        21,
+        22,
+        23
+      ],
+      "printed_pages": [
+        16,
+        17,
+        18
+      ],
+      "summary": "同为1 mol，物质的质量可以不同，固体和液体的体积通常也不同。教材用质量、密度和聚集状态表引导学生计算V=m/ρ，再比较这些体积。",
+      "classroom_check": "先用表内一组固体或液体的数据算体积，再与气体比较，要求解释时同时关注微粒数量和微粒间距。",
+      "limitation": "表中密度与温度条件有注释；单位统一后计算，不能把固体或液体也按气体摩尔体积处理。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          21,
+          22,
+          23
+        ],
+        "printed_pages": [
+          16,
+          17,
+          18
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-MOLE-07",
+      "title": "使用气体摩尔体积先核验条件",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.2",
+      "pdf_pages": [
+        22,
+        23,
+        26
+      ],
+      "printed_pages": [
+        17,
+        18,
+        21
+      ],
+      "summary": "V_m随温度和压强条件变化。教材在标准状况下采用约22.4 L·mol⁻¹，并另列其他条件下的数值；应用n=V/V_m前要确认该物质在所述条件下属于气体。",
+      "classroom_check": "让学生先圈出题给温度、压强及物质状态，再选择V_m；用水与氧气的比较检验是否识别了状态。",
+      "limitation": "采用教材本页的标准状况约定和题给精度；常温数值不能替代标准状况数值，液态水不适用气体公式。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          22,
+          23,
+          26
+        ],
+        "printed_pages": [
+          17,
+          18,
+          21
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-MOLE-08",
+      "title": "同温同压的体积比与物质的量比",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.2",
+      "pdf_pages": [
+        23,
+        24
+      ],
+      "printed_pages": [
+        18,
+        19
+      ],
+      "summary": "在教材讨论的气体条件下，同温同压时气体体积之比可对应物质的量之比。若要由体积关系推断产物组成，还要结合已知反应物组成和原子守恒。",
+      "classroom_check": "给一组气体体积比，让学生先说明同温同压条件，再列物质的量比，最后检查各元素的原子守恒。",
+      "limitation": "关系用于气体；混合物组成、反应完成程度及题设假定需要另核，单凭体积大小不能任意确定分子式。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          23,
+          24
+        ],
+        "printed_pages": [
+          18,
+          19
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-MOLE-09",
+      "title": "反应计量中分别读分子、质量和气体体积",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.2",
+      "pdf_pages": [
+        21,
+        24
+      ],
+      "printed_pages": [
+        16,
+        19
+      ],
+      "summary": "配平的化学方程式可支持指定物质间的物质的量比；结合摩尔质量可进一步得到质量关系。同温同压的气体体积关系只覆盖相应的气态物质。",
+      "classroom_check": "对甲烷（CH₄）与氧气（O₂）点燃生成二氧化碳（CO₂）和水（H₂O）的反应，让学生在方程式各物质下方分别标n比、质量与状态。",
+      "limitation": "教材表中标准状况的水标为液态；不能把其计量系数直接写成该条件下的气体体积。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          21,
+          24
+        ],
+        "printed_pages": [
+          16,
+          19
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-MOLE-10",
+      "title": "用练习诊断对象、单位和条件",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.2",
+      "pdf_pages": [
+        25,
+        26
+      ],
+      "printed_pages": [
+        20,
+        21
+      ],
+      "summary": "本节练习把微粒计数、质量换算与气体体积放在不同情境中。备课可让学生每题先填写“所问对象、给定量、适用条件”，再选择换算路径，记录错误发生在哪一步。",
+      "classroom_check": "制作三栏检查卡：计数对象是否明确、单位是否一致、温度压强与状态是否满足。把同一错误归到可解释的步骤。",
+      "limitation": "这里只给出教师使用的诊断思路，没有录入原书练习题或官方答案；原练习答案、学生作答与评分另行核验。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          25,
+          26
+        ],
+        "printed_pages": [
+          20,
+          21
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ]
+}

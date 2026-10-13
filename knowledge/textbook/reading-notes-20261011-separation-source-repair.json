@@ -1,0 +1,937 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "purpose": "分离提纯7条旧研读提示的来源补证和正文候选，已纳入工作台教材研读提示。",
+  "qualification": "AI_candidate",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "teacher_reviewed": false,
+  "teaching_use_allowed": false,
+  "generation_allowed": false,
+  "publication_allowed": false,
+  "retrieval_ready": false,
+  "source_package_sha256": "b9349078050f68d60eaf76c8c9a7bb9d6c77c4e24360624864cdadbb02561633",
+  "original_source_redistribution": false,
+  "review_method": "actual_original_textbook_page_pixels_and_existing_source_bound_lecture_render_pixels_read_by_model",
+  "notes": [
+    {
+      "id": "READ-TB-M1-20260926-SEP-01",
+      "title": "分离后该保留哪一相？",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        29,
+        38
+      ],
+      "printed_pages": [
+        24,
+        33
+      ],
+      "lecture_package_id": "PKG-038",
+      "lecture_block_indices": [
+        33,
+        35,
+        40,
+        45,
+        47,
+        49,
+        51,
+        197,
+        198,
+        202,
+        235,
+        247
+      ],
+      "summary": "分离是把混合物中的不同组分分开，提纯是除去目标物中的杂质。选方法前，先写出目标物、杂质和最终要取得的形态，再比较各组分的溶解性、沸点、互溶性或反应性质。每一步都追踪目标物留在滤渣、滤液、上层液、下层液、馏出液还是残留物。例如，从盐水取得盐晶体与回收水需要保留的部分不同。两相已经分开，只能说明完成了这一步分离；还要继续检查保留部分中的其他杂质及后续处理。",
+      "classroom_check": "给同一份盐水分别设定“取得盐晶体”和“回收水”两个目标。列出目标物、利用的性质、选用的操作、保留部分及仍需处理的成分；再解释为何糖水不能靠普通过滤取得糖。",
+      "limitation": "分离方案同时受目标形态、组分性质和纯度要求约束。选择操作时既要去除杂质，也要减少目标物损失；化学处理还须安排生成物和过量试剂的去向。",
+      "qualification": "AI_candidate",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "teacher_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false,
+      "retrieval_ready": false,
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "source_anchors": [
+        "物质的分离与提纯正文",
+        "图1.17实验室过滤与蒸发操作",
+        "练习巩固第4题分离方法判断"
+      ],
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          29,
+          38
+        ],
+        "printed_pages": [
+          24,
+          33
+        ],
+        "source_anchors": [
+          "物质的分离与提纯正文",
+          "图1.17实验室过滤与蒸发操作",
+          "练习巩固第4题分离方法判断"
+        ],
+        "current_page_visual_review": "This worker actually viewed all listed textbook page images; model observation only",
+        "evidence_anchor_ids": [
+          "M1-029-definition",
+          "M1-029-filter-evaporate",
+          "M1-038-exercise4"
+        ],
+        "human_reviewed": false
+      },
+      "lecture_evidence": {
+        "package_id": "PKG-038",
+        "source_sha256": "59e4577ee16553dd9b5194ed54da0c5f43d5794ea11dc2ad809c4a7f6465db7a",
+        "source_preview_revision": "de056f0e94d1ee1392005862167325d0be3224151d7817ac16b77ba1dffa3812",
+        "source_extraction_revision": "20260909-editable-chemistry-v2",
+        "legacy_block_indices": [
+          33,
+          35,
+          40,
+          45,
+          47,
+          49,
+          51,
+          197,
+          198,
+          202,
+          235,
+          247
+        ],
+        "current_observed_support_indices": [
+          33,
+          35,
+          45,
+          47,
+          197,
+          198,
+          202
+        ],
+        "render_pdf_sha256": "abe28bc9bdfaf003d3509abee2e652a8384e7875ce5f91f0057bfe8f1e86322a",
+        "evidence_anchor_ids": [
+          "PKG038-004-definition",
+          "PKG038-005-evaporate",
+          "PKG038-015-method"
+        ],
+        "human_reviewed": false
+      },
+      "legacy_source_record": {
+        "original_note_package_sha256": "b9349078050f68d60eaf76c8c9a7bb9d6c77c4e24360624864cdadbb02561633",
+        "verbatim_copy_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-11-forward-section-materials\\content\\separation-evidence\\original-note-package.verbatim.json",
+        "original_id_preserved": true,
+        "original_record_unmodified": true
+      },
+      "candidate_evidence_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-11-forward-section-materials\\content\\separation-evidence\\source-evidence.json",
+      "candidate_gaps": {
+        "book_edition_and_printing": "unknown",
+        "original_article_url": "unknown",
+        "lecture_publication_date": "unknown",
+        "lecture_source_account": "unknown",
+        "original_exam_identity": "unknown",
+        "teacher_verified_answer_or_scoring": "unknown",
+        "independent_human_visual_review": "unknown"
+      },
+      "candidate_previous_title": "分离目标决定保留哪一相"
+    },
+    {
+      "id": "READ-TB-M1-20260926-SEP-02",
+      "title": "过滤为何只能除去部分杂质？",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        29
+      ],
+      "printed_pages": [
+        24
+      ],
+      "lecture_package_id": "PKG-038",
+      "lecture_block_indices": [
+        45,
+        47,
+        60,
+        62,
+        63,
+        66,
+        76,
+        80,
+        82,
+        261,
+        262,
+        268
+      ],
+      "summary": "普通过滤用于把不溶性固体与液体分开。先判断要保留滤渣还是滤液，再检查滤纸、漏斗、玻璃棒和接收烧杯。滤纸紧贴漏斗内壁；滤纸边缘低于漏斗边缘，液面低于滤纸边缘；烧杯杯口紧靠玻璃棒，玻璃棒下端抵靠三层滤纸处，漏斗下端较长的一侧管口紧靠烧杯内壁。过滤后，可溶组分仍随滤液通过，因此过滤除去泥沙不等于同时除去了所有可溶性杂质。",
+      "classroom_check": "沿烧杯、玻璃棒、滤纸、漏斗管和接收烧杯标出液体流向，逐一指出“一贴、二低、三靠”的位置。再以含泥沙和氯化钠的水溶液为例，写出滤渣和滤液的主要成分。",
+      "limitation": "这些操作要点适用于漏斗和滤纸组成的普通过滤装置。是否继续蒸发或结晶，由滤液组成及目标物决定；过滤前后都需记录目标物所在部分。",
+      "qualification": "AI_candidate",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "teacher_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false,
+      "retrieval_ready": false,
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "source_anchors": [
+        "图1.17过滤操作",
+        "图1.18工业过滤器",
+        "粗盐提纯操作要点的思考题"
+      ],
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          29
+        ],
+        "printed_pages": [
+          24
+        ],
+        "source_anchors": [
+          "图1.17过滤操作",
+          "图1.18工业过滤器",
+          "粗盐提纯操作要点的思考题"
+        ],
+        "current_page_visual_review": "This worker actually viewed all listed textbook page images; model observation only",
+        "evidence_anchor_ids": [
+          "M1-029-filter-evaporate",
+          "M1-038-exercise4"
+        ],
+        "human_reviewed": false
+      },
+      "lecture_evidence": {
+        "package_id": "PKG-038",
+        "source_sha256": "59e4577ee16553dd9b5194ed54da0c5f43d5794ea11dc2ad809c4a7f6465db7a",
+        "source_preview_revision": "de056f0e94d1ee1392005862167325d0be3224151d7817ac16b77ba1dffa3812",
+        "source_extraction_revision": "20260909-editable-chemistry-v2",
+        "legacy_block_indices": [
+          45,
+          47,
+          60,
+          62,
+          63,
+          66,
+          76,
+          80,
+          82,
+          261,
+          262,
+          268
+        ],
+        "current_observed_support_indices": [
+          45,
+          47
+        ],
+        "render_pdf_sha256": "abe28bc9bdfaf003d3509abee2e652a8384e7875ce5f91f0057bfe8f1e86322a",
+        "evidence_anchor_ids": [
+          "PKG038-004-filter",
+          "PKG038-005-filter-continued",
+          "PKG038-005-evaporate"
+        ],
+        "human_reviewed": false
+      },
+      "legacy_source_record": {
+        "original_note_package_sha256": "b9349078050f68d60eaf76c8c9a7bb9d6c77c4e24360624864cdadbb02561633",
+        "verbatim_copy_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-11-forward-section-materials\\content\\separation-evidence\\original-note-package.verbatim.json",
+        "original_id_preserved": true,
+        "original_record_unmodified": true
+      },
+      "candidate_evidence_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-11-forward-section-materials\\content\\separation-evidence\\source-evidence.json",
+      "candidate_gaps": {
+        "book_edition_and_printing": "unknown",
+        "original_article_url": "unknown",
+        "lecture_publication_date": "unknown",
+        "lecture_source_account": "unknown",
+        "original_exam_identity": "unknown",
+        "teacher_verified_answer_or_scoring": "unknown",
+        "independent_human_visual_review": "unknown"
+      },
+      "candidate_previous_title": "过滤器具与过滤前后的组成"
+    },
+    {
+      "id": "READ-TB-M1-20260926-SEP-03",
+      "title": "重结晶的两次过滤分别保留什么？",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        30,
+        37,
+        38
+      ],
+      "printed_pages": [
+        25,
+        32,
+        33
+      ],
+      "lecture_package_id": "PKG-038",
+      "lecture_block_indices": [
+        38,
+        60,
+        62,
+        127,
+        161,
+        163,
+        261,
+        262,
+        263,
+        265,
+        268,
+        320,
+        321,
+        328
+      ],
+      "summary": "重结晶利用目标物与杂质溶解度的差异，使杂质全部或大部分留在母液中。采用冷却结晶时，目标物应在所选溶剂中高温较易溶、低温较难溶；还需结合杂质含量和溶解行为判断其去向。硝酸钾（KNO₃）中混有少量氯化钾（KCl）时，应比较两者溶解度随温度的变化。含少量氯化钠和泥沙的粗苯甲酸可经加水、加热溶解后趁热过滤，保留热滤液；冷却结晶后再过滤，保留苯甲酸晶体，继而用冷水洗涤、干燥。苯甲酸易溶于乙醇，用乙醇洗涤会造成较大的晶体损失。一次重结晶后的纯度不足时，可再进行重结晶。",
+      "classroom_check": "解释为何冷却结晶应看溶解度随温度的变化。沿粗苯甲酸流程标出两次过滤各自除去什么、保留什么，并比较冷水与乙醇洗涤对母液去除和晶体损失的影响。",
+      "limitation": "冷却结晶须结合目标物、杂质、溶剂、温度和用量判断；高温溶解、趁热过滤、冷却析晶的次序具有作用差别。苯甲酸实例的冷水洗涤条件不能仅凭“有晶体”推广到其他物质。",
+      "qualification": "AI_candidate",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "teacher_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false,
+      "retrieval_ready": false,
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "source_anchors": [
+        "图1.19 KCl和KNO₃的溶解度曲线",
+        "重结晶正文",
+        "图1.28及学习指南分析",
+        "练习巩固第4题第4项"
+      ],
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          30,
+          37,
+          38
+        ],
+        "printed_pages": [
+          25,
+          32,
+          33
+        ],
+        "source_anchors": [
+          "图1.19 KCl和KNO₃的溶解度曲线",
+          "重结晶正文",
+          "图1.28及学习指南分析",
+          "练习巩固第4题第4项"
+        ],
+        "current_page_visual_review": "This worker actually viewed all listed textbook page images; model observation only",
+        "evidence_anchor_ids": [
+          "M1-030-recrystallization",
+          "M1-037-solvent-choice",
+          "M1-038-exercise4"
+        ],
+        "human_reviewed": false
+      },
+      "lecture_evidence": {
+        "package_id": "PKG-038",
+        "source_sha256": "59e4577ee16553dd9b5194ed54da0c5f43d5794ea11dc2ad809c4a7f6465db7a",
+        "source_preview_revision": "de056f0e94d1ee1392005862167325d0be3224151d7817ac16b77ba1dffa3812",
+        "source_extraction_revision": "20260909-editable-chemistry-v2",
+        "legacy_block_indices": [
+          38,
+          60,
+          62,
+          127,
+          161,
+          163,
+          261,
+          262,
+          263,
+          265,
+          268,
+          320,
+          321,
+          328
+        ],
+        "current_observed_support_indices": [
+          261,
+          262,
+          263,
+          265,
+          267,
+          268
+        ],
+        "render_pdf_sha256": "abe28bc9bdfaf003d3509abee2e652a8384e7875ce5f91f0057bfe8f1e86322a",
+        "evidence_anchor_ids": [
+          "PKG038-018-benzoic-question",
+          "PKG038-019-benzoic-analysis"
+        ],
+        "human_reviewed": false
+      },
+      "legacy_source_record": {
+        "original_note_package_sha256": "b9349078050f68d60eaf76c8c9a7bb9d6c77c4e24360624864cdadbb02561633",
+        "verbatim_copy_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-11-forward-section-materials\\content\\separation-evidence\\original-note-package.verbatim.json",
+        "original_id_preserved": true,
+        "original_record_unmodified": true
+      },
+      "candidate_evidence_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-11-forward-section-materials\\content\\separation-evidence\\source-evidence.json",
+      "candidate_gaps": {
+        "book_edition_and_printing": "unknown",
+        "original_article_url": "unknown",
+        "lecture_publication_date": "unknown",
+        "lecture_source_account": "unknown",
+        "original_exam_identity": "unknown",
+        "teacher_verified_answer_or_scoring": "unknown",
+        "independent_human_visual_review": "unknown"
+      },
+      "candidate_previous_title": "重结晶看温度变化和杂质去向"
+    },
+    {
+      "id": "READ-TB-M1-20260926-SEP-04",
+      "title": "蒸馏时蒸气与冷却水怎样流动？",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        30
+      ],
+      "printed_pages": [
+        25
+      ],
+      "lecture_package_id": "PKG-038",
+      "lecture_block_indices": [
+        42,
+        51,
+        56,
+        69,
+        73,
+        84,
+        85,
+        86,
+        87,
+        92,
+        94,
+        96,
+        100,
+        113,
+        225,
+        232
+      ],
+      "summary": "蒸馏先将液体加热汽化，再把蒸气冷凝并收集，可用于从含高沸点溶质的溶液中回收溶剂，也可分离沸点差别较大的液体。常压蒸馏装置中，温度计感温部位应在蒸馏烧瓶支管口处，用来观察进入冷凝管的蒸气温度；冷却水从冷凝管下口进入、上口流出。加热前加入沸石或碎瓷片以防暴沸；若加热后才发现漏加，须停止加热并冷却后再补加。沿装置分别追踪蒸气、冷凝液和冷却水：冷凝液返回原烧瓶与流向接收器对应不同的处理目的。沸点相差不大的液体，一次蒸馏的分离效果有限，可利用分馏柱中的反复汽化与冷凝改善分离。",
+      "classroom_check": "分别用箭头标出蒸气、冷凝液、冷却水的路线，说明温度计测量对象、沸石作用和补加时机。比较冷凝液回到原烧瓶与进入接收瓶的两幅装置，再依据给定沸点说明收集目标。",
+      "limitation": "蒸馏选择须结合组分沸点、压强和热稳定性；回流、常压蒸馏与减压蒸馏的连接方式和用途须分别判断。具体馏分的收集条件取决于待分离体系和实验给定条件。",
+      "qualification": "AI_candidate",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "teacher_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false,
+      "retrieval_ready": false,
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "source_anchors": [
+        "蒸馏正文",
+        "图1.20蒸馏装置",
+        "拓展视野：分馏"
+      ],
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          30
+        ],
+        "printed_pages": [
+          25
+        ],
+        "source_anchors": [
+          "蒸馏正文",
+          "图1.20蒸馏装置",
+          "拓展视野：分馏"
+        ],
+        "current_page_visual_review": "This worker actually viewed all listed textbook page images; model observation only",
+        "evidence_anchor_ids": [
+          "M1-030-distillation",
+          "M1-030-fractionation"
+        ],
+        "human_reviewed": false
+      },
+      "lecture_evidence": {
+        "package_id": "PKG-038",
+        "source_sha256": "59e4577ee16553dd9b5194ed54da0c5f43d5794ea11dc2ad809c4a7f6465db7a",
+        "source_preview_revision": "de056f0e94d1ee1392005862167325d0be3224151d7817ac16b77ba1dffa3812",
+        "source_extraction_revision": "20260909-editable-chemistry-v2",
+        "legacy_block_indices": [
+          42,
+          51,
+          56,
+          69,
+          73,
+          84,
+          85,
+          86,
+          87,
+          92,
+          94,
+          96,
+          100,
+          113,
+          225,
+          232
+        ],
+        "current_observed_support_indices": [
+          51,
+          56,
+          84,
+          85,
+          86,
+          87
+        ],
+        "render_pdf_sha256": "abe28bc9bdfaf003d3509abee2e652a8384e7875ce5f91f0057bfe8f1e86322a",
+        "evidence_anchor_ids": [
+          "PKG038-005-distillation",
+          "PKG038-005-timing",
+          "PKG038-007-apparatus"
+        ],
+        "human_reviewed": false
+      },
+      "legacy_source_record": {
+        "original_note_package_sha256": "b9349078050f68d60eaf76c8c9a7bb9d6c77c4e24360624864cdadbb02561633",
+        "verbatim_copy_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-11-forward-section-materials\\content\\separation-evidence\\original-note-package.verbatim.json",
+        "original_id_preserved": true,
+        "original_record_unmodified": true
+      },
+      "candidate_evidence_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-11-forward-section-materials\\content\\separation-evidence\\source-evidence.json",
+      "candidate_gaps": {
+        "book_edition_and_printing": "unknown",
+        "original_article_url": "unknown",
+        "lecture_publication_date": "unknown",
+        "lecture_source_account": "unknown",
+        "original_exam_identity": "unknown",
+        "teacher_verified_answer_or_scoring": "unknown",
+        "independent_human_visual_review": "unknown"
+      },
+      "candidate_previous_title": "蒸馏的收集目标与装置路径"
+    },
+    {
+      "id": "READ-TB-M1-20260926-SEP-05",
+      "title": "萃取与分液各自完成什么任务？",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        31
+      ],
+      "printed_pages": [
+        26
+      ],
+      "lecture_package_id": "PKG-038",
+      "lecture_block_indices": [
+        42,
+        49,
+        55,
+        60,
+        62,
+        70,
+        71,
+        73,
+        76,
+        78,
+        82,
+        97,
+        100,
+        213,
+        214,
+        216,
+        220
+      ],
+      "summary": "液液萃取利用溶质在两种互不相溶溶剂中溶解能力的差异，使溶质更多地进入萃取剂；分液把已经分层的液体分别取出。萃取剂应与原溶剂互不相溶，对目标溶质的溶解能力较强，并且不与溶质或原溶剂反应。使用分液漏斗前先加水检漏；加入液体后盖紧顶塞，一手压住顶塞、一手握住活塞，倒转振荡并间歇旋开活塞放气。静置至界面清晰后，先打开顶塞，再打开活塞，使下层液体沿接收器内壁流出；界面进入活塞孔时关闭活塞，上层液体由上口倒出。密度用于判断上下层，能否分液首先取决于液体是否互不相溶且清楚分层。",
+      "classroom_check": "把检漏、振荡放气、静置分层和分液排成顺序，逐步说明顶塞与活塞的状态。对比碘水萃取和碘酒，解释为什么不能只依据“含有碘”选择分液；判断上下层时列出还需要的物性。",
+      "limitation": "液液萃取与分液的条件分别核对。萃取剂的选择同时依赖互溶性、目标溶质的溶解性及化学相容性；“有机层”这一名称不能单独决定上层或下层。",
+      "qualification": "AI_candidate",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "teacher_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false,
+      "retrieval_ready": false,
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "source_anchors": [
+        "萃取和分液定义",
+        "从碘水中萃取碘实验",
+        "图1.21振荡放气、静置分层与分液",
+        "萃取溶剂性质思考题"
+      ],
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          31
+        ],
+        "printed_pages": [
+          26
+        ],
+        "source_anchors": [
+          "萃取和分液定义",
+          "从碘水中萃取碘实验",
+          "图1.21振荡放气、静置分层与分液",
+          "萃取溶剂性质思考题"
+        ],
+        "current_page_visual_review": "This worker actually viewed all listed textbook page images; model observation only",
+        "evidence_anchor_ids": [
+          "M1-031-extraction-definition",
+          "M1-031-extraction-steps",
+          "M1-038-exercise4"
+        ],
+        "human_reviewed": false
+      },
+      "lecture_evidence": {
+        "package_id": "PKG-038",
+        "source_sha256": "59e4577ee16553dd9b5194ed54da0c5f43d5794ea11dc2ad809c4a7f6465db7a",
+        "source_preview_revision": "de056f0e94d1ee1392005862167325d0be3224151d7817ac16b77ba1dffa3812",
+        "source_extraction_revision": "20260909-editable-chemistry-v2",
+        "legacy_block_indices": [
+          42,
+          49,
+          55,
+          60,
+          62,
+          70,
+          71,
+          73,
+          76,
+          78,
+          82,
+          97,
+          100,
+          213,
+          214,
+          216,
+          220
+        ],
+        "current_observed_support_indices": [
+          49,
+          55
+        ],
+        "render_pdf_sha256": "abe28bc9bdfaf003d3509abee2e652a8384e7875ce5f91f0057bfe8f1e86322a",
+        "evidence_anchor_ids": [
+          "PKG038-005-extraction",
+          "PKG038-005-timing"
+        ],
+        "human_reviewed": false
+      },
+      "legacy_source_record": {
+        "original_note_package_sha256": "b9349078050f68d60eaf76c8c9a7bb9d6c77c4e24360624864cdadbb02561633",
+        "verbatim_copy_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-11-forward-section-materials\\content\\separation-evidence\\original-note-package.verbatim.json",
+        "original_id_preserved": true,
+        "original_record_unmodified": true
+      },
+      "candidate_evidence_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-11-forward-section-materials\\content\\separation-evidence\\source-evidence.json",
+      "candidate_gaps": {
+        "book_edition_and_printing": "unknown",
+        "original_article_url": "unknown",
+        "lecture_publication_date": "unknown",
+        "lecture_source_account": "unknown",
+        "original_exam_identity": "unknown",
+        "teacher_verified_answer_or_scoring": "unknown",
+        "independent_human_visual_review": "unknown"
+      },
+      "candidate_previous_title": "把萃取和分液拆成不同阶段"
+    },
+    {
+      "id": "READ-TB-M1-20260926-SEP-06",
+      "title": "检验现象能支持怎样的除杂结论？",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        33
+      ],
+      "printed_pages": [
+        28
+      ],
+      "lecture_package_id": "PKG-038",
+      "lecture_block_indices": [
+        122,
+        129,
+        134,
+        135,
+        187,
+        188,
+        191,
+        194,
+        270,
+        271,
+        274,
+        290,
+        295
+      ],
+      "summary": "沉淀法通过加入试剂并观察是否产生沉淀，判断溶液中是否含有相应组分。检验硫酸根离子时，按次序加入稀盐酸与氯化钡溶液，观察是否出现白色沉淀。硫酸钡沉淀对应的离子反应为：Ba²⁺(aq) + SO₄²⁻(aq) → BaSO₄(s)；物质标签为“钡离子＋硫酸根离子→硫酸钡白色沉淀”。解释检验现象时，应同时写出待检成分、所加试剂、预期变化及结论的适用条件。检出某种成分，只支持它在该样品中存在，不能直接推出另一部分中的杂质已经除尽，也不能把“没有明显现象”自动等同于试剂过量。",
+      "classroom_check": "画出“待检成分—加入试剂—预期现象—可得结论”四栏表，填入硫酸根离子的检验。再对照硫酸钡沉淀反应，讨论含钡离子的上清液遇硫酸根离子时应核对什么，并列出杂质除尽与试剂过量各自需要的证据。",
+      "limitation": "沉淀检验的结论需要规定样品、前处理和共存成分，并排除能够产生相似现象的干扰。沉淀生成、杂质除尽和试剂过量是不同命题，应分别用对应观察与反应关系支持。",
+      "qualification": "AI_candidate",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "teacher_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false,
+      "retrieval_ready": false,
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "source_anchors": [
+        "沉淀法检验正文",
+        "硫酸根离子的检验示例"
+      ],
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          33
+        ],
+        "printed_pages": [
+          28
+        ],
+        "source_anchors": [
+          "沉淀法检验正文",
+          "硫酸根离子的检验示例"
+        ],
+        "current_page_visual_review": "This worker actually viewed all listed textbook page images; model observation only",
+        "evidence_anchor_ids": [
+          "M1-033-sulfate-test",
+          "M1-033-equation-task"
+        ],
+        "human_reviewed": false
+      },
+      "lecture_evidence": {
+        "package_id": "PKG-038",
+        "source_sha256": "59e4577ee16553dd9b5194ed54da0c5f43d5794ea11dc2ad809c4a7f6465db7a",
+        "source_preview_revision": "de056f0e94d1ee1392005862167325d0be3224151d7817ac16b77ba1dffa3812",
+        "source_extraction_revision": "20260909-editable-chemistry-v2",
+        "legacy_block_indices": [
+          122,
+          129,
+          134,
+          135,
+          187,
+          188,
+          191,
+          194,
+          270,
+          271,
+          274,
+          290,
+          295
+        ],
+        "current_observed_support_indices": [
+          270,
+          271,
+          274,
+          290,
+          295,
+          247
+        ],
+        "render_pdf_sha256": "abe28bc9bdfaf003d3509abee2e652a8384e7875ce5f91f0057bfe8f1e86322a",
+        "evidence_anchor_ids": [
+          "PKG038-019-crude-salt-question",
+          "PKG038-020-barium-conflict",
+          "PKG038-020-barium-reasoning-conflict",
+          "PKG038-018-bromobenzene-continued"
+        ],
+        "human_reviewed": false
+      },
+      "legacy_source_record": {
+        "original_note_package_sha256": "b9349078050f68d60eaf76c8c9a7bb9d6c77c4e24360624864cdadbb02561633",
+        "verbatim_copy_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-11-forward-section-materials\\content\\separation-evidence\\original-note-package.verbatim.json",
+        "original_id_preserved": true,
+        "original_record_unmodified": true
+      },
+      "candidate_evidence_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-11-forward-section-materials\\content\\separation-evidence\\source-evidence.json",
+      "candidate_gaps": {
+        "book_edition_and_printing": "unknown",
+        "original_article_url": "unknown",
+        "lecture_publication_date": "unknown",
+        "lecture_source_account": "unknown",
+        "original_exam_identity": "unknown",
+        "teacher_verified_answer_or_scoring": "unknown",
+        "independent_human_visual_review": "unknown"
+      },
+      "candidate_previous_title": "检验现象与除杂结论分开核对"
+    },
+    {
+      "id": "READ-TB-E3-20260926-SEP-07",
+      "title": "有机粗品为什么需要连续处理？",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.2",
+      "pdf_pages": [
+        115,
+        121
+      ],
+      "printed_pages": [
+        111,
+        117
+      ],
+      "lecture_package_id": "PKG-038",
+      "lecture_block_indices": [
+        33,
+        35,
+        49,
+        51,
+        122,
+        129,
+        130,
+        131,
+        132,
+        134,
+        135,
+        140,
+        144,
+        197,
+        198,
+        200,
+        202,
+        234,
+        235,
+        236,
+        240,
+        245,
+        247,
+        249,
+        250,
+        251,
+        252,
+        261,
+        262,
+        268
+      ],
+      "summary": "有机物粗品先经分离和提纯，再用于元素分析、分子式确定及结构测定。选择方法时，先利用物理性质差异；需要时可通过化学反应把杂质或目标物转成较易分离的形式。粗溴苯中若含苯、溴和溴化铁，可先水洗并分液，使易进入水相的成分转移到水层；再用氢氧化钠溶液处理有机层中的溴，分液后继续水洗、分液。保留的有机层用无水氯化钙吸水，过滤除去固体干燥剂，再根据苯与溴苯的沸点差异蒸馏分离。水洗、反应除杂、分液、干燥、过滤和蒸馏分别解决不同的成分或相态问题，各步骤都要继续追踪目标物。",
+      "classroom_check": "沿粗溴苯处理流程为每一步标出进入水层、有机层或固相的成分，解释第二次水洗、干燥和过滤各自的作用。利用苯和溴苯的题给沸点说明最后一步；再用“性质差异—方法—保留部分”解释有机混合物的分离选择。",
+      "limitation": "连续处理方案依赖目标有机物、杂质与溶剂的具体性质。干燥剂须适用于该有机层，化学除杂须安排过量试剂和生成物的去向；洗涤、干燥与蒸馏条件应分别确定。",
+      "qualification": "AI_candidate",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "teacher_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false,
+      "retrieval_ready": false,
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "source_anchors": [
+        "有机化合物的分离与提纯正文",
+        "将杂质或目标物转化以利分离的说明",
+        "练习巩固第1题分离方法连线"
+      ],
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          115,
+          121
+        ],
+        "printed_pages": [
+          111,
+          117
+        ],
+        "source_anchors": [
+          "有机化合物的分离与提纯正文",
+          "将杂质或目标物转化以利分离的说明",
+          "练习巩固第1题分离方法连线"
+        ],
+        "current_page_visual_review": "This worker actually viewed all listed textbook page images; model observation only",
+        "evidence_anchor_ids": [
+          "E3-115-framework",
+          "E3-115-organic-conversion",
+          "E3-121-exercise1"
+        ],
+        "human_reviewed": false
+      },
+      "lecture_evidence": {
+        "package_id": "PKG-038",
+        "source_sha256": "59e4577ee16553dd9b5194ed54da0c5f43d5794ea11dc2ad809c4a7f6465db7a",
+        "source_preview_revision": "de056f0e94d1ee1392005862167325d0be3224151d7817ac16b77ba1dffa3812",
+        "source_extraction_revision": "20260909-editable-chemistry-v2",
+        "legacy_block_indices": [
+          33,
+          35,
+          49,
+          51,
+          122,
+          129,
+          130,
+          131,
+          132,
+          134,
+          135,
+          140,
+          144,
+          197,
+          198,
+          200,
+          202,
+          234,
+          235,
+          236,
+          240,
+          245,
+          247,
+          249,
+          250,
+          251,
+          252,
+          261,
+          262,
+          268
+        ],
+        "current_observed_support_indices": [
+          234,
+          235,
+          236,
+          237,
+          238,
+          239,
+          240,
+          241,
+          242,
+          243,
+          244,
+          245,
+          246,
+          247,
+          248,
+          249,
+          250,
+          251,
+          252
+        ],
+        "render_pdf_sha256": "abe28bc9bdfaf003d3509abee2e652a8384e7875ce5f91f0057bfe8f1e86322a",
+        "evidence_anchor_ids": [
+          "PKG038-017-bromobenzene-flow",
+          "PKG038-017-bromobenzene-answer",
+          "PKG038-018-bromobenzene-continued"
+        ],
+        "human_reviewed": false
+      },
+      "legacy_source_record": {
+        "original_note_package_sha256": "b9349078050f68d60eaf76c8c9a7bb9d6c77c4e24360624864cdadbb02561633",
+        "verbatim_copy_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-11-forward-section-materials\\content\\separation-evidence\\original-note-package.verbatim.json",
+        "original_id_preserved": true,
+        "original_record_unmodified": true
+      },
+      "candidate_evidence_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-11-forward-section-materials\\content\\separation-evidence\\source-evidence.json",
+      "candidate_gaps": {
+        "book_edition_and_printing": "unknown",
+        "original_article_url": "unknown",
+        "lecture_publication_date": "unknown",
+        "lecture_source_account": "unknown",
+        "original_exam_identity": "unknown",
+        "teacher_verified_answer_or_scoring": "unknown",
+        "independent_human_visual_review": "unknown"
+      },
+      "candidate_previous_title": "有机粗品的连续处理与后续研究"
+    }
+  ],
+  "root_selected_content_review": {
+    "at_utc": "2026-10-11T09:49:39.910647+00:00",
+    "reviewer": "root model",
+    "scope": "Read seven complete candidate statements; directly viewed six M1 textbook pages individually, two E3 textbook pages in a readable contact sheet, and lecture contact sheets covering4/5/7/14/15/17/18/19/20. Source conflicts remain in evidence; no human qualification.",
+    "source_conflict_policy": "Preserve original print and conflict evidence; use textbook-supported chemistry and explicitly attributed AI-derived ionic equation in candidate notes."
+  }
+}

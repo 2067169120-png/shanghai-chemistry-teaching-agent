@@ -1,0 +1,473 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-EXPERIMENT-EVALUATION-01",
+      "title": "实验目标决定所需证据",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        27,
+        28
+      ],
+      "printed_pages": [
+        22,
+        23
+      ],
+      "source_anchors": [
+        "实验目标决定所需证据"
+      ],
+      "summary": "教材先说明实验学习目标、准备和仪器选择，再用制气示例连接原理、条件及装置。把讲义的制备、探究、验证分别写成可检验任务，预测现象与实际记录分开。",
+      "classroom_check": "给一个装置的每级写作用及所支持的结论，并指出哪一步可能改变待检物。",
+      "limitation": "这是教材与讲义的纸面分析；未补成实际实验操作规程，原图条件须另行满足。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          27,
+          28
+        ],
+        "printed_pages": [
+          22,
+          23
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-066",
+      "lecture_block_indices": [
+        32,
+        34,
+        35,
+        36,
+        44,
+        53,
+        57,
+        60
+      ],
+      "source_sha256": "edd4696d06e0d3ad762319eb3f17f609729fec086781b393f212fc90b9eaef6e",
+      "source_preview_revision": "78d50c8cb3ef8af5f867e63c651c419aaccf0be290d275ee6d125f119d46184d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-EXPERIMENT-EVALUATION-02",
+      "title": "分离与提纯按目标组分选择",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        29
+      ],
+      "printed_pages": [
+        24
+      ],
+      "source_anchors": [
+        "分离与提纯按目标组分选择"
+      ],
+      "summary": "教材区分分离与提纯，列过滤、蒸发和萃取等方法。先写目标物、杂质及关键性质，再判断方法是否保留目标物、是否引入新杂质；不能仅凭操作名称认定方案有效。",
+      "classroom_check": "把同一混合物的分离目标与提纯目标分别写出来，比较需要收集的组分。",
+      "limitation": "性质和具体试剂须来自题给材料或已核证据，不把一般方法套用于任意样品。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          29
+        ],
+        "printed_pages": [
+          24
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-066",
+      "lecture_block_indices": [
+        57,
+        58,
+        59,
+        60,
+        83,
+        84,
+        100,
+        245,
+        246
+      ],
+      "source_sha256": "edd4696d06e0d3ad762319eb3f17f609729fec086781b393f212fc90b9eaef6e",
+      "source_preview_revision": "78d50c8cb3ef8af5f867e63c651c419aaccf0be290d275ee6d125f119d46184d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-EXPERIMENT-EVALUATION-03",
+      "title": "结晶与蒸馏需要适用条件",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        30
+      ],
+      "printed_pages": [
+        25
+      ],
+      "source_anchors": [
+        "结晶与蒸馏需要适用条件"
+      ],
+      "summary": "教材用溶解度曲线说明结晶，又按液体组分的沸点讨论蒸馏、分馏。读出可比条件和所收集的组分，再核加热、冷凝及回收链；操作原理成立还需说明目标物能否稳定存在。",
+      "classroom_check": "根据教材曲线选择降温或蒸发的依据，并在蒸馏图中标出目标物去向。",
+      "limitation": "不补猜未知溶解度、沸点、热稳定性或真实工业能耗；教材数据只支持对应条件。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          30
+        ],
+        "printed_pages": [
+          25
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-066",
+      "lecture_block_indices": [
+        210,
+        221,
+        233,
+        241,
+        245,
+        246,
+        249,
+        251
+      ],
+      "source_sha256": "edd4696d06e0d3ad762319eb3f17f609729fec086781b393f212fc90b9eaef6e",
+      "source_preview_revision": "78d50c8cb3ef8af5f867e63c651c419aaccf0be290d275ee6d125f119d46184d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-EXPERIMENT-EVALUATION-04",
+      "title": "萃取先核溶剂与分液流向",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        31,
+        32
+      ],
+      "printed_pages": [
+        26,
+        27
+      ],
+      "source_anchors": [
+        "萃取先核溶剂与分液流向"
+      ],
+      "summary": "教材碘的溶剂萃取示例要求两液相条件和目标物在溶剂中的溶解差异。分液漏斗图中要辨明液层、放液出口及后续回收方式，不能将萃取与任意两液体混合等同。",
+      "classroom_check": "沿教材分液图追踪两层液体的出口，分别说明仍需怎样回收目标物。",
+      "limitation": "液层位置与溶剂性质均依教材图；未知溶剂或组分不从颜色猜密度、反应性。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          31,
+          32
+        ],
+        "printed_pages": [
+          26,
+          27
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-066",
+      "lecture_block_indices": [
+        57,
+        58,
+        60,
+        145,
+        149,
+        210,
+        241
+      ],
+      "source_sha256": "edd4696d06e0d3ad762319eb3f17f609729fec086781b393f212fc90b9eaef6e",
+      "source_preview_revision": "78d50c8cb3ef8af5f867e63c651c419aaccf0be290d275ee6d125f119d46184d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-EXPERIMENT-EVALUATION-05",
+      "title": "鉴定要限定结论对象",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        32,
+        33
+      ],
+      "printed_pages": [
+        27,
+        28
+      ],
+      "source_anchors": [
+        "鉴定要限定结论对象"
+      ],
+      "summary": "教材从外观线索进入焰色、沉淀和气体鉴定。焰色支持对应元素线索，组合检验须核试剂和干扰；鉴定某成分与证明整份样品纯为某物质是不同结论。",
+      "classroom_check": "给一个阳性现象列两种可能解释，再说明教材中的后续检验怎样区分。",
+      "limitation": "只在教材和题给候选物范围内作鉴定；不把单一颜色或气泡推广为唯一化合物身份。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          32,
+          33
+        ],
+        "printed_pages": [
+          27,
+          28
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-066",
+      "lecture_block_indices": [
+        75,
+        79,
+        81,
+        112,
+        124,
+        130,
+        298,
+        300,
+        319,
+        321
+      ],
+      "source_sha256": "edd4696d06e0d3ad762319eb3f17f609729fec086781b393f212fc90b9eaef6e",
+      "source_preview_revision": "78d50c8cb3ef8af5f867e63c651c419aaccf0be290d275ee6d125f119d46184d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-EXPERIMENT-EVALUATION-06",
+      "title": "阴性现象要检查检验条件",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        33
+      ],
+      "printed_pages": [
+        28
+      ],
+      "source_anchors": [
+        "阴性现象要检查检验条件"
+      ],
+      "summary": "教材离子与气体检验提示先排干扰，再观察对应现象。讲义中无气泡或无明显变化须结合试剂、样品量和响应条件记录；尚未排除的解释写入待核清单。",
+      "classroom_check": "把“未观察到现象”与“样品完全没有该成分”分别写出，并列需要补的检验条件。",
+      "limitation": "未测定这些题的检出限；IUPAC术语搜索仅见索引文字、原页访问失败，不当作全文核验或实验数据。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          33
+        ],
+        "printed_pages": [
+          28
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-066",
+      "lecture_block_indices": [
+        91,
+        103,
+        160,
+        363,
+        364,
+        368,
+        372
+      ],
+      "source_sha256": "edd4696d06e0d3ad762319eb3f17f609729fec086781b393f212fc90b9eaef6e",
+      "source_preview_revision": "78d50c8cb3ef8af5f867e63c651c419aaccf0be290d275ee6d125f119d46184d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-EXPERIMENT-EVALUATION-07",
+      "title": "物质的量浓度用溶液体积",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        34
+      ],
+      "printed_pages": [
+        29
+      ],
+      "source_anchors": [
+        "物质的量浓度用溶液体积"
+      ],
+      "summary": "教材定义浓度的体积为溶液体积，并通过配制问题连接溶质物质的量与最终体积。定量题先核所测量的对象及单位，加入的水量不能直接替代最终溶液体积。",
+      "classroom_check": "在一份配制记录中圈出溶质的量和最终溶液体积，并核两者单位。",
+      "limitation": "不将讲义的吸收质量或滴定用量直接认作目标浓度，需先核选择性和转移条件。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          34
+        ],
+        "printed_pages": [
+          29
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-066",
+      "lecture_block_indices": [
+        259,
+        260,
+        265,
+        273,
+        276,
+        280,
+        282
+      ],
+      "source_sha256": "edd4696d06e0d3ad762319eb3f17f609729fec086781b393f212fc90b9eaef6e",
+      "source_preview_revision": "78d50c8cb3ef8af5f867e63c651c419aaccf0be290d275ee6d125f119d46184d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-EXPERIMENT-EVALUATION-08",
+      "title": "容量瓶配制关注定量转移",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        35,
+        36
+      ],
+      "printed_pages": [
+        30,
+        31
+      ],
+      "source_anchors": [
+        "容量瓶配制关注定量转移"
+      ],
+      "summary": "教材容量瓶标注容量及温度条件，配制图展示转移、洗涤、定容和摇匀。追踪溶质有没有留在原容器、转移后体积怎样确定，并将误差与最后浓度联系。",
+      "classroom_check": "按教材图解释洗涤液为什么需要转入容量瓶，并指出定容的参照。",
+      "limitation": "步骤依教材图和具体仪器，不以记忆的固定左右拆装次序替代装置分析。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          35,
+          36
+        ],
+        "printed_pages": [
+          30,
+          31
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-066",
+      "lecture_block_indices": [
+        57,
+        58,
+        60,
+        221,
+        226,
+        227,
+        228,
+        241,
+        259,
+        265
+      ],
+      "source_sha256": "edd4696d06e0d3ad762319eb3f17f609729fec086781b393f212fc90b9eaef6e",
+      "source_preview_revision": "78d50c8cb3ef8af5f867e63c651c419aaccf0be290d275ee6d125f119d46184d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-EXPERIMENT-EVALUATION-09",
+      "title": "稀释守恒有前提",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        36
+      ],
+      "printed_pages": [
+        31
+      ],
+      "source_anchors": [
+        "稀释守恒有前提"
+      ],
+      "summary": "教材稀释式c₁V₁＝c₂V₂来自同一溶质在稀释前后的物质的量守恒。先确认未因反应、沉淀或损失改变目标溶质，V₂再使用最终溶液体积；等体积比较也要记录浓度。",
+      "classroom_check": "说明何种变化会使直接使用稀释式失去前提，并给各量补单位。",
+      "limitation": "这一守恒关系不能替代未知产物鉴定、吸收选择性或样品纯度检验。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          36
+        ],
+        "printed_pages": [
+          31
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-066",
+      "lecture_block_indices": [
+        267,
+        272,
+        298,
+        300,
+        315,
+        317,
+        374,
+        379,
+        381
+      ],
+      "source_sha256": "edd4696d06e0d3ad762319eb3f17f609729fec086781b393f212fc90b9eaef6e",
+      "source_preview_revision": "78d50c8cb3ef8af5f867e63c651c419aaccf0be290d275ee6d125f119d46184d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-EXPERIMENT-EVALUATION-10",
+      "title": "练习表格保留条件与来源",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        37,
+        38
+      ],
+      "printed_pages": [
+        32,
+        33
+      ],
+      "source_anchors": [
+        "练习表格保留条件与来源"
+      ],
+      "summary": "教材练习以溶解度曲线、候选盐和性质表训练方法选择。逐格核物质名称、条件、现象及所支持的结论，再联系讲义表格评价；单个例子的性质不扩成所有物质的普遍规律。",
+      "classroom_check": "选教材一个判断，写出支持的表格单元及尚不能推出的结论。",
+      "limitation": "食品包装等背景只作教材题设，未扩展健康或医学判断；正式最小作答单元仍unknown。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          37,
+          38
+        ],
+        "printed_pages": [
+          32,
+          33
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-066",
+      "lecture_block_indices": [
+        291,
+        294,
+        296,
+        298,
+        300,
+        312,
+        319,
+        321,
+        383,
+        385
+      ],
+      "source_sha256": "edd4696d06e0d3ad762319eb3f17f609729fec086781b393f212fc90b9eaef6e",
+      "source_preview_revision": "78d50c8cb3ef8af5f867e63c651c419aaccf0be290d275ee6d125f119d46184d",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ]
+}

@@ -1,0 +1,336 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-CLASSIFICATION-01",
+      "title": "分类先说明所用依据",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.1",
+      "pdf_pages": [
+        12
+      ],
+      "printed_pages": [
+        7
+      ],
+      "summary": "物质可以按组成、导电性、溶解性或聚集状态等不同依据分类。按组成先区分纯净物和混合物；再在纯净物内按所含元素种类区分单质和化合物。同一物质可以在不同分类依据下得到不同类别标签。",
+      "classroom_check": "选空气、水、铜和糖水等常见材料，让学生先写分类依据，再解释所属类别。",
+      "limitation": "只概括原页分类思路；实际样品的纯度和组成需由题干或实验信息给出，不能只凭商品名称判断。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          12
+        ],
+        "printed_pages": [
+          7
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261004-CLASSIFICATION-02",
+      "title": "分类关系与微观解释分别处理",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.1",
+      "pdf_pages": [
+        13
+      ],
+      "printed_pages": [
+        8
+      ],
+      "summary": "教材继续列举氧化剂与还原剂、电解质与非电解质、烃与烃的衍生物等分类角度；随后用粒子间距、相互作用和运动方式解释固、液、气三态的宏观差异。类别判定与微观解释是不同任务。",
+      "classroom_check": "把组成、导电条件、反应角色和聚集状态四类依据分开，再用图1.2解释形状与体积。",
+      "limitation": "电解质分类限于化合物及所述条件；微观示意图不用于测量真实粒子大小或间距。反应角色的进一步辨析为教师核对建议。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          13
+        ],
+        "printed_pages": [
+          8
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261004-CLASSIFICATION-03",
+      "title": "三态转化要联系温度和压强",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.1",
+      "pdf_pages": [
+        14
+      ],
+      "printed_pages": [
+        9
+      ],
+      "summary": "图1.3把熔化、凝固、汽化、液化、升华和凝华按状态转化方向组织。教材用打火机内丁烷的状态说明聚集状态还受压强影响，不能只根据常压沸点推断容器内状态。",
+      "classroom_check": "让学生在状态转化图中标出初态、末态，再说明改变温度或压强如何影响粒子平均间距。",
+      "limitation": "不把通常情况下的密度比较写成无例外规律；等离子体栏目仅作为拓展，不增加实验操作或额外考试要求。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          14
+        ],
+        "printed_pages": [
+          9
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261004-CLASSIFICATION-04",
+      "title": "分散系先辨分散质和分散剂",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.1",
+      "pdf_pages": [
+        15,
+        16
+      ],
+      "printed_pages": [
+        10,
+        11
+      ],
+      "summary": "分散系由分散质和分散剂构成。教材按分散质粒子直径比较溶液、胶体与浊液：溶液通常小于1 nm，胶体约为1～100 nm，浊液通常大于100 nm。均匀性和稳定性是相应宏观表现，类别的基本依据是粒子大小。",
+      "classroom_check": "用硫酸铜溶液、粉笔灰悬浊液和油水乳浊液比较两种组分与静置表现，再追问分类的基本判据。",
+      "limitation": "粒径界限采用教材模型；不能把肉眼均匀或颜色作为唯一判据，也不据日常混合物名称自动推断全部组分。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          15,
+          16
+        ],
+        "printed_pages": [
+          10,
+          11
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261004-CLASSIFICATION-05",
+      "title": "滤纸与半透膜的作用不可混同",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.1",
+      "pdf_pages": [
+        16
+      ],
+      "printed_pages": [
+        11
+      ],
+      "summary": "图1.7区分普通滤纸和半透膜：胶体粒子可通过所示滤纸，不能通过所示半透膜；小分子与离子可通过半透膜。是否能用某种膜分离，取决于粒子和孔隙之间的关系。",
+      "classroom_check": "让学生分别追踪溶液粒子、胶体粒子和浊液粒子，说明各自通过滤纸或半透膜的情况。",
+      "limitation": "结论限于教材示意模型及所述膜；不能把普通过滤写成去除胶体粒子的通用方法，不补未给出的实际膜孔径。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          16
+        ],
+        "printed_pages": [
+          11
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261004-CLASSIFICATION-06",
+      "title": "丁达尔实验需比较光路与过滤结果",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.1",
+      "pdf_pages": [
+        16,
+        17
+      ],
+      "printed_pages": [
+        11,
+        12
+      ],
+      "summary": "教材实验并列比较氯化铁稀溶液、氢氧化铁胶体和氢氧化铁悬浊液，记录侧面观察到的光束以及滤纸是否有残留。胶体的丁达尔现象来自粒子对光的散射，是与溶液比较时常用的鉴别依据。",
+      "classroom_check": "把光束现象与过滤现象放在同一比较表中，要求每个判断指明观察位置和所比较的体系。",
+      "limitation": "原页胶体制备写有滴加与轻轻搅拌；此处保留来源说明，操作条件尤其搅拌步骤仍需教师复核。未实际操作，未给实验结果或标准答案。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          16,
+          17
+        ],
+        "printed_pages": [
+          11,
+          12
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261004-CLASSIFICATION-07",
+      "title": "用散射与吸附解释胶体应用",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.1",
+      "pdf_pages": [
+        17
+      ],
+      "printed_pages": [
+        12
+      ],
+      "summary": "原页把林间光束和暗室光柱联系到空气中的微粒或液滴；又用胶体粒子较大的比表面积及吸附作用解释部分水净化应用。观察到光路和描述吸附作用，需要各自对应的条件与证据。",
+      "classroom_check": "区分现象、微粒原因和应用，把气溶胶例子与氢氧化铁胶体的观察并列讨论。",
+      "limitation": "不把所有空气微粒都认定为同一种胶体，也不把净水表述扩大为去除所有污染物或达到饮用标准。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          17
+        ],
+        "printed_pages": [
+          12
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261004-CLASSIFICATION-08",
+      "title": "带电粒子运动与胶体聚沉",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.1",
+      "pdf_pages": [
+        18
+      ],
+      "printed_pages": [
+        13
+      ],
+      "summary": "教材用胶体粒子吸附同种电荷后的相互排斥解释相对稳定，并用电场下带电粒子的定向运动解释电泳。电解质、相反电荷的胶体粒子以及加热等条件可能引起聚沉，应用情境包括豆腐制作与河口沉积。",
+      "classroom_check": "比较电泳和聚沉的触发条件与可观察变化；讨论时同时说明胶体粒子与整个分散系的层次。",
+      "limitation": "不把粒子带电推成整个胶体带同种净电荷；具体体系的电性和聚沉条件需给定。示意图不提供定量迁移速度。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          18
+        ],
+        "printed_pages": [
+          13
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261004-CLASSIFICATION-09",
+      "title": "凝胶与气凝胶作为拓展素材",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.1",
+      "pdf_pages": [
+        18
+      ],
+      "printed_pages": [
+        13
+      ],
+      "summary": "拓展栏目以网络结构包裹分散剂解释凝胶，再将分散剂为气体的相关材料称为气凝胶，配图介绍隔热和承重性能。可用作结构与性质关系的课堂讨论素材。",
+      "classroom_check": "要求学生从图文中分开找结构说明、性能说明和证据缺口，再提出需要补充的量化数据。",
+      "limitation": "保留为教材拓展阅读；图片不能替代热导率、强度等测量，不把所有凝胶或气凝胶的性能概括成同一结论。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          18
+        ],
+        "printed_pages": [
+          13
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261004-CLASSIFICATION-10",
+      "title": "学习指南用于检查判据是否混淆",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.1",
+      "pdf_pages": [
+        19
+      ],
+      "printed_pages": [
+        14
+      ],
+      "summary": "本节练习分别检查分散系的构成、胶体与溶液的基本区分依据，以及生活情境中的物态变化。备课时可围绕组成、粒径、观察特征和状态转化方向建立诊断问题。",
+      "classroom_check": "先让学生说明所用判据，再解释其他依据为什么不适用；把可观察特征与类别的基本依据分开。",
+      "limitation": "仅记录原页练习涉及的任务和原创课堂核对建议，未将三道教材练习导入题库，未提供官方答案或评分细则。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          19
+        ],
+        "printed_pages": [
+          14
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ]
+}

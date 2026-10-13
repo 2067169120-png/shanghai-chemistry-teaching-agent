@@ -1,0 +1,348 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-ATOM-01",
+      "title": "原子的带电微粒和中性条件分别记录",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.2",
+      "pdf_pages": [
+        124
+      ],
+      "printed_pages": [
+        119
+      ],
+      "summary": "教材把原子分为原子核和核外电子，原子核通常含质子和中子。质子带一个单位正电荷，中子不带电，电子带一个单位负电荷；中性原子的核电荷数、质子数与核外电子数相等。",
+      "classroom_check": "以微粒名称、所在位置和电荷为列整理表格，再说明中性原子总电荷为零的条件。",
+      "limitation": "中性原子的电子数关系不能直接搬到离子；“通常含质子和中子”保留了教材对原子核组成的范围。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          124
+        ],
+        "printed_pages": [
+          119
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ATOM-02",
+      "title": "质量数用核内微粒个数计算",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.2",
+      "pdf_pages": [
+        124,
+        127
+      ],
+      "printed_pages": [
+        119,
+        122
+      ],
+      "summary": "质量数A为质子数Z与中子数N之和，即A=Z+N。核素符号左上角记质量数，左下角记质子数；根据两数求中子数时用N=A−Z，不能把质量数当成电子数或实际质量。",
+      "classroom_check": "用原页的核素符号逐项指认A、Z和元素符号，再用质子数、中子数反算质量数。",
+      "limitation": "质量数是核内两类微粒的总个数；元素的相对原子质量还需考虑同位素及其丰度。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          124,
+          127
+        ],
+        "printed_pages": [
+          119,
+          122
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ATOM-03",
+      "title": "原子质量主要集中在原子核",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.2",
+      "pdf_pages": [
+        124
+      ],
+      "printed_pages": [
+        119
+      ],
+      "summary": "原页列出质子、中子和电子的质量，质子与中子的质量远大于电子。教材因此说明原子的质量主要由原子核决定；微粒的实际质量以kg表示，和核素符号中的质量数属于不同量。",
+      "classroom_check": "比较原表三种微粒的质量数量级，写清物理量与单位，解释“质量主要集中在核内”支持的判断。",
+      "limitation": "不把近似比较当成各微粒质量完全相等，不把质量数直接附上kg。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          124
+        ],
+        "printed_pages": [
+          119
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ATOM-04",
+      "title": "原子模型的发展要对应观察证据",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.2",
+      "pdf_pages": [
+        125,
+        126
+      ],
+      "printed_pages": [
+        120,
+        121
+      ],
+      "summary": "教材从早期原子观念、道尔顿原子学说、汤姆孙的电子发现和原子模型，推进到卢瑟福金箔实验及有核模型。金箔实验中大多数粒子穿过、少数偏转、极少数大角度偏转，与原子内部结构的解释相联系。",
+      "classroom_check": "按“观察事实—模型解释—模型局限”组织课堂材料，用金箔实验中的不同现象检验模型。",
+      "limitation": "历史模型用于认识证据与解释的关系；早期模型的假设不全部作为现代原子结构的事实。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          125,
+          126
+        ],
+        "printed_pages": [
+          120,
+          121
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ATOM-05",
+      "title": "玻尔模型保留其历史解释范围",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.2",
+      "pdf_pages": [
+        126
+      ],
+      "printed_pages": [
+        121
+      ],
+      "summary": "原页在有核模型之后介绍玻尔模型，并以不同模型的发展说明人们对原子结构的认识不断深化。模型中的电子轨道表示特定历史阶段的解释，不应直接当成电子真实运动路径的照片。",
+      "classroom_check": "比较本页模型提出时需要解释的问题，再写出模型图表达的信息与不能从图中确定的信息。",
+      "limitation": "此页属于科学史和模型认识，不由轨道画法推定电子一定沿固定圆轨道运动。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          126
+        ],
+        "printed_pages": [
+          121
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ATOM-06",
+      "title": "核素和同位素先比较质子数与中子数",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.2",
+      "pdf_pages": [
+        127
+      ],
+      "printed_pages": [
+        122
+      ],
+      "summary": "具有一定质子数和中子数的原子称为核素。同一元素中质子数相同、中子数不同的核素互称同位素；教材以氕、氘、氚说明三者质子数都为1，中子数分别为0、1、2。",
+      "classroom_check": "把氕、氘、氚和本页其他核素列成质子数、中子数、质量数表，再说明判断同位素的两个条件。",
+      "limitation": "不同元素的核素即使质量数相同也不互称同位素；不把单质或化合物整体称为一种核素。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          127
+        ],
+        "printed_pages": [
+          122
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ATOM-07",
+      "title": "同位素的化学性质近似不代表所有性质相同",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.2",
+      "pdf_pages": [
+        128
+      ],
+      "printed_pages": [
+        123
+      ],
+      "summary": "教材说明同一元素的各种核素虽然质量数不同，但化学性质几乎完全相同，并区分稳定同位素与放射性同位素。比较性质时需指出比较对象和性质种类，不能从化学性质相近推出质量与核性质都相同。",
+      "classroom_check": "用“相同的质子数—不同的中子数—不同的质量数”连接结构与性质，再区分化学性质和核素本身的性质。",
+      "limitation": "本条整理教材概念，不把应用举例转成放射性材料使用方法，也不扩大成所有物理性质完全相同。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          128
+        ],
+        "printed_pages": [
+          123
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ATOM-08",
+      "title": "核素丰度按原子个数所占比例表达",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.2",
+      "pdf_pages": [
+        128,
+        129
+      ],
+      "printed_pages": [
+        123,
+        124
+      ],
+      "summary": "原页侧栏定义核素丰度为某核素的原子数与该元素总原子数之比。后页把各种核素按丰度加权平均；使用百分数时应先转为相应分数，各丰度之和应为1或100%。",
+      "classroom_check": "先注明统计对象为原子数，再检查给定丰度是否齐全；把百分数和小数两种写法对应起来。",
+      "limitation": "丰度不是同位素的质量分数；教材关于天然丰度一般不变的表述不当成任意人工样品必然具有同样组成。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          128,
+          129
+        ],
+        "printed_pages": [
+          123,
+          124
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ATOM-09",
+      "title": "相对原子质量是质量比值",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.2",
+      "pdf_pages": [
+        129
+      ],
+      "printed_pages": [
+        124
+      ],
+      "summary": "核素的相对原子质量以一个碳12原子质量的十二分之一为基准，等于该原子实际质量与这一基准的比值。原页以碳12和氧16的实际质量计算氧16的相对原子质量约15.992。",
+      "classroom_check": "在计算式中同时写清分子、分母的kg单位，并指出比值中单位消去；与质量数16分别说明。",
+      "limitation": "相对原子质量没有kg单位；这里的15.992是氧16核素的值，不能直接当作各种氧核素的平均值。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          129
+        ],
+        "printed_pages": [
+          124
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ATOM-10",
+      "title": "元素相对原子质量按核素丰度加权",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.2",
+      "pdf_pages": [
+        129,
+        130,
+        131
+      ],
+      "printed_pages": [
+        124,
+        125,
+        126
+      ],
+      "summary": "元素的相对原子质量是各核素相对原子质量按丰度的加权平均。教材氯例题给34.969、36.966及75.77%、24.23%，算得约35.453；按质量数代入只能得到近似结果。练习又要求从丰度图读取数据再估算。",
+      "classroom_check": "先检查两种氯核素质子数相同、中子数不同，再分别用实际相对质量和质量数列式，比较近似程度；读取图表时保留刻度与单位。",
+      "limitation": "图表读数的精度受原图限制；本条不代填PDF131全部练习，也不把教材例题称为考试官方评分点。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          129,
+          130,
+          131
+        ],
+        "printed_pages": [
+          124,
+          125,
+          126
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ]
+}

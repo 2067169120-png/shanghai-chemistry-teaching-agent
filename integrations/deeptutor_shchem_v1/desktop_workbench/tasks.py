@@ -128,6 +128,41 @@ class DesktopTaskBridge(QObject):
         if self._shutting_down:
             raise RuntimeError("任务桥正在关闭")
 
+    @property
+    def is_shutting_down(self) -> bool:
+        """Let delayed GUI readers skip their initial load after window close."""
+        return self._shutting_down
+
+    def _emit_while_open(self, name: str, *args: Any) -> None:
+        # A completed worker can already have queued this delivery when
+        # shutdown starts. Disconnecting signals cannot retract that event.
+        if not self._shutting_down:
+            getattr(self, name).emit(*args)
+
+    def _callback_while_open(self, callback: Callable[..., Any], *args: Any) -> None:
+        if not self._shutting_down:
+            callback(*args)
+
+    def _connect_worker(
+        self,
+        worker: _FunctionWorker,
+        *,
+        on_progress: Callable[[Any], None] | None = None,
+        on_success: Callable[[Any], None] | None = None,
+        on_failure: Callable[[str], None] | None = None,
+    ) -> None:
+        worker.signals.finished.connect(self._forget)
+        for name in ("started", "progress", "succeeded", "failed", "cancelled", "cancelled_detail", "finished"):
+            getattr(worker.signals, name).connect(
+                lambda *args, name=name: self._emit_while_open("task_" + name, *args)
+            )
+        for name, callback in (("progress", on_progress), ("succeeded", on_success), ("failed", on_failure)):
+            if callback is not None:
+                getattr(worker.signals, name).connect(
+                    lambda _task_id, _label, value, callback=callback:
+                        self._callback_while_open(callback, value)
+                )
+
     def submit(
         self,
         label: str,
@@ -140,22 +175,7 @@ class DesktopTaskBridge(QObject):
         task_id = uuid.uuid4().hex
         cancel_event = TaskCancellationEvent()
         worker = _FunctionWorker(task_id, label, operation, cancel_event)
-        worker.signals.started.connect(self.task_started)
-        worker.signals.progress.connect(self.task_progress)
-        worker.signals.succeeded.connect(self.task_succeeded)
-        worker.signals.failed.connect(self.task_failed)
-        worker.signals.cancelled.connect(self.task_cancelled)
-        worker.signals.cancelled_detail.connect(self.task_cancelled_detail)
-        worker.signals.finished.connect(self._forget)
-        worker.signals.finished.connect(self.task_finished)
-        if on_success is not None:
-            worker.signals.succeeded.connect(
-                lambda _task_id, _label, result: on_success(result)
-            )
-        if on_failure is not None:
-            worker.signals.failed.connect(
-                lambda _task_id, _label, message: on_failure(message)
-            )
+        self._connect_worker(worker, on_success=on_success, on_failure=on_failure)
         self._workers[task_id] = worker
         self._cancel_events[task_id] = cancel_event
         self._pool.start(worker)
@@ -182,26 +202,7 @@ class DesktopTaskBridge(QObject):
             cancel_event,
             progress_aware=True,
         )
-        worker.signals.started.connect(self.task_started)
-        worker.signals.progress.connect(self.task_progress)
-        worker.signals.succeeded.connect(self.task_succeeded)
-        worker.signals.failed.connect(self.task_failed)
-        worker.signals.cancelled.connect(self.task_cancelled)
-        worker.signals.cancelled_detail.connect(self.task_cancelled_detail)
-        worker.signals.finished.connect(self._forget)
-        worker.signals.finished.connect(self.task_finished)
-        if on_progress is not None:
-            worker.signals.progress.connect(
-                lambda _task_id, _label, value: on_progress(value)
-            )
-        if on_success is not None:
-            worker.signals.succeeded.connect(
-                lambda _task_id, _label, result: on_success(result)
-            )
-        if on_failure is not None:
-            worker.signals.failed.connect(
-                lambda _task_id, _label, message: on_failure(message)
-            )
+        self._connect_worker(worker, on_progress=on_progress, on_success=on_success, on_failure=on_failure)
         self._workers[task_id] = worker
         self._cancel_events[task_id] = cancel_event
         self._pool.start(worker)
@@ -225,6 +226,8 @@ class DesktopTaskBridge(QObject):
         queue.  The bridge remains alive until the bounded wait completes;
         late worker emissions are harmless because ``_safe_emit`` absorbs Qt
         teardown races and every worker signal is disconnected on timeout.
+        Already-queued deliveries check this bridge's closing state before
+        forwarding public GUI signals or running a window callback.
         """
 
         self._shutting_down = True

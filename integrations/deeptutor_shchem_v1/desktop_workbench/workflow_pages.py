@@ -115,6 +115,8 @@ class PreparationPage(QWidget):
         self._lesson_design = None
         self._save_task_id: str | None = None
         self._library_image_task_id: str | None = None
+        self._textbook_image_task_id: str | None = None
+        self._textbook_image_epoch = 0
         self._word_import_epoch = 0
         self._word_import_in_flight = False
         self._context_task_id: str | None = None
@@ -597,12 +599,15 @@ class PreparationPage(QWidget):
         from ..desktop_blueprint_drafts import BlueprintDraftError
         from ..desktop_blueprint_preparation import append_reference
 
-        source_label = "图片题" if isinstance(reference, dict) and reference.get("source_kind") == "personal_visual" else "Word"
+        source_kind = reference.get("source_kind") if isinstance(reference, dict) else None
+        source_label = {"personal_visual": "图片题", "textbook": "教材"}.get(source_kind, "Word")
         if (
             self._save_task_id
+            or self._word_import_in_flight
             or self._library_image_task_id
             or self._generation_qt_task_id
             or self._active_preparation_task_id
+            or getattr(self, '_lesson_busy', False)
         ):
             QMessageBox.information(
                 self,
@@ -835,6 +840,7 @@ class PreparationPage(QWidget):
         return True
 
     def closeEvent(self, event) -> None:
+        self._cancel_textbook_image_import()
         self._word_import_epoch += 1
         if self._word_import_in_flight:
             cancel = getattr(self.tasks, "cancel", None)
@@ -847,6 +853,15 @@ class PreparationPage(QWidget):
                 self.status, "info", "已取消本次 Word 图文追加，原有表单与图片保留。"
             )
         super().closeEvent(event)
+
+    def _cancel_textbook_image_import(self) -> None:
+        self._textbook_image_epoch += 1
+        task_id = self._textbook_image_task_id
+        if task_id is not None:
+            self._textbook_image_task_id = self._library_image_task_id = None
+            cancel = getattr(self.tasks,'cancel',None)
+            if callable(cancel):cancel(task_id)
+            self.setEnabled(True)
 
     def import_paper_reference(self, snapshot: dict) -> bool:
         from .paper_preparation_dialog import PaperPreparationDialog
@@ -896,6 +911,148 @@ class PreparationPage(QWidget):
             + "已追加；课题、教材资料与目标保留。请核对章节名及授课安排后保存或生成。尚未调用模型。",
         )
         self.materials.setFocus()
+        return True
+
+    def import_textbook_image(self, request: dict) -> bool:
+        """Recheck a previewed textbook rectangle before adding local pixels."""
+        from copy import deepcopy
+        from shiboken6 import isValid
+        if (self._save_task_id or self._generation_qt_task_id or self._active_preparation_task_id
+                or self._library_image_task_id or self._word_import_in_flight or getattr(self,'_lesson_busy',False)):
+            QMessageBox.information(self,'暂不能添加教材图表','请先等待当前备课保存、生成或图片导入结束，再重新选择教材图表。')
+            return False
+        digest = request.get('expected_image_sha256') if isinstance(request,dict) else None
+        if not isinstance(digest,str) or len(digest)!=64 or any(c not in '0123456789abcdef' for c in digest):
+            set_status(self.status,'error','教材裁片确认内容不完整，请重新框选和预览。')
+            return False
+        assets = self.image_assets_widget.assets()
+        if any(asset['sha256']==digest for asset in assets):
+            QMessageBox.information(self,'图片已经添加','这张裁片已在当前备课中，已有图题和来源保留。')
+            return False
+        if len(assets)>=self.image_assets_widget.MAX_ASSETS:
+            QMessageBox.information(self,'图片数量已满',f'每次备课最多{self.image_assets_widget.MAX_ASSETS}张图片，请先移除一张。')
+            return False
+        captured = deepcopy(request)
+        before = deepcopy(self._payload())
+        self._textbook_image_epoch += 1
+        epoch = self._textbook_image_epoch
+        self.setEnabled(False); self._library_image_task_id = 'pending'
+        set_status(self.status,'info','正在重新核对教材原页、裁片与来源，再保存到本地备课素材库…')
+        def active():
+            return isValid(self) and epoch == self._textbook_image_epoch
+        def failed(message):
+            if not active():return
+            self._textbook_image_epoch += 1
+            self._textbook_image_task_id = self._library_image_task_id = None; self.setEnabled(True)
+            set_status(self.status,'error','教材图表未加入备课：'+message)
+        def ready(asset):
+            if not active():return
+            if self._payload() != before:
+                failed('当前备课已变化，请回到教材重新选择。'); return
+            if not isinstance(asset,dict) or asset.get('sha256') != digest:
+                failed('返回的图片与已核对裁片不一致，请重新预览。'); return
+            self._textbook_image_epoch += 1
+            self._textbook_image_task_id = self._library_image_task_id = None; self.setEnabled(True)
+            if self.image_assets_widget.append_asset(asset):
+                set_status(self.status,'success','教材图表已加入本次备课。进入“教学环节”关联此图，并选择是否展示给学生；展示给学生的图进入PPT和学习单。')
+                self.editor_scroll.ensureWidgetVisible(self.image_assets_widget.asset_list)
+                self.image_assets_widget.asset_list.setFocus()
+            else:
+                set_status(self.status,'attention','原有备课内容保留，请查看图片区域的导入提示。')
+        try:
+            self._library_image_task_id = self.tasks.submit('添加教材备课图表',
+                lambda:self.facade.import_textbook_preparation_crop(captured),on_success=ready,on_failure=failed)
+            self._textbook_image_task_id = self._library_image_task_id
+        except RuntimeError as exc:
+            failed(str(exc)); return False
+        return True
+
+    def import_textbook_images(self, requests: list[dict]) -> bool:
+        """Receive an entire revalidated batch, then update the form once."""
+        from copy import deepcopy
+        from shiboken6 import isValid
+        from ..desktop_preparation_images import normalize_image_assets
+        from ..desktop_textbook_preparation_crops import CROP_REQUEST_FIELDS
+        if (self._save_task_id or self._generation_qt_task_id or self._active_preparation_task_id
+                or self._library_image_task_id or self._word_import_in_flight or getattr(self, '_lesson_busy', False)):
+            set_status(self.status, 'attention', '请先完成当前备课操作，再加入这批教材图表。')
+            return False
+        if not isinstance(requests, list) or not 1 <= len(requests) <= self.image_assets_widget.MAX_ASSETS:
+            set_status(self.status, 'error', '本批图表数量无效，请返回教材重新选择。')
+            return False
+        for request in requests:
+            digest = request.get('expected_image_sha256') if isinstance(request, dict) else None
+            if (not isinstance(request, dict) or set(request) != CROP_REQUEST_FIELDS
+                    or request.get('selection_confirmed') is not True or not isinstance(digest, str)
+                    or len(digest) != 64 or any(c not in '0123456789abcdef' for c in digest)):
+                set_status(self.status, 'error', '请逐张预览和确认本批裁片，再加入备课。')
+                return False
+        assets = deepcopy(self.image_assets_widget.assets())
+        known = {a['sha256'] for a in assets}
+        expected = {}
+        for request in requests:
+            if request['expected_image_sha256'] not in known:
+                expected.setdefault(request['expected_image_sha256'], deepcopy(request))
+        if not expected:
+            set_status(self.status, 'info', '本批裁片已在当前备课中；已有图题、来源和用途保留。')
+            return False
+        if len(assets) + len(expected) > self.image_assets_widget.MAX_ASSETS:
+            set_status(self.status, 'attention', f'加入后超过{self.image_assets_widget.MAX_ASSETS}张，请先减少本批图表或移除已有图片。')
+            return False
+        captured, before = deepcopy(requests), deepcopy(self._payload())
+        self._textbook_image_epoch += 1
+        epoch = self._textbook_image_epoch
+        self.setEnabled(False); self._library_image_task_id = 'pending'
+        set_status(self.status, 'loading', f'正在核对本批{len(captured)}张图表的原页、裁片和用途…')
+
+        def active():
+            return isValid(self) and epoch == self._textbook_image_epoch
+
+        def failed(message):
+            if not active():
+                return
+            self._textbook_image_epoch += 1
+            self._textbook_image_task_id = self._library_image_task_id = None
+            self.setEnabled(True)
+            set_status(self.status, 'error', '本批图表未加入备课：' + message)
+
+        def ready(result):
+            if not active():
+                return
+            if self._payload() != before:
+                failed('当前备课已变化，请回到教材重新核对。'); return
+            try:
+                merged = normalize_image_assets(result['image_assets'])
+                novel = merged[len(assets):]
+                if (merged[:len(assets)] != assets or [a['sha256'] for a in novel] != list(expected)
+                        or result['requested_count'] != len(captured) or result['added_count'] != len(expected)
+                        or result['duplicate_count'] != len(captured) - len(expected)):
+                    raise ValueError('返回的批次与已核对图表不一致。')
+                for asset in novel:
+                    request = expected[asset['sha256']]
+                    bounds = request['bounds']
+                    if (asset['caption'] != request['caption'] or asset['purpose'] != request['purpose']
+                            or asset['width'] != bounds['right'] - bounds['left']
+                            or asset['height'] != bounds['bottom'] - bounds['top']):
+                        raise ValueError('返回的图题、用途或尺寸与核对裁片不一致。')
+            except (ValueError, KeyError, TypeError):
+                failed('返回的批次不完整或内容已变化，请重新核对。'); return
+            self._textbook_image_epoch += 1
+            self._textbook_image_task_id = self._library_image_task_id = None
+            self.setEnabled(True)
+            self.image_assets_widget.set_assets(merged)
+            self.setWindowModified(self._payload() != self._form_baseline)
+            set_status(self.status, 'success', f"本批新增{len(novel)}张图表，已有或重复{result['duplicate_count']}张保持。进入教学环节关联图片，并选择学生展示范围后生成PPT和学习单。")
+            self.editor_scroll.ensureWidgetVisible(self.image_assets_widget.asset_list)
+            self.image_assets_widget.asset_list.setFocus()
+
+        try:
+            self._library_image_task_id = self.tasks.submit('批量添加教材备课图表',
+                lambda: self.facade.import_textbook_preparation_crops(captured, assets),
+                on_success=ready, on_failure=failed)
+            self._textbook_image_task_id = self._library_image_task_id
+        except RuntimeError as exc:
+            failed(str(exc)); return False
         return True
 
     def import_library_image(self, selection: dict) -> bool:
@@ -1053,6 +1210,8 @@ class PreparationPage(QWidget):
         set_status(self.status, "error", message)
 
     def _load_context(self) -> None:
+        if getattr(self.tasks, "is_shutting_down", False):
+            return
         if self._context_task_id:
             return
         self._context_task_id = self.tasks.submit(
@@ -1448,6 +1607,12 @@ class PreparationPage(QWidget):
         self._refresh_history()
 
     def _qt_task_cancelled(self, task_id: str, _label: str) -> None:
+        if task_id == self._textbook_image_task_id:
+            self._textbook_image_epoch += 1
+            self._textbook_image_task_id = self._library_image_task_id = None
+            self.setEnabled(True)
+            set_status(self.status,'attention','教材图表导入已取消，当前备课内容保留。可以重新框选并加入。')
+            return
         if task_id != self._generation_qt_task_id:
             return
         if self._read_durable_summary() is None:
@@ -1456,6 +1621,11 @@ class PreparationPage(QWidget):
         self._refresh_history()
 
     def _qt_task_finished(self, task_id: str) -> None:
+        if task_id == self._textbook_image_task_id:
+            self._textbook_image_epoch += 1
+            self._textbook_image_task_id = self._library_image_task_id = None
+            self.setEnabled(True)
+            return
         if task_id != self._generation_qt_task_id:
             return
         self._generation_qt_task_id = None

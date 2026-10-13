@@ -11,6 +11,7 @@ from uuid import uuid4
 
 from .desktop_preparation_sources import _digest
 from .word_native_text import NATIVE_WORD_TEXT_REVISION
+from .word_static_eq import REVISION as STATIC_EQ_REVISION
 
 CACHE_REVISION = "20260910-native-word-preview-cache-v1"
 MAX_PREVIEW_BYTES = 48 * 1024 * 1024
@@ -23,7 +24,7 @@ class WordPreviewCache:
         self.root = Path(root)
 
     def _path(self, source_sha256, source_name):
-        identity = _digest([CACHE_REVISION, NATIVE_WORD_TEXT_REVISION, source_sha256, source_name])
+        identity = _digest([CACHE_REVISION, NATIVE_WORD_TEXT_REVISION, STATIC_EQ_REVISION, source_sha256, source_name])
         return self.root / (identity + ".json.gz")
 
     @staticmethod
@@ -32,7 +33,8 @@ class WordPreviewCache:
             isinstance(preview, dict)
             and preview.get("source_sha256") == source_sha256
             and preview.get("source_name") == source_name
-            and preview.get("extraction_revision") == NATIVE_WORD_TEXT_REVISION
+            and preview.get("extraction_revision") in {
+                NATIVE_WORD_TEXT_REVISION, NATIVE_WORD_TEXT_REVISION+'+'+STATIC_EQ_REVISION}
             and preview.get("revision") == _digest({key: value for key, value in preview.items() if key != "revision"})
             and isinstance(preview.get("blocks"), list)
             and isinstance(preview.get("assets"), list)
@@ -51,7 +53,8 @@ class WordPreviewCache:
             if len(raw) > MAX_PREVIEW_BYTES:
                 return None
             record = json.loads(raw)
-            if not isinstance(record, dict) or record.get("cache_revision") != CACHE_REVISION:
+            if (not isinstance(record, dict) or record.get("cache_revision") != CACHE_REVISION
+                    or record.get('static_eq_revision') != STATIC_EQ_REVISION):
                 return None
             preview = record.get("preview")
             return preview if self._valid(preview, source_sha256, source_name) else None
@@ -64,7 +67,8 @@ class WordPreviewCache:
             raise ValueError("Native preview does not match its source")
         if self.root.is_symlink() or self.root.is_junction():
             return False
-        raw = json.dumps({"cache_revision": CACHE_REVISION, "preview": preview}, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
+        raw = json.dumps({"cache_revision": CACHE_REVISION, 'static_eq_revision': STATIC_EQ_REVISION,
+            "preview": preview}, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
         if len(raw) > MAX_PREVIEW_BYTES:
             return False
         target = self._path(source_sha256, source_name)

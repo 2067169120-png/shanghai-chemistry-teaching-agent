@@ -1,6 +1,7 @@
 """Actual Qt buttons on the backup workflow, no model/network calls."""
 from pathlib import Path
 from copy import deepcopy
+import sys
 import threading
 
 import pytest
@@ -16,6 +17,27 @@ from integrations.deeptutor_shchem_v1.desktop_workbench.backup_dialog import Bac
 
 def dialog_for(win):
     return BackupDialog(win.facade.paths,win.tasks,win,flush_editor=win.preparation_page.recovery.flush)
+
+
+def detached_process_calls(monkeypatch):
+    from integrations.deeptutor_shchem_v1.desktop_workbench import backup_dialog as ui
+    calls = []
+    class DetachedProcessProbe(QProcess):
+        def startDetached(self):
+            calls.append(self)
+            return True, 123
+    monkeypatch.setattr(ui, 'QProcess', DetachedProcessProbe)
+    return calls
+
+
+def assert_restored_launch(process, dialog):
+    from integrations.deeptutor_shchem_v1 import desktop_paths
+    launcher = Path(desktop_paths.__file__).resolve().parents[2] / 'runtime/deeptutor_shchem/desktop_teacher_workbench.pyw'
+    assert process.parent() is dialog
+    assert process.program() == sys.executable
+    assert process.arguments() == [str(launcher), '--personal-state', str(Path(dialog.restored_directory).resolve())]
+    assert process.workingDirectory() == str(dialog.paths.workspace_root)
+    assert process.processEnvironment().value('SHCHEM_WORKSPACE_ROOT') == str(dialog.paths.workspace_root)
 
 
 def test_backup_entry_is_wired_to_real_dialog(window,monkeypatch):
@@ -54,10 +76,13 @@ def test_real_save_check_restore_buttons_keep_current_state(window,tmp_path,monk
         dialog.restore_button.click();settle(app,lambda:dialog._active is None and dialog.restored_directory is not None)
         assert Path(dialog.restored_directory).is_dir() and dialog.open_button.isEnabled()
         assert win.facade.state_store.path.read_bytes()==before and win.preparation_page._payload()==payload
-        calls=[]
-        monkeypatch.setattr(QProcess,'startDetached',lambda *a:calls.append(a) or (True,123))
+        calls=detached_process_calls(monkeypatch)
+        monkeypatch.setenv('SHCHEM_WORKSPACE_ROOT', str(tmp_path / 'other-default-workspace'))
         dialog.open_button.click()
-        assert calls[0][1][-2:]==['--personal-state',dialog.restored_directory]
+        assert len(calls)==1
+        assert_restored_launch(calls[0], dialog)
+        assert '已请求打开独立恢复窗口' in dialog.status.text()
+        assert win.facade.state_store.path.read_bytes()==before and win.preparation_page._payload()==payload
     finally:dialog.close();dialog.deleteLater()
 
 

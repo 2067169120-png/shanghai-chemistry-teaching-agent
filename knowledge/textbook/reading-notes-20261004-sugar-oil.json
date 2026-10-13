@@ -1,0 +1,445 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-SUGAR-OIL-01",
+      "title": "糖类分类依据水解能力",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.4",
+      "pdf_pages": [
+        102
+      ],
+      "printed_pages": [
+        98
+      ],
+      "source_anchors": [
+        "糖类分类依据水解能力"
+      ],
+      "summary": "教材从单糖、二糖、多糖讨论糖类，葡萄糖不能再水解成更简单的糖，蔗糖和淀粉可水解。分类需要化学性质依据，甜味或形式上的碳水比例不能替代；多糖与单糖、二糖的分子大小也应分别判断。",
+      "classroom_check": "解释为什么淀粉是糖类而无甜味，油脂又不能因来自生物就叫高分子。",
+      "limitation": "按已读教材分类，不把讲义考情表视为上海考试结构依据。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          102
+        ],
+        "printed_pages": [
+          98
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-058",
+      "lecture_block_indices": [
+        41,
+        42,
+        43,
+        44,
+        59,
+        61,
+        65
+      ],
+      "source_sha256": "83831cafbb8634e881957efd98ec78c5f24b94ccddc24e617702bdfaeb21723f",
+      "source_preview_revision": "ce5e20063b559d3538811b817f7ada69cbee08cd67b7dab20dd670491a77667a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUGAR-OIL-02",
+      "title": "葡萄糖与果糖须结合链环和检验条件",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.1",
+      "pdf_pages": [
+        79,
+        80
+      ],
+      "printed_pages": [
+        75,
+        76
+      ],
+      "source_anchors": [
+        "葡萄糖与果糖须结合链环和检验条件"
+      ],
+      "summary": "教材给出两者相同分子式、不同链状官能团，并说明葡萄糖溶液环状结构为主及环链转化。果糖在碱性条件下可异构化为葡萄糖，因而链状酮基本身不足以断言银镜反应阴性。",
+      "classroom_check": "用C₆H₁₂O₆及两个链状结构说明同分异构，再写果糖还原性检验所需条件。",
+      "limitation": "环状原图已看，但不由小图替代完整立体结构、所有异构体或平衡比例的核验。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          79,
+          80
+        ],
+        "printed_pages": [
+          75,
+          76
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-058",
+      "lecture_block_indices": [
+        48,
+        53,
+        54,
+        57,
+        62
+      ],
+      "source_sha256": "83831cafbb8634e881957efd98ec78c5f24b94ccddc24e617702bdfaeb21723f",
+      "source_preview_revision": "ce5e20063b559d3538811b817f7ada69cbee08cd67b7dab20dd670491a77667a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUGAR-OIL-03",
+      "title": "二糖水解产物与还原性分别判断",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.1",
+      "pdf_pages": [
+        81
+      ],
+      "printed_pages": [
+        77
+      ],
+      "source_anchors": [
+        "二糖水解产物与还原性分别判断"
+      ],
+      "summary": "教材蔗糖水解得到葡萄糖与果糖，麦芽糖水解得到葡萄糖，麦芽糖本身可还原性检验。酸催化水解后，中和并按要求调成碱性，再加入新制氢氧化铜加热；生成Cu₂O砖红色沉淀说明还原性产物。",
+      "classroom_check": "说明酸处理后直接加Cu(OH)₂为何可能失败，为什么阳性不是葡萄糖的特异鉴定。",
+      "limitation": "本页教学实验不作尿糖诊断，不把非特异阳性当实际医学依据。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          81
+        ],
+        "printed_pages": [
+          77
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-058",
+      "lecture_block_indices": [
+        59,
+        62,
+        73,
+        79,
+        171
+      ],
+      "source_sha256": "83831cafbb8634e881957efd98ec78c5f24b94ccddc24e617702bdfaeb21723f",
+      "source_preview_revision": "ce5e20063b559d3538811b817f7ada69cbee08cd67b7dab20dd670491a77667a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUGAR-OIL-04",
+      "title": "淀粉与纤维素应比较连接方式",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.1",
+      "pdf_pages": [
+        82
+      ],
+      "printed_pages": [
+        78
+      ],
+      "source_anchors": [
+        "淀粉与纤维素应比较连接方式"
+      ],
+      "summary": "教材说明二者由葡萄糖单元形成但连接方式不同，导致结构和性质不同。重复单元通式(C₆H₁₀O₅)ₙ不是完整的连接结构，也未证明样品各分子具有同一聚合度，不能单独判断同分异构或结构相同。",
+      "classroom_check": "把“因为n一定不同”改成能够说明通式、连接方式与样品差异的论证。",
+      "limitation": "只对实际教材中的淀粉和纤维素作比较，不推断所有聚合物同分异构关系。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          82
+        ],
+        "printed_pages": [
+          78
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-058",
+      "lecture_block_indices": [
+        65,
+        69,
+        102
+      ],
+      "source_sha256": "83831cafbb8634e881957efd98ec78c5f24b94ccddc24e617702bdfaeb21723f",
+      "source_preview_revision": "ce5e20063b559d3538811b817f7ada69cbee08cd67b7dab20dd670491a77667a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUGAR-OIL-05",
+      "title": "淀粉水解两条检验要排除阴性干扰",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.1",
+      "pdf_pages": [
+        82,
+        89
+      ],
+      "printed_pages": [
+        78,
+        85
+      ],
+      "source_anchors": [
+        "淀粉水解两条检验要排除阴性干扰"
+      ],
+      "summary": "教材实验讨论碘遇碱及酸未中和使检验失效；淀粉碘显色也受加热影响。冷却后取一份检测残余淀粉，另一份按还原性检验调节酸碱和加热；还原检验阳性不足以独自证明完全水解，阴性还需检查条件和对照。",
+      "classroom_check": "给碘阴性、银镜阴性、Cu₂O阳性各写一个可能的干扰或结论限度。",
+      "limitation": "未实施实验；“完全水解”须在限定条件、检出范围和对照下解释。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          82,
+          89
+        ],
+        "printed_pages": [
+          78,
+          85
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-058",
+      "lecture_block_indices": [
+        73,
+        75,
+        77,
+        79,
+        80,
+        169,
+        178,
+        180,
+        202
+      ],
+      "source_sha256": "83831cafbb8634e881957efd98ec78c5f24b94ccddc24e617702bdfaeb21723f",
+      "source_preview_revision": "ce5e20063b559d3538811b817f7ada69cbee08cd67b7dab20dd670491a77667a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUGAR-OIL-06",
+      "title": "酯水解的酸碱产物不同",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.3",
+      "pdf_pages": [
+        68,
+        69
+      ],
+      "printed_pages": [
+        64,
+        65
+      ],
+      "source_anchors": [
+        "酯水解的酸碱产物不同"
+      ],
+      "summary": "教材用乙酸乙酯比较酸性可逆水解与碱性水解，后者得到乙酸盐和乙醇。迁移到油脂时，酯键数和醇骨架均不同，三酯水解生成甘油而非乙醇，酸性得高级脂肪酸，碱性得相应盐。",
+      "classroom_check": "将乙酸乙酯水解与硬脂酸甘油酯皂化并排，标出酯键数、醇和盐的名称。",
+      "limitation": "不把酯的通式套用到全部多官能团化合物；讲义异常酯化式另留复核。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          68,
+          69
+        ],
+        "printed_pages": [
+          64,
+          65
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-058",
+      "lecture_block_indices": [
+        52,
+        229,
+        231,
+        248,
+        250
+      ],
+      "source_sha256": "83831cafbb8634e881957efd98ec78c5f24b94ccddc24e617702bdfaeb21723f",
+      "source_preview_revision": "ce5e20063b559d3538811b817f7ada69cbee08cd67b7dab20dd670491a77667a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUGAR-OIL-07",
+      "title": "甘油三羟基与油脂三酯结构",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.4",
+      "pdf_pages": [
+        104
+      ],
+      "printed_pages": [
+        100
+      ],
+      "source_anchors": [
+        "甘油三羟基与油脂三酯结构"
+      ],
+      "summary": "教材油脂结构含三个酯基，脂肪酸残基可相同或不同。由甘油HOCH₂CH(OH)CH₂OH可核C₃H₈O₃；R相同不意味着只酯化一个羟基。分清单个分子组成与天然样品含多种组分。",
+      "classroom_check": "逐个数出甘油氧原子和油脂酯键，指出讲义C₃H₈O₂以及“单甘油酯”的歧义。",
+      "limitation": "不推断所有天然样品都只含某一类混合残基，不认证巧克力中纯物质熔点。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          104
+        ],
+        "printed_pages": [
+          100
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-058",
+      "lecture_block_indices": [
+        229,
+        231,
+        232,
+        233,
+        234,
+        269,
+        302
+      ],
+      "source_sha256": "83831cafbb8634e881957efd98ec78c5f24b94ccddc24e617702bdfaeb21723f",
+      "source_preview_revision": "ce5e20063b559d3538811b817f7ada69cbee08cd67b7dab20dd670491a77667a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUGAR-OIL-08",
+      "title": "皂化按三个酯基核计量",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.4",
+      "pdf_pages": [
+        105
+      ],
+      "printed_pages": [
+        101
+      ],
+      "source_anchors": [
+        "皂化按三个酯基核计量"
+      ],
+      "summary": "教材硬脂酸甘油酯与3份氢氧化钠加热生成3份硬脂酸钠及甘油。每一个酯键对应一个羧酸盐，所得醇由原甘油骨架决定；混合残基也应保留各盐身份。皂化与含双键油脂的加氢反应改变的部位不同。",
+      "classroom_check": "核硬脂酸甘油酯＋3NaOH→3C₁₇H₃₅COONa＋HOCH₂CH(OH)CH₂OH的原子数与物质名称。",
+      "limitation": "箭头保留加热条件；本记录不提供真实制皂操作方案。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          105
+        ],
+        "printed_pages": [
+          101
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-058",
+      "lecture_block_indices": [
+        248,
+        250,
+        254
+      ],
+      "source_sha256": "83831cafbb8634e881957efd98ec78c5f24b94ccddc24e617702bdfaeb21723f",
+      "source_preview_revision": "ce5e20063b559d3538811b817f7ada69cbee08cd67b7dab20dd670491a77667a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUGAR-OIL-09",
+      "title": "油脂氢化应以具体双键为依据",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.3",
+      "pdf_pages": [
+        66,
+        69
+      ],
+      "printed_pages": [
+        62,
+        65
+      ],
+      "source_anchors": [
+        "油脂氢化应以具体双键为依据"
+      ],
+      "summary": "教材列硬脂酸、软脂酸与油酸并说明部分油脂兼有酯和烯烃性质。氢化针对C=C，酯基仍在；饱和脂肪酸形成的三酯没有这一双键加成依据。来源是植物还是动物不能代替具体结构判断。",
+      "classroom_check": "用硬脂酸和油酸的残基解释哪些油脂可耗H₂，并说明为什么不能称天然油脂都含双键。",
+      "limitation": "不把教材工业概述扩展成营养、食品加工安全或精确氢化工艺结论。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          66,
+          69
+        ],
+        "printed_pages": [
+          62,
+          65
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-058",
+      "lecture_block_indices": [
+        252,
+        254,
+        259,
+        270,
+        303
+      ],
+      "source_sha256": "83831cafbb8634e881957efd98ec78c5f24b94ccddc24e617702bdfaeb21723f",
+      "source_preview_revision": "ce5e20063b559d3538811b817f7ada69cbee08cd67b7dab20dd670491a77667a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUGAR-OIL-10",
+      "title": "教材生活语境与诊断和物性证据分开",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.4",
+      "pdf_pages": [
+        103,
+        104
+      ],
+      "printed_pages": [
+        99,
+        100
+      ],
+      "source_anchors": [
+        "教材生活语境与诊断和物性证据分开"
+      ],
+      "summary": "教材还原性实验及油脂组成可用于课堂解释，但实验阳性不特异识别葡萄糖，食物混合物的行为也不直接给出纯甘油三酯的熔点。先限定观察对象、检验条件和结论范围，再回到原结构或专门物性资料。",
+      "classroom_check": "分别说明“检出还原性”与“诊断疾病”、“巧克力融化”与“纯三酯熔点”的证据差别。",
+      "limitation": "2016营养表和医用胶用途未作为当前健康建议；仅保留教材与讲义化学证据限度。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          103,
+          104
+        ],
+        "printed_pages": [
+          99,
+          100
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-058",
+      "lecture_block_indices": [
+        84,
+        86,
+        91,
+        269,
+        302,
+        312,
+        316,
+        321
+      ],
+      "source_sha256": "83831cafbb8634e881957efd98ec78c5f24b94ccddc24e617702bdfaeb21723f",
+      "source_preview_revision": "ce5e20063b559d3538811b817f7ada69cbee08cd67b7dab20dd670491a77667a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ]
+}

@@ -15,11 +15,17 @@ from PySide6.QtWidgets import QApplication
 BODY_POINTS = 11.0
 SMALL_POINTS = 9.5
 HAN_SAMPLE = "上海高中化学教师工作台氢氯钠铁铜锂氧碳硫题库"
-CHEMISTRY_SAMPLE = "H₂SO₄  Fe³⁺  ⇌  pH 12.5  mol·L⁻¹"
+CHEMISTRY_SAMPLE = (
+    "H₂SO₄  Fe³⁺  ⇌  pH 12.5  mol·L⁻¹；"
+    "H₂A（二元酸）⇌H⁺（氢离子）＋HA⁻（酸式酸根）；HA⁻⇌H⁺+A²⁻"
+)
 PREFERRED_FAMILIES = (
     "Microsoft YaHei UI", "Microsoft YaHei", "微软雅黑",
     "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", "思源黑体 CN",
     "DengXian", "等线", "SimHei", "黑体", "SimSun", "宋体",
+)
+SYMBOL_FALLBACK_FAMILIES = (
+    "Cambria Math", "Segoe UI Symbol", "Noto Sans Math", "Noto Sans Symbols 2", "Noto Sans Symbols",
 )
 
 
@@ -32,6 +38,12 @@ def choose_family(available: Iterable[str], supports: Callable[[str], bool]) -> 
     return None
 
 
+def choose_symbol_families(available: Iterable[str]) -> list[str]:
+    """Return installed spellings only; absent symbol faces are not invented."""
+    names = {name.casefold(): name for name in available}
+    return [names[name.casefold()] for name in SYMBOL_FALLBACK_FAMILIES if name.casefold() in names]
+
+
 def _supports_han(family: str) -> bool:
     raw = QRawFont.fromFont(QFont(family, int(BODY_POINTS)))
     return raw.isValid() and all(raw.supportsCharacter(ord(ch)) for ch in HAN_SAMPLE)
@@ -41,8 +53,10 @@ def glyph_report(font: QFont, text: str) -> dict:
     """Return actual glyph fonts, not only the requested family name."""
     layout = QTextLayout(text, font)
     layout.beginLayout()
-    line = layout.createLine()
-    if line.isValid():
+    while True:
+        line = layout.createLine()
+        if not line.isValid():
+            break
         line.setLineWidth(2000)
     layout.endLayout()
     runs = [
@@ -88,9 +102,16 @@ def install_ui_font(application: QApplication | None = None) -> str:
         symbol_path = directory / "seguisym.ttf"
         if symbol_path.is_file():
             QFontDatabase.addApplicationFont(str(symbol_path))
+    # Default merging can split adjacent equilibrium arrows and superscripts
+    # into a CJK run that lacks the arrow. Offer installed math/symbol faces
+    # explicitly while keeping the verified Chinese family first.
+    fallbacks = [family for family in choose_symbol_families(QFontDatabase.families())
+                 if family.casefold() != chosen.casefold()]
+    font.setFamilies([chosen, *fallbacks])
     app.setFont(font)
     app._shchem_typography = {"family": chosen, "chinese_sample_supported": verified,
-                              "body_points": BODY_POINTS, "small_points": SMALL_POINTS}
+                              "body_points": BODY_POINTS, "small_points": SMALL_POINTS,
+                              "symbol_fallback_families": fallbacks}
     return chosen
 
 

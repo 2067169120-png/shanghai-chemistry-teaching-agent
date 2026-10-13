@@ -1,0 +1,438 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-ORGANIC-COMPREHENSIVE-01",
+      "title": "从纯化到结构研究的证据顺序",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.2",
+      "pdf_pages": [
+        115
+      ],
+      "printed_pages": [
+        111
+      ],
+      "source_anchors": [
+        "从纯化到结构研究的证据顺序"
+      ],
+      "summary": "教材先按混合物性质选择分离和提纯，再研究组成与结构。蒸馏、萃取分液、重结晶、升华和色谱分别依赖相应物理性质或分配差异；酸碱转化去杂还需核目标物是否受影响。",
+      "classroom_check": "对教材一组混合物列目标物、杂质、性质差异和所选方法的依据。",
+      "limitation": "用于阅读教材模型，未新建实验操作方案或补未给出的回收率；知识卡与原页保持关联。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          115
+        ],
+        "printed_pages": [
+          111
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-086",
+      "lecture_block_indices": [
+        48,
+        341,
+        345
+      ],
+      "source_sha256": "aa2b018bd1f7109729b766ac43897e4a8951be34e6543fe0d6e9d4b89837826e",
+      "source_preview_revision": "28b63304eddf0d5ccd63e017609cfa81741d008247a6e0917cd35f42f7b6ffa9",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-COMPREHENSIVE-02",
+      "title": "色谱中的移动差异",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.2",
+      "pdf_pages": [
+        115,
+        116
+      ],
+      "printed_pages": [
+        111,
+        112
+      ],
+      "source_anchors": [
+        "色谱中的移动差异"
+      ],
+      "summary": "教材色谱例子显示不同组分在固定相和流动相之间作用或分配不同，因而移动与分离情况不同。柱色谱图、气相及液相色谱属于不同呈现，不能只由颜色或移动快慢唯一认定物质。",
+      "classroom_check": "用教材柱色谱图说明两相及分离所依据的差异，再列物质鉴定仍需什么证据。",
+      "limitation": "没有实测保留时间、标准样或仪器数据时不认证样品组成；联用仪器的提及不等于完成仪器测量。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          115,
+          116
+        ],
+        "printed_pages": [
+          111,
+          112
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-086",
+      "lecture_block_indices": [
+        345,
+        348
+      ],
+      "source_sha256": "aa2b018bd1f7109729b766ac43897e4a8951be34e6543fe0d6e9d4b89837826e",
+      "source_preview_revision": "28b63304eddf0d5ccd63e017609cfa81741d008247a6e0917cd35f42f7b6ffa9",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-COMPREHENSIVE-03",
+      "title": "燃烧分析先求组成比例",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.2",
+      "pdf_pages": [
+        116,
+        117
+      ],
+      "printed_pages": [
+        112,
+        113
+      ],
+      "source_anchors": [
+        "燃烧分析先求组成比例"
+      ],
+      "summary": "教材含C、H、O样品燃烧后由水和二氧化碳的质量确定氢、碳，再按样品总质量核氧，得到实验式。实验式是最简原子数比，结合相对分子质量才能进一步确定分子式。",
+      "classroom_check": "沿0.90 g样品、0.54 g水和1.32 g二氧化碳的数据列质量与原子数账，说明仍缺哪个量才能确定分子式。",
+      "limitation": "仅用于题给只含C、H、O且收集关系完整的模型；不把实验式CH2O直接写成唯一分子式，计算属于备课推导。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          116,
+          117
+        ],
+        "printed_pages": [
+          112,
+          113
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-086",
+      "lecture_block_indices": [
+        295,
+        296,
+        301,
+        345
+      ],
+      "source_sha256": "aa2b018bd1f7109729b766ac43897e4a8951be34e6543fe0d6e9d4b89837826e",
+      "source_preview_revision": "28b63304eddf0d5ccd63e017609cfa81741d008247a6e0917cd35f42f7b6ffa9",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-COMPREHENSIVE-04",
+      "title": "分子离子峰与基峰分别读取",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.2",
+      "pdf_pages": [
+        117
+      ],
+      "printed_pages": [
+        113
+      ],
+      "source_anchors": [
+        "分子离子峰与基峰分别读取"
+      ],
+      "summary": "教材乙酸乙酯质谱图中，所标分子离子峰m/z为88，最高强度的基峰在43。先读图中已指认的分子离子和电荷前提，再讨论相对分子质量；峰强度高低与质量位置是两个指标。",
+      "classroom_check": "在原图各指出分子离子峰和基峰，并解释两者分别表示什么。",
+      "limitation": "教材“最大m/z就是分子离子”的表述仅按该示例读；同位素、多电荷或分子离子缺失等不能由此概括，未用搜索摘要冒充原站全文。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          117
+        ],
+        "printed_pages": [
+          113
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-086",
+      "lecture_block_indices": [
+        295,
+        296,
+        345
+      ],
+      "source_sha256": "aa2b018bd1f7109729b766ac43897e4a8951be34e6543fe0d6e9d4b89837826e",
+      "source_preview_revision": "28b63304eddf0d5ccd63e017609cfa81741d008247a6e0917cd35f42f7b6ffa9",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-COMPREHENSIVE-05",
+      "title": "化学检验提供候选约束",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.2",
+      "pdf_pages": [
+        117,
+        118
+      ],
+      "printed_pages": [
+        113,
+        114
+      ],
+      "source_anchors": [
+        "化学检验提供候选约束"
+      ],
+      "summary": "教材用不同试剂比较多种无色有机物，再提出链状C4H8O检验实例。现象与试剂条件一起提供官能团线索，需与分子式和其他方法核对，多个候选可能仍满足同一组观察。",
+      "classroom_check": "为一个给定现象列能支持的约束与仍需排除的其他解释。",
+      "limitation": "未给教材练习补官方答案或实际操作指引；银镜阴性与溴褪色不独立认证唯一结构。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          117,
+          118
+        ],
+        "printed_pages": [
+          113,
+          114
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-086",
+      "lecture_block_indices": [
+        48,
+        341,
+        345,
+        350
+      ],
+      "source_sha256": "aa2b018bd1f7109729b766ac43897e4a8951be34e6543fe0d6e9d4b89837826e",
+      "source_preview_revision": "28b63304eddf0d5ccd63e017609cfa81741d008247a6e0917cd35f42f7b6ffa9",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-COMPREHENSIVE-06",
+      "title": "红外图读坐标再读吸收线索",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.2",
+      "pdf_pages": [
+        118
+      ],
+      "printed_pages": [
+        114
+      ],
+      "source_anchors": [
+        "红外图读坐标再读吸收线索"
+      ],
+      "summary": "教材乙酸乙酯红外图以波数cm−1和透过率%表示吸收，标出C—H、C＝O与C—O等线索。红外信息与其他结构证据配合，羰基的出现仍需通过相邻原子区分酮、酯和其他含羰基基团。",
+      "classroom_check": "在原图指出坐标单位和一处标示吸收，再说明它为何不能单独给出整个分子结构。",
+      "limitation": "未编造精确峰位或通用频率表；不由吸收标记统一认证讲义中的官能团名称。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          118
+        ],
+        "printed_pages": [
+          114
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-086",
+      "lecture_block_indices": [
+        42,
+        55,
+        57,
+        60,
+        79,
+        88
+      ],
+      "source_sha256": "aa2b018bd1f7109729b766ac43897e4a8951be34e6543fe0d6e9d4b89837826e",
+      "source_preview_revision": "28b63304eddf0d5ccd63e017609cfa81741d008247a6e0917cd35f42f7b6ffa9",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-COMPREHENSIVE-07",
+      "title": "氢谱峰组与积分分别约束结构",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.2",
+      "pdf_pages": [
+        119,
+        121
+      ],
+      "printed_pages": [
+        115,
+        117
+      ],
+      "source_anchors": [
+        "氢谱峰组与积分分别约束结构"
+      ],
+      "summary": "教材乙酸乙酯示例给三种氢环境及3H、3H、2H比例，又用丙醛与丙酮示例比较环境种类。先标各类等效氢，再核积分与分子式；简单课堂模型的峰组概念与单条裂分峰分开。",
+      "classroom_check": "给乙酸乙酯每类氢标数量，并解释丙醛、丙酮为何显示不同的环境种类。",
+      "limitation": "不将教材简化图外推为所有实测谱的峰数规则；重叠、裂分和交换情形未由图示核验。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          119,
+          121
+        ],
+        "printed_pages": [
+          115,
+          117
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-086",
+      "lecture_block_indices": [
+        348,
+        366,
+        370,
+        377,
+        420,
+        427
+      ],
+      "source_sha256": "aa2b018bd1f7109729b766ac43897e4a8951be34e6543fe0d6e9d4b89837826e",
+      "source_preview_revision": "28b63304eddf0d5ccd63e017609cfa81741d008247a6e0917cd35f42f7b6ffa9",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-COMPREHENSIVE-08",
+      "title": "PTA实例将组成、检验与波谱合并",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.2",
+      "pdf_pages": [
+        119,
+        120
+      ],
+      "printed_pages": [
+        115,
+        116
+      ],
+      "source_anchors": [
+        "PTA实例将组成、检验与波谱合并"
+      ],
+      "summary": "教材PTA练习把元素质量分数、相对分子质量、化学检验、IR和氢谱放在同一问题中。用每一条数据分别筛选候选，再检查同一结构能否同时满足所有信息，而非遇到一个熟悉现象就结束推断。",
+      "classroom_check": "列证据表，分别说明哪条约束组成、哪条约束基团、哪条约束对称性。",
+      "limitation": "题面含练习空白，未取得官方解答；候选解析与教师评分点保持分开，正式原子单元id仍unknown。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          119,
+          120
+        ],
+        "printed_pages": [
+          115,
+          116
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-086",
+      "lecture_block_indices": [
+        341,
+        345,
+        348,
+        350,
+        370,
+        377
+      ],
+      "source_sha256": "aa2b018bd1f7109729b766ac43897e4a8951be34e6543fe0d6e9d4b89837826e",
+      "source_preview_revision": "28b63304eddf0d5ccd63e017609cfa81741d008247a6e0917cd35f42f7b6ffa9",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-COMPREHENSIVE-09",
+      "title": "相同分子式需比较完整连接",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.2",
+      "pdf_pages": [
+        121
+      ],
+      "printed_pages": [
+        117
+      ],
+      "source_anchors": [
+        "相同分子式需比较完整连接"
+      ],
+      "summary": "教材以C2H4O2的乙酸和羟基乙醛比较化学鉴别与仪器分析。分子式相同不代表官能团或氢环境相同；分别读羧基与羟基、醛基的完整连接，再选择能区分的证据。",
+      "classroom_check": "并排标两种结构的基团和氢环境，解释一种鉴别信息能区分什么。",
+      "limitation": "未将讲义单现象对照当唯一鉴定；条件或反应物图缺失的方程式继续待核。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          121
+        ],
+        "printed_pages": [
+          117
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-086",
+      "lecture_block_indices": [
+        42,
+        48,
+        341,
+        345,
+        350
+      ],
+      "source_sha256": "aa2b018bd1f7109729b766ac43897e4a8951be34e6543fe0d6e9d4b89837826e",
+      "source_preview_revision": "28b63304eddf0d5ccd63e017609cfa81741d008247a6e0917cd35f42f7b6ffa9",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-COMPREHENSIVE-10",
+      "title": "综合推断逐项回验全部条件",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.2",
+      "pdf_pages": [
+        121,
+        122
+      ],
+      "printed_pages": [
+        117,
+        118
+      ],
+      "source_anchors": [
+        "综合推断逐项回验全部条件"
+      ],
+      "summary": "教材末尾综合练习同时给燃烧数据、相对分子质量、IR或氢谱，以及与碳酸氢钠或钠反应的信息。先分组成、结构、反应计量三类约束，再把候选结构逐项代回，明确哪些步骤仍需补证据。",
+      "classroom_check": "对一个候选结构逐项标满足、冲突或未知，并指出不能仅凭气体体积或峰面积确定的部分。",
+      "limitation": "未猜补练习答案、精确装置参数或官方评分；计量推断保留题给纯度、反应完整性和试剂条件。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          121,
+          122
+        ],
+        "printed_pages": [
+          117,
+          118
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-086",
+      "lecture_block_indices": [
+        48,
+        341,
+        345,
+        348,
+        370,
+        376,
+        377
+      ],
+      "source_sha256": "aa2b018bd1f7109729b766ac43897e4a8951be34e6543fe0d6e9d4b89837826e",
+      "source_preview_revision": "28b63304eddf0d5ccd63e017609cfa81741d008247a6e0917cd35f42f7b6ffa9",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ]
+}

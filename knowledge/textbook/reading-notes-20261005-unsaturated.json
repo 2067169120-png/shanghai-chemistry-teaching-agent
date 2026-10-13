@@ -1,0 +1,424 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-UNSATURATED-01",
+      "title": "石油分馏按沸点分离混合物",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.2",
+      "pdf_pages": [
+        84,
+        85
+      ],
+      "printed_pages": [
+        80,
+        81
+      ],
+      "summary": "原油主要是各种烃组成的混合物，并含少量杂质；进入炼制前需脱水、脱盐。分馏利用组分沸点不同取得石油气、汽油、煤油、柴油等馏分，是物理分离，所得馏分仍为混合物。",
+      "classroom_check": "对照图7.15核对馏分名称、出口位置和沸点范围，再区分原油、馏分与纯物质。",
+      "limitation": "图示碳数和温度范围具有教材示意范围，不当作所有炼厂的统一精确边界；2017年消费图仅是书中历史资料。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          84,
+          85
+        ],
+        "printed_pages": [
+          80,
+          81
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-UNSATURATED-02",
+      "title": "裂化与裂解改变烃的组成",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.2",
+      "pdf_pages": [
+        86
+      ],
+      "printed_pages": [
+        82
+      ],
+      "summary": "裂化在加热、催化剂等条件下使较长碳链的烃转化为较短碳链的烃。教材示例C₁₆H₃₄→C₈H₁₈+C₈H₁₆，条件为催化剂、加热，物质标签为十六烷、辛烷和辛烯。裂解采用比裂化更高的温度，获得乙烯等小分子不饱和烃。",
+      "classroom_check": "先核对碳、氢原子守恒，再比较分馏的物理分离与裂化、裂解的化学变化及目标产物。",
+      "limitation": "示例表示一种反应途径，不认定工业产品为单一物质，不补猜催化剂组成或统一工业温度。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          86
+        ],
+        "printed_pages": [
+          82
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-UNSATURATED-03",
+      "title": "煤的液化、气化与干馏保留过程条件",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.2",
+      "pdf_pages": [
+        86,
+        87
+      ],
+      "printed_pages": [
+        82,
+        83
+      ],
+      "summary": "煤是有机物和无机物组成的复杂混合物。教材分别说明液化可在催化加氢条件下制合成油；气化在供氧不足条件下部分氧化，取得含CO、H₂、CH₄等的可燃气体；干馏将煤隔绝空气加强热使其分解，生成焦炭、煤焦油、粗氨水和焦炉气等。",
+      "classroom_check": "将原料、供氧条件、变化类型、产物及书中用途对应，重点比较干馏和石油分馏。",
+      "limitation": "产品均按教材给出的混合组成理解；不把煤干馏误作仅靠沸点分离，也不补造工业产率或环境优劣数据。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          86,
+          87
+        ],
+        "printed_pages": [
+          82,
+          83
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-UNSATURATED-04",
+      "title": "电石制乙炔保留反应物、条件和气体符号",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.2",
+      "pdf_pages": [
+        87
+      ],
+      "printed_pages": [
+        83
+      ],
+      "summary": "碳化钙俗称电石。教材写CaO+3C→CaC₂+CO↑，条件为2500～3000 ℃电炉，对应氧化钙、碳、碳化钙和一氧化碳；CaC₂+2H₂O→C₂H₂↑+Ca(OH)₂，对应碳化钙、水、乙炔和氢氧化钙。乙炔又称电石气。",
+      "classroom_check": "依次核对两式的原子守恒、原料与产物名称、高温条件及气体标记，再把工艺与分子结构联系。",
+      "limitation": "本条为教材反应阅读，不含实际制气步骤、除杂装置或实验安全操作方案；不填入书中未提供的产率。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          87
+        ],
+        "printed_pages": [
+          83
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-UNSATURATED-05",
+      "title": "乙烯的碳碳双键对应两对共用电子",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.2",
+      "pdf_pages": [
+        87,
+        88
+      ],
+      "printed_pages": [
+        83,
+        84
+      ],
+      "summary": "乙烯分子式C₂H₄，结构简式CH₂=CH₂；两个碳原子共用两对电子形成碳碳双键。教材将其称为不饱和键，将形成这种键的碳原子称为不饱和碳原子；乙烯可与其他原子或原子团结合。",
+      "classroom_check": "对照球棍、空间填充模型及结构式，核对碳氢数、双键位置与价键数，再解释为什么乙烯属于不饱和烃。",
+      "limitation": "电子式书写练习在原书中未填答案；模型用于结构表示，不从图片大小推断键长或键能数值。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          87,
+          88
+        ],
+        "printed_pages": [
+          83,
+          84
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-UNSATURATED-06",
+      "title": "乙炔的三键与乙烯的双键分别核对",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.2",
+      "pdf_pages": [
+        88
+      ],
+      "printed_pages": [
+        84
+      ],
+      "summary": "乙炔分子式C₂H₂，结构式H—C≡C—H、结构简式CH≡CH。两个碳原子共用三对电子形成碳碳三键，三键也是不饱和键；原页以乙烯、乙炔模型并列引导比较成键情况。",
+      "classroom_check": "比较C₂H₄与C₂H₂的氢原子数、共用电子对数和双键／三键符号，回查图7.20及其结构式。",
+      "limitation": "本条不补入该页没有给出的杂化、键能或具体加成条件，也不代填电子式练习。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          88
+        ],
+        "printed_pages": [
+          84
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-UNSATURATED-07",
+      "title": "苯的六条碳碳键不能理解成固定单双键交替",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.2",
+      "pdf_pages": [
+        88,
+        89
+      ],
+      "printed_pages": [
+        84,
+        85
+      ],
+      "summary": "苯分子式C₆H₆，教材说明其分子具有平面正六边形结构，六个碳原子之间的键完全相同，既不同于典型碳碳单键，也不同于典型碳碳双键。凯库勒式不能完全反映苯的真实结构，原页同时展示环内圆圈表示法。",
+      "classroom_check": "对照图7.22、7.23和正文，说明画法、真实成键特点及平面结构之间的关系。",
+      "limitation": "不据凯库勒式把苯视为普通含三个独立烯键的分子；本节未核定苯的所有反应性质。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          88,
+          89
+        ],
+        "printed_pages": [
+          84,
+          85
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-UNSATURATED-08",
+      "title": "乙烯氧化与燃烧核对现象和反应对象",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.2",
+      "pdf_pages": [
+        89,
+        90
+      ],
+      "printed_pages": [
+        85,
+        86
+      ],
+      "summary": "乙烯是无色、稍有气味的易燃气体，几乎不溶于水。教材说明乙烯可被酸性高锰酸钾氧化而使紫色溶液褪色；其燃烧也是氧化反应。完全燃烧式C₂H₄+3O₂→2CO₂+2H₂O，条件为点燃，对应乙烯、氧气、二氧化碳和水。",
+      "classroom_check": "分别记录被氧化的物质、试剂和可见变化；比较褪色与燃烧的证据，回查图旁物性数据的温度条件。",
+      "limitation": "原页实验表为空白，不把正文解释冒充实测记录；不将褪色单独推广为任何样品必含乙烯的证明。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          89,
+          90
+        ],
+        "printed_pages": [
+          85,
+          86
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-UNSATURATED-09",
+      "title": "乙烯加溴形成加成产物",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.2",
+      "pdf_pages": [
+        89,
+        90
+      ],
+      "printed_pages": [
+        85,
+        86
+      ],
+      "summary": "乙烯可使溴的四氯化碳溶液褪色，教材指出该反应未生成HBr；双键中的一个键断裂，两个溴原子分别结合到两个碳原子，生成1,2-二溴乙烷。结构简式CH₂=CH₂+Br₂→CH₂Br—CH₂Br，标签为乙烯、溴和1,2-二溴乙烷，溴处于四氯化碳溶液中。",
+      "classroom_check": "对照完整结构式核对双键变化、溴的位置及产物名称，说明依据为何支持加成反应分类。",
+      "limitation": "书中H₂、HCl、H₂O加成只给“一定条件下”的练习提示，本条不补猜条件或把未填练习称为官方答案。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          89,
+          90
+        ],
+        "printed_pages": [
+          85,
+          86
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-UNSATURATED-10",
+      "title": "乙烯加聚时区分单体、链节和聚合度",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.2",
+      "pdf_pages": [
+        90,
+        91
+      ],
+      "printed_pages": [
+        86,
+        87
+      ],
+      "summary": "在适当温度、压强和催化剂条件下，许多乙烯分子通过双键变化连接成聚乙烯：nCH₂=CH₂→[—CH₂—CH₂—]ₙ，物质标签为乙烯单体与聚乙烯。—CH₂—CH₂—为链节，下标n表示聚合度；教材把这类通过加成聚合形成聚合物的过程称为加聚反应。",
+      "classroom_check": "对照图7.24追踪双键、链端连接和重复单元，分别指出单体、链节及聚合度。",
+      "limitation": "不把n视为已知定值或把所有聚合都称为加聚；含取代基G的练习不由本条代填产物。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          90,
+          91
+        ],
+        "printed_pages": [
+          86,
+          87
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-UNSATURATED-11",
+      "title": "塑料按固化特点和用途采用不同分类",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.2",
+      "pdf_pages": [
+        91,
+        92
+      ],
+      "printed_pages": [
+        87,
+        88
+      ],
+      "summary": "塑料以聚合物为主要组成，可加入增塑剂、填料、稳定剂、阻燃剂、着色剂等。图7.25按固化特点分热塑性和热固性，按用途分通用与工程塑料；图中列聚丙烯、聚氯乙烯、聚乙烯等应用实例。",
+      "classroom_check": "先读分类轴，再将实例归入对应口径，区分单体、聚合物与含添加剂的塑料制品。",
+      "limitation": "图例仅作为教材实例，不据产品照片推定所有配方性能、食用适用性、回收类别或环境结论。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          91,
+          92
+        ],
+        "printed_pages": [
+          87,
+          88
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-UNSATURATED-12",
+      "title": "制1,2-二氯乙烷比较取代与加成的产物组成",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.2",
+      "pdf_pages": [
+        92
+      ],
+      "printed_pages": [
+        88
+      ],
+      "summary": "教材例题比较乙烷与氯气取代、乙烯与氯气加成两条路线。取代可产生1,1-二氯乙烷、1,2-二氯乙烷及进一步取代产物等混合物；适量氯气与乙烯加成形成1,2-二氯乙烷，书中据此认为该路线产物纯度较高。结构简式CH₂=CH₂+Cl₂→CH₂Cl—CH₂Cl，标签为乙烯、氯气和1,2-二氯乙烷。",
+      "classroom_check": "核对目标产物结构与两种二氯乙烷的氯原子位置，说明比较路线时应同时考虑副产物。",
+      "limitation": "结论限于教材题设的反应比较，不宣称任何实际工艺都可直接取得绝对纯品；该例题解析不是考试官方评分细则。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          92
+        ],
+        "printed_pages": [
+          88
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ]
+}

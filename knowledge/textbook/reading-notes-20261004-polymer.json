@@ -1,0 +1,479 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-POLYMER-01",
+      "title": "链长、重复结构与聚合度",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.2",
+      "pdf_pages": [
+        91
+      ],
+      "printed_pages": [
+        87
+      ],
+      "source_anchors": [
+        "链长、重复结构与聚合度"
+      ],
+      "summary": "教材以聚乙烯说明重复碳链、不同链长和常见高分子样品。区分一个大分子与由不同链长组成的材料，n按题给结构解释；不能把常见相对分子质量范围改成绝对定义。",
+      "classroom_check": "在原图标出主链、重复部分和延续键，再说明改变n改变什么。",
+      "limitation": "讲义链节计数和整数倍质量式须说明所选单元与端基约定，正式section_id和unit_id均unknown。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          91
+        ],
+        "printed_pages": [
+          87
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-072",
+      "lecture_block_indices": [
+        36,
+        37,
+        38,
+        40,
+        42,
+        43,
+        47,
+        56,
+        58
+      ],
+      "source_sha256": "01f91a44ebbd0376c857cdbf8c5a186764a36f4a011c327a724b037c7c4f9c33",
+      "source_preview_revision": "6d091912015993d6eb98faa273d5d81a4d41575c94e3ec5deb75819a91a8b104",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-POLYMER-02",
+      "title": "支化与聚乙烯材料差别",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.2",
+      "pdf_pages": [
+        91,
+        92
+      ],
+      "printed_pages": [
+        87,
+        88
+      ],
+      "source_anchors": [
+        "支化与聚乙烯材料差别"
+      ],
+      "summary": "教材比较低密度和高密度聚乙烯的链结构及制备背景。按原图辨支链和较规则的主链，再讨论相应材料的性质；具体密度、工艺数值以对应材料与条件为界。",
+      "classroom_check": "用两张原图指出支化差别，并写出支持所比较性能的条件。",
+      "limitation": "不由结构示意认证全部牌号的数值、无毒或食品接触安全；源表格绝对表述保留待核。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          91,
+          92
+        ],
+        "printed_pages": [
+          87,
+          88
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-072",
+      "lecture_block_indices": [
+        240,
+        241,
+        260,
+        261,
+        263
+      ],
+      "source_sha256": "01f91a44ebbd0376c857cdbf8c5a186764a36f4a011c327a724b037c7c4f9c33",
+      "source_preview_revision": "6d091912015993d6eb98faa273d5d81a4d41575c94e3ec5deb75819a91a8b104",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-POLYMER-03",
+      "title": "乙烯类加聚保留侧基",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.2",
+      "pdf_pages": [
+        92,
+        93
+      ],
+      "printed_pages": [
+        88,
+        89
+      ],
+      "source_anchors": [
+        "乙烯类加聚保留侧基"
+      ],
+      "summary": "教材用乙烯及其他单体的结构展示加聚链节。先找参与成链的碳碳双键，再保留侧基并检查各碳价键；所得重复结构不意味着所有官能团都被消耗。",
+      "classroom_check": "给一个教材单体与链节配对，逐原子核连接键和保留侧基。",
+      "limitation": "只适用于教材所示模型，不将单双键互换推广为任意未知聚合物的唯一反推规则。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          92,
+          93
+        ],
+        "printed_pages": [
+          88,
+          89
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-072",
+      "lecture_block_indices": [
+        49,
+        51,
+        52,
+        55,
+        58,
+        61,
+        64,
+        147,
+        148,
+        154
+      ],
+      "source_sha256": "01f91a44ebbd0376c857cdbf8c5a186764a36f4a011c327a724b037c7c4f9c33",
+      "source_preview_revision": "6d091912015993d6eb98faa273d5d81a4d41575c94e3ec5deb75819a91a8b104",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-POLYMER-04",
+      "title": "二烯加聚与共聚分开判断",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.2",
+      "pdf_pages": [
+        93
+      ],
+      "printed_pages": [
+        89
+      ],
+      "source_anchors": [
+        "二烯加聚与共聚分开判断"
+      ],
+      "summary": "教材的1,3-丁二烯1,4-加聚模型保留一个碳碳双键，ABS示例涉及三种单体。单体类别、总体比例和链序列分别记录，题给规则结构不能推广为所有真实样品的排列。",
+      "classroom_check": "在二烯链节标残留双键，说明一份组成比还不能证明哪些排列信息。",
+      "limitation": "保留催化条件与原图，未独立核验真实样品的链序列或材料性能。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          93
+        ],
+        "printed_pages": [
+          89
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-072",
+      "lecture_block_indices": [
+        78,
+        83,
+        84,
+        85,
+        86,
+        147,
+        148,
+        154,
+        180,
+        181,
+        187
+      ],
+      "source_sha256": "01f91a44ebbd0376c857cdbf8c5a186764a36f4a011c327a724b037c7c4f9c33",
+      "source_preview_revision": "6d091912015993d6eb98faa273d5d81a4d41575c94e3ec5deb75819a91a8b104",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-POLYMER-05",
+      "title": "聚酯路线与脱出物",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.2",
+      "pdf_pages": [
+        94
+      ],
+      "printed_pages": [
+        90
+      ],
+      "source_anchors": [
+        "聚酯路线与脱出物"
+      ],
+      "summary": "教材PET示例连接对苯二甲酸、乙二醇和酯键，也提示其他酯原料路线。根据实际原料及端基核对脱出物，聚酯的同一重复连接不能独立证明唯一制备路线。",
+      "classroom_check": "把所示酸醇路线与酯交换背景分别列原料、连接键和脱出物名称。",
+      "limitation": "不将缩聚统一写成失水，不忽略题给端基，也不由重复结构指定未经给出的条件。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          94
+        ],
+        "printed_pages": [
+          90
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-072",
+      "lecture_block_indices": [
+        91,
+        93,
+        95,
+        97,
+        98,
+        100,
+        101,
+        193,
+        194,
+        284
+      ],
+      "source_sha256": "01f91a44ebbd0376c857cdbf8c5a186764a36f4a011c327a724b037c7c4f9c33",
+      "source_preview_revision": "6d091912015993d6eb98faa273d5d81a4d41575c94e3ec5deb75819a91a8b104",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-POLYMER-06",
+      "title": "聚酰胺与端基计量",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.2",
+      "pdf_pages": [
+        95
+      ],
+      "printed_pages": [
+        91
+      ],
+      "source_anchors": [
+        "聚酰胺与端基计量"
+      ],
+      "summary": "教材尼龙与芳纶示例通过含氮连接展示聚酰胺。先定位酰胺键和原料的反应部位，再用给定单链端基数连接及脱出物；水解产物还要区分所给酸碱条件。",
+      "classroom_check": "在一个教材链节标酰胺键，回拼单体并说明端基如何影响计量。",
+      "limitation": "n−1和2n−1依明确线型单链模型成立，未知交联、成环或末端基团不猜测。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          95
+        ],
+        "printed_pages": [
+          91
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-072",
+      "lecture_block_indices": [
+        106,
+        107,
+        108,
+        109,
+        110,
+        142,
+        205,
+        284
+      ],
+      "source_sha256": "01f91a44ebbd0376c857cdbf8c5a186764a36f4a011c327a724b037c7c4f9c33",
+      "source_preview_revision": "6d091912015993d6eb98faa273d5d81a4d41575c94e3ec5deb75819a91a8b104",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-POLYMER-07",
+      "title": "热塑、交联与橡胶硫化",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.2",
+      "pdf_pages": [
+        96
+      ],
+      "printed_pages": [
+        92
+      ],
+      "source_anchors": [
+        "热塑、交联与橡胶硫化"
+      ],
+      "summary": "教材以热塑性加工和网状交联作比较，橡胶交联示意仍保留部分双键。结合主链、支化和交联解释所示材料，不能写所有橡胶硫化后都变成同一种聚合物或全部双键消失。",
+      "classroom_check": "在交联图标链间连接与仍存在的双键，再说明加工差别。",
+      "limitation": "图示只支持对应模型；所有线型高分子、酚醛树脂与硫化程度的性质不作无条件归类。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          96
+        ],
+        "printed_pages": [
+          92
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-072",
+      "lecture_block_indices": [
+        238,
+        241,
+        244,
+        246,
+        267,
+        269,
+        270,
+        287,
+        289,
+        293,
+        295
+      ],
+      "source_sha256": "01f91a44ebbd0376c857cdbf8c5a186764a36f4a011c327a724b037c7c4f9c33",
+      "source_preview_revision": "6d091912015993d6eb98faa273d5d81a4d41575c94e3ec5deb75819a91a8b104",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-POLYMER-08",
+      "title": "功能基团与材料用途",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.2",
+      "pdf_pages": [
+        97,
+        98
+      ],
+      "printed_pages": [
+        93,
+        94
+      ],
+      "source_anchors": [
+        "功能基团与材料用途"
+      ],
+      "summary": "教材把纤维、导电高分子、离子交换树脂和药物载体联系到结构及处理条件。解释功能先指出对应基团或结构，再说明使用背景；用途名称本身不能证明全部性能。",
+      "classroom_check": "选一项教材用途，标出结构证据和还需满足的处理或使用条件。",
+      "limitation": "教材药物载体只作化学素材，未导出临床、安全或疗效判断；导电结论保留教材的处理前提。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          97,
+          98
+        ],
+        "printed_pages": [
+          93,
+          94
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-072",
+      "lecture_block_indices": [
+        251,
+        252,
+        253,
+        299,
+        301,
+        302,
+        305,
+        307,
+        311
+      ],
+      "source_sha256": "01f91a44ebbd0376c857cdbf8c5a186764a36f4a011c327a724b037c7c4f9c33",
+      "source_preview_revision": "6d091912015993d6eb98faa273d5d81a4d41575c94e3ec5deb75819a91a8b104",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-POLYMER-09",
+      "title": "降解须追踪主链连接",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.2",
+      "pdf_pages": [
+        99,
+        100
+      ],
+      "printed_pages": [
+        95,
+        96
+      ],
+      "source_anchors": [
+        "降解须追踪主链连接"
+      ],
+      "summary": "教材聚乳酸与羟基丁酸聚合物背景把聚合路线、主链酯键和降解连接起来。区别主链水解与侧基羧基中和，先按题给结构定位断裂处，再讨论得到的片段。",
+      "classroom_check": "对照教材两条路线说明原料变化，给一个含羧基聚合物辨主链是否随中和断裂。",
+      "limitation": "可降解名称不证明任意环境下的降解速度或完全降解；没有数据时不补速率与环境效果。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          99,
+          100
+        ],
+        "printed_pages": [
+          95,
+          96
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-072",
+      "lecture_block_indices": [
+        193,
+        194,
+        201,
+        235,
+        307,
+        362,
+        363,
+        375,
+        428,
+        429,
+        437
+      ],
+      "source_sha256": "01f91a44ebbd0376c857cdbf8c5a186764a36f4a011c327a724b037c7c4f9c33",
+      "source_preview_revision": "6d091912015993d6eb98faa273d5d81a4d41575c94e3ec5deb75819a91a8b104",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-POLYMER-10",
+      "title": "结构式、回收标识与证据范围",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.2",
+      "pdf_pages": [
+        101
+      ],
+      "printed_pages": [
+        97
+      ],
+      "source_anchors": [
+        "结构式、回收标识与证据范围"
+      ],
+      "summary": "教材练习用给定碳酸酯合成背景和回收标识要求读结构及材料身份。原料、连接、脱出物与条件同时保留；材料代号不等于每个地区或工艺都能回收该物品。",
+      "classroom_check": "选一项练习标原料与主链连接，并说明标识支持什么、尚不能支持什么。",
+      "limitation": "练习数字只作题设；未扩成实际实验操作、真实回收能力或当前官方考试评分标准。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          101
+        ],
+        "printed_pages": [
+          97
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-072",
+      "lecture_block_indices": [
+        91,
+        95,
+        98,
+        142,
+        235,
+        252,
+        253,
+        311,
+        498,
+        501,
+        503
+      ],
+      "source_sha256": "01f91a44ebbd0376c857cdbf8c5a186764a36f4a011c327a724b037c7c4f9c33",
+      "source_preview_revision": "6d091912015993d6eb98faa273d5d81a4d41575c94e3ec5deb75819a91a8b104",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ]
+}

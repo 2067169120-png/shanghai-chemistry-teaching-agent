@@ -1,0 +1,425 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-AROMATIC-01",
+      "title": "芳香烃与苯的同系物不能混作同一范围",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.2",
+      "pdf_pages": [
+        35,
+        37
+      ],
+      "printed_pages": [
+        31,
+        33
+      ],
+      "summary": "教材将烃分子中含一个或多个苯环的化合物称为芳香烃。图2.7给苯乙烯、联苯和萘的结构简式，正文另列苯、甲苯、乙苯和二甲苯；苯的同系物在后文单独讨论。",
+      "classroom_check": "沿原结构指出苯环、侧链以及并合或连接方式，再检查分子是否仅含碳和氢。",
+      "limitation": "苯的同系物通式不能覆盖本图全部芳香烃；不把任意含苯环但还含其他元素的物质归为芳香烃。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          35,
+          37
+        ],
+        "printed_pages": [
+          31,
+          33
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-AROMATIC-02",
+      "title": "芳香烃物理性质保留一般趋势和原料范围",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.2",
+      "pdf_pages": [
+        35
+      ],
+      "printed_pages": [
+        31
+      ],
+      "summary": "原页说明芳香烃不溶于水、可溶于四氯化碳等有机溶剂；一般密度比水小，沸点随相对分子质量增大而升高。煤和石油是简单芳香烃的原料。教材同时提示结构稳定、具有毒性和环境影响。",
+      "classroom_check": "把水溶性、密度和沸点分别记录，并区分一般趋势与具体物质实测数据。",
+      "limitation": "不将一般趋势变成全部芳香化合物的严格定律，不补原页没有的密度、沸点或实验安全参数；芳香一词不等于每种物质都有香味。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          35
+        ],
+        "printed_pages": [
+          31
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-AROMATIC-03",
+      "title": "苯与溴和酸性高锰酸钾的结论须带实验条件",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.2",
+      "pdf_pages": [
+        35,
+        36
+      ],
+      "printed_pages": [
+        31,
+        32
+      ],
+      "summary": "原页把苯与溴水、溴的四氯化碳溶液、酸性高锰酸钾溶液分别比较。正文总结：在上述条件下，苯不能与溴发生加成，也不能与酸性高锰酸钾反应，据此说明苯不具有烯烃那样典型的碳碳双键。",
+      "classroom_check": "先核对试剂、条件和现象记录，再区分分层、颜色迁移和发生化学反应的证据。",
+      "limitation": "现象记录表未填，不补写为教材标准答案；不能把上述条件下不反应扩大为任何条件下不反应，也不能只凭交替双线图把苯等同烯烃。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          35,
+          36
+        ],
+        "printed_pages": [
+          31,
+          32
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-AROMATIC-04",
+      "title": "苯加氢与燃烧的条件和文字标签",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.2",
+      "pdf_pages": [
+        36
+      ],
+      "printed_pages": [
+        32
+      ],
+      "summary": "原书说明苯在镍催化剂等特定条件下可与氢气加成，图示C₆H₆（苯）＋3H₂（氢气）→C₆H₁₂（环己烷），箭头标催化剂和加热。点燃时苯可燃烧，火焰明亮并产生黑烟。",
+      "classroom_check": "区分环加氢和燃烧两类变化，核对反应物、生成物名称、氢气计量数及箭头条件。",
+      "limitation": "不删去催化和加热条件，不补原书未给的温度、压力或燃烧方程；单凭火焰和黑烟不能唯一鉴别苯。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          36
+        ],
+        "printed_pages": [
+          32
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-AROMATIC-05",
+      "title": "苯的硝化是取代，硝基苯颜色须连同脚注读",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.2",
+      "pdf_pages": [
+        36,
+        37
+      ],
+      "printed_pages": [
+        32,
+        33
+      ],
+      "summary": "正文以苯环氢被硝基—NO₂取代说明硝化，生成硝基苯C₆H₅NO₂和水；原式标浓硫酸、55～60 ℃。实验观察到淡黄色液体，脚注明确该液体是不纯硝基苯，而硝基苯本身为无色油状液体、密度比水大。",
+      "classroom_check": "对照取代前后的苯环和氢位置，区分实验产物外观与纯物质性质。",
+      "limitation": "不将淡黄色写成纯硝基苯固有颜色，不把硝基与亚硝基混同；只作教材反应与条件核对，不改写成独立操作规程。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          36,
+          37
+        ],
+        "printed_pages": [
+          32,
+          33
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-AROMATIC-06",
+      "title": "苯和液溴的取代条件不同于前面的溴水试验",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.2",
+      "pdf_pages": [
+        37
+      ],
+      "printed_pages": [
+        33
+      ],
+      "summary": "苯在铁屑或溴化铁催化条件下可与液溴发生取代，原式以FeBr₃标催化，生成溴苯和HBr（溴化氢）。苯环保留，一个环上氢被溴替代。",
+      "classroom_check": "并列核对液溴与前面溴水或溴的四氯化碳溶液的条件，再检查产物与反应类型。",
+      "limitation": "不删催化剂或把液溴替换成溴水；不把苯环取代写成加成，不据此增加未给的试剂用量或合成步骤。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          37
+        ],
+        "printed_pages": [
+          33
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-AROMATIC-07",
+      "title": "苯的同系物通式和组成差异有范围限制",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.2",
+      "pdf_pages": [
+        37
+      ],
+      "printed_pages": [
+        33
+      ],
+      "summary": "教材给苯和苯的同系物通式CₙH₂ₙ₋₆（n≥6），组成上相差一个或若干个CH₂原子团。应与命名节所述苯环氢被烷基取代的范围一起理解。",
+      "classroom_check": "核对一个苯环与烷基侧链，再用分子式检验同系列的组成差异。",
+      "limitation": "不把通式套给苯乙烯、联苯、萘或所有含苯环物质，也不以相差CH₂作为充分判据；苯自身和具体同系物要按题目措辞区分。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          37
+        ],
+        "printed_pages": [
+          33
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-AROMATIC-08",
+      "title": "甲苯氧化指向侧链，原图不提供配平总式",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.2",
+      "pdf_pages": [
+        37,
+        38
+      ],
+      "printed_pages": [
+        33,
+        34
+      ],
+      "summary": "甲苯性质实验与苯使用相应的溴和酸性高锰酸钾条件。正文说明甲苯不能与溴加成，但能使酸性高锰酸钾溶液褪色；甲基被氧化，原图以KMnO₄、H⁺标箭头，甲苯C₆H₅CH₃转为苯甲酸C₆H₅COOH。",
+      "classroom_check": "在原图跟踪侧链碳和苯环的保留，比较苯与甲苯在相同试剂条件下的差异。",
+      "limitation": "原图是转化示意而非配平总反应式，不补计量数或氧化剂用量；不得据甲苯一例认定所有烷基苯均能相同氧化。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          37,
+          38
+        ],
+        "printed_pages": [
+          33,
+          34
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-AROMATIC-09",
+      "title": "甲苯单取代的主要位置是教材给定的邻和对",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.2",
+      "pdf_pages": [
+        38
+      ],
+      "printed_pages": [
+        34
+      ],
+      "summary": "原页给甲苯硝化主要得到邻硝基甲苯和对硝基甲苯两个一硝基取代物，并以侧链和苯环相互影响解释性质差异；另有进一步取代的教材拓展示例，保留原页引用。",
+      "classroom_check": "以甲基所连碳为起点，在两幅一取代产物原结构上标邻位和对位。",
+      "limitation": "主要产物不等于只有这两个产物，不补比例、条件筛选或多次取代的操作过程；开放比较题没有附标准答案。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          38
+        ],
+        "printed_pages": [
+          34
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-AROMATIC-10",
+      "title": "定位效应要连同反应先后和主要位置判断",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.2",
+      "pdf_pages": [
+        39
+      ],
+      "printed_pages": [
+        35
+      ],
+      "summary": "拓展栏说明原取代基影响新取代基的位置：烷基、羟基、卤原子等使新取代基主要进入邻位和对位；硝基、羧基等对应主要间位。原图以先把甲基氧化成羧基，再硝化为例讨论顺序。",
+      "classroom_check": "先标当前已存在的取代基，再判断下一步主要位置，逐步对照原路线结构。",
+      "limitation": "不把定位效应与反应活性混为一谈，不把主要位置说成唯一产物；未补多取代基竞争规则、产率或工艺条件。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          39
+        ],
+        "printed_pages": [
+          35
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-AROMATIC-11",
+      "title": "甲苯侧链和苯环氯代依赖不同条件",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.2",
+      "pdf_pages": [
+        39
+      ],
+      "printed_pages": [
+        35
+      ],
+      "summary": "教材例题分析对氯甲苯合成时，明确甲基氢被氯替代需要光照，苯环氢被氯替代需要催化剂。书中选择铁屑或三氯化铁催化的苯环取代，再从产物中分离对氯甲苯。",
+      "classroom_check": "在原结构标出侧链与环上的氢，并以条件判断取代发生的位置范围。",
+      "limitation": "例题未说只生成对位产物，不省略分离；解析来自教材，不称考试官方答案，也不把课堂分析改写成实际合成规程。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          39
+        ],
+        "printed_pages": [
+          35
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-AROMATIC-12",
+      "title": "芳香烃练习保留未附答案与章节边界",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.2",
+      "pdf_pages": [
+        35,
+        36,
+        37,
+        38,
+        40
+      ],
+      "printed_pages": [
+        31,
+        32,
+        33,
+        34,
+        36
+      ],
+      "summary": "苯和甲苯实验表的现象、结论均留空；正文有已给分析，须与空表分开。PDF38的基团相互作用比较及PDF40四道巩固题依赖原结构、反应条件和作答要求；本节未附练习答案或评分细则。",
+      "classroom_check": "逐题核对含苯环与仅含碳氢、典型双键与苯环、侧链对环和环对侧链的不同证据。",
+      "limitation": "不补选择答案、反应记录或评分点。PDF34为上一节练习，PDF41为卤代烃，仅作边界证据，不算本节正文。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          35,
+          36,
+          37,
+          38,
+          40
+        ],
+        "printed_pages": [
+          31,
+          32,
+          33,
+          34,
+          36
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ],
+  "source_conflicts": []
+}

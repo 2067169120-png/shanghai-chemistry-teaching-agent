@@ -1,0 +1,374 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-SUBSTANCE-TESTING-01",
+      "title": "初步检验用于筛选而不是唯一确认",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        32
+      ],
+      "printed_pages": [
+        27
+      ],
+      "source_anchors": [
+        "初步检验用于筛选而不是唯一确认"
+      ],
+      "summary": "教材从白色样品、溶解性、溶液颜色和碱性逐步筛选给定候选，再要求针对物质的特殊性质和特征反应进一步确定组成。要保留候选范围、混合物可能及每步观察，不能从一种外观直接认定纯物质。",
+      "classroom_check": "为教材图1.24的每一箭头写出排除依据，并补列尚可能共存的物质。",
+      "limitation": "这里只读取教材的有限候选问题，不将其当作未知任意样品的充分鉴定。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          32
+        ],
+        "printed_pages": [
+          27
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-050",
+      "lecture_block_indices": [
+        25,
+        27,
+        29,
+        31,
+        33,
+        58,
+        60
+      ],
+      "source_sha256": "dec2a992607434bdf73a4569729830daf9e4091668211222592c7bdbe3976e10",
+      "source_preview_revision": "be4b36ce3613d310732334f81a066722fa378b066a3cde9b46d199d1f592bce2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-TESTING-02",
+      "title": "焰色观察须排除钠对钾的颜色干扰",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        32,
+        33
+      ],
+      "printed_pages": [
+        27,
+        28
+      ],
+      "source_anchors": [
+        "焰色观察须排除钠对钾的颜色干扰"
+      ],
+      "summary": "教材图1.25展示Li、Na、K、Ca、Sr、Ba、Cu焰色；正文明确钠的黄色会掩盖钾的颜色，观察钾时用蓝色钴玻璃滤除黄色。要说明待检元素、清洁条件和观察方式，而非只抄一串颜色。",
+      "classroom_check": "解释混有钠时为何不能凭直接观察的黄色排除钾，并写出观察钾的处理。",
+      "limitation": "焰色颜色用于教材所列金属元素线索，不推断完整盐种类或其阴离子。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          32,
+          33
+        ],
+        "printed_pages": [
+          27,
+          28
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-050",
+      "lecture_block_indices": [
+        29
+      ],
+      "source_sha256": "dec2a992607434bdf73a4569729830daf9e4091668211222592c7bdbe3976e10",
+      "source_preview_revision": "be4b36ce3613d310732334f81a066722fa378b066a3cde9b46d199d1f592bce2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-TESTING-03",
+      "title": "沉淀法必须保留酸化试剂与加入顺序",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        33
+      ],
+      "printed_pages": [
+        28
+      ],
+      "source_anchors": [
+        "沉淀法必须保留酸化试剂与加入顺序"
+      ],
+      "summary": "教材氯离子例使用硝酸酸化的硝酸银并观察不溶于稀硝酸的白色沉淀；硫酸根例明确依次加入稀盐酸和氯化钡。不同检验使用不同酸，顺序与所引入离子必须写完整。",
+      "classroom_check": "分别写Ag⁺＋Cl⁻→AgCl↓和Ba²⁺＋SO₄²⁻→BaSO₄↓，为银离子、氯离子、氯化银、钡离子、硫酸根和硫酸钡补名称。",
+      "limitation": "教材例不是任意混合溶液的无干扰保证；若存在其他沉淀或氧化还原干扰仍须补证。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          33
+        ],
+        "printed_pages": [
+          28
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-050",
+      "lecture_block_indices": [
+        31,
+        47,
+        49,
+        51,
+        56,
+        58,
+        60
+      ],
+      "source_sha256": "dec2a992607434bdf73a4569729830daf9e4091668211222592c7bdbe3976e10",
+      "source_preview_revision": "be4b36ce3613d310732334f81a066722fa378b066a3cde9b46d199d1f592bce2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-TESTING-04",
+      "title": "气体法保留碳酸根与碳酸氢根的两种可能",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        33
+      ],
+      "printed_pages": [
+        28
+      ],
+      "source_anchors": [
+        "气体法保留碳酸根与碳酸氢根的两种可能"
+      ],
+      "summary": "教材向物质加盐酸产生无色无味且使澄清石灰水浑浊的气体，推论保留碳酸根、碳酸氢根的一种或两种。讲义将相似现象唯一归于碳酸根，超出了这组现象所提供的区分能力。",
+      "classroom_check": "并列写CO₃²⁻＋2H⁺→CO₂↑＋H₂O和HCO₃⁻＋H⁺→CO₂↑＋H₂O，并标碳酸根、碳酸氢根、氢离子、二氧化碳和水。",
+      "limitation": "未知样品还可能有含硫离子等干扰；须先确认气体身份，不只看石灰水。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          33
+        ],
+        "printed_pages": [
+          28
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-050",
+      "lecture_block_indices": [
+        31,
+        33,
+        42,
+        51,
+        56
+      ],
+      "source_sha256": "dec2a992607434bdf73a4569729830daf9e4091668211222592c7bdbe3976e10",
+      "source_preview_revision": "be4b36ce3613d310732334f81a066722fa378b066a3cde9b46d199d1f592bce2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-TESTING-05",
+      "title": "萃取、分液和蒸馏依据不同性质选择",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        29,
+        30,
+        31
+      ],
+      "printed_pages": [
+        24,
+        25,
+        26
+      ],
+      "source_anchors": [
+        "萃取、分液和蒸馏依据不同性质选择"
+      ],
+      "summary": "教材分别利用组分溶解性、随温度变化的溶解度、沸点和在互不相溶溶剂中的溶解能力差异进行分离。碘水与四氯化碳分层实例中，下层由活塞放出，上层从上口倒出；层位应按溶剂密度判断。",
+      "classroom_check": "对照图1.21标两层与出口，再比较讲义苯/甲苯和四氯化碳萃取的层位及着色原因。",
+      "limitation": "本节碘萃取例不证明所有有机溶剂都能采用同样出口、层位或检验条件。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          29,
+          30,
+          31
+        ],
+        "printed_pages": [
+          24,
+          25,
+          26
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-050",
+      "lecture_block_indices": [
+        35,
+        62,
+        65,
+        74,
+        76,
+        121,
+        122,
+        123
+      ],
+      "source_sha256": "dec2a992607434bdf73a4569729830daf9e4091668211222592c7bdbe3976e10",
+      "source_preview_revision": "be4b36ce3613d310732334f81a066722fa378b066a3cde9b46d199d1f592bce2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-TESTING-06",
+      "title": "制气流程先核原理再识别装置各环节",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        27,
+        28
+      ],
+      "printed_pages": [
+        22,
+        23
+      ],
+      "source_anchors": [
+        "制气流程先核原理再识别装置各环节"
+      ],
+      "summary": "教材制备物质一般流程为目标产物、原料、原理、路线、装置、条件及分离提纯；图1.15的氯气实验展示发生、收集与尾气吸收。讲义SO₂装置可按相同读图方法区分发生、检验、反应和吸收，不把不同装置的功能混为一项。",
+      "classroom_check": "为本讲I—IV每段气路写反应物、观察对象和作用，再核导管位置。",
+      "limitation": "教材要求在教师指导下观察实验；读图与备课建议不等于原Word全部排版已核或实验已实施。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          27,
+          28
+        ],
+        "printed_pages": [
+          22,
+          23
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-050",
+      "lecture_block_indices": [
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113
+      ],
+      "source_sha256": "dec2a992607434bdf73a4569729830daf9e4091668211222592c7bdbe3976e10",
+      "source_preview_revision": "be4b36ce3613d310732334f81a066722fa378b066a3cde9b46d199d1f592bce2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-TESTING-07",
+      "title": "试剂浓度中的体积指溶液最终体积",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        34,
+        35,
+        36
+      ],
+      "printed_pages": [
+        29,
+        30,
+        31
+      ],
+      "source_anchors": [
+        "试剂浓度中的体积指溶液最终体积"
+      ],
+      "summary": "教材物质的量浓度c=n/V中V为溶液体积；1mol溶质配成1L溶液不同于加入1L水。100mL、1.000mol·L⁻¹ NaCl示例称取5.850g，溶解、转移、洗涤、定容和摇匀均影响实际浓度；单纯稀释保持溶质物质的量。",
+      "classroom_check": "解释洗涤液全部转移和最终定容的作用，并区分c₁V₁=c₂V₂适用的单纯稀释与发生反应的混合。",
+      "limitation": "不据此认可讲义稀NaOH加热不能检出铵盐的绝对断言；检出还需具体用量与条件。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          34,
+          35,
+          36
+        ],
+        "printed_pages": [
+          29,
+          30,
+          31
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-050",
+      "lecture_block_indices": [
+        29,
+        45,
+        86,
+        88,
+        103,
+        105,
+        126,
+        129
+      ],
+      "source_sha256": "dec2a992607434bdf73a4569729830daf9e4091668211222592c7bdbe3976e10",
+      "source_preview_revision": "be4b36ce3613d310732334f81a066722fa378b066a3cde9b46d199d1f592bce2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-TESTING-08",
+      "title": "鉴别方案依据给定性质而不是相同外观",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        37,
+        38
+      ],
+      "printed_pages": [
+        32,
+        33
+      ],
+      "source_anchors": [
+        "鉴别方案依据给定性质而不是相同外观"
+      ],
+      "summary": "教材练习比较分液适用的混合物、冷却结晶的溶解度曲线，并给出NaNO₂与NaCl的溶解度、熔沸点及水溶液酸碱性。两种白色固体外观相似仍可按给定性质设计不同鉴别方案，需说明取样和现象与结论的对应。",
+      "classroom_check": "先选能产生差异的表中性质，再写出取样、条件、现象和结论，并指出哪些外观信息不足以鉴别。",
+      "limitation": "研读提示不是教材练习的官方评分细则，也不将课堂的有限候选推为未知混合物的完整分析。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          37,
+          38
+        ],
+        "printed_pages": [
+          32,
+          33
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-050",
+      "lecture_block_indices": [
+        25,
+        27,
+        31,
+        33,
+        35,
+        86,
+        88
+      ],
+      "source_sha256": "dec2a992607434bdf73a4569729830daf9e4091668211222592c7bdbe3976e10",
+      "source_preview_revision": "be4b36ce3613d310732334f81a066722fa378b066a3cde9b46d199d1f592bce2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ]
+}

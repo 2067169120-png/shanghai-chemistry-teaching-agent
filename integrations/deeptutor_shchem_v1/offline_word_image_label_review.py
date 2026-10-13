@@ -1,7 +1,7 @@
 """Source-closed image label candidates reviewed by the current root model.
 
 This is an independent admission policy, not a relaxation of the text-only
-route. It accepts selected paragraph ranges with original PNGs and validated
+route. It accepts selected paragraph ranges with original PNG/JPEGs and validated
 WMF previews, plus an explicit model reading record. An OLE equation's visible
 preview is accepted only through its native same-object ShapeID relationship;
 the binary is hashed but never interpreted or executed. Neither that technical
@@ -27,9 +27,16 @@ from PIL import Image
 from .desktop_preparation_sources import _block_text, _body_blocks, _word_images
 from .desktop_word_question_attributes import validate_attributes
 from .offline_word_label_review import (
-    OUTPUT_SCHEMA, PROVENANCE, OfflineWordLabelReviewError,
-    OfflineWordLabelReviewService, _SHA256, _TEXT, _digest,
-    _has_substantive_answer_text, _object, _require,
+    _SHA256,
+    _TEXT,
+    OUTPUT_SCHEMA,
+    PROVENANCE,
+    OfflineWordLabelReviewError,
+    OfflineWordLabelReviewService,
+    _digest,
+    _has_substantive_answer_text,
+    _object,
+    _require,
 )
 from .word_handout_import import _validate_container
 from .word_native_text import WordNativeTextReader
@@ -39,7 +46,7 @@ PLAN_SCHEMA_VERSION = "shchem.offline-word-image-label-plan.v1"
 RECEIPT_SCHEMA_VERSION = "shchem.offline-word-image-label-receipt.v1"
 SCOPE_SCHEMA_VERSION = "shchem.offline-word-image-reading-scope.v1"
 ROOT_REVIEW_SCHEMA_VERSION = "shchem.root-image-label-review.v1"
-READING_POLICY_REVISION = "complete-native-question-answer-image-root-model-v1"
+READING_POLICY_REVISION = "complete-native-question-answer-image-root-model-v2"
 RULE_REVISION = "codex-offline-image-reviewed-20260928-v1"
 RECHECK_RULE_REVISION = "codex-offline-image-recheck-20260928-v1"
 WHITE_RENDERER = "rgba-over-opaque-white-rgb-v1"
@@ -75,6 +82,7 @@ _NS = {
     "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
     "wp": "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
     "a": "http://schemas.openxmlformats.org/drawingml/2006/main",
+    "a14": "http://schemas.microsoft.com/office/drawing/2010/main",
     "pic": "http://schemas.openxmlformats.org/drawingml/2006/picture",
     "v": "urn:schemas-microsoft-com:vml", "o": "urn:schemas-microsoft-com:office:office",
     "w10": "urn:schemas-microsoft-com:office:word",
@@ -97,7 +105,15 @@ _DRAWING_TAGS = {_q(name) for name in (
     "pic:pic", "pic:nvPicPr", "pic:cNvPr", "pic:cNvPicPr", "a:picLocks",
     "pic:blipFill", "a:blip", "a:srcRect", "a:stretch", "a:fillRect",
     "pic:spPr", "a:xfrm", "a:off", "a:ext", "a:prstGeom", "a:avLst", "a:noFill", "a:ln",
+    "a:miter", "a:headEnd", "a:tailEnd", "a:extLst", "a14:useLocalDpi",
 )}
+_LOCAL_DPI_URI = "{28A0092B-C50C-407E-A947-70E740481C1C}"
+_T75_FORMULAS = (
+    "if lineDrawn pixelLineWidth 0", "sum @0 1 0", "sum 0 0 @1",
+    "prod @2 1 2", "prod @3 21600 pixelWidth", "prod @3 21600 pixelHeight",
+    "sum @0 0 1", "prod @6 1 2", "prod @7 21600 pixelWidth",
+    "sum @8 21600 0", "prod @7 21600 pixelHeight", "sum @10 21600 0",
+)
 _IDENTITY = ("key", "source_sha256", "source_revision", "index_revision", "extraction_revision", "revision")
 _RANGES = ("block_start", "question_end", "answer_start", "block_end", "context_start", "context_end", "origin_block_start")
 _GROUPS = (("context_blocks", "context_start", "context_end"),
@@ -171,7 +187,7 @@ def _relation(document, rid, *, image):
              and relation.reltype == expected, "native_relationship_unresolved",
              "原生对象缺少可核对的内部图像或OLE关系。")
     part = relation.target_part
-    _require(part.content_type in ({"image/png", "image/wmf", "image/x-wmf"} if image else
+    _require(part.content_type in ({"image/png", "image/jpeg", "image/wmf", "image/x-wmf"} if image else
                                   {"application/vnd.openxmlformats-officedocument.oleObject"}),
              "native_object_not_supported", "该原生对象类型尚未纳入此图文候选流程。")
     return {
@@ -179,6 +195,87 @@ def _relation(document, rid, *, image):
         "package_part": str(part.partname), "mime_type": part.content_type,
         "sha256": _sha(part.blob), "bytes_count": len(part.blob),
     }
+
+
+def _invisible_line(line):
+    # Width, join and endpoint metadata cannot draw a line with explicit
+    # noFill. Keep the accepted structure narrow: no effects or visible fill,
+    # duplicate children, unknown attributes, or nonempty endpoint nodes.
+    children = list(line)
+    tags = [child.tag for child in children]
+    width = line.get("w")
+    if (set(line.attrib) - {"w"} or not children or tags[0] != _q("a:noFill")
+            or len(tags) != len(set(tags))
+            or set(tags) - {_q("a:noFill"), _q("a:miter"), _q("a:headEnd"), _q("a:tailEnd")}
+            or (width is not None and not re.fullmatch(r"[0-9]{1,10}", width))):
+        return False
+    for child in children:
+        if list(child):
+            return False
+        if child.tag == _q("a:miter"):
+            if set(child.attrib) != {"lim"} or not re.fullmatch(r"[0-9]{1,10}", child.get("lim", "")):
+                return False
+        elif child.attrib:
+            return False
+    return True
+
+
+def _blip_metadata_supported(blip):
+    """Admit only the exact Office boolean DPI extension, without rewriting it.
+
+    Source-bound display uses the complete embedded pixels and authored Word
+    extent. useLocalDpi selects local versus default compression metadata; it
+    adds no pixel effect or relationship. Unknown extensions stay blocked.
+    """
+    if set(blip.attrib) - {_q("r:embed"), "cstate"}:
+        return False
+    children = list(blip)
+    if not children:
+        return not (blip.text or "").strip()
+    if len(children) != 1 or children[0].tag != _q("a:extLst"):
+        return False
+    extensions = children[0]
+    if extensions.attrib or len(extensions) != 1:
+        return False
+    extension = extensions[0]
+    if (extension.tag != _q("a:ext")
+            or dict(extension.attrib) != {"uri": _LOCAL_DPI_URI}
+            or len(extension) != 1):
+        return False
+    dpi = extension[0]
+    if (dpi.tag != _q("a14:useLocalDpi") or set(dpi.attrib) - {"val"}
+            or dpi.get("val", "true") not in {"0", "1", "false", "true"} or list(dpi)):
+        return False
+    return all(not (node.text or "").strip() and not (node.tail or "").strip()
+               for node in (blip, extensions, extension, dpi))
+
+
+def _standard_image_shapetype(template):
+    """Validate the complete standard t75 cached-image declaration, not VML.
+
+    Fixed formula strings are compared as source metadata, never interpreted.
+    Custom templates, effects and extra geometry remain unsupported even when
+    they use the familiar template ID.
+    """
+    if dict(template.attrib) != {
+        "id": "_x0000_t75", "coordsize": "21600,21600", _q("o:spt"): "75",
+        _q("o:preferrelative"): "t", "path": "m@4@5l@4@11@9@11@9@5xe",
+        "filled": "f", "stroked": "f",
+    }:
+        return False
+    children = list(template)
+    if [c.tag for c in children] != [_q("v:stroke"), _q("v:formulas"), _q("v:path"), _q("o:lock")]:
+        return False
+    stroke, formulas, path, lock = children
+    if (dict(stroke.attrib) != {"joinstyle": "miter"} or list(stroke)
+            or formulas.attrib or len(formulas) != len(_T75_FORMULAS)
+            or dict(path.attrib) != {_q("o:extrusionok"): "f", "gradientshapeok": "t", _q("o:connecttype"): "rect"}
+            or list(path) or dict(lock.attrib) != {_q("v:ext"): "edit", "aspectratio": "t"} or list(lock)):
+        return False
+    if any(node.tag != _q("v:f") or dict(node.attrib) != {"eqn": expected} or list(node)
+           for node, expected in zip(formulas, _T75_FORMULAS)):
+        return False
+    return all(not (node.text or "").strip() and not (node.tail or "").strip() for node in template.iter())
 
 
 def _objects(element, document, index, assets):
@@ -200,27 +297,64 @@ def _objects(element, document, index, assets):
                     _require(all(value in {"0", "false"} for value in child.attrib.values()),
                              "transformed_image_not_supported", "图片裁剪、翻转或旋转尚未纳入读图证据链。")
                 if child.tag == _q("a:blip"):
-                    _require(not list(child) and set(child.attrib) <= {_q("r:embed"), "cstate"},
+                    _require(_blip_metadata_supported(child),
                              "transformed_image_not_supported", "图片效果尚未纳入读图证据链。")
+                if child.tag == _q("a:extLst"):
+                    _require(child.getparent().tag == _q("a:blip"),
+                             "transformed_image_not_supported", "图片扩展必须属于明确支持的原图DPI元数据。")
+                if child.tag == _q("a:ext") and "uri" in child.attrib:
+                    _require(child.getparent().tag == _q("a:extLst")
+                             and child.getparent().getparent().tag == _q("a:blip"),
+                             "transformed_image_not_supported", "图片扩展URI必须属于已核对的原图元数据。")
+                if child.tag == _q("a14:useLocalDpi"):
+                    _require(child.getparent().tag == _q("a:ext")
+                             and child.getparent().getparent().tag == _q("a:extLst")
+                             and child.getparent().getparent().getparent().tag == _q("a:blip"),
+                             "transformed_image_not_supported", "原图DPI元数据必须具有完整的扩展位置。")
                 if child.tag == _q("a:prstGeom"):
                     _require(dict(child.attrib) == {"prst": "rect"}, "transformed_image_not_supported", "非矩形图片需另行复核。")
                 if child.tag in {_q("a:avLst"), _q("a:noFill")}:
                     _require(not child.attrib and not list(child), "transformed_image_not_supported", "图片几何调整尚未纳入读图证据链。")
                 if child.tag == _q("a:ln"):
-                    _require(not child.attrib and [part.tag for part in child] == [_q("a:noFill")],
+                    _require(_invisible_line(child),
                              "transformed_image_not_supported", "图片边框效果需另行复核。")
+                if child.tag in {_q("a:miter"), _q("a:headEnd"), _q("a:tailEnd")}:
+                    _require(child.getparent().tag == _q("a:ln"),
+                             "transformed_image_not_supported", "边框元数据必须属于明确禁描边的原图。")
             images = list(node.iter(_q("a:blip")))
             rid = images[0].get(_q("r:embed")) if len(images) == 1 else None
         else:
-            allowed = {node.tag, _q("v:shape"), _q("v:imagedata")}
+            allowed = {node.tag, _q("v:shape"), _q("v:imagedata"),
+                       _q("v:stroke"), _q("o:lock"), _q("w10:anchorlock")}
             if node.tag == _q("w:object"):
-                allowed.update({_q("o:OLEObject"), _q("v:stroke"), _q("o:lock"), _q("w10:anchorlock")})
+                allowed.add(_q("o:OLEObject"))
+            templates = list(node.iter(_q("v:shapetype")))
+            _require(not templates or (len(templates) == 1 and templates[0].getparent() is node
+                                      and _standard_image_shapetype(templates[0])),
+                     "native_object_not_supported", "旧式图形模板不是完整的标准原图显示声明。")
+            if templates:
+                allowed.update({_q("v:shapetype"), _q("v:formulas"), _q("v:f"), _q("v:path")})
+                template = templates[0]
+                _require(all(child.getparent() is template for name in ("v:formulas", "v:path")
+                             for child in node.iter(_q(name)))
+                         and all(child.getparent().tag == _q("v:formulas")
+                                 and child.getparent().getparent() is template
+                                 for child in node.iter(_q("v:f"))),
+                         "native_object_not_supported", "旧式公式和路径必须只属于已核对的标准原图模板。")
             _require(all(child.tag in allowed for child in node.iter()),
                      "native_object_not_supported", "旧式图形包含尚未支持的对象或版式。")
             shapes, images = list(node.iter(_q("v:shape"))), list(node.iter(_q("v:imagedata")))
             _require(len(shapes) == len(images) == 1 and images[0].getparent() is shapes[0],
                      "native_preview_ambiguous", "旧式对象没有唯一的同对象图像预览。")
             shape = shapes[0]
+            _require(not templates or shape.getparent() is node,
+                     "native_object_not_supported", "标准原图模板必须绑定同一容器内的直接图像形状。")
+            _require(all(child.getparent() is shape for name in ("v:stroke", "o:lock", "w10:anchorlock")
+                         for child in node.iter(_q(name)) if child.getparent() not in templates),
+                     "native_object_not_supported", "旧式图像元数据必须属于同一图像形状。")
+            _require(not templates or (shape.get("coordsize") in {None, "21600,21600"}
+                                      and shape.get(_q("o:preferrelative")) in {None, "t"}),
+                     "transformed_image_not_supported", "旧式原图覆盖了已核对模板的坐标空间。")
             _require(shape.get("type") == "#_x0000_t75"
                      and set(shape.attrib) <= {"id", "type", "alt", "style", _q("o:ole"),
                                                "coordsize", _q("o:preferrelative"), "filled", "stroked"}
@@ -278,13 +412,21 @@ def _objects(element, document, index, assets):
     return result
 
 
-def _png(raw):
+def _raster(raw, *, format):
     with Image.open(io.BytesIO(raw)) as image:
-        _require(image.format == "PNG" and image.width * image.height <= 50_000_000
+        _require(image.format == format and image.width * image.height <= 50_000_000
                  and getattr(image, "n_frames", 1) == 1,
-                 "invalid_readable_image", "候选显示依据必须是单帧且尺寸可读的PNG。")
+                 "invalid_readable_image", "候选显示图的实际格式、帧数或尺寸与原生依据不符。")
+        if format == "JPEG":
+            _require(image.mode in {"RGB", "L"} and image.getexif().get(274) in {None, 1}
+                     and not image.info.get("icc_profile"),
+                     "transformed_image_not_supported", "JPEG色彩或方向元数据需另行复核。")
         image.load()
         return image.copy()
+
+
+def _png(raw):
+    return _raster(raw, format="PNG")
 
 
 def _native_scope(words, row, attributes, preview, source):
@@ -354,24 +496,27 @@ def _native_scope(words, row, attributes, preview, source):
                                   "native_features": list(native.features), "native_math_count": native.native_math_count})
             objects.extend(block_objects)
             for asset in assets:
+                derived = asset["mime_type"] in {"image/wmf", "image/x-wmf"}
+                display_mime = "image/png" if derived else asset["mime_type"]
                 try:
                     display = words.reader.word_asset_bytes(source.content, asset["asset_id"],
                                                            render_metafiles=True, expected_sha256=asset["sha256"])
-                    raster = _png(display["bytes"])
+                    raster = _raster(display["bytes"], format="JPEG" if display_mime == "image/jpeg" else "PNG")
                 except Exception as exc:
                     if isinstance(exc, OfflineWordLabelReviewError):
                         raise
                     raise OfflineWordLabelReviewError("image_not_readable", "原图或可信WMF转换尚不可读。") from exc
-                derived = asset["mime_type"] != "image/png"
                 display_sha = _sha(display["bytes"])
                 _require(not derived or (display.get("derived_preview") is True
                          and display.get("original_sha256") == asset["sha256"]
                          and display.get("preview_sha256") == display_sha and bool(display.get("renderer_revision"))),
                          "derived_image_unbound", "派生图未闭合到原图字节及转换器。")
-                _require(derived or display_sha == asset["sha256"], "original_image_changed", "PNG原图字节变化。")
+                _require(derived or (display_sha == asset["sha256"] and display.get("mime_type") == display_mime),
+                         "original_image_changed", "PNG/JPEG原图字节或格式变化。")
                 images.append({**asset, "display": {
-                    "sha256": display_sha, "bytes_count": len(display["bytes"]), "mime_type": "image/png",
-                    "renderer_revision": display["renderer_revision"] if derived else "original-png-v1",
+                    "sha256": display_sha, "bytes_count": len(display["bytes"]), "mime_type": display_mime,
+                    "renderer_revision": display["renderer_revision"] if derived else
+                        ("original-jpeg-v1" if display_mime == "image/jpeg" else "original-png-v1"),
                     "derived_preview": derived, "width": raster.width, "height": raster.height,
                 }})
                 payloads[asset["asset_id"]] = display["bytes"]

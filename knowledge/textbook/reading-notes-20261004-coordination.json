@@ -1,0 +1,472 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-COORDINATION-01",
+      "title": "配位现象与电子对给予—接受",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.3",
+      "pdf_pages": [
+        60
+      ],
+      "printed_pages": [
+        56
+      ],
+      "source_anchors": [
+        "配位现象与电子对给予—接受"
+      ],
+      "summary": "教材通过氨的电子对给予—接受和铜、银相关观察引入配位。先区分原有溶液、加入试剂及观察结果，再把现象与给出的结构模型配对，保留物质名称与条件。",
+      "classroom_check": "列一份现象—条件—解释表，并说明颜色变化还不能唯一证明什么。",
+      "limitation": "教材实验是所给条件下的阅读素材，未认证其他浓度或配体的通用结果，也未补缺失公式。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          60
+        ],
+        "printed_pages": [
+          56
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-074",
+      "lecture_block_indices": [
+        25,
+        27,
+        28,
+        30,
+        33,
+        34,
+        44,
+        46,
+        47
+      ],
+      "source_sha256": "ce42a35186fe08e9440f27900207a7e7e7639770d6c4b12dac50907a2eb35e31",
+      "source_preview_revision": "a38ab1bc91e85d9e2d00c0998c99eb9abaedb8af46cdb67236ded2119b243289",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-COORDINATION-02",
+      "title": "配离子与内外界分别标注",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.3",
+      "pdf_pages": [
+        61
+      ],
+      "printed_pages": [
+        57
+      ],
+      "source_anchors": [
+        "配离子与内外界分别标注"
+      ],
+      "summary": "教材铜氨、银氨配合物分别标中心、配体、配离子与外界；完整电荷按组成核算。中性配合物没有外界的例子与配离子盐分开，不能要求全部配合物都有反离子。",
+      "classroom_check": "对一份教材化学式标内界、外界和配体电荷，再写电荷代数和。",
+      "limitation": "讲义NH4Cl前后分类矛盾保留原记录；电离与稳定性只按给定溶液条件解释。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          61
+        ],
+        "printed_pages": [
+          57
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-074",
+      "lecture_block_indices": [
+        36,
+        38,
+        39,
+        41,
+        43,
+        44,
+        50,
+        52,
+        53,
+        54
+      ],
+      "source_sha256": "ce42a35186fe08e9440f27900207a7e7e7639770d6c4b12dac50907a2eb35e31",
+      "source_preview_revision": "a38ab1bc91e85d9e2d00c0998c99eb9abaedb8af46cdb67236ded2119b243289",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-COORDINATION-03",
+      "title": "配位数须数直接连接的原子",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.3",
+      "pdf_pages": [
+        61
+      ],
+      "printed_pages": [
+        57
+      ],
+      "source_anchors": [
+        "配位数须数直接连接的原子"
+      ],
+      "summary": "教材示意Ag二配位、Zn四配位和Co六配位。把配位数与配体数分开，再与讲义多齿丁二酮肟镍图比较：两个配体贡献四个直接与Ni连接的N。",
+      "classroom_check": "在原结构图分别圈中心、配体与直接配位原子，说明两个数为何可能不同。",
+      "limitation": "图形只是对应结构模型；不将配位数、分子式或纸面排列单独作为全部空间构型的证据。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          61
+        ],
+        "printed_pages": [
+          57
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-074",
+      "lecture_block_indices": [
+        38,
+        39,
+        40,
+        42,
+        51,
+        123,
+        124,
+        125,
+        126,
+        141
+      ],
+      "source_sha256": "ce42a35186fe08e9440f27900207a7e7e7639770d6c4b12dac50907a2eb35e31",
+      "source_preview_revision": "a38ab1bc91e85d9e2d00c0998c99eb9abaedb8af46cdb67236ded2119b243289",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-COORDINATION-04",
+      "title": "平面与四面体的异构位置",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.3",
+      "pdf_pages": [
+        62
+      ],
+      "printed_pages": [
+        58
+      ],
+      "source_anchors": [
+        "平面与四面体的异构位置"
+      ],
+      "summary": "教材用MA2B2比较平面四边形的顺反位置与正四面体等价位置。固定中心与配体身份，逐位置比较可区分的结构，再核题给产物数。",
+      "classroom_check": "各用一个平面和四面体模型说明哪些取代位置等价。",
+      "limitation": "结论限于教材模型；不能由四配位直接指定杂化，也不能由工业背景补实际操作或工艺。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          62
+        ],
+        "printed_pages": [
+          58
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-074",
+      "lecture_block_indices": [
+        68,
+        69,
+        131,
+        132,
+        139,
+        141
+      ],
+      "source_sha256": "ce42a35186fe08e9440f27900207a7e7e7639770d6c4b12dac50907a2eb35e31",
+      "source_preview_revision": "a38ab1bc91e85d9e2d00c0998c99eb9abaedb8af46cdb67236ded2119b243289",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-COORDINATION-05",
+      "title": "生命与药物背景的结构素材",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.3",
+      "pdf_pages": [
+        63,
+        64
+      ],
+      "printed_pages": [
+        59,
+        60
+      ],
+      "source_anchors": [
+        "生命与药物背景的结构素材"
+      ],
+      "summary": "教材用含Mg、Fe、Co的生物相关结构及顺反铂配合物说明配位的应用。阅读只抽取可在图中定位的中心和配位连接，以及所给几何差别。",
+      "classroom_check": "选一幅原图指出中心及配位原子，另列哪些背景说法尚不能由图证明。",
+      "limitation": "未生成当前临床疗效、治疗选择或解毒建议；讲义“酶是含锌”及药物绝对表述另列待核。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          63,
+          64
+        ],
+        "printed_pages": [
+          59,
+          60
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-074",
+      "lecture_block_indices": [
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        68,
+        69,
+        70,
+        71
+      ],
+      "source_sha256": "ce42a35186fe08e9440f27900207a7e7e7639770d6c4b12dac50907a2eb35e31",
+      "source_preview_revision": "a38ab1bc91e85d9e2d00c0998c99eb9abaedb8af46cdb67236ded2119b243289",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-COORDINATION-06",
+      "title": "超分子单元内外的作用分开",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.3",
+      "pdf_pages": [
+        64
+      ],
+      "printed_pages": [
+        60
+      ],
+      "source_anchors": [
+        "超分子单元内外的作用分开"
+      ],
+      "summary": "教材引入分子或离子构成的聚集体及非共价相互作用。先辨单元自己的共价骨架，再标单元之间的作用；DNA示意中碱基间氢键不能代替完整稳定性解释。",
+      "classroom_check": "用两种线型标单元内连接与单元之间作用，并说明示意图的解释边界。",
+      "limitation": "不把“由分子组成”限制为只含中性分子，也不将DNA的作用简化为唯一氢键机制。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          64
+        ],
+        "printed_pages": [
+          60
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-074",
+      "lecture_block_indices": [
+        145,
+        146,
+        147,
+        148,
+        149,
+        157
+      ],
+      "source_sha256": "ce42a35186fe08e9440f27900207a7e7e7639770d6c4b12dac50907a2eb35e31",
+      "source_preview_revision": "a38ab1bc91e85d9e2d00c0998c99eb9abaedb8af46cdb67236ded2119b243289",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-COORDINATION-07",
+      "title": "分子识别与自组装的证据",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.3",
+      "pdf_pages": [
+        65
+      ],
+      "printed_pages": [
+        61
+      ],
+      "source_anchors": [
+        "分子识别与自组装的证据"
+      ],
+      "summary": "教材通过冠醚空腔及构成单元排列讨论分子识别、自组装。尺寸适配是图给证据，须与电荷和作用位点一起解释；有序组装与选择性识别分别对应具体观察。",
+      "classroom_check": "各选一幅教材图说明支持识别还是组装，并列仍需保留的条件。",
+      "limitation": "不将某冠醚例子的偏好改写成对其他离子绝不结合的通用规则，实际选择性和环境另核。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          65
+        ],
+        "printed_pages": [
+          61
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-074",
+      "lecture_block_indices": [
+        151,
+        152,
+        154,
+        155,
+        156,
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        172
+      ],
+      "source_sha256": "ce42a35186fe08e9440f27900207a7e7e7639770d6c4b12dac50907a2eb35e31",
+      "source_preview_revision": "a38ab1bc91e85d9e2d00c0998c99eb9abaedb8af46cdb67236ded2119b243289",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-COORDINATION-08",
+      "title": "分子器件和主客体路线读图",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.3",
+      "pdf_pages": [
+        66
+      ],
+      "printed_pages": [
+        62
+      ],
+      "source_anchors": [
+        "分子器件和主客体路线读图"
+      ],
+      "summary": "教材用环与链的组合说明分子器件，结合讲义分子梭原图可追踪识别位点、质子化和环的位置。杯酚分离图另按溶剂、固相、滤液及客体去向逐步读。",
+      "classroom_check": "标主体、客体与位点，沿每个箭头说明改变的条件和位置或物相。",
+      "limitation": "讲义A/B名称误写待核；示意路线未认证真实分子机器效率、分离收率或循环耐久性。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          66
+        ],
+        "printed_pages": [
+          62
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-074",
+      "lecture_block_indices": [
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        181,
+        190,
+        191,
+        192,
+        193,
+        194
+      ],
+      "source_sha256": "ce42a35186fe08e9440f27900207a7e7e7639770d6c4b12dac50907a2eb35e31",
+      "source_preview_revision": "a38ab1bc91e85d9e2d00c0998c99eb9abaedb8af46cdb67236ded2119b243289",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-COORDINATION-09",
+      "title": "UV-可见与红外先读谱图量",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.3",
+      "pdf_pages": [
+        67
+      ],
+      "printed_pages": [
+        63
+      ],
+      "source_anchors": [
+        "UV-可见与红外先读谱图量"
+      ],
+      "summary": "教材分别展示UV-可见电子跃迁与红外振动吸收的基本联系。读谱先辨横轴量、单位和纵轴含义，再说明所给信息支持的结构判断，仪器选择从问题所需量出发。",
+      "classroom_check": "在两种教材谱图标轴和单位，比较各能提供哪类信息。",
+      "limitation": "示意谱图没有样品校准或原始测量链，不生成定量浓度、峰值精度或唯一结构认证。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          67
+        ],
+        "printed_pages": [
+          63
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-074",
+      "lecture_block_indices": [
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        195,
+        196,
+        197,
+        198,
+        199,
+        201,
+        202,
+        203,
+        204
+      ],
+      "source_sha256": "ce42a35186fe08e9440f27900207a7e7e7639770d6c4b12dac50907a2eb35e31",
+      "source_preview_revision": "a38ab1bc91e85d9e2d00c0998c99eb9abaedb8af46cdb67236ded2119b243289",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-COORDINATION-10",
+      "title": "组成、外界沉淀和模型约束",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.3",
+      "pdf_pages": [
+        68
+      ],
+      "printed_pages": [
+        64
+      ],
+      "source_anchors": [
+        "组成、外界沉淀和模型约束"
+      ],
+      "summary": "教材练习把Pt氯配合物组成、氨配体和外界氯相关信息用于结构推断。电荷、总组成、配位数及题给沉淀条件同时核算，配位水与结晶水也须分开。",
+      "classroom_check": "用一个教材题设列电荷、氯和配位数约束，说明沉淀量推外界数的前提。",
+      "limitation": "只按题给条件讨论；未把所有氯都认为立刻可沉淀，正式section_id和unit_id保持unknown。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          68
+        ],
+        "printed_pages": [
+          64
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-074",
+      "lecture_block_indices": [
+        43,
+        44,
+        50,
+        52,
+        130,
+        138,
+        141
+      ],
+      "source_sha256": "ce42a35186fe08e9440f27900207a7e7e7639770d6c4b12dac50907a2eb35e31",
+      "source_preview_revision": "a38ab1bc91e85d9e2d00c0998c99eb9abaedb8af46cdb67236ded2119b243289",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ]
+}

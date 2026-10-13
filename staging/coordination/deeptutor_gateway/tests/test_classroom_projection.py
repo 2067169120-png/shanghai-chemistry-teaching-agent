@@ -37,7 +37,10 @@ def test_classroom_reflows_without_changing_source_or_auto_numbering():
         assert refs_before == refs_after
         assert not any(e.overflow for e in after.elements)
     title = next(e for e in new[1].elements if "/slides/1/title" in e.source_paths)
-    assert title.align == "center" and title.font_px >= 54
+    assert title.align == "left" and title.font_px >= 54
+    assert title.x == 70 and title.y == 34
+    cover = next(e for e in new[0].elements if e.element_type == "text" and e.source_paths)
+    assert cover.align == "center"
     body = next(e for e in new[1].elements if "/slides/1/content/0" in e.source_paths)
     assert body.font_px >= 40 and "1. 选择" not in body.text and "2. A" not in body.text
     assert not any(
@@ -53,6 +56,9 @@ def test_classroom_guidance_reaches_prompt_and_editable_starter():
     assert "同一页只保留一套必要编号" in text
     assert "不是国家平台规定" in text
     assert "静态导出采用题目页与解答页分开" in text
+    assert "后续课堂页左上角优先用具体引导问题作标题" in text
+    assert "后续知识讲解页优先以知识点名称作标题" not in text
+    assert "知识笔记正文保留稳定的小节名、完整定义和适用条件" in text
 
 
 def test_seven_short_exercise_rows_fit_without_small_type_or_lost_text():

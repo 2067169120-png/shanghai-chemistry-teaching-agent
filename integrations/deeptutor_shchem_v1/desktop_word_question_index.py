@@ -20,7 +20,7 @@ from typing import Any
 QUESTION_INDEX_REVISION = "20260910-word-answer-boundary-index-v4"
 BOUNDARY_REVIEW_REVISION = "20260912-explicit-source-boundary-review-v1"
 _REVIEWABLE_ISSUES = frozenset(
-    {"unmarked_answer", "nonstandard_label", "self_contained_reference"}
+    {"unmarked_answer", "nonstandard_label", "self_contained_reference", "missing_number_delimiter"}
 )
 _GAP = re.compile(r"【(?:待查看原文：[\s\S]*?|未提取到文字)】")
 _NUMBER = r"[0-9０-９一二三四五六七八九十百]+(?:[-－—][0-9０-９]+)?"
@@ -42,6 +42,9 @@ _LEADING_TAG = re.compile(
 # A full-width/list delimiter may be followed by a numerical condition (e.g.
 # "24．25 ℃时"). Only an adjacent ASCII dot+digit denotes a decimal value.
 _GENERIC = re.compile(r"^(\d{1,3})(?:\s*[．、]\s*|\s*\.(?!\d)\s*)(.*)$", re.DOTALL)
+# A damaged printed label ("13下列…") still needs nearby options and an
+# explicit key. Never interpret a measurement or a bare numbered note as one.
+_UNDELIMITED_NUMBER = re.compile(r"^([1-9]\d{0,2})\s*(下列[^\n]*)$", re.DOTALL)
 _QUESTION = re.compile(
     r"[?？]|_{2,}|下列.{0,80}(?:正确|错误|不正确|不合理|属于|的是|有)|"
     r"(?:^|请|试)(?:写出|回答|解答|判断|填空|填入|填写|选择|求出|计算出|计算下列|按要求)|"
@@ -84,6 +87,12 @@ _BACK_REFERENCE = re.compile(
 )
 _SCORED_THEME = re.compile(r"^[一二三四五六七八九十]+[、．.]\s*\S.{0,100}[（(]\s*\d+(?:\.\d+)?\s*分\s*[）)]\s*$")
 _PARENTHESIZED_PART = re.compile(r"^[（(]\s*\d{1,2}\s*[）)]")
+_KNOWLEDGE_SECTION = re.compile(
+    r"^(?:知识点|考点|知识精讲|知识导学|必杀技|温馨提示|方法总结|规律总结|得分速记|思维建模)"
+)
+_KNOWLEDGE_SUBHEADING = re.compile(
+    r"^[^？?。\n]{1,72}(?:分类|结构|性质|性能|应用|组成|功能|特点|原理|制备反应|比较)$"
+)
 
 
 def _digest(value: Any) -> str:
@@ -202,8 +211,27 @@ def _question_cue(text: str) -> bool:
     return bool(_QUESTION.search(clean))
 
 
+def _undelimited_label(blocks: list[dict[str, Any]], position: int) -> str | None:
+    text = _GAP.sub("", blocks[position].get("text", "")).strip()
+    match = _UNDELIMITED_NUMBER.fullmatch(text)
+    if match is None or not _question_cue(match.group(2)):
+        return None
+    options = bool(_OPTION.search(match.group(2)))
+    for block in blocks[position + 1:position + 65]:
+        following = _GAP.sub("", block.get("text", "")).strip()
+        if _EXPLICIT_KEY_START.match(following):
+            return match.group(1) if options else None
+        if (_ANSWER.search(following) or _marker(following) or
+                _GENERIC.match(following) or _UNDELIMITED_NUMBER.fullmatch(following) or
+                _heading(following)):
+            break
+        options = options or bool(_OPTION.search(following))
+    return None
+
+
 def _question_label(
-    blocks: list[dict[str, Any]], position: int, practice: bool
+    blocks: list[dict[str, Any]], position: int, practice: bool,
+    *, knowledge_context: bool = False,
 ) -> str | None:
     text = blocks[position].get("text", "")
     explicit = _marker(text)
@@ -215,6 +243,9 @@ def _question_label(
             if _marker(following):
                 return None
         return explicit
+    undelimited = _undelimited_label(blocks, position)
+    if undelimited:
+        return undelimited
     match = _GENERIC.match(_GAP.sub("", text).strip())
     if match is None or _heading(text):
         return None
@@ -229,17 +260,40 @@ def _question_label(
             return match.group(1)
     # An introductory stem can continue in the following blocks. Do not let
     # the evidence of the next numbered question turn a knowledge list into one.
-    for block in blocks[position + 1 : position + 65]:
+    instructional_parts = False
+    memory_blank = False
+    for offset, block in enumerate(blocks[position + 1 : position + 65], position + 1):
         following = _GAP.sub("", block.get("text", "")).strip()
         if (
             _marker(following)
             or _GENERIC.match(following)
+            or _UNDELIMITED_NUMBER.fullmatch(following)
             or _heading(following)
             or _ANSWER.search(following)
         ):
+            # Multiple original fill-in parts can share one key at their end.
+            # Only that explicit key inside this bounded unit supplies task
+            # evidence; a later question/heading never supplies its answer.
+            if memory_blank and _EXPLICIT_KEY_START.match(following):
+                return match.group(1)
             break
-        if _OPTION.search(following) or _question_cue(following):
+        part = _PARENTHESIZED_PART.match(following)
+        if (knowledge_context and part and not _question_cue(following)
+                and _KNOWLEDGE_SUBHEADING.fullmatch(following[part.end():].strip())):
+            instructional_parts = True
+        if _OPTION.search(following):
             return match.group(1)
+        if _question_cue(following):
+            # A numbered knowledge title can lead classification, properties,
+            # pictures and a later memory blank. That blank does not turn the
+            # whole teaching unit into a question. Actual prompts/options and
+            # a blank with its adjacent explicit key retain their old path.
+            task_text = re.sub(r"[ \t\u3000]{3,}", " ", following)
+            adjacent_key = (offset + 1 < len(blocks)
+                and _EXPLICIT_KEY_START.match(blocks[offset + 1].get("text", "").strip()))
+            if not instructional_parts or _question_cue(task_text) or adjacent_key:
+                return match.group(1)
+            memory_blank = True
     return match.group(1) if practice else None
 
 
@@ -286,7 +340,7 @@ def _nested_numbered_parent(
     for offset in range(answer_at + 1, len(blocks)):
         text = _GAP.sub("", blocks[offset].get("text", "")).strip()
         number = _GENERIC.match(text)
-        if (_marker(text) or _HEADING.match(_clean(text)) or
+        if (_marker(text) or _HEADING.match(_clean(text)) or _undelimited_label(blocks, offset) or
                 (number and int(number.group(1)) not in child_numbers)):
             end = offset
             break
@@ -379,6 +433,13 @@ def _build(
     full_text = "\n".join(block.get("text", "") for block in copied)
     needs_review = split
     applicable_reviews = set()
+    if _UNDELIMITED_NUMBER.fullmatch(_GAP.sub("", question_blocks[0].get("text", "")).strip()):
+        applicable_reviews.add("missing_number_delimiter")
+        if manual and "missing_number_delimiter" in reviewed_issues:
+            warnings.add("原文题号后缺少分隔符；已明确核对独立题面与答案边界，原文标记和来源文件保持不变。")
+        else:
+            warnings.add("原文题号后缺少分隔符；已按题干、邻接选项和答案标记列出独立候选，请预览并核对题目边界。")
+            needs_review = True
     if inferred_answer_at is not None:
         applicable_reviews.add("unmarked_answer")
         if (
@@ -435,7 +496,8 @@ def _build(
     if reviewed_issues - applicable_reviews:
         raise ValueError("范围确认项与当前所选原文不一致，请重新预览后核对。")
     label = _marker(question_blocks[0].get("text", ""))
-    generic = _GENERIC.match(_GAP.sub("", question_blocks[0].get("text", "")).strip())
+    first_text = _GAP.sub("", question_blocks[0].get("text", "")).strip()
+    generic = _GENERIC.match(first_text) or _UNDELIMITED_NUMBER.fullmatch(first_text)
     label = label or (generic.group(1) if generic else "题目")
     title = re.sub(r"\s+", " ", question_blocks[0].get("text", "")).strip()
     if not _clean(title):
@@ -508,6 +570,7 @@ def index_word_questions(preview: dict[str, Any]) -> list[dict[str, Any]]:
     active = None
     chapter = ""
     practice = False
+    knowledge_context = False
     material_start = None
     shared_material = False
     context = []
@@ -568,13 +631,15 @@ def index_word_questions(preview: dict[str, Any]) -> list[dict[str, Any]]:
         if _heading(text):
             finish(position - 1)
             practice = bool(_PRACTICE.match(clean))
+            knowledge_context = (bool(_KNOWLEDGE_SECTION.match(clean))
+                or (knowledge_context and bool(_GENERIC.match(clean)))) and not practice
             if (
                 _HEADING.match(clean) or _PRACTICE.match(clean)
             ) and not clean.startswith(("必杀技", "温馨提示", "方法总结", "规律总结")):
                 chapter = clean
             material_start, context = None, []
             continue
-        label = _question_label(blocks, position, practice)
+        label = _question_label(blocks, position, practice, knowledge_context=knowledge_context)
         if label is None:
             continue
         finish(position - 1)

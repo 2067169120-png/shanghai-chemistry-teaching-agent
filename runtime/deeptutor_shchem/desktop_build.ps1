@@ -2,19 +2,30 @@
     [string]$Python = "python",
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')]
     [string]$BuildTag,
-    [switch]$OneFile
+    [switch]$OneFile,
+    [string]$OutputRoot
 )
 $ErrorActionPreference = "Stop"
 $RuntimeRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $WorkspaceRoot = (Resolve-Path (Join-Path $RuntimeRoot "..\..")).Path
 $EntryPoint = Join-Path $RuntimeRoot "desktop_teacher_workbench.pyw"
-$DistRoot = Join-Path $RuntimeRoot "desktop_dist"
-$WorkRoot = Join-Path $RuntimeRoot "desktop_build"
-$SpecRoot = Join-Path $RuntimeRoot "desktop_spec"
+$BuildRoot = $RuntimeRoot
+if ($OutputRoot) {
+    if (-not ($OutputRoot -match '^[A-Za-z]:[\\/]' -or $OutputRoot -match '^[\\/]{2}[^\\/]+[\\/][^\\/]+')) {
+        throw "OutputRoot must be an absolute directory path."
+    }
+    $BuildRoot = [IO.Path]::GetFullPath($OutputRoot)
+    if (Test-Path -LiteralPath $BuildRoot -PathType Leaf) {
+        throw "OutputRoot must be a directory, not an existing file."
+    }
+}
+$DistRoot = Join-Path $BuildRoot "desktop_dist"
+$WorkRoot = Join-Path $BuildRoot "desktop_build"
+$SpecRoot = Join-Path $BuildRoot "desktop_spec"
 if ($BuildTag) {
-    $DistRoot = Join-Path $RuntimeRoot "desktop_dist_$BuildTag"
-    $WorkRoot = Join-Path $RuntimeRoot "desktop_build_$BuildTag"
-    $SpecRoot = Join-Path $RuntimeRoot "desktop_spec_$BuildTag"
+    $DistRoot = Join-Path $BuildRoot "desktop_dist_$BuildTag"
+    $WorkRoot = Join-Path $BuildRoot "desktop_build_$BuildTag"
+    $SpecRoot = Join-Path $BuildRoot "desktop_spec_$BuildTag"
 }
 foreach ($BuildOutputPath in @($DistRoot, $WorkRoot, $SpecRoot)) {
     if (Test-Path -LiteralPath $BuildOutputPath) {

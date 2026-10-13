@@ -12,22 +12,29 @@ from types import SimpleNamespace
 
 import pytest
 from docx import Document
-from docx.oxml import parse_xml
 from docx.opc.constants import RELATIONSHIP_TYPE as RT
 from docx.opc.packuri import PackURI
 from docx.opc.part import Part
+from docx.oxml import parse_xml
 from PIL import Image, ImageDraw
 
-from integrations.deeptutor_shchem_v1.desktop_word_question_attributes import _seal, suggest_attributes
-from integrations.deeptutor_shchem_v1.offline_word_label_review import (
-    OfflineWordLabelReviewError, OfflineWordLabelReviewService, _digest,
+from integrations.deeptutor_shchem_v1.desktop_word_question_attributes import (
+    _seal,
+    suggest_attributes,
 )
 from integrations.deeptutor_shchem_v1.offline_word_image_label_review import (
-    CANDIDATE_SCHEMA_VERSION, ROOT_REVIEW_SCHEMA_VERSION, RULE_REVISION,
+    CANDIDATE_SCHEMA_VERSION,
+    ROOT_REVIEW_SCHEMA_VERSION,
     OfflineWordImageLabelReviewService,
 )
+from integrations.deeptutor_shchem_v1.offline_word_label_review import (
+    OfflineWordLabelReviewError,
+    OfflineWordLabelReviewService,
+)
 from runtime.deeptutor_shchem import apply_offline_word_image_labels as cli
-from staging.coordination.deeptutor_gateway.tests.test_desktop_word_auto_attributes import setup as setup
+from staging.coordination.deeptutor_gateway.tests.test_desktop_word_auto_attributes import (
+    setup as setup,  # noqa: PLC0414 -- pytest fixture re-export
+)
 from staging.coordination.deeptutor_gateway.tests.test_word_metafile_preview import _wmf
 
 
@@ -45,22 +52,31 @@ def _json(path, value):
     return _ref(path)
 
 
-def _image(*, color="black"):
+def _image(*, color="black", jpeg=False, orientation=None):
     image = Image.new("RGBA", (90, 45), (255, 255, 255, 0))
     ImageDraw.Draw(image).line((10, 10, 70, 35), fill=color, width=2)
     output = io.BytesIO()
-    image.save(output, format="PNG")
+    if jpeg:
+        exif = Image.Exif()
+        if orientation is not None:
+            exif[274] = orientation
+        image.convert("RGB").save(output, format="JPEG", exif=exif)
+    else:
+        image.save(output, format="PNG")
     return output.getvalue()
 
 
 def _document(*, wmf=False, wrong_shape=False, extra_field=False, answer_image=False,
-              invisible_outline=False, visible_vml_stroke=False, repeated_image=False, crop=False):
+              invisible_outline=False, visible_vml_stroke=False, repeated_image=False, crop=False,
+              jpeg=False, orientation=None, wrong_raster_mime=False, line_xml=None, vml_picture=False,
+              bad_vml_lock=False):
     document = Document()
     document.add_heading("合成课堂图像练习", 1)
     document.add_paragraph("【即学即练1】解释氧化还原反应及图中现象。")
-    if wmf:
+    if wmf or vml_picture:
         package = document.part.package
-        image_part = Part(PackURI("/word/media/fixture.wmf"), "image/x-wmf", _wmf(), package)
+        image_part = Part(PackURI("/word/media/fixture.wmf" if wmf else "/word/media/fixture.png"),
+                          "image/x-wmf" if wmf else "image/png", _wmf() if wmf else _image(), package)
         image_id = document.part.relate_to(image_part, RT.IMAGE)
         # The route verifies the OOXML preview relation, never binary content.
         ole_part = Part(PackURI("/word/embeddings/fixture.bin"),
@@ -69,20 +85,28 @@ def _document(*, wmf=False, wrong_shape=False, extra_field=False, answer_image=F
         ole_id = document.part.relate_to(ole_part, RT.OLE_OBJECT)
         shape = "different" if wrong_shape else "_x0000_i1001"
         invisible_vml = ('<v:stroke joinstyle="miter"/>' if invisible_outline or visible_vml_stroke else '')
-        invisible_vml += ('<o:lock v:ext="edit" aspectratio="t"/><w10:anchorlock/>' if invisible_outline else '')
+        ratio = 'f' if bad_vml_lock else 't'
+        invisible_vml += (f'<o:lock v:ext="edit" aspectratio="{ratio}"/><w10:anchorlock/>' if invisible_outline else '')
         stroked = 't' if visible_vml_stroke else 'f'
-        xml = f'''<w:object xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+        container = 'object' if wmf else 'pict'
+        ole_xml = (f'<o:OLEObject Type="Embed" ProgID="Equation.DSMT4" ShapeID="{shape}" '
+                   f'DrawAspect="Content" r:id="{ole_id}"/>' if wmf else '')
+        xml = f'''<w:{container} xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
           xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"
           xmlns:w10="urn:schemas-microsoft-com:office:word"
           xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
           <v:shape id="_x0000_i1001" type="#_x0000_t75" style="width:40pt;height:20pt" stroked="{stroked}">
             <v:imagedata r:id="{image_id}"/>{invisible_vml}</v:shape>
-          <o:OLEObject Type="Embed" ProgID="Equation.DSMT4" ShapeID="{shape}"
-            DrawAspect="Content" r:id="{ole_id}"/></w:object>'''
+          {ole_xml}</w:{container}>'''
         document.add_paragraph().add_run()._r.append(parse_xml(xml))
     else:
-        document.add_picture(io.BytesIO(_image()))
+        document.add_picture(io.BytesIO(_image(jpeg=jpeg, orientation=orientation)))
         paragraph = document.paragraphs[-1]
+        if wrong_raster_mime:
+            rid = paragraph._p.xpath('.//a:blip')[0].get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed')
+            document.part.rels[rid].target_part._content_type = 'image/png' if jpeg else 'image/jpeg'
+        if line_xml is not None:
+            paragraph._p.xpath('.//pic:spPr')[0].append(parse_xml(line_xml))
         if invisible_outline:
             sppr = paragraph._p.xpath('.//pic:spPr')[0]
             sppr.append(parse_xml('<a:noFill xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/>'))
@@ -241,12 +265,13 @@ def test_white_png_composition_is_reproduced(setup, tmp_path):
 
 @pytest.mark.skipif(os.name != "nt", reason="The real WMF renderer requires Windows GDI+")
 def test_real_wmf_same_object_preview_without_interpreting_ole(setup, tmp_path):
+    from integrations.deeptutor_shchem_v1.desktop_word_metafile_preview import RENDERER_REVISION
     c = _review(_corpus(setup, tmp_path, wmf=True, invisible_outline=True))
     preview = c.service.preview(c.batch)
     scope = c.batch["entries"][0]["reading_scope"]
     assert scope["objects"][0]["ole"]["binary_interpreted"] is False
     assert scope["images"][0]["display"]["derived_preview"] is True
-    assert "wmf-font-preflight" in scope["images"][0]["display"]["renderer_revision"]
+    assert scope["images"][0]["display"]["renderer_revision"] == RENDERER_REVISION
     assert preview["entries"][0]["uninterpreted_ole_with_same_object_preview_count"] == 1
     c.service.apply(c.batch, expected_plan_sha256=preview["plan_sha256"])
 
@@ -277,6 +302,78 @@ def test_explicit_no_fill_and_repeated_same_image_keep_every_native_occurrence(s
     with pytest.raises(OfflineWordLabelReviewError) as error:
         c.service.preview(c.batch)
     assert error.value.code == "reviewed_object_inventory_changed"
+
+
+def test_original_jpeg_bytes_mime_and_root_reading_are_bound(setup, tmp_path):
+    c = _review(_corpus(setup, tmp_path, jpeg=True))
+    scope = c.batch["entries"][0]["reading_scope"]
+    image = scope["images"][0]
+    assert image["mime_type"] == image["display"]["mime_type"] == "image/jpeg"
+    assert image["sha256"] == image["display"]["sha256"]
+    assert image["display"]["derived_preview"] is False
+    assert image["display"]["renderer_revision"] == "original-jpeg-v1"
+    plan = c.service.preview(c.batch)
+    assert not plan["entries"][0]["white_display_bindings"]
+    assert c.service.apply(c.batch, expected_plan_sha256=plan["plan_sha256"])["readback_verified"] is True
+
+
+@pytest.mark.parametrize("options,code", [
+    ({"jpeg": True, "orientation": 6}, "transformed_image_not_supported"),
+    ({"jpeg": True, "wrong_raster_mime": True}, "invalid_readable_image"),
+    ({"wrong_raster_mime": True}, "invalid_readable_image"),
+])
+def test_jpeg_orientation_and_wrong_mime_fail_without_write(setup, tmp_path, options, code):
+    c = _corpus(setup, tmp_path, **options)
+    before = c.words.attribute_store.history(c.row["key"])
+    with pytest.raises(OfflineWordLabelReviewError) as error:
+        c.service.describe_entry(c.identity)
+    assert error.value.code == code
+    assert c.words.attribute_store.history(c.row["key"]) == before
+
+
+_LINE_NS = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+
+
+def test_explicit_no_fill_width_miter_and_empty_endpoints_are_invisible(setup, tmp_path):
+    line = f'<a:ln {_LINE_NS} w="9525"><a:noFill/><a:miter lim="800000"/><a:headEnd/><a:tailEnd/></a:ln>'
+    c = _review(_corpus(setup, tmp_path, line_xml=line))
+    assert c.service.preview(c.batch)["changed_question_count"] == 1
+
+
+@pytest.mark.parametrize("body,attrs", [
+    ('<a:solidFill><a:srgbClr val="000000"/></a:solidFill>', 'w="9525"'),
+    ('<a:noFill/><a:headEnd type="triangle"/>', 'w="9525"'),
+    ('<a:noFill/><a:noFill/>', ''),
+    ('<a:noFill/><a:miter lim="bad"/>', ''),
+    ('<a:noFill/>', 'w="-1"'),
+    ('<a:noFill/>', 'custom="1"'),
+    ('<a:noFill/><a:headEnd><a:noFill/></a:headEnd>', ''),
+])
+def test_visible_or_unproven_line_metadata_stays_rejected(setup, tmp_path, body, attrs):
+    c = _corpus(setup, tmp_path, line_xml=f'<a:ln {_LINE_NS} {attrs}>{body}</a:ln>')
+    with pytest.raises(OfflineWordLabelReviewError) as error:
+        c.service.describe_entry(c.identity)
+    assert error.value.code in {"transformed_image_not_supported", "drawing_layout_not_supported"}
+    assert c.words.attribute_store.get(c.row["key"]) == c.old
+
+
+def test_picture_only_vml_reuses_disabled_outline_and_lock_validation(setup, tmp_path):
+    c = _review(_corpus(setup, tmp_path, vml_picture=True, invisible_outline=True))
+    scope = c.batch["entries"][0]["reading_scope"]
+    assert scope["objects"][0]["feature"] == "vml_drawing_or_shape"
+    assert scope["objects"][0]["ole"] is None
+    assert c.service.preview(c.batch)["changed_question_count"] == 1
+
+
+@pytest.mark.parametrize("options,code", [
+    ({"visible_vml_stroke": True}, "transformed_image_not_supported"),
+    ({"invisible_outline": True, "bad_vml_lock": True}, "native_object_not_supported"),
+])
+def test_picture_only_vml_visible_stroke_and_unknown_lock_stay_rejected(setup, tmp_path, options, code):
+    c = _corpus(setup, tmp_path, vml_picture=True, **options)
+    with pytest.raises(OfflineWordLabelReviewError) as error:
+        c.service.describe_entry(c.identity)
+    assert error.value.code == code
 
 
 def test_unread_field_cannot_be_covered_by_a_picture(setup, tmp_path):

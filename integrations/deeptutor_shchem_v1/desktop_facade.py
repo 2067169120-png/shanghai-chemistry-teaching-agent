@@ -31,7 +31,7 @@ from .desktop_library import (
 )
 from .desktop_library_session import snapshot_reader_graph
 from .desktop_import_identity import serialized_import
-from .desktop_paths import DesktopPaths
+from .desktop_paths import DesktopPathError, DesktopPaths
 from .desktop_preparation import DesktopPreparationError, DesktopPreparationManager
 from .desktop_preparation_provider import StructuredPreparationProvider
 from .desktop_provider_probe import (
@@ -365,7 +365,6 @@ _VISUAL_FAILURE_GUIDANCE = {
         "保留原文件，检查模型设置和网络后再手动重试；不要连续重复发送。",
     ),
 }
-_STUDENT_VISUAL_ROOT_NAME = "student-visual-v1"
 _STUDENT_SOURCE_MIME = {
     ".png": "image/png",
     ".jpg": "image/jpeg",
@@ -3116,6 +3115,11 @@ class DesktopWorkbenchFacade:
     def word_question_catalog(self):
         return self._word_questions().catalog()
 
+    def word_question_catalog_progress(self, progress, cancelled):
+        """Read the complete source-bound catalogue with cooperative progress."""
+        with read_cancel_scope(cancelled):
+            return self._word_questions().catalog(progress=progress)
+
     def _word_semantic_tags(self):
         from .desktop_word_semantic_tags import WordSemanticTagService
         if not hasattr(self, "_word_semantic_tag_service"):
@@ -3147,6 +3151,10 @@ class DesktopWorkbenchFacade:
     def word_question_source(self, key, revision):
         return self._word_questions().source(key, revision)
 
+    def word_question_reading_layout(self, key, revision, *, scope="question"):
+        from .desktop_word_question_reading import question_reading_layout
+        return question_reading_layout(self._word_questions(), key, revision, scope=scope)
+
     def word_question_source_locations(self, key, revision, *, scope="question"):
         return self._word_questions().source_locations(key, revision, scope=scope)
 
@@ -3165,6 +3173,14 @@ class DesktopWorkbenchFacade:
 
     def word_question_attribute_options(self, key, revision):
         return self._word_questions().attribute_options(key, revision)
+
+    def word_question_preview_automatic_scope_labels(self, key, revision):
+        return self._word_questions().preview_automatic_scope_labels(key, revision)
+
+    def word_question_save_automatic_scope_labels(self, key, revision, *, expected_plan_sha256):
+        return self._word_questions().save_automatic_scope_labels(
+            key, revision, expected_plan_sha256=expected_plan_sha256,
+        )
 
     def word_question_save_attributes(
         self, key, revision, updates, *, expected_attribute_revision,
@@ -3620,7 +3636,7 @@ class DesktopWorkbenchFacade:
                     # writes then fail closed instead of inventing a mapping.
                     curriculum = None
                 self._student_analysis_manager = StudentVisualAnalysisManager(
-                    self.paths.state_root / _STUDENT_VISUAL_ROOT_NAME,
+                    self.paths.student_visual_root,
                     project_root=self.paths.workspace_root,
                     provider_store=self._providers,
                     renderer=self._student_analysis_renderer,
@@ -3629,6 +3645,10 @@ class DesktopWorkbenchFacade:
                     require_project_external=True,
                 )
                 return self._student_analysis_manager
+            except DesktopPathError as exc:
+                raise DesktopFacadeError(
+                    "student_data_root_not_private_external", str(exc)
+                ) from exc
             except (StudentVisualAnalysisError, OSError) as exc:
                 raise self._as_student_error(
                     exc,
@@ -6497,6 +6517,122 @@ class DesktopWorkbenchFacade:
             concept_id, revision
         )
 
+    def textbook_bookshelf(self) -> dict[str, Any]:
+        from .desktop_textbook_bookshelf import TextbookBookshelfError, TextbookBookshelfService
+        from .desktop_preparation_sources import PreparationSourceError
+
+        try:
+            snapshot = TextbookBookshelfService(self.paths.workspace_root).snapshot()
+        except TextbookBookshelfError as exc:
+            snapshot = {"volumes": [], "sections": [], "concepts": [], "assets": [],
+                        "unmapped_concept_count": 0, "notices": [exc.message_zh]}
+        try:
+            snapshot["local_books"] = self.personal_textbook_study().books() if getattr(self, '_state', None) is not None else []
+        except PreparationSourceError as exc:
+            snapshot["local_books"] = []
+            snapshot["notices"].append(exc.message_zh)
+        return snapshot
+
+    def textbook_workspace(self):
+        from .desktop_textbook_workspace import TextbookWorkspaceService
+        return TextbookWorkspaceService(self.paths, self._state)
+
+    def textbook_reading_positions(self):
+        from .desktop_textbook_reading_positions import TextbookReadingPositions
+        state = getattr(self, '_state', None)
+        return TextbookReadingPositions(state) if state is not None else None
+
+    def personal_textbook_study(self):
+        from .desktop_textbook_personal_study import PersonalTextbookStudyService
+        return PersonalTextbookStudyService(self.textbook_workspace())
+
+    def personal_textbook_source(self, selection, *, section_id=None, study_revision=None):
+        return self.personal_textbook_study().read(
+            selection, section_id=section_id, study_revision=study_revision)
+
+    def personal_textbook_search(self, selection, query, **options):
+        from .desktop_personal_textbook_search import PersonalTextbookSearchService
+        return PersonalTextbookSearchService(self).search(selection, query, **options)
+
+    def textbook_question_context(self, request):
+        from .desktop_textbook_question_context import TextbookQuestionContextService
+        personal = self.personal_textbook_study() if isinstance(request, dict) and request.get('mode') == 'personal' else None
+        return TextbookQuestionContextService(self.paths.workspace_root, personal).resolve(request)
+
+    def validate_textbook_question_context(self, context):
+        from .desktop_textbook_question_context import TextbookQuestionContextService
+        personal = self.personal_textbook_study() if isinstance(context, dict) and context.get('entry_origin') == 'personal_textbook' else None
+        return TextbookQuestionContextService(self.paths.workspace_root, personal).validate(context)
+
+    def personal_textbook_reference(self, selection, study_revision, notes):
+        return self.personal_textbook_study().reference(selection, study_revision, notes)
+
+    def personal_textbook_knowledge(self):
+        from .desktop_personal_textbook_knowledge import PersonalTextbookKnowledgeService
+        return PersonalTextbookKnowledgeService(self.textbook_workspace())
+
+    def personal_textbook_knowledge_generate(self, selection, study_revision, section_id,
+            pdf_start, pdf_end, *, profile_id, profile_revision, send_confirmed=False):
+        from .desktop_textbook_knowledge_provider import generate_knowledge
+        from .desktop_preparation_sources import PreparationSourceError
+        if send_confirmed is not True:
+            raise PreparationSourceError('请先确认将所选教材原页发送给指定模型。')
+        profile = self._preparation_profile(profile_id, profile_revision)
+        metadata = next((row for row in self._providers.list_metadata() if row.get('profile_id') == profile_id), None)
+        if metadata is None:
+            raise PreparationSourceError('模型配置已变化，请重新选择并确认。')
+        if ('vision' not in profile.capabilities
+                or 'source_page_image' not in metadata.get('allowed_data_classes', [])):
+            raise PreparationSourceError('该模型未启用视觉能力或未允许发送资料原页，请到模型设置核对。')
+        service = self.personal_textbook_knowledge()
+        prepared = service.prepare(selection, study_revision, section_id, pdf_start, pdf_end)
+        with self._providers.borrow_invocation_context(profile_id, expected_revision=profile_revision) as context:
+            decoded = generate_knowledge(context, prepared, transport=getattr(self, '_preparation_transport', None))
+        return service.create(prepared, decoded, 'model_visual')
+
+    def export_textbook_bundle(self, destination):
+        from .desktop_preparation_sources import PreparationSourceError
+        try:
+            return self.textbook_workspace().export_bundle(destination)
+        except FileExistsError as exc:
+            raise PreparationSourceError("目标文件已存在，请选择新文件名；未覆盖旧备份。") from exc
+        except OSError as exc:
+            raise PreparationSourceError("个人教材备份无法保存，请检查所选位置；原件保留。") from exc
+
+    def textbook_bookshelf_section_source(
+        self, section_key: str, revision: str
+    ) -> dict[str, Any]:
+        from .desktop_textbook_bookshelf import TextbookBookshelfService
+
+        return TextbookBookshelfService(self.paths.workspace_root).section_source(
+            section_key, revision
+        )
+
+    def textbook_bookshelf_supplement_source(self, supplement_node_key: str, revision: str) -> dict[str, Any]:
+        from .desktop_textbook_bookshelf import TextbookBookshelfService
+
+        return TextbookBookshelfService(self.paths.workspace_root).supplement_source(supplement_node_key, revision)
+
+    def textbook_reading_reference(self, notes, *, concepts=None, textbook_excerpts=None):
+        from .desktop_textbook_bookshelf import TextbookBookshelfService
+
+        return TextbookBookshelfService(self.paths.workspace_root).reading_reference(
+            notes, concepts=concepts, textbook_excerpts=textbook_excerpts)
+
+    def preparation_textbook_asset_options(self, query: str = "") -> dict[str, Any]:
+        from .desktop_textbook_asset_catalog import TextbookAssetCatalogService
+
+        return TextbookAssetCatalogService(self.paths.workspace_root).options(query)
+
+    def preparation_textbook_asset_source(
+        self, visual_asset_id: str, revision: str
+    ) -> dict[str, Any]:
+        from .desktop_textbook_asset_catalog import TextbookAssetCatalogService
+
+        return TextbookAssetCatalogService(self.paths.workspace_root).source(
+            visual_asset_id, revision
+        )
+
     def preparation_source_reference(
         self,
         word_path: str | None,
@@ -6642,6 +6778,46 @@ class DesktopWorkbenchFacade:
             state="draft",
             message_zh="备课草稿已保存；PPT 与教案将共享同一 Lesson Blueprint 和 O/A/E 编号。",
         )
+
+    def _textbook_crop_call(self, method: str, *args, **kwargs):
+        from .desktop_textbook_preparation_crops import TextbookPreparationCropService
+        from .reader_cancellation import ReadCancelled
+        try:
+            selection = args[0] if args else kwargs.get('selection')
+            personal = (isinstance(selection, dict)
+                        and str(selection.get('visual_asset_id', '')).startswith('BOOKPAGE-'))
+            if isinstance(selection, list):
+                personal = any(isinstance(r, dict) and isinstance(r.get('selection'), dict)
+                    and str(r['selection'].get('visual_asset_id', '')).startswith('BOOKPAGE-') for r in selection)
+            service = TextbookPreparationCropService(self.paths.workspace_root, self.paths.task_root,
+                personal_books=self.textbook_workspace() if personal else None)
+            return getattr(service, method)(*args, **kwargs)
+        except ReadCancelled:
+            raise
+        except Exception as exc:
+            raise DesktopFacadeError("textbook_preparation_crop_invalid",
+                getattr(exc, "message_zh", "教材裁图无法读取或保存，请核对原页和本地状态后重试。")) from exc
+
+    def preparation_textbook_crop_page(self, selection):
+        return self._textbook_crop_call("page", selection)
+
+    def preparation_textbook_crop_original(self, item, image_assets, *, expected_binding=None):
+        """Read a composition crop's verified original PDF without saving state."""
+        from .desktop_textbook_crop_reading import textbook_crop_reader
+        return textbook_crop_reader(self, item, image_assets, expected_binding=expected_binding)
+
+    def preparation_textbook_crop_preview(self, selection, page_revision, bounds, caption, purpose):
+        return self._textbook_crop_call("preview", selection, page_revision, bounds, caption, purpose)
+
+    def import_textbook_preparation_crop(self, request):
+        fields = {"selection", "page_revision", "bounds", "caption", "purpose",
+                  "expected_preview_revision", "expected_image_sha256", "selection_confirmed"}
+        if not isinstance(request, dict) or set(request) != fields:
+            raise DesktopFacadeError("textbook_preparation_crop_invalid", "教材裁图确认内容不完整，请重新预览。")
+        return self._textbook_crop_call("confirm", **request)
+
+    def import_textbook_preparation_crops(self, requests, existing_assets=None):
+        return self._textbook_crop_call("confirm_batch", requests, existing_assets)
 
     def import_preparation_image(
         self, file_path: str, caption: str, source: str, purpose: str

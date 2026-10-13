@@ -1,0 +1,420 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-CARBONYL-01",
+      "title": "由球棍模型读醛与酮的连接方式",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.2",
+      "pdf_pages": [
+        59
+      ],
+      "printed_pages": [
+        55
+      ],
+      "source_anchors": [
+        "由球棍模型读醛与酮的连接方式"
+      ],
+      "summary": "图3.7并列甲醛、乙醛、丙醛、丙酮。醛的羰基碳连氢，酮的羰基碳两侧连烃基；甲醛H—C(=O)—H只有一个羰基，两个碳氢键不等于两个独立醛基。",
+      "classroom_check": "按模型写结构简式并标羰基碳所连原子，随后纠正讲义110的“两醛基”措辞。",
+      "limitation": "结构与官能团计数不由甲醛特殊银镜计量反推。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          59
+        ],
+        "printed_pages": [
+          55
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-036",
+      "lecture_block_indices": [
+        36,
+        38,
+        45,
+        108,
+        109,
+        110,
+        271,
+        283
+      ],
+      "source_sha256": "a9a174ce53a8d3ac7f6be1ee6b73b4e71c268d9a1d7d0ad42abc059635c3f00e",
+      "source_preview_revision": "b0d7730a70936172544a0d95af7febd0bc1077a3a832099074e0dd93fa8d877c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBONYL-02",
+      "title": "相同分子式仍要比较官能团",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.2",
+      "pdf_pages": [
+        59,
+        60
+      ],
+      "printed_pages": [
+        55,
+        56
+      ],
+      "source_anchors": [
+        "相同分子式仍要比较官能团"
+      ],
+      "summary": "教材用丙醛与丙酮比较同分异构体。无环饱和一元醛、酮可同为CₙH₂ₙO，但酮的羰基碳须连两个烃基，最简单的酮是丙酮，不能写碳数为1或2的饱和一元酮。",
+      "classroom_check": "分别写C₃H₆O的丙醛、丙酮，再说明甲醛与乙醛为何属于醛。",
+      "limitation": "通式限本节讨论的无环、饱和、一元对象，不据此鉴定未知全部含氧物。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          59,
+          60
+        ],
+        "printed_pages": [
+          55,
+          56
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-036",
+      "lecture_block_indices": [
+        45,
+        46,
+        271,
+        283
+      ],
+      "source_sha256": "a9a174ce53a8d3ac7f6be1ee6b73b4e71c268d9a1d7d0ad42abc059635c3f00e",
+      "source_preview_revision": "b0d7730a70936172544a0d95af7febd0bc1077a3a832099074e0dd93fa8d877c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBONYL-03",
+      "title": "物态和水溶性按具体样品记录",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.2",
+      "pdf_pages": [
+        59,
+        60
+      ],
+      "printed_pages": [
+        55,
+        56
+      ],
+      "source_anchors": [
+        "物态和水溶性按具体样品记录"
+      ],
+      "summary": "教材写室温甲醛为气体，其他常见低级醛、酮为液体，羰基氧能与水形成氢键；丙酮被用作溶剂。甲醛水溶液的用途与物质本身的物态应分开读取。",
+      "classroom_check": "将甲醛、乙醛、丙酮的结构、室温物态与水溶性分栏填写。",
+      "limitation": "只比较教材列举的低级醛、酮，不将本节水溶性推广到任意碳链长度；福尔马林浓度仅作原页信息。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          59,
+          60
+        ],
+        "printed_pages": [
+          55,
+          56
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-036",
+      "lecture_block_indices": [
+        40,
+        41,
+        42,
+        43,
+        48,
+        272
+      ],
+      "source_sha256": "a9a174ce53a8d3ac7f6be1ee6b73b4e71c268d9a1d7d0ad42abc059635c3f00e",
+      "source_preview_revision": "b0d7730a70936172544a0d95af7febd0bc1077a3a832099074e0dd93fa8d877c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBONYL-04",
+      "title": "银镜实验把配制终点和水浴连起来",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.2",
+      "pdf_pages": [
+        61,
+        62
+      ],
+      "printed_pages": [
+        57,
+        58
+      ],
+      "source_anchors": [
+        "银镜实验把配制终点和水浴连起来"
+      ],
+      "summary": "图3.11记录向AgNO₃溶液逐滴加氨水、最初沉淀恰好消失，再加乙醛并水浴加热；反应式生成乙酸铵与银。页下注明银氨溶液现配现用，实验后废液及时处理。",
+      "classroom_check": "在操作记录中写配制终点、加热方式、银镜现象以及乙醛被氧化、银离子被还原。",
+      "limitation": "课堂实验由教师按学校要求组织；阳性不能作为醛类结构的唯一充分证据。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          61,
+          62
+        ],
+        "printed_pages": [
+          57,
+          58
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-036",
+      "lecture_block_indices": [
+        74,
+        82,
+        85,
+        86,
+        88,
+        104,
+        155,
+        213
+      ],
+      "source_sha256": "a9a174ce53a8d3ac7f6be1ee6b73b4e71c268d9a1d7d0ad42abc059635c3f00e",
+      "source_preview_revision": "b0d7730a70936172544a0d95af7febd0bc1077a3a832099074e0dd93fa8d877c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBONYL-05",
+      "title": "砖红色Cu₂O与碱性条件一起读取",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.2",
+      "pdf_pages": [
+        61,
+        62
+      ],
+      "printed_pages": [
+        57,
+        58
+      ],
+      "source_anchors": [
+        "砖红色Cu₂O与碱性条件一起读取"
+      ],
+      "summary": "图3.12先在NaOH溶液中加少量CuSO₄形成新制Cu(OH)₂，再加乙醛并加热至沸腾。反应式包含NaOH，生成乙酸钠和砖红色Cu₂O，不能套用银镜实验的水浴条件。",
+      "classroom_check": "核对反应前蓝色悬浊液与反应后砖红色沉淀，在方程式中注明乙醛、乙酸钠与氧化亚铜名称。",
+      "limitation": "讲义99把本实验写成银氨溶液条件，需按本页及94、98、100纠正；不直接推广到所有芳香醛。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          61,
+          62
+        ],
+        "printed_pages": [
+          57,
+          58
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-036",
+      "lecture_block_indices": [
+        77,
+        94,
+        97,
+        98,
+        99,
+        100,
+        105
+      ],
+      "source_sha256": "a9a174ce53a8d3ac7f6be1ee6b73b4e71c268d9a1d7d0ad42abc059635c3f00e",
+      "source_preview_revision": "b0d7730a70936172544a0d95af7febd0bc1077a3a832099074e0dd93fa8d877c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBONYL-06",
+      "title": "羰基加成与还原看成键位置",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.2",
+      "pdf_pages": [
+        62
+      ],
+      "printed_pages": [
+        58
+      ],
+      "source_anchors": [
+        "羰基加成与还原看成键位置"
+      ],
+      "summary": "教材展示乙醛在催化剂与加热条件下加氢形成乙醇，并以HCN的两个候选产物讨论羰基极性。选择连接方式时要保留原有碳骨架，分别核对羟基与新连入基团的位置。",
+      "classroom_check": "先标羰基C、O的极性，再对比教材两候选结构；加氢路线写乙醛与乙醇名称。",
+      "limitation": "HCN只作教材结构信息分析，不作为学生实际操作建议；未据此推广所有HX等物质均能直接加成。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          62
+        ],
+        "printed_pages": [
+          58
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-036",
+      "lecture_block_indices": [
+        58,
+        60,
+        61,
+        63,
+        64,
+        277,
+        279
+      ],
+      "source_sha256": "a9a174ce53a8d3ac7f6be1ee6b73b4e71c268d9a1d7d0ad42abc059635c3f00e",
+      "source_preview_revision": "b0d7730a70936172544a0d95af7febd0bc1077a3a832099074e0dd93fa8d877c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBONYL-07",
+      "title": "酚醛树脂图中释放水并保留酚羟基",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.2",
+      "pdf_pages": [
+        63
+      ],
+      "printed_pages": [
+        59
+      ],
+      "source_anchors": [
+        "酚醛树脂图中释放水并保留酚羟基"
+      ],
+      "summary": "图3.14从苯酚与甲醛显示链状聚合物的形成并释放水，图3.15进一步显示交联网络。图中酚羟基保留，苯环由—CH₂—桥连接，缩聚与简单加聚的证据不同。",
+      "classroom_check": "在示意图上标出小分子水与—CH₂—桥，结合讲义480区分缩聚和加聚。",
+      "limitation": "此处读取教材简化示意图，不据图推定所有工业配方、交联条件或性能数据。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          63
+        ],
+        "printed_pages": [
+          59
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-036",
+      "lecture_block_indices": [
+        48,
+        474,
+        480
+      ],
+      "source_sha256": "a9a174ce53a8d3ac7f6be1ee6b73b4e71c268d9a1d7d0ad42abc059635c3f00e",
+      "source_preview_revision": "b0d7730a70936172544a0d95af7febd0bc1077a3a832099074e0dd93fa8d877c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBONYL-08",
+      "title": "香草醛按多官能团检查潜在副反应",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.2",
+      "pdf_pages": [
+        60,
+        64
+      ],
+      "printed_pages": [
+        56,
+        60
+      ],
+      "source_anchors": [
+        "香草醛按多官能团检查潜在副反应"
+      ],
+      "summary": "图3.8及例题香草醛结构同时含醛基、酚羟基、醚键。教材把醛基还原产物画为—CH₂OH、氧化产物画为—COOH，并提醒酚羟基氧化和苯环在一定条件下加氢的可能副反应。",
+      "classroom_check": "分别圈出三类含氧官能团，再说明题给氧化或还原条件为何不能只按一处醛基判断整分子产物。",
+      "limitation": "教材列的是可能副反应，未给出统一产率或任意试剂条件；不代替选择性反应资料。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          60,
+          64
+        ],
+        "printed_pages": [
+          56,
+          60
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-036",
+      "lecture_block_indices": [
+        36,
+        48,
+        64,
+        68,
+        70,
+        276
+      ],
+      "source_sha256": "a9a174ce53a8d3ac7f6be1ee6b73b4e71c268d9a1d7d0ad42abc059635c3f00e",
+      "source_preview_revision": "b0d7730a70936172544a0d95af7febd0bc1077a3a832099074e0dd93fa8d877c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBONYL-09",
+      "title": "教材计量练习先列反应关系与条件",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.2",
+      "pdf_pages": [
+        64,
+        65
+      ],
+      "printed_pages": [
+        60,
+        61
+      ],
+      "source_anchors": [
+        "教材计量练习先列反应关系与条件"
+      ],
+      "summary": "本节练习把乙醇、乙醛、乙酸的转化与2.9 g饱和一元醛产生10.8 g银的数据分别呈现。计量需先明确样品与终产物，再写醛和银的关系，不能只用“有银镜”反推唯一结构。",
+      "classroom_check": "保留g单位，把银的物质的量、醛的物质的量及摩尔质量分三步列出，并另核甲醛特殊计量是否适用。",
+      "limitation": "本页未提供官方评分细则；仅作为教材练习组织与教师复核入口，未把自行推导写成官方答案。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          64,
+          65
+        ],
+        "printed_pages": [
+          60,
+          61
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-036",
+      "lecture_block_indices": [
+        64,
+        68,
+        74,
+        113,
+        119,
+        120
+      ],
+      "source_sha256": "a9a174ce53a8d3ac7f6be1ee6b73b4e71c268d9a1d7d0ad42abc059635c3f00e",
+      "source_preview_revision": "b0d7730a70936172544a0d95af7febd0bc1077a3a832099074e0dd93fa8d877c",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    }
+  ]
+}

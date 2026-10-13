@@ -1,4 +1,6 @@
 from copy import deepcopy
+import json
+from pathlib import Path
 
 import pytest
 
@@ -595,3 +597,122 @@ def test_numbered_knowledge_heading_stays_out_even_with_spacing_and_answer_tag()
     data = preview("1．物质分类       的定义", "【答案】某讲义中的总结", "【例1】真实问题？")
     (item,) = index_word_questions(data)
     assert item["block_start"] == 3
+
+
+def test_knowledge_material_titles_do_not_borrow_a_later_memory_blank():
+    data = preview("知识点2 通用高分子材料", "得分速记", "2．合成纤维",
+        "（1）纤维的分类", "【待查看原文：图片或图形】",
+        "（2）合成纤维的性能和应用", "①性能：强度高、弹性好。",
+        "（3）常见合成纤维", "①六大纶包括：       、       、       。",
+        "【表格开始】纤维的实例、性能和应用【表格结束】", "3．合成橡胶",
+        "（1）橡胶的分类", "【待查看原文：图片或图形】",
+        "橡胶硫化后得到有弹性与强度的材料。", "得分速记",
+        "考向1 高分子材料", "【例1】下列说法正确的是____。", "【答案】A",
+        assets=[{"asset_id": "fiber", "block_index": 5},
+                {"asset_id": "rubber", "block_index": 13}])
+    before = deepcopy(data)
+    (item,) = index_word_questions(data)
+    assert (item["block_start"], item["block_end"]) == (17, 18)
+    assert data == before
+
+
+@pytest.mark.parametrize("task", [
+    "（2）请写出该纤维的单体。", "（2）哪项性质符合要求？",
+    "A．耐热 B．耐磨 C．耐腐蚀 D．吸水",
+    "（2）纤维的性质为       。",
+])
+def test_real_tasks_inside_knowledge_units_keep_the_numbered_parent(task):
+    data = preview("知识点2 通用高分子材料", "得分速记", "2．合成纤维",
+        "（1）纤维的分类", "【待查看原文：图片或图形】", task, "【答案】原结果",
+        assets=[{"asset_id": "source-picture", "block_index": 5}])
+    (item,) = index_word_questions(data)
+    assert (item["block_start"], item["question_end"], item["answer_start"], item["block_end"]) == (3, 6, 7, 7)
+    assert item["question_blocks"][2]["assets"][0]["asset_id"] == "source-picture"
+
+
+def test_multiple_original_fill_in_parts_keep_their_own_final_explicit_key():
+    data = preview("知识点2 通用高分子材料", "2．合成纤维", "（1）纤维的分类",
+        "【待查看原文：图片或图形】", "（2）纤维的性质为       。",
+        "（3）这种材料的用途为       。", "【答案】（2）原性质（3）原用途",
+        assets=[{"asset_id": "source-picture", "block_index": 4}])
+    (item,) = index_word_questions(data)
+    assert (item["block_start"], item["question_end"], item["answer_start"], item["block_end"]) == (2, 6, 7, 7)
+    assert [b["index"] for b in item["question_blocks"]] == [2, 3, 4, 5, 6]
+
+
+def test_memory_note_cannot_borrow_an_explicit_key_from_the_next_real_question():
+    data = preview("知识点2 通用高分子材料", "2．合成纤维", "（1）纤维的分类",
+        "①六大纶包括：       、       、       。", "考向1 材料的性能",
+        "【例1】请判断材料性质。", "【答案】A")
+    (item,) = index_word_questions(data)
+    assert (item["block_start"], item["answer_start"]) == (6, 7)
+
+
+@pytest.mark.parametrize("stem", [
+    "2．某转化需要比较不同的实验方案。",
+    "2．(2025·某校)工业分离的实验方法：",
+    "2．某元素存在下列转化关系：",
+])
+def test_real_scenario_picture_and_subpart_blank_survive_knowledge_context(stem):
+    data = preview("知识点1 实验", "得分速记", stem,
+        "【待查看原文：图片或图形】", "（1）该变化的数值为       kJ/mol。", "【答案】原结果",
+        assets=[{"asset_id": "source-picture", "block_index": 4}])
+    (item,) = index_word_questions(data)
+    assert (item["block_start"], item["answer_start"]) == (3, 6)
+
+
+_PKG072_DATA = Path("E:/项目/上海高中化学等级考")
+_PKG072_INTAKE = _PKG072_DATA / "sh-chem-db/.intake/2026-07-30-user-teaching-pack/expanded/PKG-072"
+_PKG072_EVIDENCE = _PKG072_DATA / "outputs/2026-10-08-protein-polymer-workbench/PKG-072"
+
+
+def _assert_historical_pkg072_rows_preserved(actual, expected, current_preview):
+    """Keep exact historical scope/content while validating the EQ overlay identity."""
+    from hashlib import sha256
+    from integrations.deeptutor_shchem_v1.word_native_text import NATIVE_WORD_TEXT_REVISION
+    from integrations.deeptutor_shchem_v1.word_static_eq import REVISION as STATIC_EQ_REVISION
+
+    assert {row["extraction_revision"] for row in expected} == {"20260909-editable-chemistry-v2"}
+    assert current_preview["extraction_revision"] == NATIVE_WORD_TEXT_REVISION + "+" + STATIC_EQ_REVISION
+    assert "static-eq-overlay" in STATIC_EQ_REVISION
+    for row in actual:
+        assert row["source_revision"] == current_preview["revision"]
+        assert row["extraction_revision"] == current_preview["extraction_revision"]
+        summary = {key: value for key, value in row.items() if key != "revision"}
+        payload = json.dumps(summary, ensure_ascii=False, sort_keys=True,
+                             separators=(",", ":"), allow_nan=False).encode("utf-8")
+        assert row["revision"] == sha256(payload).hexdigest()
+
+    # Only document/row extractor identity changed. All ordered real question
+    # text, complete question/answer/context ranges, assets, source SHA and
+    # statuses remain subject to strict full equality against the old baseline.
+    identity_fields = {"extraction_revision", "source_revision", "revision"}
+    def content(rows):
+        return [{key: value for key, value in row.items() if key not in identity_fields}
+                for row in rows]
+    assert content(actual) == content(expected)
+
+
+@pytest.mark.parametrize("role,filename,old_count", [
+    ("question", "第08讲 高分子有机物（复习讲义）（原卷版）.docx", 25),
+    ("solution", "第08讲 高分子有机物（复习讲义）（解析版）.docx", 24),
+])
+def test_actual_pkg072_removes_only_the_knowledge_title_identity(role, filename, old_count):
+    source = _PKG072_INTAKE / filename
+    old_path = _PKG072_EVIDENCE / (role + "-production-index.json")
+    if not source.is_file() or not old_path.is_file():
+        pytest.skip("Exact local source and historical index are unavailable")
+    from hashlib import sha256
+    from integrations.deeptutor_shchem_v1.desktop_preparation_sources import PreparationSourcesService
+    before = (sha256(source.read_bytes()).hexdigest(), source.stat().st_mtime_ns)
+    old_bytes = old_path.read_bytes()
+    old = json.loads(old_bytes)
+    assert len(old) == old_count
+    data = PreparationSourcesService(_PKG072_DATA).word_preview_bytes(source.read_bytes(), source.name)
+    actual = index_word_questions(data)
+    false_key = "word-question-539019663810a24a9d1a5a7c"
+    expected = [row for row in old if row["key"] != false_key]
+    assert len(actual) == len(expected) == 24
+    _assert_historical_pkg072_rows_preserved(actual, expected, data)
+    assert old_path.read_bytes() == old_bytes
+    assert (sha256(source.read_bytes()).hexdigest(), source.stat().st_mtime_ns) == before

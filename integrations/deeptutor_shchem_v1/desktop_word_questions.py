@@ -23,13 +23,16 @@ from .desktop_preparation_sources import (
     PreparationSourcesService,
 )
 from .desktop_source_quality import apply_source_quality, source_quality_notes
+from .reader_cancellation import check_read_cancelled
 from .desktop_word_preview_cache import WordPreviewCache
 from .desktop_word_question_attributes import (
     WordQuestionAttributeError,
     WordQuestionAttributeStore,
     automatic_tags_protected,
+    automatic_scope_refresh_protected,
     complete_missing_attributes,
     load_attribute_catalog,
+    rebase_automatic_scope_attributes,
     suggest_attributes,
 )
 from .desktop_word_question_index import apply_question_range, index_word_questions
@@ -78,30 +81,68 @@ class WordQuestionService:
         self._locations = {}
         self._lock = threading.RLock()
 
-    def _inventory(self, locations=None, *, read_only=False):
+    def _inventory(self, locations=None, *, read_only=False, progress=None):
         """Revalidate archive bytes each time; never cache authority by filename."""
         from .desktop_facade import DesktopFacadeError
 
         found = {}
         warnings = []
-        for batch in self.facade.list_imported_word_batches():
-            if locations is not None and batch.batch_id not in locations:
-                continue
+        if locations is None:
+            batches = self.facade.list_imported_word_batches()
+        else:
+            # Locations only select archives; they never supply trusted source
+            # contents. Snapshot all IDs before any I/O or progress callback.
+            check_read_cancelled()
+            if not isinstance(locations, dict) or any(
+                not isinstance(batch_id, str) or not batch_id.strip()
+                or not isinstance(source_ids, (set, frozenset)) or not source_ids
+                or any(not isinstance(source_id, str) or not source_id.strip()
+                       for source_id in source_ids)
+                for batch_id, source_ids in locations.items()
+            ):
+                raise WordQuestionError("原Word来源位置不完整，请重新选择。")
+            locations = {batch_id: set(source_ids)
+                         for batch_id, source_ids in locations.items()}
+            batches = tuple(locations)
+        for position, batch in enumerate(batches, 1):
+            check_read_cancelled()
+            batch_id = batch.batch_id if locations is None else batch
+            if progress:
+                progress({"message": f"正在核对第 {position}/{len(batches)} 批已导入资料…"})
+                if locations is not None:
+                    check_read_cancelled()
             try:
-                descriptor = self.facade._saved_visual_import_batch(batch.batch_id)
+                descriptor = self.facade._saved_visual_import_batch(batch_id)
+                if locations is not None:
+                    if descriptor.get("batch_id") != batch_id:
+                        raise WordQuestionError("原Word来源批次已变化，请重新选择。")
+                    # Native desktop facades also validate the selected bounded
+                    # manifest. Narrow injected source ports retain their
+                    # existing descriptor/restoration validation contract.
+                    manifest = getattr(self.facade, "_import_batch_manifest", None)
+                    if callable(manifest):
+                        manifest(descriptor)
+                    check_read_cancelled()
                 sources = (
                     self.facade._restore_visual_import_sources(
-                        descriptor, source_ids=locations[batch.batch_id]
+                        descriptor, source_ids=locations[batch_id]
                     )
                     if locations is not None
                     else self.facade._restore_visual_import_sources(descriptor)
                 )
+                if locations is not None:
+                    check_read_cancelled()
+                    restored_ids = [source.effective_source_file_id for source in sources]
+                    if (set(restored_ids) != locations[batch_id]
+                            or len(restored_ids) != len(locations[batch_id])):
+                        raise WordQuestionError("原Word来源文件标识已变化，请重新选择。")
             except (DesktopFacadeError, OSError, ValueError, TypeError):
                 warnings.append(
                     "一批已导入资料的原文件缺失或发生变化，请到导入历史重新核对。"
                 )
                 continue
             for source in sources:
+                check_read_cancelled()
                 if (
                     not source.filename.casefold().endswith(".docx")
                     or source.source_sha256 in found
@@ -122,6 +163,8 @@ class WordQuestionService:
                                     self.preview_cache.save(
                                         source.content, source.filename, preview
                                     )
+                            if locations is not None:
+                                check_read_cancelled()
                             indexed = index_word_questions(preview)
                         except (PreparationSourceError, ValueError, TypeError):
                             warnings.append(
@@ -129,15 +172,31 @@ class WordQuestionService:
                             )
                             continue
                         self._cache[token] = (preview, indexed)
-                    preview, items = deepcopy(self._cache[token])
-                found[source.source_sha256] = (source, batch.batch_id, preview, items)
+                    # This inventory is private. Catalogue quality processing
+                    # copies each row, and source() copies the whole preview.
+                    # Keep the cached trees read-only instead of duplicating
+                    # every source and then copying its questions again.
+                    preview, items = self._cache[token]
+                if locations is not None:
+                    check_read_cancelled()
+                found[source.source_sha256] = (source, batch_id, preview, items)
+                if progress:
+                    progress({"message": f"已整理 {len(found)} 份 Word 来源，继续核对…"})
+        if locations is not None:
+            check_read_cancelled()
         return found, warnings
 
-    def _catalog(self, locations=None, *, read_only=False):
-        inventory, warnings = (
-            self._inventory(locations, read_only=True)
-            if read_only else self._inventory(locations)
-        )
+    def _catalog(self, locations=None, *, read_only=False, progress=None):
+        if progress is None:
+            inventory, warnings = (
+                self._inventory(locations, read_only=True)
+                if read_only else self._inventory(locations)
+            )
+        else:
+            inventory, warnings = self._inventory(
+                locations, read_only=read_only, progress=progress
+            )
+        check_read_cancelled()
         try:
             quality = source_quality_notes(self.facade.paths.workspace_root)
         except (OSError, ValueError, TypeError, KeyError) as exc:
@@ -152,6 +211,7 @@ class WordQuestionService:
         )
         result, sources = [], []
         for digest, (source, batch_id, preview, indexed) in inventory.items():
+            check_read_cancelled()
             sources.append(
                 {
                     "source_id": digest,
@@ -160,7 +220,8 @@ class WordQuestionService:
                 }
             )
             for original_item in indexed:
-                item = deepcopy(original_item)
+                check_read_cancelled()
+                item = original_item
                 override = overrides.get(item["key"])
                 if override:
                     if override.get("source_revision") != preview["revision"]:
@@ -176,6 +237,9 @@ class WordQuestionService:
                             warnings.append(
                                 f"{source.filename} 的一条范围修订无法恢复，请重新核对。"
                             )
+                # Source-quality evaluation copies the current range before
+                # adding annotations. Never annotate a cached source row.
+                item = apply_source_quality(item, quality)
                 item.update(
                     batch_id=batch_id,
                     source_id=digest,
@@ -183,9 +247,15 @@ class WordQuestionService:
                     archive_source_id=source.effective_source_file_id,
                     source_block_count=len(preview["blocks"]),
                 )
-                result.append(apply_source_quality(item, quality))
+                result.append(item)
+            if progress:
+                progress({"message": f"已整理 {len(result)} 道题，正在核对范围和标签…"})
+        check_read_cancelled()
+        if progress:
+            progress({"message": f"正在核对 {len(result)} 道题的已保存教学标签…"})
         attributes = self.attribute_store.get_many([row["key"] for row in result])
         for row in result:
+            check_read_cancelled()
             saved = attributes.get(row["key"])
             if (
                 saved
@@ -198,6 +268,7 @@ class WordQuestionService:
                 # exposing them to filtering as current effective attributes.
                 row["attribute_stale"] = True
                 row["attribute_protected"] = automatic_tags_protected(saved)
+                row["automatic_scope_refresh_allowed"] = not automatic_scope_refresh_protected(saved)
                 if saved["annotation_source"] == "teacher_modified":
                     row["attribute_warning"] = (
                         "题目范围已变化，原教师标签保存在历史中，请重新核对后保存。"
@@ -222,8 +293,8 @@ class WordQuestionService:
             "warnings": list(dict.fromkeys(warnings)),
         }, inventory
 
-    def catalog(self):
-        result = self._catalog()[0]
+    def catalog(self, *, progress=None):
+        result = self._catalog(progress=progress)[0]
         try:
             result["attribute_catalog"] = self._read_attribute_catalog()
         except (OSError, ValueError, TypeError, KeyError):
@@ -231,10 +302,13 @@ class WordQuestionService:
             result["warnings"].append(
                 "教材标签目录暂时无法读取，教材筛选不可用；原题列表与预览仍可使用。"
             )
+        check_read_cancelled()
         return result
 
-    def _read_attribute_catalog(self):
-        catalog = load_attribute_catalog(self.facade.paths.workspace_root)
+    def _read_attribute_catalog(self, *, allow_builtin=False):
+        catalog = load_attribute_catalog(
+            self.facade.paths.workspace_root, allow_builtin=allow_builtin
+        )
         if not isinstance(catalog, dict) or any(
             not isinstance(catalog.get(name), list)
             or any(not isinstance(row, dict) for row in catalog[name])
@@ -242,6 +316,10 @@ class WordQuestionService:
         ):
             raise WordQuestionAttributeError("教材标签目录结构不完整。")
         return catalog
+
+    def _read_dependency_attribute_catalog(self):
+        """Pin existing basic labels when the optional local catalogue is absent."""
+        return self._read_attribute_catalog(allow_builtin=True)
 
     def _annotation_snapshot(self, batch_id, previews):
         """Read exactly one batch; cold previews stay in memory, never on disk."""
@@ -580,6 +658,52 @@ class WordQuestionService:
                 )
             ) from exc
 
+    def preview_automatic_scope_labels(self, key, revision):
+        """Read a new-scope automatic proposal without saving or confirming it."""
+        with self._lock:
+            return self._automatic_scope_labels_plan(key, revision)
+
+    def _automatic_scope_labels_plan(self, key, revision):
+        rows, inventory = self._resolve([{"key": key, "revision": revision}])
+        row = rows[0]
+        options = self.attribute_options(key, revision)
+        previous = options["previous_attributes"]
+        if not options["range_review_required"] or previous is None:
+            raise WordQuestionError("当前标签已对应本题范围，无需重新整理。")
+        try:
+            proposed = rebase_automatic_scope_attributes(previous, options["attributes"])
+        except WordQuestionAttributeError as exc:
+            raise WordQuestionError(exc.message_zh) from exc
+        boundaries = ("block_start", "question_end", "answer_start", "block_end", "context_start", "context_end")
+        original = next((item for item in inventory[row["source_id"]][3]
+                         if item["key"] == key and item["revision"] == previous["question_revision"]), None)
+        plan = {
+            "key": key, "question_revision": revision,
+            "title": row.get("title") or "当前Word题目", "source_name": row["source_name"],
+            "source_sha256": row["source_sha256"],
+            "current_range": {field: row.get(field) for field in boundaries},
+            "previous_range": {field: original.get(field) for field in boundaries} if original else None,
+            "previous_attributes": previous, "attributes": proposed,
+            "stored_revision": options["stored_revision"],
+            "catalog_revision": _digest(options["catalog"]),
+            "automatic_only": True, "teacher_confirmed": False,
+        }
+        plan["plan_sha256"] = _digest(plan)
+        return deepcopy(plan)
+
+    def save_automatic_scope_labels(self, key, revision, *, expected_plan_sha256):
+        """Explicit exact-preview/CAS save, with no teacher-confirmation route."""
+        with self._lock:
+            plan = self._automatic_scope_labels_plan(key, revision)
+            if expected_plan_sha256 != plan["plan_sha256"]:
+                raise WordQuestionError("范围、标签或目录已变化，未保存；请重新预览自动建议。")
+            try:
+                return self.attribute_store.save_many(
+                    [plan["attributes"]], expected_revisions={key: plan["stored_revision"]},
+                )[0]
+            except WordQuestionAttributeError as exc:
+                raise WordQuestionError(exc.message_zh) from exc
+
     def save_attributes(
         self,
         key,
@@ -697,6 +821,15 @@ class WordQuestionService:
                 )
             }
         )
+        saved = self.attribute_store.get(key)
+        if saved and saved["source_sha256"] == updated["source_sha256"] and saved["question_revision"] == updated["revision"]:
+            updated["attributes"] = saved
+        elif saved:
+            updated["attribute_stale"] = True
+            updated["attribute_protected"] = automatic_tags_protected(saved)
+            updated["automatic_scope_refresh_allowed"] = not automatic_scope_refresh_protected(saved)
+            if saved["annotation_source"] == "teacher_modified":
+                updated["attribute_warning"] = "题目范围已变化，原教师标签保存在历史中，请重新核对后保存。"
         return apply_source_quality(
             updated, source_quality_notes(self.facade.paths.workspace_root)
         )

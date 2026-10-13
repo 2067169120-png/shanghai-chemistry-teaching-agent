@@ -1,0 +1,132 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "title": "卤代烃物性、主要产物与合成路线补充候选",
+  "purpose": "补充已核对的选必三2.3原PDF41、43—45页；保留教材图表、数据范围和条件。",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "official": false,
+  "root_model_review_completed": true,
+  "retrieval_ready": false,
+  "teaching_use_allowed": false,
+  "generation_allowed": false,
+  "publication_allowed": false,
+  "notes": [
+    {
+      "id": "READ-20261006-HALOGEN-PROPERTIES-01",
+      "title": "比较沸点先固定结构维度",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.3",
+      "pdf_pages": [
+        41
+      ],
+      "printed_pages": [
+        37
+      ],
+      "summary": "表2.2把相同烃基的氯代物与溴代物并列，也列出碳原子数和卤原子数变化的示例。氯甲烷CH₃Cl为−24.2℃，溴甲烷CH₃Br为3.56℃；氯乙烷CH₃CH₂Cl为12.3℃，溴乙烷CH₃CH₂Br为38.2℃。先固定烃基或卤素种类，再用所给数据描述趋势。",
+      "limitation": "结论限于原表所列示例；表中未注明测量压力。不以碳卤键平均键能解释沸点，也不外推所有异构体或全部含卤化合物。",
+      "classroom_check": "分别从表中找出烃基相同、卤素种类相同以及卤原子数变化的比较组，注明控制的变量与数据单位。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "textbook_evidence": {
+        "source_path": "E:\\项目\\上海高中化学等级考\\课本\\沪科技化学选修第三册【高清教材】.pdf",
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          41
+        ],
+        "printed_pages": [
+          37
+        ],
+        "review_method": "original_PDF_pages_freshly_rendered_and_viewed_by_root_model"
+      },
+      "source_anchors": [
+        "比较沸点先固定结构维度"
+      ],
+      "AI_derived": true
+    },
+    {
+      "id": "READ-20261006-HALOGEN-MAJOR-PRODUCT-02",
+      "title": "可能产物与主要产物分开回答",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.3",
+      "pdf_pages": [
+        43,
+        44
+      ],
+      "printed_pages": [
+        39,
+        40
+      ],
+      "summary": "教材用扎依采夫规则说明不同消去方向下主要产物的判断：通常形成双键上取代基较多的烯烃。所给2-溴丁烷例同时产生1-丁烯和2-丁烯，教材报告2-丁烯比例为81%。可能产物的列举与主要产物的预测是两个作答任务。",
+      "limitation": "81%仅为教材该例的数据，不能当作任意底物、碱、溶剂或温度下的固定比例；经验规则不能替代题目给定条件。教材该段未分别给出顺式、反式2-丁烯的比例。",
+      "classroom_check": "先标出连接Br的碳及相邻碳上的氢，再列出不同消去方向；把“可能生成”与“主要生成”分栏，保留反应条件。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "textbook_evidence": {
+        "source_path": "E:\\项目\\上海高中化学等级考\\课本\\沪科技化学选修第三册【高清教材】.pdf",
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          43,
+          44
+        ],
+        "printed_pages": [
+          39,
+          40
+        ],
+        "review_method": "original_PDF_pages_freshly_rendered_and_viewed_by_root_model"
+      },
+      "source_anchors": [
+        "可能产物与主要产物分开回答"
+      ],
+      "AI_derived": true
+    },
+    {
+      "id": "READ-20261006-HALOGEN-CYCLOPENTADIENE-03",
+      "title": "沿结构变化核对环戊二烯路线",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.3",
+      "pdf_pages": [
+        44,
+        45
+      ],
+      "printed_pages": [
+        40,
+        41
+      ],
+      "summary": "教材路线依次为环戊烷、氯代环戊烷、环戊烯、二溴代环戊烷和环戊二烯。步骤①为取代，条件为氯气、光照；②为消去，氢氧化钠醇溶液、加热；③为加成，溴的四氯化碳溶液；④为消去，氢氧化钠醇溶液、加热。原图保留各中间体的连接位置与双键位置。",
+      "limitation": "按教材所示底物和条件解释这条路线，不扩展为普适制备工艺。路线简图未逐步列出全部副产物和配平系数；完整方程式应另外核对。",
+      "classroom_check": "逐步比较卤原子数、碳碳双键和连接位置的变化，先判反应类型再填试剂与条件；结合原图核对④的两次消去。",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "textbook_evidence": {
+        "source_path": "E:\\项目\\上海高中化学等级考\\课本\\沪科技化学选修第三册【高清教材】.pdf",
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          44,
+          45
+        ],
+        "printed_pages": [
+          40,
+          41
+        ],
+        "review_method": "original_PDF_pages_freshly_rendered_and_viewed_by_root_model"
+      },
+      "source_anchors": [
+        "沿结构变化核对环戊二烯路线"
+      ],
+      "AI_derived": true
+    }
+  ],
+  "source": {
+    "path": "E:\\项目\\上海高中化学等级考\\课本\\沪科技化学选修第三册【高清教材】.pdf",
+    "sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+    "bytes": 137542720
+  },
+  "edition": "待核验",
+  "original_URL": "待核验",
+  "published_at": "待核验",
+  "collected_at": "2026-10-06",
+  "original_source_redistribution": false
+}

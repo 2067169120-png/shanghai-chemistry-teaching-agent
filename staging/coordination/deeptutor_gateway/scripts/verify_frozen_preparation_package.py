@@ -589,7 +589,7 @@ def verify_catalog_session(facade_code) -> bool:
     return True
 
 
-def verify_frozen_image_limit(pyz) -> bool:
+def verify_frozen_image_limit(pyz, *, expected_limit=48) -> bool:
     # This pure module defines metadata validation and a store class; importing
     # it does not instantiate a store, read app state or load provider settings.
     namespace = {"__name__": "frozen_preparation_images"}
@@ -597,8 +597,10 @@ def verify_frozen_image_limit(pyz) -> bool:
         pyz.extract("integrations.deeptutor_shchem_v1.desktop_preparation_images"),
         namespace,
     )
-    if namespace["MAX_IMAGES"] != 48:
-        raise RuntimeError("Frozen image capacity is not 48")
+    # The default still inspects the released v0.1.101 package. Source checks
+    # explicitly request the newer capacity without relabelling that release.
+    if namespace["MAX_IMAGES"] != expected_limit:
+        raise RuntimeError(f"Frozen image capacity is not {expected_limit}")
     limit = namespace["MAX_IMAGES"]
     assets = [
         {

@@ -146,9 +146,15 @@ def test_visual_request_preserves_exact_selected_pixels_and_order(style, entrypo
             f'"attachment_number":{number},"asset_id":"{asset["asset_id"]}"' in prompt
         )
     assert "随本请求附上图片像素" in prompt
-    assert "图片转写，待教师核对" in prompt
+    assert "图片转写，待教师核对" not in prompt
+    assert "转写状态仅记录在uncertainties，正文不加核验提醒" in prompt
+    assert "生成正文、表格、图注、教师备注和板书直接呈现教学内容" in prompt
+    assert "不写‘待核实’‘待核验’‘待教师核对’‘候选’等流程提醒" in prompt
+    assert "不写‘仅供参考’‘请教师自行检查’‘AI可能有误’‘不保证准确性’等防御性文字" in prompt
+    assert "来源、转写状态、审核标记和资料缺口仅存入uncertainties及内部资料记录" in prompt
+    assert "不混入教学正文或teacher_notes" in prompt
     assert "uncertainties" in prompt
-    assert "答案与解析图仅用于相应题目的后续讲评页" in prompt
+    assert "答案与解析图只用于相应题目的点击显示分析或后续讲评" in prompt
     assert "没有看到图片像素" not in prompt
     assert "图中模糊" in prompt
     assert "fixture-not-a-real-credential" not in prompt

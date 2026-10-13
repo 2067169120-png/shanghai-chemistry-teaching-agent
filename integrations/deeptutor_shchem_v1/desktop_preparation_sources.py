@@ -20,6 +20,7 @@ from docx.text.paragraph import Paragraph
 from .desktop_preparation_limits import MAX_MATERIALS
 from .word_handout_import import _validate_container
 from .word_native_text import NATIVE_WORD_TEXT_REVISION, WordNativeTextReader
+from .word_static_eq import REVISION as STATIC_EQ_REVISION
 
 CONCEPTS = "sh-chem-db/kb/textbook_knowledge_map_v1_2026-08-28/concepts.jsonl"
 MAX_TEXTBOOK_PREVIEW_BYTES = 256 * 1024 * 1024
@@ -42,11 +43,11 @@ def _local(node):
     return node.tag.rsplit("}", 1)[-1]
 
 
-def _paragraph(element, document, warnings, text_reader=None):
+def _paragraph(element, document, warnings, text_reader=None, native_result=None):
     # Use the same chemical text projection as import routing, including
     # docDefaults, effective visibility, native OMML and special hyphens.
     reader = text_reader or WordNativeTextReader(document.styles.element)
-    result = reader.read(element)
+    result = native_result or reader.read(element)
     messages = {
         "hidden_text_omitted": "存在隐藏文字，未加入备课参考。",
         "tracked_changes": "存在修订；删除内容未加入，保留或插入内容使用前需核对修订状态。",
@@ -69,9 +70,9 @@ def _paragraph(element, document, warnings, text_reader=None):
     return result.text
 
 
-def _block_text(element, document, warnings, text_reader=None):
+def _block_text(element, document, warnings, text_reader=None, native_result=None):
     if _local(element) == "p":
-        return _paragraph(element, document, warnings, text_reader)
+        return _paragraph(element, document, warnings, text_reader,native_result)
     if _local(element) != "tbl":
         warnings.add("特殊正文容器未提取；需查看原文件。")
         return "【待查看原文：特殊正文容器】"
@@ -315,10 +316,12 @@ class PreparationSourcesService:
             document = Document(io.BytesIO(data))
             text_reader = WordNativeTextReader(document.styles.element)
             blocks = []
+            has_static_eq = False
             elements = list(_body_blocks(document._element.body))
             for index, element in enumerate(elements, 1):
                 warnings = set()
-                text = _block_text(element, document, warnings, text_reader)
+                native=text_reader.read(element) if _local(element)=='p' else None
+                text = _block_text(element, document, warnings, text_reader,native)
                 if _local(element) not in {"p", "tbl", "altChunk"}:
                     warnings.add("此正文容器可能含修订或特殊结构，需查看原文件。")
                 blocks.append(
@@ -330,9 +333,31 @@ class PreparationSourcesService:
                         "warnings": sorted(warnings),
                     }
                 )
+                if native is not None and native.static_eqs:
+                    # Only sources whose transcription gains static fields
+                    # acquire a new identity; unaffected saved cards retain it.
+                    if native.text != text:
+                        raise PreparationSourceError('静态EQ投影与完整原文不一致。')
+                    blocks[-1]['static_eqs'] = list(native.static_eqs)
+                    has_static_eq = True
+                elif _local(element)=='tbl' and element.find('.//'+qn('w:fldChar')) is not None:
+                    # Table cells can retain searchable EQ transcription while
+                    # full-card admission still rejects their unsupported layout.
+                    has_static_eq=has_static_eq or bool(text_reader.read(element).static_eqs)
             if not blocks:
                 raise PreparationSourceError("Word中没有可读取的正文区块。")
             assets = _word_images(elements, document)
+            for native in blocks:
+                image_fields=[s for s in native.get('static_eqs',[]) if s['field']['base']['kind']=='image']
+                if image_fields:
+                    relationships=[]
+                    for node in elements[native['index']-1].iter():
+                        if _local(node) in {'blip','imagedata'}:
+                            rid=node.get(qn('r:embed')) or node.get(qn('r:id'))
+                            if rid and rid not in relationships:relationships.append(rid)
+                    native['static_eq_images']={s['field']['field_sha256']:
+                        f"word-b{native['index']}-image{relationships.index(s['field']['base']['relationship_id'])+1}"
+                        for s in image_fields}
             result = {
                 "source_name": source_name,
                 "source_sha256": hashlib.sha256(data).hexdigest(),
@@ -340,7 +365,8 @@ class PreparationSourcesService:
                 "sections": _word_sections(elements, document, blocks),
                 "assets": assets,
                 "warnings": sorted({warning for block in blocks for warning in block["warnings"]}),
-                "extraction_revision": NATIVE_WORD_TEXT_REVISION,
+                "extraction_revision": (NATIVE_WORD_TEXT_REVISION+'+'+STATIC_EQ_REVISION
+                                        if has_static_eq else NATIVE_WORD_TEXT_REVISION),
             }
             result["revision"] = _digest(result)
             return result
@@ -445,6 +471,7 @@ class PreparationSourcesService:
 
     def textbook_source(self, concept_id, revision):
         """Return exact verified PDF bytes for local viewing, never extraction."""
+        from .desktop_textbook_assets import load_textbook_assets
         from .desktop_textbook_reading_hints import load_reading_hints
 
         if not isinstance(concept_id, str) or not isinstance(revision, str):
@@ -502,10 +529,18 @@ class PreparationSourcesService:
                 source_sha256=row["source_sha256"],
                 pdf_pages=pages,
             ),
+            "visual_assets": load_textbook_assets(
+                self.workspace,
+                volume_id=row.get("volume_id"),
+                section_key=row.get("section_key"),
+                source_sha256=row["source_sha256"],
+                pdf_pages=pages,
+            ),
         }
 
     def textbook_section_source(self, concept_id, revision):
         """Explicit read-only section view; never change concept/material scope."""
+        from .desktop_textbook_assets import load_textbook_assets
         from .desktop_textbook_reading_hints import load_reading_hints
         from .desktop_textbook_section_reader import textbook_section_scope
 
@@ -521,6 +556,10 @@ class PreparationSourcesService:
         return {
             **source, **scope,
             "reading_hints": load_reading_hints(
+                self.workspace, volume_id=row["volume_id"], section_key=row["section_key"],
+                source_sha256=source["source_sha256"], pdf_pages=scope["pdf_pages"],
+            ),
+            "visual_assets": load_textbook_assets(
                 self.workspace, volume_id=row["volume_id"], section_key=row["section_key"],
                 source_sha256=source["source_sha256"], pdf_pages=scope["pdf_pages"],
             ),

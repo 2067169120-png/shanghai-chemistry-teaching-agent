@@ -1,0 +1,309 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-ORGANIC-HISTORY-01",
+      "title": "有机化学研究范围与早期生产实践",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.1",
+      "pdf_pages": [
+        7
+      ],
+      "printed_pages": [
+        3
+      ],
+      "summary": "有机化学研究有机物的结构、性质、制备、应用及其理论方法。教材以酿酒、发酵、造纸、制糖、制备染料和提炼油脂等早期实践说明人类对有机物的认识与应用，并介绍它与材料、环境、生命科学的交叉。",
+      "classroom_check": "从一个生活材料分别提出结构、性质、制备或应用问题，区分学科任务与材料的天然来源。",
+      "limitation": "早期从动植物提取并不意味着所有有机物只能来自生命体；章节导语邻页PDF6不并入本节正文范围。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          7
+        ],
+        "printed_pages": [
+          3
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-HISTORY-02",
+      "title": "有机物性质的常见倾向与表1.1的分解边界",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.1",
+      "pdf_pages": [
+        7
+      ],
+      "printed_pages": [
+        3
+      ],
+      "summary": "正文列举部分早期提取有机物在水中溶解性较差、熔沸点较低、受热易分解、易燃烧、反应慢且复杂等常见倾向。表1.1列萘熔点80.5 ℃、沸点217.7 ℃，葡萄糖熔点150 ℃且200 ℃以上分解炭化，氯化钠熔点800.8 ℃、沸点1465 ℃。",
+      "classroom_check": "先读列标题，再区分熔点、沸点和“受热分解”；说明三个例子能支持哪些有限比较。",
+      "limitation": "200 ℃以上分解炭化不是葡萄糖的沸点，不能转录成沸点200 ℃；这些性质不是区分全部有机物与无机物的充分条件。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          7
+        ],
+        "printed_pages": [
+          3
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-HISTORY-03",
+      "title": "人工合成打破有机物只能由生命体产生的旧观念",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.1",
+      "pdf_pages": [
+        7,
+        8
+      ],
+      "printed_pages": [
+        3,
+        4
+      ],
+      "summary": "教材介绍1808年贝采利乌斯提出“有机化学”，并曾把来自生命体的有机物与无机物区分。19世纪20年代起尿素、草酸和醋酸等陆续由无机物合成，动摇“生命力”学说；图1.1注明1828年维勒用氰酸铵合成尿素。",
+      "classroom_check": "把旧学说、实验事实和认识改变分开，说明人工合成证据改变了什么判断。",
+      "limitation": "保留教材历史叙述，不把当时的生命力解释当作当前化学事实；本条未补写原页未给出的合成条件或方程式。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          7,
+          8
+        ],
+        "printed_pages": [
+          3,
+          4
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-HISTORY-04",
+      "title": "含碳是有机物组成特征，分类还须保留例外",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.1",
+      "pdf_pages": [
+        8
+      ],
+      "printed_pages": [
+        4
+      ],
+      "summary": "正文说明有机物都含碳，大多数含氢，部分还含氧、氮等元素，并指出有机物与无机物没有绝对界限、在一定条件下可以转化。脚注保留CO、CO₂、碳酸及碳酸盐等含碳物质仍归入无机物的分类习惯。",
+      "classroom_check": "分别检查“含碳”“含氢”和分类依据，用教材明确列出的含碳无机物检验概括是否过强。",
+      "limitation": "不把所有含碳物质归为有机物，也不把含氢作为有机物必要条件；一定条件下转化不等于任意物质在任意条件下互转。未扩列原脚注未列的例外。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          8
+        ],
+        "printed_pages": [
+          4
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-HISTORY-05",
+      "title": "发展时间线同时保留实验与结构理论的历史身份",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.1",
+      "pdf_pages": [
+        8
+      ],
+      "printed_pages": [
+        4
+      ],
+      "summary": "图1.1把提取与合成事件同理论、实验方法并列：1831年李比希的碳氢定量分析、1857年碳四价学说、1865年苯的单双键交替结构模型、1874年碳的四面体结构及手性认识。时间线用于观察实验和模型的相互推动。",
+      "classroom_check": "给每个事件标明“方法、实验事实或历史模型”，再讨论模型能解释什么。",
+      "limitation": "1865年苯图是历史模型，不代表当前苯环具有固定交替单双键；不据时间线装饰或年代推导当前反应事实。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          8
+        ],
+        "printed_pages": [
+          4
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-HISTORY-06",
+      "title": "现代有机合成与有机分析的任务不同而相互联系",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.1",
+      "pdf_pages": [
+        8,
+        9
+      ],
+      "printed_pages": [
+        4,
+        5
+      ],
+      "summary": "现代发展叙述从PDF8续至9。教材将有机合成研究概括为探索合成方法、路线及产业化技术，并将有机分析任务列为分离、提纯、鉴定和测定。现代仪器分析与跨学科研究支持认识有机物及相关技术的发展。",
+      "classroom_check": "把“获得目标物”和“确定所获物质”分开，再列出二者相互需要的证据。",
+      "limitation": "本条只整理任务范围，未补充波谱参数、合成产率或工业工艺；跨页信息完整保留，不将不同学科任务混成同一个操作。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          8,
+          9
+        ],
+        "printed_pages": [
+          4,
+          5
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-HISTORY-07",
+      "title": "天然产物来源与人工合成的资源保护语境",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.1",
+      "pdf_pages": [
+        9,
+        10
+      ],
+      "printed_pages": [
+        5,
+        6
+      ],
+      "summary": "教材将植物、动物和微生物作为天然产物来源，以五味子素、麝香酮和青霉素为例，并把人工合成麝香酮同减少对野生麝资源的依赖联系起来。图1.4分别展示这些来源和结构。",
+      "classroom_check": "区分天然来源、结构与用途，再讨论人工合成为何可能改变资源获取方式。",
+      "limitation": "仅保留化学与资源保护语境；教材青蒿素段的治疗用语不改写成当前医疗建议。结构的立体细节、药效或安全性未单独核定，不从缩略图补猜。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          9,
+          10
+        ],
+        "printed_pages": [
+          5,
+          6
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-HISTORY-08",
+      "title": "教材例题用反例检验有机物的过度概括",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.1",
+      "pdf_pages": [
+        10
+      ],
+      "printed_pages": [
+        6
+      ],
+      "summary": "本页例题已附分析：醋酸可以电离，反驳“有机物都是非电解质”；无机分子物质也可有较低熔点，低熔点不能直接判为有机物；有机物含碳；四氯化碳CCl₄是可以不含氢的有机物。原教材据此只判D正确。",
+      "classroom_check": "先指出每个判断中的全称条件，再用教材提供的反例检验，明确哪些特征仅是常见倾向。",
+      "limitation": "这里的答案来自教材已附分析，不称考试官方答案或采分点；没有依据本例编造其他试卷答案。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          10
+        ],
+        "printed_pages": [
+          6
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-HISTORY-09",
+      "title": "巩固练习保留四组任务与未附答案状态",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.1",
+      "pdf_pages": [
+        11
+      ],
+      "printed_pages": [
+        7
+      ],
+      "summary": "本页练习涉及历史事件与发展结果配对、五个关于来源及性质的判断、丝绸之路相关物质主要成分分类，以及含C/H/O且相对分子质量小于150、氧质量分数50%时的碳原子数问题。题设条件和任务类型随页码保留。",
+      "classroom_check": "分类与判断题先识别全称词及材料范围，计算题先完整列出元素、相对分子质量上限和质量分数。",
+      "limitation": "原页未附这四组练习答案或评分细则，本条不代答、不补公式或最大碳原子数；邻页PDF12已经进入1.2，不并入本节候选。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          11
+        ],
+        "printed_pages": [
+          7
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ],
+  "source_conflicts": []
+}

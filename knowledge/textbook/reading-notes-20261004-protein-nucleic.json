@@ -1,0 +1,465 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-PROTEIN-NUCLEIC-01",
+      "title": "α-氨基酸通式与侧链逐一辨认",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.1",
+      "pdf_pages": [
+        83
+      ],
+      "printed_pages": [
+        79
+      ],
+      "source_anchors": [
+        "α-氨基酸通式与侧链逐一辨认"
+      ],
+      "summary": "教材把组成蛋白质的主要α-氨基酸写为氨基和羧基连接同一α碳，并列甘氨酸、丙氨酸、天冬氨酸等侧链例子。通式中的R不同，全部游离羧基数也可不同；“主要20种”不等于任何情境的全部氨基酸总数。",
+      "classroom_check": "画出教材三个例子的侧链并数游离羧基，再与讲义谷氨酸比较。",
+      "limitation": "正式section_id、unit_id仍unknown；不把讲义21种或考情表认证为官方口径。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          83
+        ],
+        "printed_pages": [
+          79
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-062",
+      "lecture_block_indices": [
+        29,
+        41,
+        43,
+        45
+      ],
+      "source_sha256": "4bf36447638b9835792e99c25ce5fed43dbddc13f326e69e585efe64f3f7cc91",
+      "source_preview_revision": "74f7bff65f126566b940bb4a9da5d0dfc474a32cf9cfffb2f33acad4f19d1ccb",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-PROTEIN-NUCLEIC-02",
+      "title": "甘氨酸两性离子与条件下的电荷",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.1",
+      "pdf_pages": [
+        84
+      ],
+      "printed_pages": [
+        80
+      ],
+      "source_anchors": [
+        "甘氨酸两性离子与条件下的电荷"
+      ],
+      "summary": "教材从氨基的碱性和羧基的酸性引出甘氨酸两性离子H₃N⁺—CH₂—COO⁻，示意分子内部质子转移。电荷表示与酸碱条件关联，不能将转移误作缩合或把带电式中的N—H直接计为新肽键。",
+      "classroom_check": "标出正、负电荷的位置，并说明加酸和加碱时应关注哪些基团。",
+      "limitation": "只作教材电荷示意，未补猜等电点、pKa或具体浓度下分布。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          84
+        ],
+        "printed_pages": [
+          80
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-062",
+      "lecture_block_indices": [
+        43,
+        47,
+        49,
+        50,
+        51,
+        52
+      ],
+      "source_sha256": "4bf36447638b9835792e99c25ce5fed43dbddc13f326e69e585efe64f3f7cc91",
+      "source_preview_revision": "74f7bff65f126566b940bb4a9da5d0dfc474a32cf9cfffb2f33acad4f19d1ccb",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-PROTEIN-NUCLEIC-03",
+      "title": "肽键数、失水量与序列限制",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.1",
+      "pdf_pages": [
+        84,
+        85
+      ],
+      "printed_pages": [
+        80,
+        81
+      ],
+      "source_anchors": [
+        "肽键数、失水量与序列限制"
+      ],
+      "summary": "教材肽键形成图显示羧基和氨基脱水连接，二肽、三肽按残基数命名。对一条无环线性肽，n个残基对应n−1个肽键；讲义枚举二肽时还要区分N端、C端并核是否允许同一种氨基酸重复。",
+      "classroom_check": "用A、B写出AA、AB、BA、BB，再改成限定两残基不同并比较数量。",
+      "limitation": "n−1仅用于限定结构；成环、多链和侧链反应须重新数实际连接。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          84,
+          85
+        ],
+        "printed_pages": [
+          80,
+          81
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-062",
+      "lecture_block_indices": [
+        52,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        66,
+        70,
+        114
+      ],
+      "source_sha256": "4bf36447638b9835792e99c25ce5fed43dbddc13f326e69e585efe64f3f7cc91",
+      "source_preview_revision": "74f7bff65f126566b940bb4a9da5d0dfc474a32cf9cfffb2f33acad4f19d1ccb",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-PROTEIN-NUCLEIC-04",
+      "title": "序列与空间组织是不同结构信息",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.1",
+      "pdf_pages": [
+        85,
+        86
+      ],
+      "printed_pages": [
+        81,
+        82
+      ],
+      "source_anchors": [
+        "序列与空间组织是不同结构信息"
+      ],
+      "summary": "教材把氨基酸种类、数目、排列顺序与蛋白质结构联系，并以示意图区分一级序列、二级与三级空间组织及多亚基的四级结构。链的分子量相同或氨基酸种类相同，不足以判定排列和功能相同。",
+      "classroom_check": "给两条组成相同、顺序不同的短序列，指出共同信息与不同信息。",
+      "limitation": "不补猜具体蛋白质活性或所有单链蛋白质都具有四级结构；历史科研材料保留为教材背景。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          85,
+          86
+        ],
+        "printed_pages": [
+          81,
+          82
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-062",
+      "lecture_block_indices": [
+        74,
+        76,
+        77,
+        90
+      ],
+      "source_sha256": "4bf36447638b9835792e99c25ce5fed43dbddc13f326e69e585efe64f3f7cc91",
+      "source_preview_revision": "74f7bff65f126566b940bb4a9da5d0dfc474a32cf9cfffb2f33acad4f19d1ccb",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-PROTEIN-NUCLEIC-05",
+      "title": "茚三酮与浓硝酸显色的适用范围",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.1",
+      "pdf_pages": [
+        84,
+        87
+      ],
+      "printed_pages": [
+        80,
+        83
+      ],
+      "source_anchors": [
+        "茚三酮与浓硝酸显色的适用范围"
+      ],
+      "summary": "教材茚三酮反应列出弱酸性、加热和蓝紫色现象；教材浓硝酸显色对应含苯环的蛋白质并出现黄色。两者的对象、条件与现象应分别核对，不能从任一显色推出所有蛋白质或某一唯一物质。",
+      "classroom_check": "给“所有蛋白质遇浓硝酸都变黄”补出教材限制，再读讲义甘氨酸检验。",
+      "limitation": "作为教材识别证据讨论，未实测样品；未扩展为自主实验步骤或混合物特异认证。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          84,
+          87
+        ],
+        "printed_pages": [
+          80,
+          83
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-062",
+      "lecture_block_indices": [
+        94,
+        215,
+        216,
+        219,
+        224
+      ],
+      "source_sha256": "4bf36447638b9835792e99c25ce5fed43dbddc13f326e69e585efe64f3f7cc91",
+      "source_preview_revision": "74f7bff65f126566b940bb4a9da5d0dfc474a32cf9cfffb2f33acad4f19d1ccb",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-PROTEIN-NUCLEIC-06",
+      "title": "核苷、核苷酸和核酸的层级",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.1",
+      "pdf_pages": [
+        87,
+        88
+      ],
+      "printed_pages": [
+        83,
+        84
+      ],
+      "source_anchors": [
+        "核苷、核苷酸和核酸的层级"
+      ],
+      "summary": "教材核苷酸组成图包含戊糖、碱基和磷酸，核酸以核苷酸为基本单位。讲义核苷与核苷酸题还需区分糖—碱基连接与磷酸部分；水解产物依断裂范围判断，单个核苷酸不因用于核酸就变成高分子。",
+      "classroom_check": "在组成图上圈出糖、碱基和磷酸，并指出移去磷酸后的层级变化。",
+      "limitation": "教材页与讲义题图共同支持层级比较；未知反应条件、正式unit和医疗用途不补猜。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          87,
+          88
+        ],
+        "printed_pages": [
+          83,
+          84
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-062",
+      "lecture_block_indices": [
+        231,
+        235,
+        269,
+        274,
+        290,
+        297,
+        303,
+        305,
+        310
+      ],
+      "source_sha256": "4bf36447638b9835792e99c25ce5fed43dbddc13f326e69e585efe64f3f7cc91",
+      "source_preview_revision": "74f7bff65f126566b940bb4a9da5d0dfc474a32cf9cfffb2f33acad4f19d1ccb",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-PROTEIN-NUCLEIC-07",
+      "title": "核糖与2-脱氧核糖按结构辨认",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.1",
+      "pdf_pages": [
+        80,
+        88
+      ],
+      "printed_pages": [
+        76,
+        84
+      ],
+      "source_anchors": [
+        "核糖与2-脱氧核糖按结构辨认"
+      ],
+      "summary": "教材给出核糖、2-脱氧核糖图并比较DNA与RNA组成。辨认时比较戊糖2号碳上的羟基差别，DNA通常用A、G、C、T，RNA通常用A、G、C、U；不按核酸名称猜缺失题图中的碱基、端点和连接位置。",
+      "classroom_check": "给戊糖环编号，指出2号碳及环氧的位置，解释为什么环氧不算羟基。",
+      "limitation": "80页是实际读过的前置结构图；正式section_id与unit_id仍unknown，缺旧式对象的题目继续待修复。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          80,
+          88
+        ],
+        "printed_pages": [
+          76,
+          84
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-062",
+      "lecture_block_indices": [
+        235,
+        247,
+        290,
+        292,
+        303,
+        306,
+        311,
+        314,
+        315,
+        318,
+        323
+      ],
+      "source_sha256": "4bf36447638b9835792e99c25ce5fed43dbddc13f326e69e585efe64f3f7cc91",
+      "source_preview_revision": "74f7bff65f126566b940bb4a9da5d0dfc474a32cf9cfffb2f33acad4f19d1ccb",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-PROTEIN-NUCLEIC-08",
+      "title": "单链骨架与双链碱基配对分别计数",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C4:4.1",
+      "pdf_pages": [
+        88
+      ],
+      "printed_pages": [
+        84
+      ],
+      "source_anchors": [
+        "单链骨架与双链碱基配对分别计数"
+      ],
+      "summary": "教材DNA图将外侧戊糖—磷酸骨架与内侧碱基配对分开，A—T有两条氢键、G—C有三条氢键。互补链之间对应计数后，完整双链总数满足A＝T、G＝C；这一等式不能直接套到任意单链片段。",
+      "classroom_check": "一条链写AAGC，再配出互补链并分别统计单链、双链碱基和配对氢键。",
+      "limitation": "教材模型适用范围明确；不把讲义“磷脂键”或“平行”缩略语用来推断链方向。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          88
+        ],
+        "printed_pages": [
+          84
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-062",
+      "lecture_block_indices": [
+        242,
+        251,
+        253,
+        416,
+        418,
+        424,
+        426
+      ],
+      "source_sha256": "4bf36447638b9835792e99c25ce5fed43dbddc13f326e69e585efe64f3f7cc91",
+      "source_preview_revision": "74f7bff65f126566b940bb4a9da5d0dfc474a32cf9cfffb2f33acad4f19d1ccb",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-PROTEIN-NUCLEIC-09",
+      "title": "蛋白质盐析和变性要区分观察与活性",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.4",
+      "pdf_pages": [
+        105,
+        106
+      ],
+      "printed_pages": [
+        101,
+        102
+      ],
+      "source_anchors": [
+        "蛋白质盐析和变性要区分观察与活性"
+      ],
+      "summary": "教材介绍浓盐溶液降低蛋白质溶解度及热、酸碱等条件下的变性，并将结构与生理活性关联。析出与重新溶解是可见现象，活性仍是另外的待验证量；讲义把变性一律写成不可逆的概括需保留限制。",
+      "classroom_check": "对“盐析再溶解”和“加热后不溶”分别写观察记录与尚未测量的结论。",
+      "limitation": "特殊复性证据另见原始研究核验记录，不能外推课堂样品必然复性；未作当前健康、防疫建议。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          105,
+          106
+        ],
+        "printed_pages": [
+          101,
+          102
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-062",
+      "lecture_block_indices": [
+        74,
+        85,
+        86,
+        87,
+        89,
+        90,
+        91,
+        92,
+        101
+      ],
+      "source_sha256": "4bf36447638b9835792e99c25ce5fed43dbddc13f326e69e585efe64f3f7cc91",
+      "source_preview_revision": "74f7bff65f126566b940bb4a9da5d0dfc474a32cf9cfffb2f33acad4f19d1ccb",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-PROTEIN-NUCLEIC-10",
+      "title": "教材蛋白质练习用条件解释现象",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.4",
+      "pdf_pages": [
+        108
+      ],
+      "printed_pages": [
+        104
+      ],
+      "source_anchors": [
+        "教材蛋白质练习用条件解释现象"
+      ],
+      "summary": "教材练习将硫酸钠、硫酸铜、硝酸和氢氧化钠等加入蛋白质溶液，要求联系条件讨论现象。可见沉淀不能独自区分盐析、变性或其他变化，应结合试剂、条件及后续证据；不把问题题干当已实测答案。",
+      "classroom_check": "按教材四个条件列出需要观察和需要进一步验证的量，再检查讲义盐析—变性表。",
+      "limitation": "本页实际读图仅支持题目条件；没有真实实验、官方评分细则或教师人工验收。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          108
+        ],
+        "printed_pages": [
+          104
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-062",
+      "lecture_block_indices": [
+        85,
+        86,
+        87,
+        89,
+        90,
+        91,
+        92,
+        101
+      ],
+      "source_sha256": "4bf36447638b9835792e99c25ce5fed43dbddc13f326e69e585efe64f3f7cc91",
+      "source_preview_revision": "74f7bff65f126566b940bb4a9da5d0dfc474a32cf9cfffb2f33acad4f19d1ccb",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ]
+}

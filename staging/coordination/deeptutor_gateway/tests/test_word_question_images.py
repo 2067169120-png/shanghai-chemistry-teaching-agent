@@ -30,12 +30,14 @@ def _image_bytes(fmt, color="blue"):
     return output.getvalue()
 
 
-def _fixture(desktop_paths, tmp_path, *, count=1, answer_image=False, replace=None):
+def _fixture(desktop_paths, tmp_path, *, count=1, answer_image=False, replace=None, pictures_per_question=1):
     doc = Document()
     doc.add_heading("电解质练习", 1)
     for number in range(1, count + 1):
         doc.add_paragraph(f"【即学即练{number}】观察图示后回答问题。")
-        doc.add_paragraph().add_run().add_picture(io.BytesIO(_png((number, 10, 20))))
+        for picture_number in range(pictures_per_question):
+            pixel_number = (number - 1) * pictures_per_question + picture_number + 1
+            doc.add_paragraph().add_run().add_picture(io.BytesIO(_png((pixel_number, 10, 20))))
         doc.add_paragraph("【答案】参考答案")
         if answer_image:
             doc.add_paragraph().add_run().add_picture(
@@ -271,17 +273,39 @@ def test_missing_image_is_reported_with_every_role(
         facade.import_word_question_reference(ref, [])
 
 
+@pytest.mark.parametrize('image_count', [MAX_IMAGES, MAX_IMAGES + 1])
 def test_preview_exceeding_limit_is_complete_but_import_rejects(
-    desktop_paths, tmp_path
+    desktop_paths, tmp_path, monkeypatch, image_count
 ):
-    facade, choices, _ = _fixture(desktop_paths, tmp_path, count=MAX_IMAGES + 1)
+    facade, choices, provider = _fixture(desktop_paths, tmp_path, count=1, pictures_per_question=image_count)
+    assert len(choices) == 1
+    source = tmp_path / '原图演示讲义.docx'; original = source.read_bytes()
+    state = deepcopy(facade.state_store.snapshot()); frozen_choices = deepcopy(choices)
     ref = facade.word_question_reference(choices)
-    assert len(ref["image_assets"]) == MAX_IMAGES + 1
+    frozen = deepcopy(ref)
+    assert len(ref["image_assets"]) == image_count
+    assert len({a['sha256'] for a in ref['image_assets']}) == image_count
     assert ref["image_issues"] == []
-    assert "未删减图片" in "".join(ref["warnings"])
-    with pytest.raises(WordQuestionError, match="最多选择12张"):
-        facade.import_word_question_reference(ref, [])
-    assert not _store_root(desktop_paths).exists()
+    save = PreparationImageStore.import_bytes; calls = []
+    def observe(store, *args, **kwargs):
+        calls.append(store.root)
+        return save(store, *args, **kwargs)
+    monkeypatch.setattr(PreparationImageStore, 'import_bytes', observe)
+    if image_count > MAX_IMAGES:
+        assert "未删减图片" in "".join(ref["warnings"])
+        with pytest.raises(WordQuestionError, match=f"最多选择{MAX_IMAGES}张"):
+            facade.import_word_question_reference(ref, [])
+        assert calls == [] and not _store_root(desktop_paths).exists()
+    else:
+        result = facade.import_word_question_reference(ref, [])
+        assert result['image_assets'] == ref['image_assets']
+        assert len(calls) == image_count and all(root == _store_root(desktop_paths) for root in calls)
+        store = PreparationImageStore(_store_root(desktop_paths))
+        for number, asset in enumerate(result['image_assets'], 1):
+            assert store.load(asset) == _png((number, 10, 20))
+    assert ref == frozen and choices == frozen_choices
+    assert source.read_bytes() == original and facade.state_store.snapshot() == state
+    assert provider.borrow_calls == 0
 
 
 def test_merge_preserves_order_metadata_and_duplicate_image_roles(
@@ -312,7 +336,7 @@ def test_combined_limit_fails_without_saving_new_images(desktop_paths, tmp_path)
         for n in range(MAX_IMAGES - 1)
     ]
     before = set(store.root.iterdir())
-    with pytest.raises(WordQuestionError, match="最多选择12张"):
+    with pytest.raises(WordQuestionError, match=f"最多选择{MAX_IMAGES}张"):
         facade.import_word_question_reference(ref, existing)
     assert set(store.root.iterdir()) == before
 

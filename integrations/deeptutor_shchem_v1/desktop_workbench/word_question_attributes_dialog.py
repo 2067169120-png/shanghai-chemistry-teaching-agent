@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSizePolicy,
     QStackedWidget,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -29,6 +30,7 @@ from ..desktop_word_question_attributes import (
     WordQuestionAttributeError,
     apply_teacher_edits,
     build_teacher_updates,
+    rebase_automatic_scope_attributes,
     validate_attributes,
 )
 from .components import page_scroll, set_status
@@ -100,6 +102,74 @@ def attribute_summary(row):
         or "待映射",
         "教师备注": row["teacher_note"] or "未填写",
     }
+
+
+class WordAutomaticScopeLabelsDialog(QDialog):
+    """Compare old/current automatic scope suggestions; acceptance never writes."""
+
+    def __init__(self, plan, parent=None):
+        super().__init__(parent)
+        old = validate_attributes(plan["previous_attributes"])
+        new = rebase_automatic_scope_attributes(old, plan["attributes"])
+        if (plan.get("automatic_only") is not True or plan.get("teacher_confirmed") is not False
+                or old["key"] != new["key"] or old["source_sha256"] != new["source_sha256"]
+                or new["question_revision"] != plan["question_revision"]
+                or not isinstance(plan.get("plan_sha256"), str) or len(plan["plan_sha256"]) != 64):
+            raise WordQuestionAttributeError("自动建议与当前题目不一致，请重新预览。")
+        self.expected_plan_sha256 = plan["plan_sha256"]
+        self.save_requested = False
+        self.setWindowTitle("按新范围整理自动建议")
+        self.resize(740, 760)
+        self.setMinimumSize(360, 480)
+        layout = QVBoxLayout(self)
+        layout.addWidget(_label(plan["title"]))
+        layout.addWidget(_label(plan["source_name"]))
+        layout.addWidget(_label("自动建议将按当前题目范围重新整理；旧标签和修订历史保留，选用仍需核对。"))
+        def scope(value):
+            if not value:
+                return "位置未记录，保留旧版本"
+            return f"原文区块{value['block_start']}—{value['block_end']}；题面至{value['question_end']}，答案从{value['answer_start']}"
+        layout.addWidget(_label(f"旧范围：{scope(plan['previous_range'])}\n当前范围：{scope(plan['current_range'])}"))
+        summary = attribute_summary(new)
+        self.current_summary = _label("；".join(f"{field}：{summary[field]}" for field in ("主知识点", "教材节")))
+        layout.addWidget(self.current_summary)
+        self.tabs = QTabWidget()
+        self.comparison = QPlainTextEdit()
+        self.comparison.setReadOnly(True)
+        self.comparison.setAccessibleName("旧范围与当前范围的自动标签对照")
+        old_summary = attribute_summary(old)
+        self.comparison.setPlainText("\n\n".join(
+            f"{field}\n旧范围：{old_summary[field]}\n当前范围：{summary[field]}" for field in summary
+        ))
+        self.tabs.addTab(self.comparison, "标签对照")
+        self.evidence = QPlainTextEdit()
+        self.evidence.setReadOnly(True)
+        self.evidence.setAccessibleName("当前范围自动建议的原文依据")
+        evidence = []
+        for group in [new["primary_knowledge"], *new["supporting_knowledge"], *new["curriculum_candidates"], new["answer_status"]]:
+            for item in group.get("evidence", []):
+                position = f"区块{item['block_index']}" if item.get("block_index") is not None else "来源记录"
+                evidence.append(f"{position}：{item['quote']}")
+        evidence += new["material_status"]["warnings"]
+        self.evidence.setPlainText("\n\n".join(dict.fromkeys(evidence)) or "本范围暂无可定位标签依据，未知字段保留待确认。")
+        self.tabs.addTab(self.evidence, "当前依据")
+        layout.addWidget(self.tabs, 1)
+        controls = QHBoxLayout()
+        self.cancel_button = QPushButton("取消")
+        self.save_button = QPushButton("保存自动建议")
+        self.cancel_button.clicked.connect(self.reject)
+        self.save_button.clicked.connect(self._confirm)
+        controls.addWidget(self.cancel_button)
+        controls.addWidget(self.save_button)
+        layout.addLayout(controls)
+
+    def _confirm(self):
+        self.save_requested = True
+        self.accept()
+
+    def reject(self):
+        self.save_requested = False
+        super().reject()
 
 
 class WordQuestionAttributesDialog(QDialog):

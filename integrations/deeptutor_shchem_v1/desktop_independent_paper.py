@@ -34,7 +34,10 @@ def _dependencies(facade, rows, words):
     # their taxonomy change independently. Pin both without copying a bank.
     catalog = None
     if words:
-        reader = getattr(facade._word_questions(), "_read_attribute_catalog", None)
+        service = facade._word_questions()
+        reader = getattr(service, "_read_dependency_attribute_catalog", None)
+        if not callable(reader):
+            reader = getattr(service, "_read_attribute_catalog", None)
         catalog = reader() if callable(reader) else None
     for row in rows:
         if row["kind"] == "word_question":

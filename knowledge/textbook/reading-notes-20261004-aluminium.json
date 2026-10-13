@@ -1,0 +1,355 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-ALUMINIUM-01",
+      "title": "铝与水实验须保留去膜和加热条件",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.1",
+      "pdf_pages": [
+        10
+      ],
+      "printed_pages": [
+        6
+      ],
+      "source_anchors": [
+        "铝与水实验须保留去膜和加热条件"
+      ],
+      "summary": "教材讨论铝表面氧化膜对水反应的影响，并比较处理表面后加热的现象。反应式应同时保留铝、水、氢氧化铝和氢气的名称及实验条件；未处理铝表面与去膜后的观察不能当作同一实验。",
+      "classroom_check": "解释为什么金属活泼性不能单独预测未处理铝片在水中的可见现象。",
+      "limitation": "仅按本页条件理解，不把讲义未完整显示条件的水反应当作室温任意铝材的必然现象。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          10
+        ],
+        "printed_pages": [
+          6
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-054",
+      "lecture_block_indices": [
+        35
+      ],
+      "source_sha256": "29a257401b339a157448bf1873d80e99222072af73fd2c9900097151192b97f3",
+      "source_preview_revision": "d2a6439330b24b4777fb1852c1dfb559f235ff4a7fd0dd745e04cec35550963b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ALUMINIUM-02",
+      "title": "浓酸钝化需要物质、浓度和温度条件",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.1",
+      "pdf_pages": [
+        10
+      ],
+      "printed_pages": [
+        6
+      ],
+      "source_anchors": [
+        "浓酸钝化需要物质、浓度和温度条件"
+      ],
+      "summary": "教材说明室温下铁、铝遇浓硝酸或浓硫酸会钝化。应将表面反应形成保护层与完全没有反应区分，保留金属、浓酸及室温条件，不能直接推广到稀酸或加热后的条件。",
+      "classroom_check": "将“铝在浓酸中不反应”改写为包含条件和表面保护机制的解释。",
+      "limitation": "研读提示不核槽车实际运输条件，也不作为材料安全使用指南。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          10
+        ],
+        "printed_pages": [
+          6
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-054",
+      "lecture_block_indices": [
+        35,
+        52,
+        57
+      ],
+      "source_sha256": "29a257401b339a157448bf1873d80e99222072af73fd2c9900097151192b97f3",
+      "source_preview_revision": "d2a6439330b24b4777fb1852c1dfb559f235ff4a7fd0dd745e04cec35550963b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ALUMINIUM-03",
+      "title": "铝热还原与电解制铝使用不同原理",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.1",
+      "pdf_pages": [
+        11,
+        12
+      ],
+      "printed_pages": [
+        7,
+        8
+      ],
+      "source_anchors": [
+        "铝热还原与电解制铝使用不同原理"
+      ],
+      "summary": "教材按金属活泼性讨论冶炼；铝可在高温还原某些金属氧化物，制铝则电解熔融氧化铝。书中冰晶石Na₃AlF₆用于降低操作温度；这不同于在水溶液中置换金属或把冰晶石当作铝的主要原料。",
+      "classroom_check": "对照Cr₂O₃＋2Al→2Cr＋Al₂O₃（高温；氧化铬、铝、铬、氧化铝），说明与工业电解熔融氧化铝的区别。",
+      "limitation": "未核工业能耗、纯度和AlCl₃各物态性质；教材冶炼路线不支持讲义所有工艺细节。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          11,
+          12
+        ],
+        "printed_pages": [
+          7,
+          8
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-054",
+      "lecture_block_indices": [
+        37,
+        54,
+        55,
+        60,
+        262
+      ],
+      "source_sha256": "29a257401b339a157448bf1873d80e99222072af73fd2c9900097151192b97f3",
+      "source_preview_revision": "d2a6439330b24b4777fb1852c1dfb559f235ff4a7fd0dd745e04cec35550963b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ALUMINIUM-04",
+      "title": "材料选择用给定性质与比较对象说明",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.1",
+      "pdf_pages": [
+        7,
+        14,
+        15
+      ],
+      "printed_pages": [
+        3,
+        10,
+        11
+      ],
+      "source_anchors": [
+        "材料选择用给定性质与比较对象说明"
+      ],
+      "summary": "教材呈现金属的共性、合金比较和性质数据，铝的密度、熔点等可用于材料评价。轻、导电或耐腐蚀各是不同证据，不能由单个性质推出一种材料在所有用途下最好；须说明比较对象与用途条件。",
+      "classroom_check": "从教材表中各选一项物理性质和一种材料用途，写出证据支持到哪一步。",
+      "limitation": "只使用所读教材表格，不补造合金性能、价格或具体产品参数。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          7,
+          14,
+          15
+        ],
+        "printed_pages": [
+          3,
+          10,
+          11
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-054",
+      "lecture_block_indices": [
+        35,
+        65,
+        74
+      ],
+      "source_sha256": "29a257401b339a157448bf1873d80e99222072af73fd2c9900097151192b97f3",
+      "source_preview_revision": "d2a6439330b24b4777fb1852c1dfb559f235ff4a7fd0dd745e04cec35550963b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ALUMINIUM-05",
+      "title": "氧化铝两性实验核起始物与配平",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.2",
+      "pdf_pages": [
+        17
+      ],
+      "printed_pages": [
+        13
+      ],
+      "source_anchors": [
+        "氧化铝两性实验核起始物与配平"
+      ],
+      "summary": "教材用新制备氧化铝分别与强酸、强碱反应说明两性：Al₂O₃＋6HCl→2AlCl₃＋3H₂O；Al₂O₃＋2NaOH＋3H₂O→2Na[Al(OH)₄]。氧化铝、盐酸、氯化铝、水、氢氧化钠及四羟基合铝酸钠的物质名称与系数应完整保留。",
+      "classroom_check": "逐项核两式的铝、氧、氢原子数，并说明为什么不能照抄金属铝的放氢式。",
+      "limitation": "本页反应不确认“唯一两性物质”的断言，也不直接标定沉淀曲线或镓流程的难度。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          17
+        ],
+        "printed_pages": [
+          13
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-054",
+      "lecture_block_indices": [
+        35,
+        65,
+        69,
+        71,
+        74,
+        80
+      ],
+      "source_sha256": "29a257401b339a157448bf1873d80e99222072af73fd2c9900097151192b97f3",
+      "source_preview_revision": "d2a6439330b24b4777fb1852c1dfb559f235ff4a7fd0dd745e04cec35550963b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ALUMINIUM-06",
+      "title": "金属铝与碱反应和氧化铝两性分别记录",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.2",
+      "pdf_pages": [
+        17,
+        19
+      ],
+      "printed_pages": [
+        13,
+        15
+      ],
+      "source_anchors": [
+        "金属铝与碱反应和氧化铝两性分别记录"
+      ],
+      "summary": "教材氧化铝实验与铝、氢氧化钠溶液的教师实验起始物不同。比较时要记录是否有气体、铝价态是否变化及各反应所需的水；讲义管道疏通式漏掉产物系数，须先核守恒再讨论现象。",
+      "classroom_check": "写2Al＋2OH⁻＋6H₂O→2[Al(OH)₄]⁻＋3H₂↑，并标铝、氢氧根、水、四羟基合铝酸根和氢气。",
+      "limitation": "教师实验原页的阅读不等于实验已实施；本提示也不作为管道疏通产品操作说明。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          17,
+          19
+        ],
+        "printed_pages": [
+          13,
+          15
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-054",
+      "lecture_block_indices": [
+        35,
+        65,
+        131,
+        134
+      ],
+      "source_sha256": "29a257401b339a157448bf1873d80e99222072af73fd2c9900097151192b97f3",
+      "source_preview_revision": "d2a6439330b24b4777fb1852c1dfb559f235ff4a7fd0dd745e04cec35550963b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ALUMINIUM-07",
+      "title": "铁离子检验受共存铁与前处理影响",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.2",
+      "pdf_pages": [
+        24,
+        25
+      ],
+      "printed_pages": [
+        20,
+        21
+      ],
+      "source_anchors": [
+        "铁离子检验受共存铁与前处理影响"
+      ],
+      "summary": "教材以KSCN红色反应区分Fe³⁺，并展示铁离子与铁生成亚铁离子的转化2Fe³⁺＋Fe→3Fe²⁺。铝热产物含金属铁时，酸溶和后续还原可改变被检物种，KSCN不显红不足以否定原样含氧化铁。",
+      "classroom_check": "沿“原样→酸溶→与共存铁反应→KSCN检验”逐步标出Fe的价态和阴性结论的限制。",
+      "limitation": "仅建立前处理干扰的证据链，不宣称本讲铝热产物已做实验或Fe₂O₃含量已测定。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          24,
+          25
+        ],
+        "printed_pages": [
+          20,
+          21
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-054",
+      "lecture_block_indices": [
+        108,
+        120,
+        126
+      ],
+      "source_sha256": "29a257401b339a157448bf1873d80e99222072af73fd2c9900097151192b97f3",
+      "source_preview_revision": "d2a6439330b24b4777fb1852c1dfb559f235ff4a7fd0dd745e04cec35550963b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ALUMINIUM-08",
+      "title": "教材性质用于流程核对而非替代工艺依据",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.2",
+      "pdf_pages": [
+        16,
+        17
+      ],
+      "printed_pages": [
+        12,
+        13
+      ],
+      "source_anchors": [
+        "教材性质用于流程核对而非替代工艺依据"
+      ],
+      "summary": "教材比较金属氧化物并说明氧化铝两性，可用于核对讲义碱浸后铝的去向。进一步处理共存铁、硅及镓仍需原料、试剂、相态和分离条件；教材这些页未完整展开铝沉淀曲线或Ga/Al选择性流程。",
+      "classroom_check": "为讲义酸浸、碱浸流程各列目标元素、滤液与滤渣，再标哪些判断需超出本节原页补证。",
+      "limitation": "不由SiO₂熔点单独判铝纯度，不由同族关系确定Ga的全部酸碱或沉淀行为。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          16,
+          17
+        ],
+        "printed_pages": [
+          12,
+          13
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-054",
+      "lecture_block_indices": [
+        257,
+        259,
+        262,
+        264,
+        268,
+        285,
+        291,
+        298,
+        306,
+        314
+      ],
+      "source_sha256": "29a257401b339a157448bf1873d80e99222072af73fd2c9900097151192b97f3",
+      "source_preview_revision": "d2a6439330b24b4777fb1852c1dfb559f235ff4a7fd0dd745e04cec35550963b",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ]
+}

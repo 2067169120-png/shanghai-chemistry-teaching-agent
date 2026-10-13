@@ -1,0 +1,470 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-SUBSTANCE-PREPARATION-01",
+      "title": "制备方案从目标组成走向条件和分离",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        27
+      ],
+      "printed_pages": [
+        22
+      ],
+      "source_anchors": [
+        "制备方案从目标组成走向条件和分离"
+      ],
+      "summary": "教材把目标物、原料、反应原理、制备路线、装置与条件及分离提纯关联起来。各阶段依据不同，反应式正确还不足以证明粗品纯度、出口气体组成或产品实际收率。",
+      "classroom_check": "为一个纸面流程标出每一步的目标物、伴随物、条件及待验证结论。",
+      "limitation": "课堂图析建议，尚未做真实实验或认证讲义原始试卷。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          27
+        ],
+        "printed_pages": [
+          22
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-060",
+      "lecture_block_indices": [
+        154,
+        214,
+        282,
+        319,
+        320,
+        321
+      ],
+      "source_sha256": "68f4f4c3b93a048a50eea10a15a0dc91e9a41f7621623f857014d30d1393f6f1",
+      "source_preview_revision": "4ce161fdb563840fb2a0e9ffbccc10f0dd420b5e1f2324cae37dd68448c39fff",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-PREPARATION-02",
+      "title": "氯气制备的反应式与尾气物料核对",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        28
+      ],
+      "printed_pages": [
+        23
+      ],
+      "source_anchors": [
+        "氯气制备的反应式与尾气物料核对"
+      ],
+      "summary": "教材二氧化锰与浓盐酸加热反应：MnO₂＋4HCl（浓）→MnCl₂＋Cl₂↑＋2H₂O，分别为二氧化锰、盐酸、氯化锰、氯气和水。NaOH尾气吸收的教材反应为Cl₂＋2NaOH→NaCl＋NaClO＋H₂O；盐酸蒸气与水蒸气的净化需求另核。",
+      "classroom_check": "检查Mn、Cl、H、O及两份NaOH系数，并解释湿洗后为什么还可能含水蒸气。",
+      "limitation": "仅教师指导下教材讨论，不扩展为学生自主制备或完整安全操作。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          28
+        ],
+        "printed_pages": [
+          23
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-060",
+      "lecture_block_indices": [
+        41,
+        44,
+        63,
+        79,
+        99,
+        100,
+        101,
+        102,
+        103
+      ],
+      "source_sha256": "68f4f4c3b93a048a50eea10a15a0dc91e9a41f7621623f857014d30d1393f6f1",
+      "source_preview_revision": "4ce161fdb563840fb2a0e9ffbccc10f0dd420b5e1f2324cae37dd68448c39fff",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-PREPARATION-03",
+      "title": "过滤与蒸发要先识别物料状态",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        29
+      ],
+      "printed_pages": [
+        24
+      ],
+      "source_anchors": [
+        "过滤与蒸发要先识别物料状态"
+      ],
+      "summary": "教材过滤用于分开不溶性固体与液体，蒸发用于去除挥发性溶剂取得适宜溶质。目标留在滤渣还是滤液需由溶解状态确定；不能按“有固体”就过滤或将任何晶体产物都蒸干。",
+      "classroom_check": "在制备流程上分别圈出目标所在的滤渣、滤液和最终晶体。",
+      "limitation": "过滤与蒸发是有条件方法，具体水合物或分解行为以题设和原资料为准。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          29
+        ],
+        "printed_pages": [
+          24
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-060",
+      "lecture_block_indices": [
+        195,
+        196,
+        200,
+        205,
+        211,
+        214,
+        226,
+        234
+      ],
+      "source_sha256": "68f4f4c3b93a048a50eea10a15a0dc91e9a41f7621623f857014d30d1393f6f1",
+      "source_preview_revision": "4ce161fdb563840fb2a0e9ffbccc10f0dd420b5e1f2324cae37dd68448c39fff",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-PREPARATION-04",
+      "title": "蒸发结晶与冷却结晶的选择",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        30,
+        37
+      ],
+      "printed_pages": [
+        25,
+        32
+      ],
+      "source_anchors": [
+        "蒸发结晶与冷却结晶的选择"
+      ],
+      "summary": "教材以溶解度随温度变化区分蒸发结晶和冷却结晶，并用曲线讨论适合冷却析出的溶质。重结晶同时考虑目标溶解、杂质去向和晶体析出，不能只凭一个物质名称选方法。",
+      "classroom_check": "对教材两条曲线写出冷却后的析出倾向，再为母液中的杂质补一条说明。",
+      "limitation": "未据曲线外推题设以外温度；低温洗涤仍可能损失产品。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          30,
+          37
+        ],
+        "printed_pages": [
+          25,
+          32
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-060",
+      "lecture_block_indices": [
+        196,
+        200,
+        205,
+        211,
+        275,
+        276,
+        277,
+        278
+      ],
+      "source_sha256": "68f4f4c3b93a048a50eea10a15a0dc91e9a41f7621623f857014d30d1393f6f1",
+      "source_preview_revision": "4ce161fdb563840fb2a0e9ffbccc10f0dd420b5e1f2324cae37dd68448c39fff",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-PREPARATION-05",
+      "title": "蒸馏与分馏的分离能力不同",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        30
+      ],
+      "printed_pages": [
+        25
+      ],
+      "source_anchors": [
+        "蒸馏与分馏的分离能力不同"
+      ],
+      "summary": "教材用沸点差较大的混合物解释蒸馏；沸点较近时用分馏柱增加气液接触和重复汽化、冷凝。加热浴控制供热和温度，不能独自提供近沸点组分的分离能力。",
+      "classroom_check": "指出“换成油浴就能分开沸点相近混合物”缺少什么证据或装置条件。",
+      "limitation": "减压条件、热稳定性与实际纯度仍须逐案核，不宣称一定节能或零分解。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          30
+        ],
+        "printed_pages": [
+          25
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-060",
+      "lecture_block_indices": [
+        194,
+        200,
+        288,
+        291,
+        337,
+        339,
+        341,
+        345
+      ],
+      "source_sha256": "68f4f4c3b93a048a50eea10a15a0dc91e9a41f7621623f857014d30d1393f6f1",
+      "source_preview_revision": "4ce161fdb563840fb2a0e9ffbccc10f0dd420b5e1f2324cae37dd68448c39fff",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-PREPARATION-06",
+      "title": "萃取和分液需要不互溶的液层",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        31,
+        38
+      ],
+      "printed_pages": [
+        26,
+        33
+      ],
+      "source_anchors": [
+        "萃取和分液需要不互溶的液层"
+      ],
+      "summary": "教材萃取利用溶质在两种不互溶溶剂中溶解性不同，再按液层分液。下层由下口放出，上层从上口倒出；先核真实密度、互溶性和物料。乙醇与乙醚互溶，不能靠分液直接得到纯乙醚。",
+      "classroom_check": "说明分液漏斗图中哪层是目标，并解释乙醇—乙醚混合物为何不适用一次分液。",
+      "limitation": "操作表达为教材识图核对，不提供危险溶剂的自主处理流程。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          31,
+          38
+        ],
+        "printed_pages": [
+          26,
+          33
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-060",
+      "lecture_block_indices": [
+        195,
+        200,
+        214,
+        321,
+        340,
+        343,
+        345
+      ],
+      "source_sha256": "68f4f4c3b93a048a50eea10a15a0dc91e9a41f7621623f857014d30d1393f6f1",
+      "source_preview_revision": "4ce161fdb563840fb2a0e9ffbccc10f0dd420b5e1f2324cae37dd68448c39fff",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-PREPARATION-07",
+      "title": "冷却水端口与气液路径分别核对",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        32
+      ],
+      "printed_pages": [
+        27
+      ],
+      "source_anchors": [
+        "冷却水端口与气液路径分别核对"
+      ],
+      "summary": "教材蒸馏示意图的冷凝水从外套低端进入、高端流出，蒸气沿内管进入接收体系。低进高出依据端口实际位置；回流和收集馏出物的装置还需沿冷凝液去向判断。",
+      "classroom_check": "用两种颜色标出外套水路和内部蒸气/冷凝液路径，不按左右字母死记。",
+      "limitation": "本页示意图不认证所有冷凝设备、原讲义图形或真实装置完整安全性。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          32
+        ],
+        "printed_pages": [
+          27
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-060",
+      "lecture_block_indices": [
+        288,
+        291,
+        293,
+        294,
+        341,
+        342,
+        345,
+        366
+      ],
+      "source_sha256": "68f4f4c3b93a048a50eea10a15a0dc91e9a41f7621623f857014d30d1393f6f1",
+      "source_preview_revision": "4ce161fdb563840fb2a0e9ffbccc10f0dd420b5e1f2324cae37dd68448c39fff",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-PREPARATION-08",
+      "title": "离子检验的阳性须排除共同干扰",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        33
+      ],
+      "printed_pages": [
+        28
+      ],
+      "source_anchors": [
+        "离子检验的阳性须排除共同干扰"
+      ],
+      "summary": "教材氯离子用酸化后硝酸银检验，硫酸根先用盐酸酸化再加氯化钡；碳酸根和碳酸氢根都可能放出CO₂。选择试剂、酸化及前处理是结论的前提，一个现象不能脱离共存离子而特异归属。",
+      "classroom_check": "解释酸化为什么能排除Ag₂CO₃干扰，为什么这一步仍不能证明溴离子的全部来源。",
+      "limitation": "卤素携带与反应类型的推论另核，不把教材氯离子试验直接当所有卤素的认证。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          33
+        ],
+        "printed_pages": [
+          28
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-060",
+      "lecture_block_indices": [
+        162,
+        182,
+        188,
+        303,
+        308,
+        312,
+        314,
+        316,
+        328,
+        329,
+        331
+      ],
+      "source_sha256": "68f4f4c3b93a048a50eea10a15a0dc91e9a41f7621623f857014d30d1393f6f1",
+      "source_preview_revision": "4ce161fdb563840fb2a0e9ffbccc10f0dd420b5e1f2324cae37dd68448c39fff",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-PREPARATION-09",
+      "title": "浓度体积口径与制备产量的计量核算",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        34,
+        35,
+        36
+      ],
+      "printed_pages": [
+        29,
+        30,
+        31
+      ],
+      "source_anchors": [
+        "浓度体积口径与制备产量的计量核算"
+      ],
+      "summary": "教材c＝n/V中的V为溶液体积，不是加水体积；定容、定量转移和洗涤影响准确量取。制备理论产量还应按反应计量、限制性反应物和目标化学式计算，溶液浓度、转化率和分离收率不能混作一个量。",
+      "classroom_check": "核教材100mL、1mol/L NaCl需5.850g，再说明带水晶体的称量何时不能直接算纯品收率。",
+      "limitation": "教材量取页支持物质的量与体积口径；具体收率仅为讲义模型，未实测。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          34,
+          35,
+          36
+        ],
+        "printed_pages": [
+          29,
+          30,
+          31
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-060",
+      "lecture_block_indices": [
+        192,
+        196,
+        200,
+        214,
+        275,
+        276,
+        277,
+        278,
+        282
+      ],
+      "source_sha256": "68f4f4c3b93a048a50eea10a15a0dc91e9a41f7621623f857014d30d1393f6f1",
+      "source_preview_revision": "4ce161fdb563840fb2a0e9ffbccc10f0dd420b5e1f2324cae37dd68448c39fff",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-SUBSTANCE-PREPARATION-10",
+      "title": "分离题用性质表和曲线约束方法",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C1:1.3",
+      "pdf_pages": [
+        37,
+        38
+      ],
+      "printed_pages": [
+        32,
+        33
+      ],
+      "source_anchors": [
+        "分离题用性质表和曲线约束方法"
+      ],
+      "summary": "教材练习要求依据溶解度曲线、混合物相态和沸点资料选择方法；溶解的糖不由普通过滤除去，混溶液体也不能直接分液。先读条件与表格单位，再说明目标物和杂质各往哪里去。",
+      "classroom_check": "给一个错误的过滤或分液选择补上可核验的物性理由。",
+      "limitation": "练习中的食品等生活背景仅作化学题设，不延伸为当前健康或材料安全建议。",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          37,
+          38
+        ],
+        "printed_pages": [
+          32,
+          33
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-060",
+      "lecture_block_indices": [
+        194,
+        195,
+        196,
+        200,
+        214,
+        321,
+        343,
+        345
+      ],
+      "source_sha256": "68f4f4c3b93a048a50eea10a15a0dc91e9a41f7621623f857014d30d1393f6f1",
+      "source_preview_revision": "4ce161fdb563840fb2a0e9ffbccc10f0dd420b5e1f2324cae37dd68448c39fff",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ]
+}

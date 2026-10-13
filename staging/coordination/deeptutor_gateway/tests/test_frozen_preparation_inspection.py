@@ -137,7 +137,19 @@ def test_inspector_rejects_missing_self_contained_notebook_rules(missing):
 
 
 def test_inspector_runs_frozen_image_capacity_without_store_io():
-    assert _inspector().verify_frozen_image_limit(_CodeArchive())
+    assert _inspector().verify_frozen_image_limit(_CodeArchive(), expected_limit=128)
+
+
+def test_inspector_preserves_released_48_image_default():
+    class ReleasedImages(_CodeArchive):
+        def extract(self, name):
+            if not name.endswith("desktop_preparation_images"):
+                return super().extract(name)
+            path = ROOT / (name.replace(".", "/") + ".py")
+            source = path.read_text("utf-8").replace("MAX_IMAGES = 128", "MAX_IMAGES = 48")
+            return compile(source, str(path), "exec")
+
+    assert _inspector().verify_frozen_image_limit(ReleasedImages())
 
 
 def test_inspector_rejects_old_six_image_capacity():
@@ -147,7 +159,7 @@ def test_inspector_rejects_old_six_image_capacity():
                 return super().extract(name)
             path = ROOT / (name.replace(".", "/") + ".py")
             source = path.read_text("utf-8").replace(
-                "MAX_IMAGES = 48", "MAX_IMAGES = 6"
+                "MAX_IMAGES = 128", "MAX_IMAGES = 6"
             )
             return compile(source, str(path), "exec")
 

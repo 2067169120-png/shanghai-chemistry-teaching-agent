@@ -7,15 +7,16 @@ import sys
 import threading
 from uuid import uuid4
 
-from PySide6.QtCore import QProcess, Qt
+from PySide6.QtCore import QProcess, QProcessEnvironment, Qt
 from PySide6.QtWidgets import (QCheckBox, QDialog, QFileDialog, QHBoxLayout, QLabel,
-    QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit, QPushButton,
+    QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit, QPushButton, QLineEdit,
     QTabWidget, QVBoxLayout, QWidget)
 
 from ..desktop_backup import (BackupCancelled, create_backup, inspect_backup, manifest_revision,
     missing_lesson_images, plan_backup, reconnect_lesson_image, restore_backup, restored_profile,
     summary_text)
 from .components import set_status
+from .. import desktop_paths as _loaded_desktop_paths
 
 
 class BackupDialog(QDialog):
@@ -48,6 +49,17 @@ class BackupDialog(QDialog):
         self.images = QCheckBox("包含这些备课引用的本地图片")
         self.outputs = QCheckBox("包含已结束的生成任务、返回稿及成品文件")
         lay.addWidget(self.images); lay.addWidget(self.outputs)
+        self.sources=QCheckBox('包含本课原讲义及同批原文件，恢复后可继续选材')
+        self.source_root=QLineEdit(str(paths.state_root));self.source_root.setReadOnly(True)
+        self.source_root.setAccessibleName('已登记原讲义所在个人工作台目录')
+        self.source_root_button=QPushButton('选择原讲义所在工作台目录…')
+        def select_source_root():
+            chosen=QFileDialog.getExistingDirectory(self,'选择保存原讲义导入记录的个人工作台目录')
+            if chosen:self.source_root.setText(chosen);self.invalidate_plan()
+        self.source_root_button.clicked.connect(select_source_root)
+        lay.addWidget(self.sources);lay.addWidget(self.source_root);lay.addWidget(self.source_root_button)
+        self.source_root.setEnabled(False);self.source_root_button.setEnabled(False)
+        self.sources.toggled.connect(lambda value:(self.source_root.setEnabled(value),self.source_root_button.setEnabled(value),self.invalidate_plan()))
         self.plan_output = QPlainTextEdit()
         self.plan_output.setReadOnly(True)
         self.plan_output.setPlaceholderText("先整理清单，查看包括的数量、文件大小和缺失资料。")
@@ -160,12 +172,13 @@ class BackupDialog(QDialog):
             return
         self.plan = None
         images, tasks = self.images.isChecked(), self.outputs.isChecked()
+        sources,source_root=self.sources.isChecked(),self.source_root.text()
         def apply(plan):
             self.plan = plan
             self.plan_output.setPlainText(summary_text(plan.report()))
             set_status(self.status, "success", "清单已就绪。检查范围与缺失项后，可保存本机备份。")
         self._run("整理备份清单", lambda cancel: plan_backup(self.paths.state_root,
-                  include_images=images, include_tasks=tasks, cancel=cancel), apply)
+                  include_images=images, include_tasks=tasks, include_source_dependencies=sources, source_state_root=source_root if sources else None, cancel=cancel), apply)
 
     def save_backup(self):
         if not self.plan or self._active:
@@ -235,9 +248,14 @@ class BackupDialog(QDialog):
                 program, args = sys.executable, ["--personal-state", str(root)]
             else:
                 program = sys.executable
-                args = [str(self.paths.workspace_root / "runtime/deeptutor_shchem/desktop_teacher_workbench.pyw"),
+                args = [str(Path(_loaded_desktop_paths.__file__).resolve().parents[2] / "runtime/deeptutor_shchem/desktop_teacher_workbench.pyw"),
                         "--personal-state", str(root)]
-            success, _pid = QProcess.startDetached(program, args, str(self.paths.workspace_root))
+            process=QProcess(self)
+            environment=QProcessEnvironment.systemEnvironment()
+            environment.insert('SHCHEM_WORKSPACE_ROOT',str(self.paths.workspace_root))
+            process.setProcessEnvironment(environment);process.setProgram(program);process.setArguments(args)
+            process.setWorkingDirectory(str(self.paths.workspace_root))
+            success,_pid=process.startDetached()
             if not success:
                 raise OSError("launch failed")
         except Exception:

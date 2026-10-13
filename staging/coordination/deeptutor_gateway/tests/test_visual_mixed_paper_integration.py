@@ -215,17 +215,35 @@ def test_cancelled_pagination_does_not_persist_approvable_result(imported_visual
     assert _protected(context) == before
 
 
-def test_new_preview_model_invalidates_previous_page_confirmation(imported_visual_batch):
-    service, rows = _service(imported_visual_batch)
+def test_only_successful_visual_pagination_invalidates_previous_page_confirmation(imported_visual_batch):
+    context = imported_visual_batch
+    service, rows = _service(context)
+    protected = _protected(context)
     _, paginated = _prepare(service, rows)
     _read_all(service, paginated)
     service.approve(paginated.preview_id, paginated.preview_hash)
+    original_export = service.export(paginated.preview_id, paginated.preview_hash)
+    original_artifacts = {row["path"]: Path(row["path"]).read_bytes()
+                          for row in original_export["artifacts"]}
     changed = service.create_preview(_request(service, title="合成标题与排版设置已变化", duration_minutes=50))
     assert changed.preview_id != paginated.preview_id
+    # Content candidates preserve the last approved paper until actual pages
+    # have been successfully generated and published for the replacement.
+    assert service.approve(paginated.preview_id, paginated.preview_hash)["status"] == "approved"
+    assert service.export(paginated.preview_id, paginated.preview_hash)["status"] == "completed"
+    changed = service.prepare_pagination(changed.preview_id, changed.preview_hash)
+    assert service._load(changed.preview_id)[1].get("pages_read") == []
     with pytest.raises(MixedPaperError):
         service.approve(paginated.preview_id, paginated.preview_hash)
     with pytest.raises(MixedPaperError):
         service.export(paginated.preview_id, paginated.preview_hash)
+    with pytest.raises(MixedPaperError, match="逐页"):
+        service.approve(changed.preview_id, changed.preview_hash)
+    _read_all(service, changed)
+    assert service.approve(changed.preview_id, changed.preview_hash)["status"] == "approved"
+    assert service.export(changed.preview_id, changed.preview_hash)["status"] == "completed"
+    assert original_artifacts == {path: Path(path).read_bytes() for path in original_artifacts}
+    assert _protected(context) == protected
 
 
 def _change_source(context, kind):
@@ -285,7 +303,8 @@ def test_missing_frozen_page_blocks_confirmation_even_after_all_pages_read(impor
         service.export(paginated.preview_id, paginated.preview_hash)
 
 
-def test_approve_rechecks_active_preview_after_final_source_check(imported_visual_batch, monkeypatch):
+@pytest.mark.parametrize("publish_pages", [False, True])
+def test_approve_rechecks_active_visual_pagination_after_final_source_check(imported_visual_batch, monkeypatch, publish_pages):
     service, rows = _service(imported_visual_batch)
     _, paginated = _prepare(service, rows)
     _read_all(service, paginated)
@@ -296,14 +315,23 @@ def test_approve_rechecks_active_preview_after_final_source_check(imported_visua
         result = original(*args, **kwargs)
         if kwargs.get("check_images") is False and not replacement:
             replacement.append(service.create_preview(_request(service, title="合成并发新预览")))
+            if publish_pages:
+                candidate = replacement[0]
+                replacement[0] = service.prepare_pagination(candidate.preview_id, candidate.preview_hash)
         return result
 
     monkeypatch.setattr(service, "_build_sections", replace_after_check)
-    with pytest.raises(MixedPaperError):
-        service.approve(paginated.preview_id, paginated.preview_hash)
+    if publish_pages:
+        with pytest.raises(MixedPaperError):
+            service.approve(paginated.preview_id, paginated.preview_hash)
+    else:
+        assert service.approve(paginated.preview_id, paginated.preview_hash)["status"] == "approved"
     assert len(replacement) == 1
     _, record, _ = service._load(paginated.preview_id)
-    assert record["approval"] is None
+    if publish_pages:
+        assert record["approval"] is None
+    else:
+        assert record["approval"]["preview_hash"] == paginated.preview_hash
 
 
 def test_export_rechecks_actual_cas_after_last_frozen_artifact_read(imported_visual_batch, monkeypatch):

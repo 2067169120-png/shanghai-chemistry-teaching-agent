@@ -13,9 +13,23 @@ sys.path.insert(0,str(ROOT/'runtime/deeptutor_shchem'))
 from explorer_demo_data import seed_demo
 
 @pytest.fixture
-def window(tmp_path):
+def window(tmp_path, monkeypatch):
     app=QApplication.instance() or QApplication([])
-    facade=seed_demo(tmp_path/'workspace',tmp_path/'state')
+    # These tests exercise native Word question data and UI state. The import
+    # preview is a synthetic bitmap, so seeding does not launch host Office.
+    # This fixture provides no evidence about Word-to-PDF layout fidelity.
+    from PIL import Image
+    from integrations.deeptutor_shchem_v1.intake_imports import LocalPageRenderer, RenderedPage
+    def authored_preview(_renderer, source_path, *, mime_type, work_root):
+        assert source_path.suffix == '.docx'
+        assert mime_type == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        work_root.mkdir(parents=True, exist_ok=False)
+        preview=work_root/'authored-ui-preview.png'
+        Image.new('RGB',(204,284),'white').save(preview)
+        return [RenderedPage(preview,'image/png')]
+    with monkeypatch.context() as seed_patch:
+        seed_patch.setattr(LocalPageRenderer,'render',authored_preview)
+        facade=seed_demo(tmp_path/'workspace',tmp_path/'state')
     win=TeacherWorkbenchWindow(facade);win.resize(1360,940);win.show();win.navigate("library")
     page=win.library_page
     page.scope.setCurrentIndex(page.scope.findData("word_native"))

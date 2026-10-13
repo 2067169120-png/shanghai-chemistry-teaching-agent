@@ -180,6 +180,9 @@ class PreparationRecoveryController(QObject):
             return
         apply_editor_payload(self.page, self.default)
         self.page._form_baseline = deepcopy(self.default)
+        if hasattr(self.page, '_editor_work_title'):
+            self.page._editor_work_title = ''
+            self.page._editor_draft_id = None
         self.page._preparation_task_id = None
         self.page._current_task_status = ""
         self.page._hide_result_artifacts()
@@ -188,3 +191,6 @@ class PreparationRecoveryController(QObject):
         self.page.setWindowModified(False)
         self._last_saved = (deepcopy(self.default), False)
         self.status.setText("已开始空白备课；已保存的正式草稿可从“我的备课”找回。")
+        target_changed = getattr(self.page, 'preparation_target_changed', None)
+        if target_changed is not None:
+            target_changed.emit()
