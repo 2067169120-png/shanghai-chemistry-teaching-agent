@@ -7,6 +7,7 @@ all mutable personal state below the current Windows user's local application
 data directory.
 """
 
+import hashlib
 import os
 import sys
 from dataclasses import dataclass
@@ -121,6 +122,30 @@ class DesktopPaths:
             self.task_root,
         ):
             path.mkdir(parents=True, exist_ok=True)
+
+    @property
+    def student_visual_root(self) -> Path:
+        """Keep restored student artifacts private and scoped to that copy.
+
+        A validated restore may live inside the evidence workspace. Its lesson
+        state stays there, while new student artifacts use an independent
+        namespace beside the current user's external model settings. This does
+        not migrate student data or change what a lesson backup contains.
+        """
+        state = self.state_root.resolve()
+        workspace = self.workspace_root.resolve()
+        if not (state.is_relative_to(workspace) or workspace.is_relative_to(state)):
+            return self.state_root / "student-visual-v1"
+        private_base = self.settings_root.parent
+        resolved_base = private_base.resolve()
+        if resolved_base.is_relative_to(workspace) or workspace.is_relative_to(resolved_base):
+            raise DesktopPathError("学生分析的本机私有目录必须位于项目目录之外。")
+        namespace = hashlib.sha256(
+            os.path.normcase(str(state)).encode("utf-8")
+        ).hexdigest()
+        # Retain the lexical base so the manager still rejects every reparse
+        # component before accepting this artifact root.
+        return private_base / "restored-student-visual-v1" / namespace
 
     @property
     def uses_personal_library(self) -> bool:

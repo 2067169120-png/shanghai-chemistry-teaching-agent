@@ -1,0 +1,437 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-CARBOXYL-01",
+      "title": "羧基结构和羧酸通式均保留适用范围",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.3",
+      "pdf_pages": [
+        66
+      ],
+      "printed_pages": [
+        62
+      ],
+      "source_anchors": [
+        "羧基结构和羧酸通式均保留适用范围"
+      ],
+      "summary": "教材用乙酸说明羧基—COOH，并列乳酸、柠檬酸、水杨酸等多官能团羧酸。无环饱和一元羧酸为CₙH₂ₙO₂（n≥1），甲酸包含在内；只对甲酸、乙酸举与水任意互溶实例。",
+      "classroom_check": "标出乙酸羧基碳所连原子，在乳酸、水杨酸结构中另圈醇羟基、酚羟基。",
+      "limitation": "不将通式用于所有多官能团、环状或不饱和羧酸；水溶性按具体对象核验。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          66
+        ],
+        "printed_pages": [
+          62
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-046",
+      "lecture_block_indices": [
+        37,
+        38,
+        39,
+        40,
+        43,
+        44,
+        113,
+        114
+      ],
+      "source_sha256": "14f08c7e8486b2bb95a13a9de457fb21e42d6682ea0fc2ea01ad6b8ddc3ec813",
+      "source_preview_revision": "d6126f523aea78f21331ae25f4b3017528a3fe09919864a8acc63fe8d9c43bb3",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBOXYL-02",
+      "title": "乙酸乙酯制备把试剂和水浴条件合并读取",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.3",
+      "pdf_pages": [
+        67
+      ],
+      "printed_pages": [
+        63
+      ],
+      "source_anchors": [
+        "乙酸乙酯制备把试剂和水浴条件合并读取"
+      ],
+      "summary": "教材实验记录乙醇3 mL、浓硫酸2 mL、冰醋酸2 mL，95°C水浴加热约10 min。浓硫酸加入次序、混匀操作及水浴条件属于本实验，不能推广为所有酯化反应必须条件。",
+      "classroom_check": "把三种试剂的体积、加入顺序、加热方式及所形成酯的名称填入操作表。",
+      "limitation": "这是教材实例的研读信息，课堂实验由教师组织；未核验其他催化体系或实验规模。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          67
+        ],
+        "printed_pages": [
+          63
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-046",
+      "lecture_block_indices": [
+        81,
+        82,
+        83,
+        85,
+        86,
+        87,
+        93
+      ],
+      "source_sha256": "14f08c7e8486b2bb95a13a9de457fb21e42d6682ea0fc2ea01ad6b8ddc3ec813",
+      "source_preview_revision": "d6126f523aea78f21331ae25f4b3017528a3fe09919864a8acc63fe8d9c43bb3",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBOXYL-03",
+      "title": "接收装置和提高酯产率分别解释",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.3",
+      "pdf_pages": [
+        67
+      ],
+      "printed_pages": [
+        63
+      ],
+      "source_anchors": [
+        "接收装置和提高酯产率分别解释"
+      ],
+      "summary": "蒸气导管末端位于饱和Na₂CO₃溶液液面上方，避免伸入液面导致倒吸；接收液用于中和混入乙酸并帮助分离酯层。乙醇过量、移出产物或水影响平衡，升温不能单独等同于提高平衡产率。",
+      "classroom_check": "在装置图标导管末端与液面，再把操作分别归入接收、速率和反应平衡。",
+      "limitation": "不把本装置推广到任意气体收集，也不将加热速率、转化率和实际分离产率混为一项。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          67
+        ],
+        "printed_pages": [
+          63
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-046",
+      "lecture_block_indices": [
+        81,
+        82,
+        83,
+        85,
+        86,
+        87,
+        92,
+        93
+      ],
+      "source_sha256": "14f08c7e8486b2bb95a13a9de457fb21e42d6682ea0fc2ea01ad6b8ddc3ec813",
+      "source_preview_revision": "d6126f523aea78f21331ae25f4b3017528a3fe09919864a8acc63fe8d9c43bb3",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBOXYL-04",
+      "title": "水果香味示例用来辨酯的连接方式",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.3",
+      "pdf_pages": [
+        68
+      ],
+      "printed_pages": [
+        64
+      ],
+      "source_anchors": [
+        "水果香味示例用来辨酯的连接方式"
+      ],
+      "summary": "教材把若干水果香味与酯结构并列，酯为R—C(=O)—O—R′，饱和一元酯通式CₙH₂ₙO₂且n≥2。根据对应酸和醇识别酯名，必须区分酯与讲义表中误写的RCOCl。",
+      "classroom_check": "把酯键两侧分别归入酸的酰基部分与醇的烃基部分，再对照水解产物命名。",
+      "limitation": "香味只作教材列举，不凭气味鉴定纯物质或推出食品的全部成分。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          68
+        ],
+        "printed_pages": [
+          64
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-046",
+      "lecture_block_indices": [
+        198,
+        199,
+        200,
+        202,
+        205,
+        206,
+        207,
+        208,
+        216,
+        217,
+        218,
+        219
+      ],
+      "source_sha256": "14f08c7e8486b2bb95a13a9de457fb21e42d6682ea0fc2ea01ad6b8ddc3ec813",
+      "source_preview_revision": "d6126f523aea78f21331ae25f4b3017528a3fe09919864a8acc63fe8d9c43bb3",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBOXYL-05",
+      "title": "乙酸乙酯的两种水解条件对应不同终产物",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.3",
+      "pdf_pages": [
+        69
+      ],
+      "printed_pages": [
+        65
+      ],
+      "source_anchors": [
+        "乙酸乙酯的两种水解条件对应不同终产物"
+      ],
+      "summary": "教材酸催化水解是可逆过程，生成乙酸和乙醇；与NaOH溶液加热时生成乙酸钠和乙醇，酸被中和有利于水解继续。反应条件、箭头和终产物须一起核对。",
+      "classroom_check": "并排书写两种方程式，为所有物质补名称，解释碱性条件为何生成乙酸盐。",
+      "limitation": "不将任意少量碱、任意操作时间都写成完全水解；未推广所有特殊酯的产物与条件。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          69
+        ],
+        "printed_pages": [
+          65
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-046",
+      "lecture_block_indices": [
+        213,
+        214,
+        215,
+        216,
+        217
+      ],
+      "source_sha256": "14f08c7e8486b2bb95a13a9de457fb21e42d6682ea0fc2ea01ad6b8ddc3ec813",
+      "source_preview_revision": "d6126f523aea78f21331ae25f4b3017528a3fe09919864a8acc63fe8d9c43bb3",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBOXYL-06",
+      "title": "油脂加氢要定位碳碳双键",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.3",
+      "pdf_pages": [
+        69
+      ],
+      "printed_pages": [
+        65
+      ],
+      "source_anchors": [
+        "油脂加氢要定位碳碳双键"
+      ],
+      "summary": "教材说明油脂中不饱和烃基的碳碳双键可以在适当催化条件下加氢，而酯基羰基在常用条件下不能按同样规则计入。计量前先在结构上区分C=C与酯键中的C=O。",
+      "classroom_check": "在油脂简式中用不同标记圈碳碳双键和酯基，再说明H₂计量所采用的反应条件。",
+      "limitation": "“常用条件下”不能改写成酯基在一切条件下均不能被还原。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          69
+        ],
+        "printed_pages": [
+          65
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-046",
+      "lecture_block_indices": [
+        105,
+        106,
+        107,
+        213,
+        214,
+        215,
+        267
+      ],
+      "source_sha256": "14f08c7e8486b2bb95a13a9de457fb21e42d6682ea0fc2ea01ad6b8ddc3ec813",
+      "source_preview_revision": "d6126f523aea78f21331ae25f4b3017528a3fe09919864a8acc63fe8d9c43bb3",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBOXYL-07",
+      "title": "胺与酰胺依据氮旁连接区别",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.3",
+      "pdf_pages": [
+        69
+      ],
+      "printed_pages": [
+        65
+      ],
+      "source_anchors": [
+        "胺与酰胺依据氮旁连接区别"
+      ],
+      "summary": "教材由氨的氢被烃基取代说明胺，并通过羧酸与胺的反应引入酰胺。酰胺含羰基碳直接连氮的连接方式；本讲乙酰胺、苯甲酰胺、N,N-二甲基甲酰胺展示不同氮取代。",
+      "classroom_check": "对照甲胺、乙酰胺和N,N-二甲基甲酰胺标氮原子的邻接原子，再核水解产物与电荷。",
+      "limitation": "不把所有胺写成RNH₂，也不把所有酰胺水解的含氮产物都写成NH₃或NH₄⁺。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          69
+        ],
+        "printed_pages": [
+          65
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-046",
+      "lecture_block_indices": [
+        223,
+        224,
+        225,
+        226,
+        234,
+        239,
+        240,
+        241,
+        242,
+        243,
+        244
+      ],
+      "source_sha256": "14f08c7e8486b2bb95a13a9de457fb21e42d6682ea0fc2ea01ad6b8ddc3ec813",
+      "source_preview_revision": "d6126f523aea78f21331ae25f4b3017528a3fe09919864a8acc63fe8d9c43bb3",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBOXYL-08",
+      "title": "乳酸路线分别追踪羟基与羧基",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.3",
+      "pdf_pages": [
+        70,
+        71
+      ],
+      "printed_pages": [
+        66,
+        67
+      ],
+      "source_anchors": [
+        "乳酸路线分别追踪羟基与羧基"
+      ],
+      "summary": "乳酸CH₃CH(OH)COOH与乙醇形成乳酸乙酯A（C₅H₁₀O₃），与乙酸形成羟基被乙酰化的B（C₅H₈O₄），在教材给定催化、加热条件下脱水形成丙烯酸C（C₃H₄O₂）。每条路线的反应位置不同。",
+      "classroom_check": "先圈乳酸的羟基和羧基，再分别写A、B、C结构，并用分子式核对净增减原子。",
+      "limitation": "只读取教材给定路线与条件，不推广任意乳酸实验的产率、催化剂或生成物比例。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          70,
+          71
+        ],
+        "printed_pages": [
+          66,
+          67
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-046",
+      "lecture_block_indices": [
+        38,
+        39,
+        81,
+        82,
+        83,
+        85,
+        86,
+        87,
+        198,
+        205,
+        206,
+        213,
+        214,
+        215,
+        263,
+        264
+      ],
+      "source_sha256": "14f08c7e8486b2bb95a13a9de457fb21e42d6682ea0fc2ea01ad6b8ddc3ec813",
+      "source_preview_revision": "d6126f523aea78f21331ae25f4b3017528a3fe09919864a8acc63fe8d9c43bb3",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-20261004-CARBOXYL-09",
+      "title": "本节练习先说明试剂条件再计量",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C3:3.3",
+      "pdf_pages": [
+        71,
+        72
+      ],
+      "printed_pages": [
+        67,
+        68
+      ],
+      "source_anchors": [
+        "本节练习先说明试剂条件再计量"
+      ],
+      "summary": "练习涉及羧酸、酯同分异构体，甲酸还原性及酯水解后的醇能否进一步氧化为酸。判断需要保留官能团位置、醇的类型与试剂条件，不能将分子式或水解现象作为唯一结构证据。",
+      "classroom_check": "分别列足量NaOH的终产物、醇的氧化路线和不适用的结构，再检查元素及电荷守恒。",
+      "limitation": "页面未提供官方评分细则；研读提示是教师组织练习的候选，不作为官方采分点或整卷难度结论。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          71,
+          72
+        ],
+        "printed_pages": [
+          67,
+          68
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-046",
+      "lecture_block_indices": [
+        39,
+        79,
+        121,
+        126,
+        205,
+        206,
+        207,
+        213,
+        214,
+        215,
+        263,
+        264,
+        265,
+        267
+      ],
+      "source_sha256": "14f08c7e8486b2bb95a13a9de457fb21e42d6682ea0fc2ea01ad6b8ddc3ec813",
+      "source_preview_revision": "d6126f523aea78f21331ae25f4b3017528a3fe09919864a8acc63fe8d9c43bb3",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true
+    }
+  ]
+}

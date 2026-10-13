@@ -1,0 +1,442 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-ORGANIC-SYNTHESIS-STRATEGY-01",
+      "title": "有机合成步骤与目标比较",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.1",
+      "pdf_pages": [
+        107
+      ],
+      "printed_pages": [
+        103
+      ],
+      "source_anchors": [
+        "有机合成步骤与目标比较"
+      ],
+      "summary": "教材将合成表达为原料、中间体和目标的连续转化。逐步标出所需官能团及辅助试剂、条件和副产物，把“结构变化”与“箭头上需要什么”同时记录。",
+      "classroom_check": "用一条教材路线列原料、中间体、目标及每步改变的基团。",
+      "limitation": "未补教材没有给出的实验产率或实际操作参数；图示课堂模型保留原结构和名称。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          107
+        ],
+        "printed_pages": [
+          103
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-081",
+      "lecture_block_indices": [
+        136,
+        162,
+        163,
+        167,
+        176
+      ],
+      "source_sha256": "812e273ab966f11a309b7ad5db704d9a7656fd432cb79ba0a49a0a14e3b5d6a6",
+      "source_preview_revision": "1113f946361a4741707e48cddb4eac21dc89ab512e695302a730f77f6d5a2f0a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-SYNTHESIS-STRATEGY-02",
+      "title": "碳链增长、缩短和成环分别数碳",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.1",
+      "pdf_pages": [
+        108
+      ],
+      "printed_pages": [
+        104
+      ],
+      "source_anchors": [
+        "碳链增长、缩短和成环分别数碳"
+      ],
+      "summary": "教材分别举增长碳链、缩短碳链及成环的结构变化。先比较目标与原料的骨架，再追踪含碳试剂和副产物中的碳；不同骨架变化不能只按官能团名称判断。",
+      "classroom_check": "选一个教材模型标每个碳的来源，并说明副产物中的碳去向。",
+      "limitation": "讲义68不守恒裂化式保留为纠错素材，未猜补产物或改原式。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          108
+        ],
+        "printed_pages": [
+          104
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-081",
+      "lecture_block_indices": [
+        37,
+        38,
+        41,
+        66,
+        68,
+        346,
+        349,
+        352
+      ],
+      "source_sha256": "812e273ab966f11a309b7ad5db704d9a7656fd432cb79ba0a49a0a14e3b5d6a6",
+      "source_preview_revision": "1113f946361a4741707e48cddb4eac21dc89ab512e695302a730f77f6d5a2f0a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-SYNTHESIS-STRATEGY-03",
+      "title": "逆向分析箭头与实际反应区分",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.1",
+      "pdf_pages": [
+        109
+      ],
+      "printed_pages": [
+        105
+      ],
+      "source_anchors": [
+        "逆向分析箭头与实际反应区分"
+      ],
+      "summary": "教材从聚酯的酯连接倒推丁二酸和乙二醇，再继续寻找可获得的前体。分析从目标向原料展开，实际合成仍从原料到目标按可行反应实施。",
+      "classroom_check": "在同一例子各画一条逆向分析链和正向反应链，解释两种箭头。",
+      "limitation": "倒推关系不是已经认证的逆反应或可逆反应；正式section_id和unit_id仍unknown。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          109
+        ],
+        "printed_pages": [
+          105
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-081",
+      "lecture_block_indices": [
+        162,
+        163,
+        164,
+        172,
+        174,
+        176
+      ],
+      "source_sha256": "812e273ab966f11a309b7ad5db704d9a7656fd432cb79ba0a49a0a14e3b5d6a6",
+      "source_preview_revision": "1113f946361a4741707e48cddb4eac21dc89ab512e695302a730f77f6d5a2f0a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-SYNTHESIS-STRATEGY-04",
+      "title": "逆推后补正向中间体和条件",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.1",
+      "pdf_pages": [
+        110
+      ],
+      "printed_pages": [
+        106
+      ],
+      "source_anchors": [
+        "逆推后补正向中间体和条件"
+      ],
+      "summary": "教材用丁二烯和乙烯分别到二元酸、二元醇的模型补合成路线。将逆推所得前体放回正向链，逐箭头核原结构、碳数、反应条件和可保留的官能团。",
+      "classroom_check": "列出一个前体到目标的正向链，并逐步检查是否有条件遗漏。",
+      "limitation": "对应教材图示讨论，不将共轭二烯加成比例、实际选择性或产率由示意图认证。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          110
+        ],
+        "printed_pages": [
+          106
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-081",
+      "lecture_block_indices": [
+        162,
+        163,
+        167,
+        176,
+        343,
+        345,
+        346,
+        349,
+        352
+      ],
+      "source_sha256": "812e273ab966f11a309b7ad5db704d9a7656fd432cb79ba0a49a0a14e3b5d6a6",
+      "source_preview_revision": "1113f946361a4741707e48cddb4eac21dc89ab512e695302a730f77f6d5a2f0a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-SYNTHESIS-STRATEGY-05",
+      "title": "路线评价的不同指标",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.1",
+      "pdf_pages": [
+        111
+      ],
+      "printed_pages": [
+        107
+      ],
+      "source_anchors": [
+        "路线评价的不同指标"
+      ],
+      "summary": "教材把科学可行性、安全、步骤、产物分离、原料、能耗及污染等列入路线比较。产率与原子经济性分别判断，工业模型还需保留实际工艺条件和数据来源。",
+      "classroom_check": "为两条教材路线列评价表，并标哪些指标已有证据、哪些仍缺数据。",
+      "limitation": "没有工艺测量时不认证最佳生产路线、实际成本或真实收率；评价点为备课建议。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          111
+        ],
+        "printed_pages": [
+          107
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-081",
+      "lecture_block_indices": [
+        158,
+        159,
+        160,
+        176
+      ],
+      "source_sha256": "812e273ab966f11a309b7ad5db704d9a7656fd432cb79ba0a49a0a14e3b5d6a6",
+      "source_preview_revision": "1113f946361a4741707e48cddb4eac21dc89ab512e695302a730f77f6d5a2f0a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-SYNTHESIS-STRATEGY-06",
+      "title": "保护需兼顾恢复步骤",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.1",
+      "pdf_pages": [
+        111,
+        112
+      ],
+      "printed_pages": [
+        107,
+        108
+      ],
+      "source_anchors": [
+        "保护需兼顾恢复步骤"
+      ],
+      "summary": "教材强调先保护易受影响的基团再恢复，用具体双键保护路线说明反应顺序。把保护前后和恢复后三个结构并排比较，核需保留基团是否仍完整。",
+      "classroom_check": "对教材具体路线标保护步骤、后续转化和恢复条件，说明为何需要保护。",
+      "limitation": "讲义末端氯代位置及酚钠通用抗氧化说法没有独立适用性证据，不随教材一并认证。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          111,
+          112
+        ],
+        "printed_pages": [
+          107,
+          108
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-081",
+      "lecture_block_indices": [
+        136,
+        140,
+        143,
+        145,
+        146,
+        150,
+        153,
+        154,
+        155,
+        258
+      ],
+      "source_sha256": "812e273ab966f11a309b7ad5db704d9a7656fd432cb79ba0a49a0a14e3b5d6a6",
+      "source_preview_revision": "1113f946361a4741707e48cddb4eac21dc89ab512e695302a730f77f6d5a2f0a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-SYNTHESIS-STRATEGY-07",
+      "title": "消去与水解顺序影响路线",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.1",
+      "pdf_pages": [
+        112,
+        113
+      ],
+      "printed_pages": [
+        108,
+        109
+      ],
+      "source_anchors": [
+        "消去与水解顺序影响路线"
+      ],
+      "summary": "教材将先消去后水解与先水解后消去的两种顺序并排比较。逐步核官能团、条件和可能的竞争转化，说明为什么终产物相同的设想仍需检查中间步骤。",
+      "classroom_check": "沿两条路线分别追踪羟基、酯连接和双键，标出可能受影响的步骤。",
+      "limitation": "比较限于教材给定结构与条件，未外推成所有酯和醇均适用的固定先后顺序。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          112,
+          113
+        ],
+        "printed_pages": [
+          108,
+          109
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-081",
+      "lecture_block_indices": [
+        136,
+        167,
+        176,
+        179,
+        181,
+        385,
+        388
+      ],
+      "source_sha256": "812e273ab966f11a309b7ad5db704d9a7656fd432cb79ba0a49a0a14e3b5d6a6",
+      "source_preview_revision": "1113f946361a4741707e48cddb4eac21dc89ab512e695302a730f77f6d5a2f0a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-SYNTHESIS-STRATEGY-08",
+      "title": "原料到环酯需核完整碳源",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.1",
+      "pdf_pages": [
+        113
+      ],
+      "printed_pages": [
+        109
+      ],
+      "source_anchors": [
+        "原料到环酯需核完整碳源"
+      ],
+      "summary": "教材练习以乙烯相关模型追踪二元醇、二元酸及成环酯的碳源。与羟基酸自酯化模型比较，说明环酯或聚酯的形成可以有不同原料组合。",
+      "classroom_check": "在原图标环中每个碳来自哪种原料，并比较两种可形成酯连接的组合。",
+      "limitation": "不由生成环酯或聚酯唯一认定原料为羟基酸；具体环大小与结构以原题为准。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          113
+        ],
+        "printed_pages": [
+          109
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-081",
+      "lecture_block_indices": [
+        37,
+        38,
+        162,
+        163,
+        176,
+        382
+      ],
+      "source_sha256": "812e273ab966f11a309b7ad5db704d9a7656fd432cb79ba0a49a0a14e3b5d6a6",
+      "source_preview_revision": "1113f946361a4741707e48cddb4eac21dc89ab512e695302a730f77f6d5a2f0a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-SYNTHESIS-STRATEGY-09",
+      "title": "位置变化与题给限制条件",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.1",
+      "pdf_pages": [
+        113
+      ],
+      "printed_pages": [
+        109
+      ],
+      "source_anchors": [
+        "位置变化与题给限制条件"
+      ],
+      "summary": "教材由1-溴丙烷到2-丙醇的练习要求核官能团位置变化，另一题给出烯基氢难取代的信息。先读所给限制，再从消去与加成等具体模型寻找可行连接。",
+      "classroom_check": "对一项位置变化写所需中间体，并说明题给信息排除了哪条直接转化。",
+      "limitation": "题给结构与限制是路线判断前提，不把普通卤代烃水解或取代条件覆盖烯卤、芳卤等全部底物。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          113
+        ],
+        "printed_pages": [
+          109
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-081",
+      "lecture_block_indices": [
+        324,
+        327,
+        332,
+        385,
+        388
+      ],
+      "source_sha256": "812e273ab966f11a309b7ad5db704d9a7656fd432cb79ba0a49a0a14e3b5d6a6",
+      "source_preview_revision": "1113f946361a4741707e48cddb4eac21dc89ab512e695302a730f77f6d5a2f0a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-ORGANIC-SYNTHESIS-STRATEGY-10",
+      "title": "多官能团路线同时核氧化还原顺序",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C5:5.1",
+      "pdf_pages": [
+        114
+      ],
+      "printed_pages": [
+        110
+      ],
+      "source_anchors": [
+        "多官能团路线同时核氧化还原顺序"
+      ],
+      "summary": "教材多步合成练习要求同时关注被转化与需保留的基团。结合讲义先氧化甲基再还原硝基的模型，可用结构变化表解释步骤顺序和官能团干扰。",
+      "classroom_check": "选教材一处转化，分别列目标改变、需保留基团和条件仍缺的部分。",
+      "limitation": "保留原练习中未给出的条件，不补官方答案或官方采分点；药物背景不转化为用药或疗效建议。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          114
+        ],
+        "printed_pages": [
+          110
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-081",
+      "lecture_block_indices": [
+        136,
+        147,
+        148,
+        258,
+        261,
+        269
+      ],
+      "source_sha256": "812e273ab966f11a309b7ad5db704d9a7656fd432cb79ba0a49a0a14e3b5d6a6",
+      "source_preview_revision": "1113f946361a4741707e48cddb4eac21dc89ab512e695302a730f77f6d5a2f0a",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ]
+}

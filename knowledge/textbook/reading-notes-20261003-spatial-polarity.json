@@ -1,0 +1,390 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "purpose": "完整研读2.2节11页正文及3页目录/边界；复用已核验同版2.1节14页，新增8条研读提示。",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-TB-E2-20261003-SPATIAL-POLARITY-01",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.1",
+      "title": "电子域计数后再分列两种构型",
+      "pdf_pages": [
+        45,
+        46,
+        47
+      ],
+      "printed_pages": [
+        41,
+        42,
+        43
+      ],
+      "source_anchors": [
+        "电子域计数后再分列两种构型"
+      ],
+      "summary": "多重键在VSEPR模型中只给出一个成键方向。NH₃（氨）与H₂O（水）的电子对构型都是四面体形，分子构型分别为三角锥形与V形；SO₂（二氧化硫）在本节模型中为3个电子域、平面三角形电子对模型和V形分子。",
+      "classroom_check": "让学生分列σ键、孤电子对、电子域、电子对构型和分子构型，再核对讲义区块239的冲突。",
+      "limitation": "沿用同一PDF版本上一轮已读的完整2.1节；不把速记公式无条件用于过渡金属或非常规粒子。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          45,
+          46,
+          47
+        ],
+        "printed_pages": [
+          41,
+          42,
+          43
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-052",
+      "lecture_block_indices": [
+        69,
+        70,
+        146,
+        147,
+        154,
+        160,
+        185,
+        190,
+        239
+      ],
+      "source_sha256": "515e68f45c0272e3ade992de8b51741f04673b76ab868a8adfa2ece040dfaaaf",
+      "source_preview_revision": "11de2a7d5952c3016cb7d9b6d7eada76052b172881fbcfa6fdc83a44887e6002",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    },
+    {
+      "id": "READ-TB-E2-20261003-SPATIAL-POLARITY-02",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.1",
+      "title": "理想杂化夹角与实际键角分开",
+      "pdf_pages": [
+        40,
+        41,
+        42,
+        43,
+        46,
+        47
+      ],
+      "printed_pages": [
+        36,
+        37,
+        38,
+        39,
+        42,
+        43
+      ],
+      "source_anchors": [
+        "理想杂化夹角与实际键角分开"
+      ],
+      "summary": "sp、sp²和sp³理想模型给出180°、120°、约109.5°的方向关系。教材模型中，甲烷CH₄约109°28′，氨NH₃约107°18′，水H₂O约104.5°，中心原子的杂化类型相同也不保证实际键角相同。",
+      "classroom_check": "把三种分子的实际键角放在“实验/教材近似值”列，另列“理想轨道模型”，解释孤电子对的影响。",
+      "limitation": "本条只比较教材列出的简单分子；角度为教材所用近似值，不能写成所有分子的固定数值。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          40,
+          41,
+          42,
+          43,
+          46,
+          47
+        ],
+        "printed_pages": [
+          36,
+          37,
+          38,
+          39,
+          42,
+          43
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-052",
+      "lecture_block_indices": [
+        64,
+        66,
+        67,
+        77,
+        113,
+        274
+      ],
+      "source_sha256": "515e68f45c0272e3ade992de8b51741f04673b76ab868a8adfa2ece040dfaaaf",
+      "source_preview_revision": "11de2a7d5952c3016cb7d9b6d7eada76052b172881fbcfa6fdc83a44887e6002",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    },
+    {
+      "id": "READ-TB-E2-20261003-SPATIAL-POLARITY-03",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "title": "以等价键和空间构型检查分子极性",
+      "pdf_pages": [
+        49,
+        50,
+        51
+      ],
+      "printed_pages": [
+        45,
+        46,
+        47
+      ],
+      "source_anchors": [
+        "以等价键和空间构型检查分子极性"
+      ],
+      "summary": "CO₂（二氧化碳）直线形两键的偶极抵消，CCl₄（四氯化碳）正四面体四条等价键的偶极抵消；H₂O（水）为V形、NH₃（氨）为三角锥形，偶极不能全部抵消。教材用带电橡胶棒附近水流与非极性液体流的偏转观察联系分子极性。",
+      "classroom_check": "先画空间模型和键偶极，再说明是否抵消；教材实验以教师演示记录为讨论材料。",
+      "limitation": "AI课堂建议；实验材料的可燃性及操作条件须由教师另行确认，本条不提供家庭实验方案。不只凭有无孤电子对判断全部分子。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          49,
+          50,
+          51
+        ],
+        "printed_pages": [
+          45,
+          46,
+          47
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-052",
+      "lecture_block_indices": [
+        257,
+        259,
+        260,
+        262,
+        265,
+        271,
+        273,
+        274,
+        321
+      ],
+      "source_sha256": "515e68f45c0272e3ade992de8b51741f04673b76ab868a8adfa2ece040dfaaaf",
+      "source_preview_revision": "11de2a7d5952c3016cb7d9b6d7eada76052b172881fbcfa6fdc83a44887e6002",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    },
+    {
+      "id": "READ-TB-E2-20261003-SPATIAL-POLARITY-04",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "title": "相似相溶要结合氢键及组成",
+      "pdf_pages": [
+        51,
+        56
+      ],
+      "printed_pages": [
+        47,
+        52
+      ],
+      "source_anchors": [
+        "相似相溶要结合氢键及组成"
+      ],
+      "summary": "“相似相溶”是常用经验规律，教材用极性与非极性分子解释若干溶解现象。分子间能形成氢键会影响与水的相互作用；讲义的甲醇、乙醇与戊醇比较提示，还要考虑亲水部分和憎水部分。",
+      "classroom_check": "比较乙醇C₂H₅OH与甲醚CH₃OCH₃的结构、氢键及沸点，再讨论延长醇的碳链为何可能降低水中溶解度。",
+      "limitation": "醇的碳链迁移例来自讲义；相似相溶及氢键因素都不能单独定量预测所有溶解度，不能省略温度与具体溶剂。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          51,
+          56
+        ],
+        "printed_pages": [
+          47,
+          52
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-052",
+      "lecture_block_indices": [
+        279,
+        280,
+        281
+      ],
+      "source_sha256": "515e68f45c0272e3ade992de8b51741f04673b76ab868a8adfa2ece040dfaaaf",
+      "source_preview_revision": "11de2a7d5952c3016cb7d9b6d7eada76052b172881fbcfa6fdc83a44887e6002",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    },
+    {
+      "id": "READ-TB-E2-20261003-SPATIAL-POLARITY-05",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "title": "分子间作用与分子内共价键分别解释",
+      "pdf_pages": [
+        52,
+        53,
+        54
+      ],
+      "printed_pages": [
+        48,
+        49,
+        50
+      ],
+      "source_anchors": [
+        "分子间作用与分子内共价键分别解释"
+      ],
+      "summary": "干冰CO₂升华主要克服分子间作用，不把它写成分子内C=O共价键断裂。教材介绍范德华力的取向、诱导和色散作用；不能把范德华力限定为只存在于非极性分子。卤素单质的熔沸点比较有组成和结构相似这一前提。",
+      "classroom_check": "用F₂、Cl₂、Br₂、I₂（氟、氯、溴、碘）的教材数据说明趋势，同时写明比较对象；用CO₂升华检查作用层级。",
+      "limitation": "本条主要为教材研读补充；不由相对分子质量独自推断任意物质的熔沸点，不把熔点与沸点变化等同于共价键键能变化。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          52,
+          53,
+          54
+        ],
+        "printed_pages": [
+          48,
+          49,
+          50
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-052",
+      "lecture_block_indices": [
+        414
+      ],
+      "source_sha256": "515e68f45c0272e3ade992de8b51741f04673b76ab868a8adfa2ece040dfaaaf",
+      "source_preview_revision": "11de2a7d5952c3016cb7d9b6d7eada76052b172881fbcfa6fdc83a44887e6002",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    },
+    {
+      "id": "READ-TB-E2-20261003-SPATIAL-POLARITY-06",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "title": "氢键的供体、受体和物性证据",
+      "pdf_pages": [
+        55,
+        56
+      ],
+      "printed_pages": [
+        51,
+        52
+      ],
+      "source_anchors": [
+        "氢键的供体、受体和物性证据"
+      ],
+      "summary": "教材以X—H···Y表示氢键，X、Y通常为N、O、F等电负性较强、半径较小的原子。水、氨、氟化氢的分子间氢键可用来解释同族氢化物沸点中的明显偏离；氢键也影响溶解性。",
+      "classroom_check": "在H₂O（水）、NH₃（氨）、HF（氟化氢）的示意图上标出与H共价结合的原子及另一端受体，再读教材沸点图。",
+      "limitation": "本条按高中教材的常见氢键模型组织，不把出现N、O、F或出现H任一条件单独当成充分条件。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          55,
+          56
+        ],
+        "printed_pages": [
+          51,
+          52
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-052",
+      "lecture_block_indices": [
+        280,
+        380,
+        414
+      ],
+      "source_sha256": "515e68f45c0272e3ade992de8b51741f04673b76ab868a8adfa2ece040dfaaaf",
+      "source_preview_revision": "11de2a7d5952c3016cb7d9b6d7eada76052b172881fbcfa6fdc83a44887e6002",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    },
+    {
+      "id": "READ-TB-E2-20261003-SPATIAL-POLARITY-07",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "title": "分子内与分子间氢键分开比较",
+      "pdf_pages": [
+        57,
+        58
+      ],
+      "printed_pages": [
+        53,
+        54
+      ],
+      "source_anchors": [
+        "分子内与分子间氢键分开比较"
+      ],
+      "summary": "教材通过邻、对羟基苯甲醛的氢键位置讨论分子间作用，并给出邻、对硝基苯酚的水中溶解度、熔点、沸点数据。分子内氢键与分子间氢键的作用对象不同，不能由“能形成氢键”一句话推出相同物性。",
+      "classroom_check": "从结构图圈出氢键跨越的范围，再利用教材表2.5的完整单位与温度条件，判断哪一结构更容易形成分子内氢键。",
+      "limitation": "这组教材例题未在本轮单独导入为正式题库作答单元；熔点还受晶体堆积等因素影响，不把单一氢键因素推广为所有异构体的定量规律。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          57,
+          58
+        ],
+        "printed_pages": [
+          53,
+          54
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-052",
+      "lecture_block_indices": [],
+      "source_sha256": "515e68f45c0272e3ade992de8b51741f04673b76ab868a8adfa2ece040dfaaaf",
+      "source_preview_revision": "11de2a7d5952c3016cb7d9b6d7eada76052b172881fbcfa6fdc83a44887e6002",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    },
+    {
+      "id": "READ-TB-E2-20261003-SPATIAL-POLARITY-08",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "title": "手性先核对镜像能否重合",
+      "pdf_pages": [
+        51
+      ],
+      "printed_pages": [
+        47
+      ],
+      "source_anchors": [
+        "手性先核对镜像能否重合"
+      ],
+      "summary": "分子的镜像若不能通过空间转动与原分子重合，可讨论其手性。教材用中心碳连接四个不同基团的模型帮助辨认，分析时要核对四个基团的实际结构，不能只数图上四条键。",
+      "classroom_check": "给出四个不同标签的四面体模型及其镜像，允许转动并比较对应位置；记录“互为镜像、是否可重合”两项证据。",
+      "limitation": "本条仅取结构模型和课堂建议；教材同页药物历史叙述未在本轮核验，不导入为医学事实，也不将单个手性碳判据推广为所有分子的唯一判据。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          51
+        ],
+        "printed_pages": [
+          47
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-052",
+      "lecture_block_indices": [],
+      "source_sha256": "515e68f45c0272e3ade992de8b51741f04673b76ab868a8adfa2ece040dfaaaf",
+      "source_preview_revision": "11de2a7d5952c3016cb7d9b6d7eada76052b172881fbcfa6fdc83a44887e6002",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    }
+  ]
+}

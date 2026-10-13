@@ -1,0 +1,365 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "purpose": "两节20正文页及7页目录/边界核对的6条研读候选；讲义选读与43个图形出现次数核对。",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_review_completed": true,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-TB-M1-20261003-CHEMICAL-BONDS-01",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.4",
+      "title": "先辨认成键微粒，再判断化合物类别",
+      "pdf_pages": [
+        138,
+        139,
+        140,
+        142
+      ],
+      "printed_pages": [
+        133,
+        134,
+        135,
+        137
+      ],
+      "source_anchors": [
+        "先辨认成键微粒，再判断化合物类别"
+      ],
+      "summary": "NaCl（氯化钠）的离子键和HCl（氯化氢）的共价键用不同微粒模型描述。NaOH（氢氧化钠）中存在多原子离子，离子内部共价键与离子间静电作用须分别识别；不能只根据是否含金属作判断。",
+      "classroom_check": "给NaCl、HCl、NaOH的表示式，让学生标出作用的双方并逐项检查电荷与孤电子对。",
+      "limitation": "AI课堂建议；不推广为所有金属与非金属化合物均为离子化合物。",
+      "lecture_package_id": "PKG-042",
+      "lecture_block_indices": [
+        38,
+        39,
+        40,
+        42,
+        66,
+        80,
+        89,
+        95,
+        145,
+        149
+      ],
+      "source_sha256": "4ff0a44c7ae1744ea64bc1c71893ba0a5182c71bbc47d0fd650baaac93fb8c33",
+      "source_preview_revision": "8221dc14120039e30e0cf1614c214b29b26e46adb4e8b6e8426477a94896fb9f",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          138,
+          139,
+          140,
+          142
+        ],
+        "printed_pages": [
+          133,
+          134,
+          135,
+          137
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-M1-20261003-CHEMICAL-BONDS-02",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.4",
+      "title": "把状态变化与化学键变化分开",
+      "pdf_pages": [
+        140,
+        141,
+        142
+      ],
+      "printed_pages": [
+        135,
+        136,
+        137
+      ],
+      "source_anchors": [
+        "把状态变化与化学键变化分开"
+      ],
+      "summary": "结构式与电子式呈现的信息不同。共价分子形成的物质发生汽化等状态变化时，通常主要克服分子间作用；不能因为状态改变就断言分子内共价键断裂。",
+      "classroom_check": "用“微粒是否改变、作用的双方是否改变”两列比较水汽化与NaCl（氯化钠）溶于水。",
+      "limitation": "NaCl溶解的课堂比较来自讲义；只针对所述可溶性盐与过程，不承诺一切离子化合物均溶于水。",
+      "lecture_package_id": "PKG-042",
+      "lecture_block_indices": [
+        104,
+        106,
+        109
+      ],
+      "source_sha256": "4ff0a44c7ae1744ea64bc1c71893ba0a5182c71bbc47d0fd650baaac93fb8c33",
+      "source_preview_revision": "8221dc14120039e30e0cf1614c214b29b26e46adb4e8b6e8426477a94896fb9f",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          140,
+          141,
+          142
+        ],
+        "printed_pages": [
+          135,
+          136,
+          137
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20261003-CHEMICAL-BONDS-03",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.1",
+      "title": "用轨道重叠模型检查局域σ与π计数",
+      "pdf_pages": [
+        35,
+        36,
+        37,
+        43,
+        44
+      ],
+      "printed_pages": [
+        31,
+        32,
+        33,
+        39,
+        40
+      ],
+      "source_anchors": [
+        "用轨道重叠模型检查局域σ与π计数"
+      ],
+      "summary": "氮气N₂的三键含1个σ键和2个π键；乙烯C₂H₄有5个σ键和1个π键，乙炔C₂H₂有3个σ键和2个π键。判断键型依据相对核间轴的重叠方式，p轨道也能形成σ键。",
+      "classroom_check": "先让学生画完整连接并补氢，再用两种颜色标出σ/π；尿素CO(NH₂)₂作为讲义迁移例检查7σ、1π。",
+      "limitation": "局域键计数规则不机械应用于苯的离域π体系；尿素例为讲义对照，不称教材原题。",
+      "lecture_package_id": "PKG-042",
+      "lecture_block_indices": [
+        150,
+        155,
+        171,
+        173,
+        183,
+        184,
+        185,
+        186,
+        250
+      ],
+      "source_sha256": "4ff0a44c7ae1744ea64bc1c71893ba0a5182c71bbc47d0fd650baaac93fb8c33",
+      "source_preview_revision": "8221dc14120039e30e0cf1614c214b29b26e46adb4e8b6e8426477a94896fb9f",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          35,
+          36,
+          37,
+          43,
+          44
+        ],
+        "printed_pages": [
+          31,
+          32,
+          33,
+          39,
+          40
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20261003-CHEMICAL-BONDS-04",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.1",
+      "title": "键能与键长比较要注明对象和物态",
+      "pdf_pages": [
+        35,
+        38,
+        39
+      ],
+      "printed_pages": [
+        31,
+        34,
+        35
+      ],
+      "source_anchors": [
+        "键能与键长比较要注明对象和物态"
+      ],
+      "summary": "教材的气态键能定义和H₂（氢气）势能曲线说明断键需能量、稳定核间距有对应的能量最低点，核间距并非越小越稳定。碳碳单、双、三键的键能不按1∶2∶3简单倍增。",
+      "classroom_check": "让学生说明键能表的单位与气态范围，再审查用平均键能估算反应焓变时是否计入了系数与相变。",
+      "limitation": "焓变估算步骤为讲义对照；不由跨元素键长排序推出沸点或任意反应活性。",
+      "lecture_package_id": "PKG-042",
+      "lecture_block_indices": [
+        202,
+        207,
+        209,
+        211,
+        212,
+        281,
+        283,
+        295,
+        298,
+        299,
+        301,
+        314
+      ],
+      "source_sha256": "4ff0a44c7ae1744ea64bc1c71893ba0a5182c71bbc47d0fd650baaac93fb8c33",
+      "source_preview_revision": "8221dc14120039e30e0cf1614c214b29b26e46adb4e8b6e8426477a94896fb9f",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          35,
+          38,
+          39
+        ],
+        "printed_pages": [
+          31,
+          34,
+          35
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20261003-CHEMICAL-BONDS-05",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.1",
+      "title": "连接关系、电子对构型与分子构型分列",
+      "pdf_pages": [
+        40,
+        41,
+        42,
+        43,
+        46,
+        47
+      ],
+      "printed_pages": [
+        36,
+        37,
+        38,
+        39,
+        42,
+        43
+      ],
+      "source_anchors": [
+        "连接关系、电子对构型与分子构型分列"
+      ],
+      "summary": "H₂O（水）的H—O—H结构式不表示直线形分子；CH₄（甲烷）为正四面体形，NH₃（氨）为三角锥形，H₂O为V形。讨论孤电子对时，电子对空间构型和只看原子位置的分子构型必须区分。",
+      "classroom_check": "给出H₂O、NH₃、CH₄的连接式，要求另画空间模型，并解释为什么不能把平面纸上的线条当成键角。",
+      "limitation": "教材数值为近似实验值；讲义的H₂O约105°与教材104.5°按精度区分，不把约数当矛盾。",
+      "lecture_package_id": "PKG-042",
+      "lecture_block_indices": [
+        224,
+        225,
+        227,
+        228,
+        279,
+        283,
+        325,
+        331,
+        337
+      ],
+      "source_sha256": "4ff0a44c7ae1744ea64bc1c71893ba0a5182c71bbc47d0fd650baaac93fb8c33",
+      "source_preview_revision": "8221dc14120039e30e0cf1614c214b29b26e46adb4e8b6e8426477a94896fb9f",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          40,
+          41,
+          42,
+          43,
+          46,
+          47
+        ],
+        "printed_pages": [
+          36,
+          37,
+          38,
+          39,
+          42,
+          43
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    },
+    {
+      "id": "READ-TB-E2-20261003-CHEMICAL-BONDS-06",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.1",
+      "title": "极性、键强度与活性分别提问",
+      "pdf_pages": [
+        37,
+        38,
+        39,
+        40
+      ],
+      "printed_pages": [
+        33,
+        34,
+        35,
+        36
+      ],
+      "source_anchors": [
+        "极性、键强度与活性分别提问"
+      ],
+      "summary": "共用电子对偏移用于判断键极性，键能和键长描述另一些键参数，键角和空间构型又提供不同证据。教材不能支持“键越极性越易断裂、反应必越活泼”的普遍结论。",
+      "classroom_check": "把“电子对偏向哪边”“断键所需能量”“分子整体是否极性”“具体反应速率”写成四个独立问题，并列出各自缺少的条件。",
+      "limitation": "本条只澄清判断边界；分子极性的下一节未在本次完整研读，未新增该节阅读完成记录。",
+      "lecture_package_id": "PKG-042",
+      "lecture_block_indices": [
+        188,
+        190,
+        191,
+        193,
+        194,
+        199,
+        202,
+        208
+      ],
+      "source_sha256": "4ff0a44c7ae1744ea64bc1c71893ba0a5182c71bbc47d0fd650baaac93fb8c33",
+      "source_preview_revision": "8221dc14120039e30e0cf1614c214b29b26e46adb4e8b6e8426477a94896fb9f",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          37,
+          38,
+          39,
+          40
+        ],
+        "printed_pages": [
+          33,
+          34,
+          35,
+          36
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_review_completed": true,
+      "root_model_review_completed": true
+    }
+  ]
+}

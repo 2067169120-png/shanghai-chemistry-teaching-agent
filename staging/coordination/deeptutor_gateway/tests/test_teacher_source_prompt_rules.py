@@ -22,7 +22,7 @@ from integrations.deeptutor_shchem_v1.model_provider_settings import (
 
 
 def test_teaching_rules_keep_source_capabilities_and_answer_area_boundaries():
-    assert TEACHING_SOURCE_RULES_VERSION == "teacher-source-closure-v2"
+    assert TEACHING_SOURCE_RULES_VERSION == "teacher-source-closure-v3"
     assert TEACHING_SOURCE_RULES_VERSION in TEACHING_SOURCE_RULES
     for text in (
         "教材知识点—课堂例题—练习检测",

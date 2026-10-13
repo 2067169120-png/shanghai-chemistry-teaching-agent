@@ -181,6 +181,10 @@ def test_native_dialog_selects_chapter_and_compiles_offline(tmp_path):
     assert dialog.goal.isEnabled()
     dialog.title_input.setText("修改后的主题")
     assert not dialog.task_output.toPlainText()
-    assert "重新编译" in dialog.status.text()
+    assert dialog.status.text() == "章节、目标或参考题目已修改，请重新整理命题要求。"
+    assert not dialog.system_output.toPlainText() and not dialog.evidence_output.toPlainText()
+    assert dialog.goal.toPlainText() == PAYLOAD["learning_goal"]
+    assert dialog.sections.item(0).checkState() == Qt.CheckState.Checked
     dialog.close()
     dialog._compiled({})  # Late worker completion after close is ignored.
+    assert not dialog.task_output.toPlainText()

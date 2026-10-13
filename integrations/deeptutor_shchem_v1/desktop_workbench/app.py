@@ -89,12 +89,17 @@ def run_desktop_workbench(
         return 2
     arguments = list(sys.argv if argv is None else argv)
     if "--personal-state" in arguments:
+        base_settings_root = paths.settings_root
         try:
             from ..desktop_backup import restored_profile
             index = arguments.index("--personal-state")
             state_root = restored_profile(arguments[index + 1])
             paths = DesktopPaths.from_workspace(paths.workspace_root, state_root=state_root)
-            paths = replace(paths, shchem_root=state_root / "library" / "sh-chem-db")
+            paths = replace(
+                paths,
+                shchem_root=state_root / "library" / "sh-chem-db",
+                settings_root=base_settings_root,
+            )
         except (ValueError, IndexError, OSError):
             QMessageBox.critical(None, "无法打开恢复副本", "请选择通过本工作台校验恢复的独立目录。")
             return 2

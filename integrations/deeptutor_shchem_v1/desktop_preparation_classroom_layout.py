@@ -61,7 +61,7 @@ def classroom_layout(layout, *, draw, fonts):
             )
     else:
         base.append(
-            text(title, (70, 34, 1460, 110), 68, 54, center=True, color="24543D")
+            text(title, (70, 34, 1460, 110), 68, 54, color="24543D")
         )
         if layout.slide_type == "image":
             picture = next(e for e in items if e.element_type == "image")

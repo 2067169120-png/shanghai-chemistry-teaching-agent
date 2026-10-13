@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 
 from ..desktop_word_metafile_preview import can_attempt_metafile
 from .word_table_layout import word_table_html
+from .word_source_display import block_display_label, section_display_title, section_display_summary
 
 
 class _LocalDocument(QTextDocument):
@@ -69,13 +70,15 @@ class WordLessonReader(QWidget):
     location_requested = Signal(int)
     image_zoom_requested = Signal()
 
-    def __init__(self, parent: QWidget | None = None):
+    def __init__(self, parent: QWidget | None = None, *, image_selection_only=False):
         super().__init__(parent)
+        self._image_selection_only = image_selection_only
         self.setObjectName("WordLessonReader")
         self.setMinimumWidth(0)
         self._source: dict[str, Any] | None = None
         self._blocks: dict[int, dict[str, Any]] = {}
         self._assets: dict[str, dict[str, Any]] = {}
+        self._navigation_sections: list[dict[str, Any]] = []
         self._block_anchors: dict[int, str] = {}
         self._image_anchors: dict[str, str] = {}
         self._actions: dict[str, tuple[str, str | int | None]] = {}
@@ -109,7 +112,7 @@ class WordLessonReader(QWidget):
         search_row = QHBoxLayout()
         search_row.setSpacing(6)
         self.search_edit = QLineEdit()
-        self.search_edit.setPlaceholderText("在整份教案中查找…")
+        self.search_edit.setPlaceholderText("在整份讲义中查找…" if image_selection_only else "在整份教案中查找…")
         self.search_edit.setAccessibleName("查找完整教案原文")
         self.search_edit.setClearButtonEnabled(True)
         self.search_edit.setMinimumWidth(0)
@@ -177,12 +180,17 @@ class WordLessonReader(QWidget):
         self.previous_button.clicked.connect(self.find_previous)
         self.set_source(None)
 
-    def set_source(self, value: dict | None) -> None:
-        """Replace all reading state. Invalid block data fails closed."""
+    def set_source(self, value: dict | None, *, navigation_sections=None) -> None:
+        """Replace reading state; optional heading navigation stays separate.
+
+        The native source snapshot is never rewritten for display labels or
+        full heading navigation. Invalid block data fails closed.
+        """
         self._generation += 1
         self._source = None
         self._blocks.clear()
         self._assets.clear()
+        self._navigation_sections.clear()
         self._block_anchors.clear()
         self._image_anchors.clear()
         self._actions.clear()
@@ -217,6 +225,10 @@ class WordLessonReader(QWidget):
             if not invalid:
                 self._source = deepcopy(value)
                 self._blocks = {b["index"]: b for b in self._source["blocks"]}
+                sections = (navigation_sections if navigation_sections is not None
+                            else self._source.get('sections', ()))
+                if isinstance(sections, (list, tuple)):
+                    self._navigation_sections = deepcopy(list(sections))
                 self._collect_assets()
                 self._collect_sections()
         self.section_picker.setEnabled(self.section_picker.count() > 1)
@@ -282,7 +294,7 @@ class WordLessonReader(QWidget):
             self._assets.pop(asset_id, None)
 
     def _collect_sections(self) -> None:
-        sections = self._source.get("sections", ())
+        sections = self._navigation_sections
         if not isinstance(sections, (list, tuple)):
             return
         for section in sections:
@@ -302,7 +314,9 @@ class WordLessonReader(QWidget):
                 and isinstance(title, str)
                 and title
             ):
-                self.section_picker.addItem(title, start)
+                label = section_display_title(section, self._source)
+                summary = section_display_summary(section, self._source)
+                self.section_picker.addItem(label + ' · ' + summary, start)
 
     @staticmethod
     def _label(value: Any, fallback: str) -> str:
@@ -364,6 +378,8 @@ class WordLessonReader(QWidget):
                 if isinstance(warnings, (list, tuple))
                 else []
             )
+            if self._image_selection_only:
+                source_warnings = []
             warnings_at_end = len(source_warnings) > 4
             warning_summary = (
                 '<p class="warning">来源提醒 '
@@ -379,8 +395,10 @@ class WordLessonReader(QWidget):
                     '<p class="eyebrow">原文阅读 · 完整正文</p>',
                     f"<h1>{escape(title)}</h1>",
                     (
-                        '<p class="note">按原文区块顺序通读。选中“选此段备课”后，'
+                        ('<p class="note">沿完整原文阅读，点击图名查看原图，再选用当前图片。</p>'
+                         if self._image_selection_only else '<p class="note">按原文区块顺序通读。选中“选此段备课”后，'
                         "再核对将要追加的内容。公式、表格版式和图片位置以原 Word 为准。</p>"
+                         )
                     ),
                     warning_summary,
                 ]
@@ -388,10 +406,14 @@ class WordLessonReader(QWidget):
             for index, block in self._blocks.items():
                 anchor = f"lesson-block-{self._generation}-{index}"
                 self._block_anchors[index] = anchor
-                label = self._label(block.get("label"), f"区块 {index}")
+                label = block_display_label(block, self._assets.values())
                 if index in self._table_grids:
                     label = f"{index} · 原文表格"
-                body = '<p class="body">' + escape(block["text"]) + "</p>"
+                body = '<p class="body">' + self._eq_body(block,images) + "</p>"
+                if (self._image_selection_only
+                    and block['text'] in {'【待查看原文：图片或图形】', '【待查看原文：图片或旧式图形】'}
+                    and label == f"区块 {index} · 原图"):
+                    body = ''
                 if self._show_table_grids and index in self._table_grids:
                     body = (
                         '<p class="note">原表行列预览 · 保留明确的合并关系；'
@@ -407,11 +429,11 @@ class WordLessonReader(QWidget):
                     [
                         f'<p class="block-label"><a name="{anchor}"></a>{escape(label)}</p>',
                         body,
-                        self._warning_html(block.get("warnings")),
-                        '<p class="note">'
-                        + self._link("选此段备课", "block", index)
-                        + " · " + self._link("核对公式与对象位置", "location", index)
-                        + "</p>",
+                        ('' if self._image_selection_only else self._warning_html(block.get("warnings"))),
+                        ('' if self._image_selection_only else '<p class="note">'
+                         + self._link("选此段备课", "block", index)
+                         + " · " + self._link("核对公式与对象位置", "location", index)
+                         + "</p>"),
                     ]
                 )
                 for asset_id, asset in self._assets.items():
@@ -476,6 +498,33 @@ class WordLessonReader(QWidget):
         self._fit_document_width()
         self._search_changed(preserve_index=previous_match, reveal=False)
         self.browser.verticalScrollBar().setValue(scroll)
+
+    def _eq_body(self,block,images):
+        """Use the same measured static field as the canvas, on request for pixels."""
+        from ..word_static_eq import layout_eq,png_bytes
+        from ..desktop_preparation_images import image_info
+        text=block['text'];parts=[];cursor=0
+        for ordinal,span in enumerate(block.get('static_eqs',[])):
+            field=deepcopy(span['field'])
+            if text[span['start']:span['end']]!=field['transcription']:
+                raise ValueError('静态EQ与完整Word原文失配。')
+            parts.append(escape(text[cursor:span['start']]))
+            token={'kind':'eq','field':field};assets={};payloads={}
+            source_id=block.get('static_eq_images',{}).get(field['field_sha256'])
+            if field['base']['kind']=='image':
+                if source_id!=self._image_asset_id or self._image_pixmap is None:
+                    parts.append(escape(field['transcription']));cursor=span['end'];continue
+                from hashlib import sha256
+                raw=png_bytes(self._image_pixmap.toImage());sha=sha256(raw).hexdigest();info=image_info(raw)
+                identity='IMG-'+sha;token['asset_id']=identity;field['base']['image_block_id']='CB-'+'0'*32
+                assets[identity]={'asset_id':identity,'sha256':sha,**info,'caption':'原图',
+                    'source':'本地Word','purpose':'原生条件式'};payloads[identity]=raw
+            picture=layout_eq(token,assets,payloads,font_px=16)
+            url=f'lesson-eq:/{self._generation}/{block["index"]}/{ordinal}'
+            images[url]=QPixmap.fromImage(picture['_image'])
+            parts.append(f'<img src="{url}" width="{picture["width"]*96/25.4:.2f}" height="{picture["height"]*96/25.4:.2f}"/>')
+            cursor=span['end']
+        parts.append(escape(text[cursor:]));return ''.join(parts)
 
     def _activate_link(self, url: QUrl) -> None:
         action = self._actions.get(url.toString())

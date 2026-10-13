@@ -4,9 +4,8 @@ from pathlib import Path
 
 import pytest
 pytest.importorskip("PySide6")
-from PySide6.QtCore import QProcess
 from PySide6.QtWidgets import QFileDialog
-from test_lesson_backup_ui import window, dialog_for
+from test_lesson_backup_ui import window, dialog_for, detached_process_calls, assert_restored_launch
 from test_work_organization import save_draft
 from integrations.deeptutor_shchem_v1.desktop_backup import (
     create_backup, inspect_backup, manifest_revision, plan_backup, restore_backup,
@@ -31,16 +30,18 @@ def test_reopen_previously_restored_directory_keeps_current_editor(window, tmp_p
     prep.recovery.flush()
     state, payload = deepcopy(win.facade.state_store.snapshot()), deepcopy(prep._payload())
     recovery = prep.recovery.store.path.read_bytes()
-    calls = []
+    calls = detached_process_calls(monkeypatch)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *a, **k: str(target))
-    monkeypatch.setattr(QProcess, "startDetached", lambda *a: calls.append(a) or (True, 123))
+    monkeypatch.setenv('SHCHEM_WORKSPACE_ROOT', str(tmp_path / 'other-default-workspace'))
     dialog = dialog_for(win)
     try:
         dialog.show(); dialog.tabs.setCurrentIndex(1)
         assert dialog.restored_directory is None
         dialog.existing_button.click()
         assert dialog.restored_directory == str(target.resolve())
-        assert calls[0][1][-2:] == ["--personal-state", str(target.resolve())]
+        assert len(calls) == 1
+        assert_restored_launch(calls[0], dialog)
+        assert '已请求打开独立恢复窗口' in dialog.status.text()
         assert win.facade.state_store.snapshot() == state
         assert prep._payload() == payload
         assert prep.recovery.store.path.read_bytes() == recovery
@@ -52,9 +53,8 @@ def test_reopen_previously_restored_directory_keeps_current_editor(window, tmp_p
 def test_cancel_or_invalid_restore_folder_never_replaces_open_target(window, tmp_path, monkeypatch, choice):
     win, _ = window
     target = independent_copy(win, tmp_path)
-    calls = []
+    calls = detached_process_calls(monkeypatch)
     monkeypatch.setattr(QFileDialog, "getExistingDirectory", lambda *a, **k: "" if choice == "cancel" else str(tmp_path))
-    monkeypatch.setattr(QProcess, "startDetached", lambda *a: calls.append(a))
     dialog = dialog_for(win)
     try:
         dialog.restored_directory = str(target)

@@ -301,7 +301,7 @@ def test_history_uses_frozen_preview_not_current_form_or_profile(
         decision["result"] = QDialog.DialogCode.Accepted
     page._activate_current_task()
     assert not facade.new_previews and not facade.prepare_calls
-    title = "确认本地重新导出" if local else "确认重试备课候选" if retry else "确认继续生成"
+    title = "确认本地重新导出" if local else "确认重新生成" if retry else "确认继续生成"
     if local:
         assert prompts[0][1] == facade.task_preview["confirmation_text"] + "\n\n是否继续？"
         assert "LIVE-FORM-MODE" not in prompts[0][1]

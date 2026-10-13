@@ -1,0 +1,348 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-EQUILIBRIUM-01",
+      "title": "可逆反应限定在相同条件下双向进行",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.2",
+      "pdf_pages": [
+        54
+      ],
+      "printed_pages": [
+        50
+      ],
+      "summary": "教材将可逆反应限定为在相同条件下正、逆反应均能进行。氯气与水生成盐酸和次氯酸的反应以及合成氨用于说明这一点；N₂(g)+3H₂(g)⇌2NH₃(g)，对应氮气、氢气与氨，原页标注高温、高压、催化剂。",
+      "classroom_check": "核对正反应与逆反应是否处于同一条件，保留物质名称、状态符号和反应条件，再阅读起始投料与变化过程。",
+      "limitation": "水电解与氢气燃烧的操作条件不同，不能仅凭物质互相转化就归作本节定义的可逆反应；后页练习未附原书答案，本条不称标准答案。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          54
+        ],
+        "printed_pages": [
+          50
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-EQUILIBRIUM-02",
+      "title": "合成氨的浓度与双向速率随时间变化",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.2",
+      "pdf_pages": [
+        54,
+        55
+      ],
+      "printed_pages": [
+        50,
+        51
+      ],
+      "summary": "从氮气和氢气起始的密闭体系中，生成氨后逆反应开始发生；反应物浓度逐渐减小，氨浓度增大，正反应速率减小、逆反应速率增大，最终二者相等。图6.7为分子示意，图6.8为速率—时间示意。",
+      "classroom_check": "沿时间顺序区分起始状态、接近平衡和到达平衡，标明两条曲线分别代表的速率。",
+      "limitation": "分子图和速率图均不是数值测量表，不能从示意粒子数补出精确转化率、平衡常数或速率方程。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          54,
+          55
+        ],
+        "printed_pages": [
+          50,
+          51
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-EQUILIBRIUM-03",
+      "title": "化学平衡是恒定条件下的动态状态",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.2",
+      "pdf_pages": [
+        55,
+        57
+      ],
+      "printed_pages": [
+        51,
+        53
+      ],
+      "summary": "原书定义一定条件下正、逆反应速率相等、各组分浓度保持不变的状态为化学平衡；平衡时反应仍双向进行。它表示该反应在这些条件下达到最大程度，改变条件可以使平衡发生移动。",
+      "classroom_check": "同时核对条件恒定、双向速率相等和组分浓度不变；区分动态保持与反应停止。",
+      "limitation": "平衡不是所有反应物消耗完，也不是任何条件下的最大转化率；本节不提供平衡常数公式和一般压强判据，不能补写为本页已有内容。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          55,
+          57
+        ],
+        "printed_pages": [
+          51,
+          53
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-EQUILIBRIUM-04",
+      "title": "判断平衡时比较对象与速率口径必须明确",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.2",
+      "pdf_pages": [
+        55,
+        58
+      ],
+      "printed_pages": [
+        51,
+        54
+      ],
+      "summary": "动态平衡中同一种物质的消耗速率与生成速率相等，各组分浓度保持不变。后页合成氨练习要求判断物质的量比、不同物质速率、浓度相等或浓度不变等叙述。",
+      "classroom_check": "先指出所比较的是同一物质还是不同物质，以及是正向消耗还是逆向生成；不同物质的化学计量数需另行核对。",
+      "limitation": "各组分浓度保持不变不等于浓度彼此相等；原练习未附答案，不据本条补造试卷采分点或将浓度曲线相交当作平衡证据。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          55,
+          58
+        ],
+        "printed_pages": [
+          51,
+          54
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-EQUILIBRIUM-05",
+      "title": "铁盐与硫氰酸盐实验先核对混合和等体积对照",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.2",
+      "pdf_pages": [
+        56
+      ],
+      "printed_pages": [
+        52
+      ],
+      "summary": "教材先将3mL的0.02mol·L⁻¹氯化铁与18mL的0.01mol·L⁻¹硫氰酸钾混合。1号试管取4mL混合液作参照；2、3、4号各取3mL，再分别加1mL的1mol·L⁻¹硫氰酸钾、氯化铁、氢氧化钠溶液，最终各管体积均为4mL。",
+      "classroom_check": "对应图6.9核对四管操作，注明加液种类、浓度、体积和参照管，区分实验现象与解释。",
+      "limitation": "原页记录栏为空白，不能将教材方案或示意照片补写成学生实测数据，也不由颜色面积算出物质的量或平衡常数。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          56
+        ],
+        "printed_pages": [
+          52
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-EQUILIBRIUM-06",
+      "title": "浓度变化实验保留教材表示与未作答问题",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.2",
+      "pdf_pages": [
+        56
+      ],
+      "printed_pages": [
+        52
+      ],
+      "summary": "原页采用FeCl₃+3KSCN⇌Fe(SCN)₃+3KCl表示体系，物质为氯化铁、硫氰酸钾、红色硫氰酸铁和氯化钾。正文说明加入硫氰酸钾或氯化铁后颜色加深，平衡向正反应方向移动；另问4号管上层清液颜色变浅的原因。",
+      "classroom_check": "分别标出正文已说明的2、3号变化，以及4号管留给学生解释的问题；回查原实验条件后讨论浓度扰动。",
+      "limitation": "本条保留原书体系表达，未将其扩写为现代配位物种分布；4号管问题及实验记录没有原书答案，不能标作官方结论或代填观察记录。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          56
+        ],
+        "printed_pages": [
+          52
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-EQUILIBRIUM-07",
+      "title": "二氧化氮平衡的颜色与温度对应",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.2",
+      "pdf_pages": [
+        57
+      ],
+      "printed_pages": [
+        53
+      ],
+      "summary": "双球封闭装置中的2NO₂(g)⇌N₂O₄(g)为正向放热反应：二氧化氮呈红棕色、四氧化二氮无色。教材将两球置于热水和冰水环境，说明升温颜色变深、二氧化氮增多，降温颜色变浅、二氧化氮减少。",
+      "classroom_check": "先标明正反应热效应、颜色所指物质和温度改变方向，再说明平衡移动；核查封闭装置和对照条件。",
+      "limitation": "照片中温度计读数不是适用于所有实验的温度阈值；归纳表留空，不能把本条称为学生已完成的表格，也不由颜色推算浓度或常数。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          57
+        ],
+        "printed_pages": [
+          53
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-EQUILIBRIUM-08",
+      "title": "羟基磷灰石例析将酸作用连接到平衡",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.2",
+      "pdf_pages": [
+        57,
+        58
+      ],
+      "printed_pages": [
+        53,
+        54
+      ],
+      "summary": "教材用牙齿中的羟基磷灰石Ca₅(PO₄)₃OH(s)⇌5Ca²⁺+3PO₄³⁻+OH⁻说明平衡移动，产物为钙离子、磷酸根离子和氢氧根离子。原页例析指出氢离子与氢氧根离子反应生成水，氢氧根浓度降低，促进固体溶解方向的移动。",
+      "classroom_check": "按原书已附分析核对消耗的离子、浓度变化和移动方向，保留固态符号、电荷及计量关系。",
+      "limitation": "这是教材化学情境的原页例析，不作为医疗建议，不从该平衡式补出临床结论、饮食处方、溶解度常数或考试官方采分点。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          57,
+          58
+        ],
+        "printed_pages": [
+          53,
+          54
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-EQUILIBRIUM-09",
+      "title": "二氧化硫曲线练习先核对纵轴和容器体积",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.2",
+      "pdf_pages": [
+        58,
+        59
+      ],
+      "printed_pages": [
+        54,
+        55
+      ],
+      "summary": "题设为2L密闭容器中的2SO₂(g)+O₂(g)⇌2SO₃(g)，对应二氧化硫、氧气和三氧化硫。曲线纵轴为物质的量/mol、横轴为时间/min，15—20min为平台，20min氧气量增加；后续要求平均速率、平衡时间区间和扰动后的浓度变化。",
+      "classroom_check": "先区分物质的量与浓度、所取时间段与瞬时状态，联系2L容器体积及计量关系；判断平台须回到条件和题设。",
+      "limitation": "本条保留题设与读图线索，未附解析练习不补为标准计算答案；曲线相交不单独说明双向速率相等，扰动前后不能混为同一平衡条件。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          58,
+          59
+        ],
+        "printed_pages": [
+          54,
+          55
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-EQUILIBRIUM-10",
+      "title": "五氯化磷练习保留恒容和吸热条件",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.2",
+      "pdf_pages": [
+        59
+      ],
+      "printed_pages": [
+        55
+      ],
+      "summary": "练习给恒容密闭容器中的PCl₅(g)⇌PCl₃(g)+Cl₂(g)，正反应吸热，物质为五氯化磷、三氯化磷和氯气；分别询问加入五氯化磷、加入氯气及降低温度后的平衡移动。",
+      "classroom_check": "逐项列出改变因素、保持的条件、正向热效应和需要判断的方向，分开处理三个问题。",
+      "limitation": "原书本页没有答案；本条不把推导标为官方答案，不补写压强操作、平衡常数数值或未给温度数据。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          59
+        ],
+        "printed_pages": [
+          55
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ]
+}

@@ -724,8 +724,10 @@ def test_docx_title_has_no_border_and_uncertainties_hide_internal_field_codes(
     assert b"source_basis" not in document_xml
     document = Document(docx_path)
     text = "\n".join(paragraph.text for paragraph in document.paragraphs)
-    assert "例题数据需要教师核对。 教师处理：授课前核对题面、答案和单位。" in text
-    assert "材料出处需要教师确认。 教师处理：使用前检查原始材料。" in text
+    assert "例题数据需要教师核对" not in text
+    assert "材料出处需要教师确认" not in text
+    stored = json.loads(Path(_artifact_map(result)['candidate_json']['path']).read_text(encoding='utf8'))
+    assert stored['uncertainties'] == candidate['uncertainties']
 
 
 @pytest.mark.parametrize(
@@ -832,7 +834,9 @@ def test_teacher_notes_are_preserved_off_projection_and_cover_uses_subject(tmp_p
     assert "仅给教师的教学意图" not in visible
     notes = presentation.slides[0].notes_slide.notes_text_frame.text
     assert candidate["slides"][0]["purpose"] in notes
-    assert candidate["slides"][0]["teacher_notes"] in notes
+    assert candidate["slides"][0]["teacher_notes"] not in notes
+    stored = json.loads(Path(_artifact_map(result)['candidate_json']['path']).read_text(encoding='utf8'))
+    assert stored['slides'][0]['teacher_notes'] == candidate['slides'][0]['teacher_notes']
     document = Document(_artifact_map(result)["lesson_plan_docx"]["path"])
     matrix = document.tables[1]
     assert "tblHeader" in matrix.rows[0]._tr.xml

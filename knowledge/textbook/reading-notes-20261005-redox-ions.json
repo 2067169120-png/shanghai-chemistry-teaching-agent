@@ -1,0 +1,348 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-REDOX-IONS-01",
+      "title": "先用化合价变化识别氧化还原",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.2",
+      "pdf_pages": [
+        58,
+        59
+      ],
+      "printed_pages": [
+        53,
+        54
+      ],
+      "summary": "教材从铜氧化物与氢气、钠与氯气的反应出发，以元素化合价升降识别氧化还原反应，并进一步说明电子转移是其本质。判断时应同时找到被氧化与被还原的元素。",
+      "classroom_check": "让学生依次标出反应前后化合价、升降方向、失得电子数，最后检查失电子与得电子总数是否相等。",
+      "limitation": "不能把氧原子的得失当作全部氧化还原反应的判据；箭头、反应条件及计量数须回原页核对。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          58,
+          59
+        ],
+        "printed_pages": [
+          53,
+          54
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-IONS-02",
+      "title": "把氧化剂还原剂与自身变化对应",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.2",
+      "pdf_pages": [
+        59
+      ],
+      "printed_pages": [
+        54
+      ],
+      "summary": "氧化剂在该反应中得到电子、自身被还原；还原剂失去电子、自身被氧化。教材用高锰酸钾和碘化钾说明，可结合元素价态及具体反应推断物质的作用。",
+      "classroom_check": "设计“物质作用—电子变化—化合价变化—自身经历的过程”四列对应表，检查是否把氧化剂与被氧化混淆。",
+      "limitation": "“具有氧化性”与“在某个具体反应中作氧化剂”要区分；作用不能仅凭名称确定。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          59
+        ],
+        "printed_pages": [
+          54
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-IONS-03",
+      "title": "同一种物质的作用取决于反应体系",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.2",
+      "pdf_pages": [
+        59,
+        60
+      ],
+      "printed_pages": [
+        54,
+        55
+      ],
+      "summary": "教材以过氧化氢说明：遇到不同反应物时，同一种物质可能作氧化剂，也可能作还原剂。讨论其作用时，要依据反应产物中相应元素价态的变化。",
+      "classroom_check": "给两份产物信息，让学生比较过氧化氢中氧元素的价态变化，再说明相同物质为什么作用可以不同。",
+      "limitation": "本条只整理教材的分类思路，不把中间价态一概等同于任何条件下都能反应，也不提供具体实验实施方案。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          59,
+          60
+        ],
+        "printed_pages": [
+          54,
+          55
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-IONS-04",
+      "title": "电解质分类先限定对象和状态",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.2",
+      "pdf_pages": [
+        61
+      ],
+      "printed_pages": [
+        56
+      ],
+      "summary": "教材比较固体、水溶液和熔融状态的导电情况。电解质与非电解质的分类对象是化合物；观察到某种溶液导电，需要进一步说明其中自由移动离子的来源。",
+      "classroom_check": "把“物质本身是什么”“观察的是哪种状态”“是否存在自由移动离子”分成三个问题逐项回答。",
+      "limitation": "导电现象与物质分类不能只靠一个名称对应；混合溶液和金属不能直接套用化合物的电解质分类。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          61
+        ],
+        "printed_pages": [
+          56
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-IONS-05",
+      "title": "从微观粒子解释氯化钠不同状态的导电",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.2",
+      "pdf_pages": [
+        61,
+        62
+      ],
+      "printed_pages": [
+        56,
+        57
+      ],
+      "summary": "氯化钠在水中或熔融时形成可以自由移动的离子，固体中离子不能自由迁移。教材用两种状态的微观图说明，导电判断既要关注带电粒子，也要关注粒子能否移动。",
+      "classroom_check": "让学生对照原页两幅微观图说明溶解与熔融的共同点和差别，并写氯化钠的电离方程式：NaCl→Na⁺+Cl⁻。",
+      "limitation": "式中的箭头表示相应状态下的电离，不能据此把电离理解为外加电流才发生的电解反应。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          61,
+          62
+        ],
+        "printed_pages": [
+          56,
+          57
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-IONS-06",
+      "title": "区分强弱电解质并保留可逆符号",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.2",
+      "pdf_pages": [
+        62,
+        63
+      ],
+      "printed_pages": [
+        57,
+        58
+      ],
+      "summary": "教材把在水溶液中全部电离的电解质与部分电离的电解质区分。醋酸的电离写为CH₃COOH⇌H⁺+CH₃COO⁻，一水合氨写为NH₃·H₂O⇌NH₄⁺+OH⁻，均保留可逆符号。",
+      "classroom_check": "让学生比较盐酸、醋酸和一水合氨的电离表示，检查箭头、下标及两侧总电荷。",
+      "limitation": "强弱分类描述电离程度，不直接等同于某份溶液浓度大小或导电强弱；教材把水列为极弱电解质。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          62,
+          63
+        ],
+        "printed_pages": [
+          57,
+          58
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-IONS-07",
+      "title": "用旁观离子比较不同盐溶液的反应",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.2",
+      "pdf_pages": [
+        64
+      ],
+      "printed_pages": [
+        59
+      ],
+      "summary": "教材比较硫酸钠、硫酸铜分别与氯化钡溶液的反应。两组变化共同涉及钡离子与硫酸根离子生成硫酸钡沉淀：Ba²⁺+SO₄²⁻→BaSO₄↓；其他离子仍留在溶液中。",
+      "classroom_check": "分别列出混合前后的离子清单，圈出真正改变的粒子，再用同一个离子方程式概括两组反应。",
+      "limitation": "离子反应不限于生成沉淀；不能把“混合了两种溶液”直接认定为所有离子均参加反应。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          64
+        ],
+        "printed_pages": [
+          59
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-IONS-08",
+      "title": "写离子方程式时有条件地拆写",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.2",
+      "pdf_pages": [
+        65
+      ],
+      "printed_pages": [
+        60
+      ],
+      "summary": "教材以碳酸钙与盐酸反应示范：先写化学方程式，把易溶于水的强电解质拆为离子，保留难溶物、气体与弱电解质，约去旁观离子，再检查元素和电荷守恒。碳酸钙与氢离子的反应为CaCO₃+2H⁺→Ca²⁺+CO₂↑+H₂O。",
+      "classroom_check": "让学生在每个拆写或保留的物质旁写理由，最后分别列元素数和总电荷进行核对。",
+      "limitation": "不能把所有含离子的物质或所有酸、碱都拆开；必须核验溶解性、强弱电解质、题设状态及实际参与反应的粒子。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          65
+        ],
+        "printed_pages": [
+          60
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-IONS-09",
+      "title": "氧化还原与离子反应可以同时描述一件事",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.2",
+      "pdf_pages": [
+        66
+      ],
+      "printed_pages": [
+        61
+      ],
+      "summary": "教材用铁与硫酸铜溶液反应说明，氧化还原反应也可用离子方程式表示：Fe+Cu²⁺→Fe²⁺+Cu，铁被氧化、铜离子被还原。两种分类分别关注电子变化和实际参与的粒子。",
+      "classroom_check": "让学生对同一个反应分别回答“是否有化合价变化”和“实际变化的粒子是什么”，检查两类判断是否被误当作互斥。",
+      "limitation": "式中物质依次为铁、铜离子、亚铁离子和铜；离子方程式不自动证明任意离子组合均能反应。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          66
+        ],
+        "printed_pages": [
+          61
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-IONS-10",
+      "title": "沿铁黑流程分开分析沉淀与氧化阶段",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.2",
+      "pdf_pages": [
+        63,
+        66
+      ],
+      "printed_pages": [
+        58,
+        61
+      ],
+      "summary": "教材的铁黑制备流程包含调至碱性、通入空气、过滤和加热转化。讨论时应把沉淀生成与氧气使部分亚铁转化为三价铁的变化分开，再根据所给反应追踪最终铁黑中的铁价态。",
+      "classroom_check": "在流程箭头旁分别写输入物质、发生的变化和判断证据，说明通空气的化学作用与过滤的分离作用有什么差别。",
+      "limitation": "氨水涉及弱电解质一水合氨；书写其参与的离子方程式时保留NH₃·H₂O，不把投加弱碱按完全电离拆写。这里不增加未给出的工业参数或原练习答案。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          63,
+          66
+        ],
+        "printed_pages": [
+          58,
+          61
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ]
+}

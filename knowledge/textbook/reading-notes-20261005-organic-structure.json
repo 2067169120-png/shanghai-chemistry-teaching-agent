@@ -1,0 +1,441 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-ORGANIC-STRUCTURE-01",
+      "title": "碳原子的四价与常见成键方式",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.2",
+      "pdf_pages": [
+        12
+      ],
+      "printed_pages": [
+        8
+      ],
+      "summary": "教材说明碳最外层有4个电子，一般通过共用电子对形成共价键，碳之间还能组成直链、支链和环。图1.5以C—C、C—Cl、C—O、C=C、C=O、C≡C和C≡N示例区分单、双、三键，双键和三键称不饱和键。",
+      "classroom_check": "先读成键原子和共用电子对，再比较连接方式，保留元素标识及键型。",
+      "limitation": "这里只整理教材的一般成键模型，不把碳四价改成所有化合物中的氧化数均为+4；电子式书写任务原页未附答案。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          12
+        ],
+        "printed_pages": [
+          8
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-STRUCTURE-02",
+      "title": "饱和与不饱和碳的连接数和局部空间角度",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.2",
+      "pdf_pages": [
+        12,
+        13
+      ],
+      "printed_pages": [
+        8,
+        9
+      ],
+      "summary": "甲烷中的碳形成四个碳氢键，任意两键夹角109°28′；同类以四个原子通过共价单键连接的碳称饱和碳。乙烯、乙炔中的相应碳连接原子数少于4，称不饱和碳。双键碳相邻两键角约120°，三键碳相邻两键角180°；图1.6同时标乙烯具体角度121.7°与116.6°。",
+      "classroom_check": "把原子连接数、键型和局部空间形状分开核对，区分近似角度与图中具体示例值。",
+      "limitation": "不把约120°写成所有乙烯键角精确相等；不由一个局部碳的构型判断整分子所有原子共平面，甲烷角度保持原书度分单位。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          12,
+          13
+        ],
+        "printed_pages": [
+          8,
+          9
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-STRUCTURE-03",
+      "title": "表1.2碳碳键长键能与反应现象的适用边界",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.2",
+      "pdf_pages": [
+        13
+      ],
+      "printed_pages": [
+        9
+      ],
+      "summary": "表1.2给出C—C、C=C、C≡C键长分别154、133、120 pm，键能分别347、615、839 kJ·mol⁻¹。教材以乙烯通入溴的四氯化碳溶液褪色、乙烷无明显变化为情境，说明多键中的各成键部分不完全等同，乙烯和乙炔可发生加成反应。",
+      "classroom_check": "分列键型、键长和键能，再结合原页给定溶剂及观察条件判断证据能支持的结论。",
+      "limitation": "不把双键或三键总键能按单键的2倍或3倍转录，也不把表中值当作每个分子的精确实测键能；溴的四氯化碳溶液不能擅换为溴水，开放思考任务不补写未附答案。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          13
+        ],
+        "printed_pages": [
+          9
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-STRUCTURE-04",
+      "title": "共价键极性与碳氢键的弱极性脚注",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.2",
+      "pdf_pages": [
+        14
+      ],
+      "printed_pages": [
+        10
+      ],
+      "summary": "教材从不同原子吸引共用电子对能力的差异解释极性键，同种原子的相应共价键为非极性键；列C—H、C—Cl、C—O、C=O、O—H、C—N为常见极性键。脚注特别说明C和H吸引电子能力相近，碳氢键极性较弱。",
+      "classroom_check": "先标成键元素与电子对偏移，再用脚注检查概括；乙醇反应位置的思考仍回到完整条件。",
+      "limitation": "保留“反应往往发生在极性键上”的有限表述，不推成全部反应必定只发生于极性键；也不把一个极性键直接等同于整分子有极性。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          14
+        ],
+        "printed_pages": [
+          10
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-STRUCTURE-05",
+      "title": "结构式、结构简式和键线式省略的内容",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.2",
+      "pdf_pages": [
+        14
+      ],
+      "printed_pages": [
+        10
+      ],
+      "summary": "教材以正己烷与乙酸乙酯展示键线式：折线的每个拐点和终点表示碳原子，省略碳及与碳相连的氢。结构式和结构简式用于表示分子的连接关系。原页另给C5H12三个烷烃名称，要求比较结构简式、键线式和异同。",
+      "classroom_check": "对照原图逐点数碳，并核对氧等非碳原子及键的连接位置，区分表示约定与实际空间几何。",
+      "limitation": "键线式不能一概省略所有元素或所有氢；空表仍未附填写答案，本候选不补三种结构图。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          14
+        ],
+        "printed_pages": [
+          10
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-STRUCTURE-06",
+      "title": "楔形式表示三维方向，平面结构式不等于真实共面",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.2",
+      "pdf_pages": [
+        15
+      ],
+      "printed_pages": [
+        11
+      ],
+      "summary": "拓展视野说明甲烷真实形状为正四面体，普通结构式画在平面上并不表示原子真实共面。楔形式以普通实线表示纸面内的键，实楔指向观察者，虚楔远离观察者；图1.7对照甲烷、乙烷和丙烷的楔形式与球棍模型。",
+      "classroom_check": "逐一对照键的纸面内、前方和后方方向，再将二维符号同球棍模型对应。",
+      "limitation": "不从普通二维结构式推导全部原子共面；本条没有补指定R/S构型、构象能量或原图未给的立体参数。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          15
+        ],
+        "printed_pages": [
+          11
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-STRUCTURE-07",
+      "title": "构造异构按碳骨架、官能团位置及种类区分",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.2",
+      "pdf_pages": [
+        15,
+        16
+      ],
+      "printed_pages": [
+        11,
+        12
+      ],
+      "summary": "教材把原子排列顺序和连接方式不同、暂不考虑空间结构的异构归为构造异构，并分碳链异构、位置异构和官能团异构。例子依次为直链与支链C5H12，CH3CH2CH2OH与CH3CH(OH)CH3，以及CH2=CHCH=CH2与CH3CH2C≡CH；最后一类叙述从PDF15续到16。",
+      "classroom_check": "先核对组成相同，再比较碳骨架、官能团位置或种类，避免只凭画图方向判断新异构体。",
+      "limitation": "保留跨页定义和原例，不把旋转纸面或改写结构简式就计为新异构体；本条不扩充枚举数量或未附练习答案。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          15,
+          16
+        ],
+        "printed_pages": [
+          11,
+          12
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-STRUCTURE-08",
+      "title": "顺反异构保留2-丁烯的几何示例和原书物性值",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.2",
+      "pdf_pages": [
+        16
+      ],
+      "printed_pages": [
+        12
+      ],
+      "summary": "教材以碳碳双键不能自由旋转解释2-丁烯的顺反异构：两个氢在双键同侧为顺式、异侧为反式。该页列顺-2-丁烯沸点3.7 ℃、反-2-丁烯0.9 ℃，用于说明互为顺反异构体可有不同性质。",
+      "classroom_check": "先按原图定位双键两侧的取代基，再区分连接顺序和空间排列；对照同页提出的2-丁炔开放问题。",
+      "limitation": "不把存在不可自由旋转的多键当成所有分子都有顺反异构的充分条件；沸点压力原页未写，不补猜压力，2-丁炔思考题不补未附答案。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          16
+        ],
+        "printed_pages": [
+          12
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-STRUCTURE-09",
+      "title": "对映异构的镜像与不可完全重合条件",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.2",
+      "pdf_pages": [
+        16
+      ],
+      "printed_pages": [
+        12
+      ],
+      "summary": "教材将不能完全重合、互为实物与镜像的分子说明为对映异构体，以左右手和图1.8球棍模型作对照。这是与空间排列有关的立体异构，连接顺序可相同。",
+      "classroom_check": "分别检查连接关系相同、互为镜像及不可重合三个条件，用模型而非平面图外观判断。",
+      "limitation": "镜像关系本身不足以认定对映异构；原图未给旋光方向、R/S命名或药效，候选不补这些结论。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          16
+        ],
+        "printed_pages": [
+          12
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-STRUCTURE-10",
+      "title": "组成、碳骨架和官能团是不同分类维度",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.2",
+      "pdf_pages": [
+        16,
+        17
+      ],
+      "printed_pages": [
+        12,
+        13
+      ],
+      "summary": "教材按是否仅含碳氢区分烃及烃的衍生物，按骨架形状区分链状与环状；环状举脂环族环己烷和芳香族苯。图1.9把烃分链烃与环烃、列烃的衍生物的主要官能团类别，说明官能团相互转化是有机反应的重要内容。",
+      "classroom_check": "每次先说明采用哪个分类维度，再读图中父子关系，保留环烃中的脂环与芳香类别区别。",
+      "limitation": "不把所有环状有机物都叫芳香族，亦不把一个分类维度直接替代其他维度；未补原图未列的杂环或全部化合物门类。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          16,
+          17
+        ],
+        "printed_pages": [
+          12,
+          13
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-STRUCTURE-11",
+      "title": "图1.9官能团须连同完整邻接关系识别",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.2",
+      "pdf_pages": [
+        17
+      ],
+      "printed_pages": [
+        13
+      ],
+      "summary": "图1.9列碳碳双键、三键、碳卤键、羟基、醚键、醛基、酮羰基、羧基、酯基、氨基和酰胺基。醇与酚都显示羟基，但类别依据还需结合所连接骨架；含羰基的醛、酮、羧酸、酯和酰胺不能只见C=O就归为同类。",
+      "classroom_check": "用“官能团＋邻接原子或骨架”描述原图，核对O、N、H与R标签，并回看完整结构。",
+      "limitation": "图中的R示意不当作固定物质；这里未独立列出各类反应条件或把复杂分子只能归入单一类别。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          17
+        ],
+        "printed_pages": [
+          13
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-STRUCTURE-12",
+      "title": "维生素C教材例题按完整结构识别官能团",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.2",
+      "pdf_pages": [
+        18
+      ],
+      "printed_pages": [
+        14
+      ],
+      "summary": "图1.10和1.11的已附分析说明维生素C分子有六处氧，分别对应四个羟基和一个酯基，并还有一个碳碳双键。观察键线式时，教材建议先找与氧、氮、卤素相关的位置，再核对双键或三键。",
+      "classroom_check": "对照原图指出四个羟基、环内酯连接和碳碳双键，先保留完整邻接关系再数原子。",
+      "limitation": "这是教材已附分析，不称考试官方答案或采分点；未推导维生素C的医疗建议、全部反应性质或当前药效。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          18
+        ],
+        "printed_pages": [
+          14
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-STRUCTURE-13",
+      "title": "本节巩固练习只保留结构、条件和未附答案状态",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.2",
+      "pdf_pages": [
+        18,
+        19
+      ],
+      "printed_pages": [
+        14,
+        15
+      ],
+      "summary": "四组练习依次为判断哪一个结构不是给定2-丁烯的同分异构体，填写三个有机物官能团与不饱和碳数，判断CH≡C—CH2—CH2OH性质主要取决于哪些部位，以及相对分子质量86的烷烃五种异构体书写结构简式和键线式。",
+      "classroom_check": "核对分子组成、官能团邻接及双三键连接数；先完整列出质量86和五种异构体等原题条件。",
+      "limitation": "这四组练习未附答案或评分细则，不补選项、原子数或五种结构；PDF11属上一节、PDF20属下一节，均只作邻页边界证据。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          18,
+          19
+        ],
+        "printed_pages": [
+          14,
+          15
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ],
+  "source_conflicts": []
+}

@@ -1,0 +1,294 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-IONIZATION-01",
+      "title": "弱电解质部分电离与可逆表示",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        70
+      ],
+      "printed_pages": [
+        64
+      ],
+      "summary": "本节按水溶液中的电离情况区分强、弱电解质。弱电解质只部分电离，生成的离子可重新结合成分子。醋酸的教材表示为CH₃COOH⇌CH₃COO⁻+H⁺，物质标签为醋酸、醋酸根离子和氢离子；一水合氨表示为NH₃·H₂O⇌NH₄⁺+OH⁻，标签为一水合氨、铵根离子和氢氧根离子。",
+      "classroom_check": "逐项核对可逆符号、离子电荷及反应物名称，区分电离程度和溶液浓度。",
+      "limitation": "保留教材水溶液语境，不补写该页未给出的状态符号；等浓度盐酸、醋酸与镁反应的思考题未附标准答案，本条不代填实验结果。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          70
+        ],
+        "printed_pages": [
+          64
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-IONIZATION-02",
+      "title": "电离平衡建立时两种速率相等且过程继续",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        70
+      ],
+      "printed_pages": [
+        64
+      ],
+      "summary": "图3.5把电离速率和结合速率随时间的变化放在同一图中，两条曲线在电离平衡状态处达到相同的非零水平。正文将电离平衡视为动态平衡；浓度、温度等条件改变时，平衡可发生移动。",
+      "classroom_check": "读出时间轴、反应速率轴和交汇后的水平段，再说明平衡时仍有两种相反过程。",
+      "limitation": "图为定性示意，不从图中读取精确速率或达到平衡的时间；速率相等不等于分子和离子浓度相等。加水、碱、盐酸和醋酸钠的思考题保持未作答。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          70
+        ],
+        "printed_pages": [
+          64
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-IONIZATION-03",
+      "title": "一元弱酸和弱碱电离常数保留温度条件",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        71
+      ],
+      "printed_pages": [
+        65
+      ],
+      "summary": "在一定温度、达到电离平衡时，一元弱酸或弱碱的电离常数用平衡浓度表示。醋酸Ka=[H⁺][CH₃COO⁻]/[CH₃COOH]；一水合氨Kb=[NH₄⁺][OH⁻]/[NH₃·H₂O]。本页给出25 ℃时两者相应常数均为1.8×10⁻⁵，Ka与Kb分别采用弱酸、弱碱符号。",
+      "classroom_check": "用前页电离式核对分子、离子和电荷，再把平衡浓度与配制时的初始浓度分开。",
+      "limitation": "该表达式和数值限于教材给定对象、温度和浓度近似；不把Ka与Kb的同值推广到所有酸碱，也不把它们当作电离度。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          71
+        ],
+        "printed_pages": [
+          65
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-IONIZATION-04",
+      "title": "弱酸强弱比较先核对同温度和电离步次",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        71
+      ],
+      "printed_pages": [
+        65
+      ],
+      "summary": "表3.3的温度为25 ℃。一元弱酸列中，甲酸HCOOH、亚硝酸HNO₂、氢氟酸HF和醋酸CH₃COOH的Ka依次为1.8×10⁻⁴、7.2×10⁻⁴、5.6×10⁻⁴和1.8×10⁻⁵。多元酸列单列Ka₁、Ka₂；表下注明它们分别对应第一步、第二步电离。",
+      "classroom_check": "先读列标题和温度，再对应物质、常数符号及数量级；比较酸性时明确采用的电离步次。",
+      "limitation": "只保留已核看的表内数据，练习中的排序和其他常数表达式不补成标准答案。碳酸Ka₂表格与次页正文不同，差异另列待核验。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          71
+        ],
+        "printed_pages": [
+          65
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-IONIZATION-05",
+      "title": "碳酸分步电离保留Ka₂的原页差异",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        71,
+        72
+      ],
+      "printed_pages": [
+        65,
+        66
+      ],
+      "summary": "正文将碳酸电离分两步：H₂CO₃⇌H⁺+HCO₃⁻，标签为碳酸、氢离子和碳酸氢根；HCO₃⁻⇌H⁺+CO₃²⁻，标签为碳酸氢根、氢离子和碳酸根。Ka₁=[H⁺][HCO₃⁻]/[H₂CO₃]，Ka₂=[H⁺][CO₃²⁻]/[HCO₃⁻]。教材说明多元弱酸第二步通常较难、酸性主要由第一步决定；电离常数会受温度影响。",
+      "classroom_check": "逐步核对反应物、离子电荷和分母；对照表3.3与正文公式，指出数值差异的两个位置。",
+      "limitation": "同一原件PDF71／印刷65表格写碳酸Ka₂=4.8×10⁻¹¹，PDF72／印刷66正文写4.7×10⁻¹¹。两值均保留，未裁定正误、未合并或平均，不作为精确计算题的已核定数据。书中忽略温度影响只作本节近似，不解释成恒与温度无关。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          71,
+          72
+        ],
+        "printed_pages": [
+          65,
+          66
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-IONIZATION-06",
+      "title": "电离度表示已电离比例并受浓度影响",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        72
+      ],
+      "printed_pages": [
+        66
+      ],
+      "summary": "在给定条件、达到电离平衡时，电离度α为已电离分子数占总分子数的百分数；分母包含已电离和未电离的分子数。教材说明电离度与温度及溶液浓度有关，溶液越稀，电离度越大。",
+      "classroom_check": "用同一溶质比较稀释前后的比例，分别说明α、离子浓度和电离常数表示什么。",
+      "limitation": "比例增大不直接等于某种离子的浓度增大；本条不代答次页稀释醋酸的选择题，也不提供教材未给出的温度数值关系。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          72
+        ],
+        "printed_pages": [
+          66
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-IONIZATION-07",
+      "title": "跨页例题在相同浓度下比较电离与未电离分子",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        72,
+        73
+      ],
+      "printed_pages": [
+        66,
+        67
+      ],
+      "summary": "例题从PDF72续至73，给出醋酸及磷酸的电离常数，并比较0.1 mol·L⁻¹醋酸、磷酸、硫酸和盐酸。原解析区分强酸的电离与弱酸的部分电离，用磷酸第一步常数比较其与醋酸的氢离子浓度，并用相同浓度下的电离程度比较剩余未电离分子。",
+      "classroom_check": "先完整读取跨页题设，再逐一核对初始浓度、强弱酸、第一步电离和原解析的比较条件。",
+      "limitation": "原解析只据硫酸第一步全部电离判断[H⁺]>0.1 mol·L⁻¹，不据此改写为第二步完全电离或精确等于0.2 mol·L⁻¹；该参考解析属于教材例题，不是考试官方评分细则。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          72,
+          73
+        ],
+        "printed_pages": [
+          66,
+          67
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-IONIZATION-08",
+      "title": "四道巩固题保留条件和待答状态",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        73
+      ],
+      "printed_pages": [
+        67
+      ],
+      "summary": "本节巩固题分别涉及0.1 mol·L⁻¹醋酸加水稀释、浓醋酸与浓氨水的导电性及混合、氨水中微粒浓度比较、仅用指定指示剂和蒸馏水区分等浓度强弱酸。四题的试剂、初始条件和任务要求均需随题保留。",
+      "classroom_check": "把题设、现象、要比较的微粒或判断对象分列，先明确每道题能够使用的材料。",
+      "limitation": "原页没有附这四题的答案或评分细则；本条是题型与条件摘要，未编造实验数据、未代填作答，也不把导电亮度当作所有体系的通用定量浓度尺度。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          73
+        ],
+        "printed_pages": [
+          67
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ],
+  "source_conflicts": [
+    {
+      "field": "carbonic_acid_second_ionization_constant",
+      "resolved": false,
+      "values": [
+        {
+          "pdf_page": 71,
+          "printed_page": 65,
+          "location": "表3.3",
+          "value": "4.8×10⁻¹¹"
+        },
+        {
+          "pdf_page": 72,
+          "printed_page": 66,
+          "location": "正文Ka₂公式",
+          "value": "4.7×10⁻¹¹"
+        }
+      ],
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "decision": "retain both; blocked for precise numeric use pending review"
+    }
+  ]
+}

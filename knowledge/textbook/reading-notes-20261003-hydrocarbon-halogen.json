@@ -1,0 +1,387 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "purpose": "必修二7.1、选必三2.1及2.3共20页完整正文选读，8条教材研读候选提示。",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261003-HYDROCARBON-HALOGEN-01",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.1",
+      "title": "通式先标明链状与饱和范围",
+      "pdf_pages": [
+        78,
+        79
+      ],
+      "printed_pages": [
+        74,
+        75
+      ],
+      "source_anchors": [
+        "通式先标明链状与饱和范围"
+      ],
+      "summary": "教材把碳碳单键组成链状、其余价键与氢结合的烃称为烷烃，给出CₙH₂ₙ₊₂（n≥1）。环状饱和烃不能直接套这个通式。",
+      "classroom_check": "分别写组成、连接范围和饱和条件，再核对甲烷CH₄、乙烷C₂H₆与丁烷C₄H₁₀。",
+      "limitation": "适用范围限本节无环烷烃，不由该通式推定所有有机物类别。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          78,
+          79
+        ],
+        "printed_pages": [
+          74,
+          75
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-002",
+      "lecture_block_indices": [
+        42,
+        44,
+        265,
+        317
+      ],
+      "source_sha256": "c2195789348b846331c0fedb1e62a58dd690726b04663c954a471ac58b8faec2",
+      "source_preview_revision": "b848736b011ecb30bb2baa4088bf6f8a8ae678205108396db10fb66ecefb02e2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    },
+    {
+      "id": "READ-20261003-HYDROCARBON-HALOGEN-02",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.1",
+      "title": "二维结构式对照甲烷立体模型",
+      "pdf_pages": [
+        76
+      ],
+      "printed_pages": [
+        72
+      ],
+      "source_anchors": [
+        "二维结构式对照甲烷立体模型"
+      ],
+      "summary": "甲烷CH₄（甲烷）中碳原子位于正四面体中心，四个氢原子位于顶点。纸面结构式的十字画法用于表示连接，不能作为所有原子共面的证据。",
+      "classroom_check": "让学生对照模型解释二维画法；把连接关系与空间位置分别写入笔记。",
+      "limitation": "模型制作属于课堂建议，不把相邻碳原子的所有取代基无条件判为共面。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          76
+        ],
+        "printed_pages": [
+          72
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-002",
+      "lecture_block_indices": [
+        46,
+        47,
+        48,
+        164,
+        187,
+        192
+      ],
+      "source_sha256": "c2195789348b846331c0fedb1e62a58dd690726b04663c954a471ac58b8faec2",
+      "source_preview_revision": "b848736b011ecb30bb2baa4088bf6f8a8ae678205108396db10fb66ecefb02e2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    },
+    {
+      "id": "READ-20261003-HYDROCARBON-HALOGEN-03",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.1",
+      "title": "熔点和沸点分别读取表格",
+      "pdf_pages": [
+        79,
+        81
+      ],
+      "printed_pages": [
+        75,
+        77
+      ],
+      "source_anchors": [
+        "熔点和沸点分别读取表格"
+      ],
+      "summary": "教材表7.1中甲烷、乙烷、丙烷的熔点不是随碳数单调升高；表7.2分别列出正丁烷与异丁烷的熔点、沸点。比较时保留°C、具体结构和物性列，不能将沸点的常见趋势直接复制成熔点规律。",
+      "classroom_check": "圈出讲义53、55、57、63的冲突，逐列用教材数值核对；不把一个例子写成全部异构体通则。",
+      "limitation": "本条只对照教材的有限数据，不进行未核验物性的定量预测。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          79,
+          81
+        ],
+        "printed_pages": [
+          75,
+          77
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-002",
+      "lecture_block_indices": [
+        52,
+        53,
+        55,
+        57,
+        63,
+        568,
+        571
+      ],
+      "source_sha256": "c2195789348b846331c0fedb1e62a58dd690726b04663c954a471ac58b8faec2",
+      "source_preview_revision": "b848736b011ecb30bb2baa4088bf6f8a8ae678205108396db10fb66ecefb02e2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    },
+    {
+      "id": "READ-20261003-HYDROCARBON-HALOGEN-04",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C7:7.1",
+      "title": "同分异构体与画法、转动分开",
+      "pdf_pages": [
+        80,
+        81
+      ],
+      "printed_pages": [
+        76,
+        77
+      ],
+      "source_anchors": [
+        "同分异构体与画法、转动分开"
+      ],
+      "summary": "正丁烷与异丁烷同为C₄H₁₀（丁烷），碳骨架连接不同。教材用结构式、结构简式和球棍模型并列显示；相同连接结构的不同画法不应重复计数。",
+      "classroom_check": "把完整结构式、简式和模型进行配对，再按碳原子连接判断是否重复。",
+      "limitation": "这里只练习链状烷烃的连接异构，未包含完整立体异构分类或命名专题。",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          80,
+          81
+        ],
+        "printed_pages": [
+          76,
+          77
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-002",
+      "lecture_block_indices": [
+        46,
+        47,
+        48,
+        131,
+        134,
+        135,
+        138,
+        257,
+        260
+      ],
+      "source_sha256": "c2195789348b846331c0fedb1e62a58dd690726b04663c954a471ac58b8faec2",
+      "source_preview_revision": "b848736b011ecb30bb2baa4088bf6f8a8ae678205108396db10fb66ecefb02e2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    },
+    {
+      "id": "READ-20261003-HYDROCARBON-HALOGEN-05",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.1",
+      "title": "一卤代物先辨等价位置",
+      "pdf_pages": [
+        30
+      ],
+      "printed_pages": [
+        26
+      ],
+      "source_anchors": [
+        "一卤代物先辨等价位置"
+      ],
+      "summary": "教材的烷烃卤代反应说明取代位置、取代次数和卤素种类都会影响产物，通常得到混合物；一卤代物数目需要先按分子的等价位置计数。",
+      "classroom_check": "与必修二PDF82页丙烷例题对应，区分1-氯丙烷与2-氯丙烷；明确只统计一次取代。",
+      "limitation": "数目不等于产物比例，不能把教材异丁烷例中的比例迁移到所有烷烃。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          30
+        ],
+        "printed_pages": [
+          26
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-002",
+      "lecture_block_indices": [
+        74,
+        75,
+        76,
+        80,
+        81,
+        82,
+        85,
+        89,
+        131
+      ],
+      "source_sha256": "c2195789348b846331c0fedb1e62a58dd690726b04663c954a471ac58b8faec2",
+      "source_preview_revision": "b848736b011ecb30bb2baa4088bf6f8a8ae678205108396db10fb66ecefb02e2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    },
+    {
+      "id": "READ-20261003-HYDROCARBON-HALOGEN-06",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.3",
+      "title": "同一底物用两栏写反应条件",
+      "pdf_pages": [
+        42,
+        43
+      ],
+      "printed_pages": [
+        38,
+        39
+      ],
+      "source_anchors": [
+        "同一底物用两栏写反应条件"
+      ],
+      "summary": "教材以1-溴丁烷展示条件的作用：NaOH水溶液加热形成1-丁醇；强碱乙醇溶液加热可形成1-丁烯。表格比较反应类型、条件、断键和主要产物。",
+      "classroom_check": "写出CH₃CH₂CH₂CH₂Br（1-溴丁烷）两条反应，并配平NaBr与H₂O，分别注明水、乙醇和加热。",
+      "limitation": "按教材常见底物讨论主要产物；不承诺任意卤代烃只发生一种反应或没有副反应。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          42,
+          43
+        ],
+        "printed_pages": [
+          38,
+          39
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-002",
+      "lecture_block_indices": [
+        274,
+        275,
+        280,
+        283,
+        285,
+        346,
+        354
+      ],
+      "source_sha256": "c2195789348b846331c0fedb1e62a58dd690726b04663c954a471ac58b8faec2",
+      "source_preview_revision": "b848736b011ecb30bb2baa4088bf6f8a8ae678205108396db10fb66ecefb02e2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    },
+    {
+      "id": "READ-20261003-HYDROCARBON-HALOGEN-07",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.3",
+      "title": "消去前检查相邻碳上的氢",
+      "pdf_pages": [
+        43
+      ],
+      "printed_pages": [
+        39
+      ],
+      "source_anchors": [
+        "消去前检查相邻碳上的氢"
+      ],
+      "summary": "教材并列氯甲烷、邻碳无氢的卤代烷及其他结构，要求用结构解释能否消去。判断时先标出连接卤素的碳，再检查相邻碳上是否有氢及不同消去方向。",
+      "classroom_check": "对照讲义288两张已看结构图，说明无邻碳与有邻碳但无邻位氢是不同情形。",
+      "limitation": "只用于本节常见消去模型；特殊芳卤、乙烯基卤化物及制炔条件需要另行核验。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          43
+        ],
+        "printed_pages": [
+          39
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-002",
+      "lecture_block_indices": [
+        280,
+        285,
+        287,
+        288,
+        318,
+        322,
+        323,
+        324,
+        379
+      ],
+      "source_sha256": "c2195789348b846331c0fedb1e62a58dd690726b04663c954a471ac58b8faec2",
+      "source_preview_revision": "b848736b011ecb30bb2baa4088bf6f8a8ae678205108396db10fb66ecefb02e2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    },
+    {
+      "id": "READ-20261003-HYDROCARBON-HALOGEN-08",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C2:2.3",
+      "title": "检验先转化卤素，再排除干扰",
+      "pdf_pages": [
+        42,
+        45
+      ],
+      "printed_pages": [
+        38,
+        41
+      ],
+      "source_anchors": [
+        "检验先转化卤素，再排除干扰"
+      ],
+      "summary": "教材比较1-溴丁烷原样直接加AgNO₃（硝酸银）与NaOH水溶液加热后的水层；后一水层分为硝酸酸化后加AgNO₃和直接加AgNO₃两份，用以讨论共价溴与Br⁻及过量碱的干扰。",
+      "classroom_check": "保留原样和水层对照，解释为何先用稀硝酸酸化；若题目要求识别卤素来源，另核对空白与原样游离卤离子。",
+      "limitation": "课堂证据分析建议；本条只讨论已核验的氯、溴、碘检验范围，不把沉淀颜色当作任意含卤材料的唯一证明。",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          42,
+          45
+        ],
+        "printed_pages": [
+          38,
+          41
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "root_model_review_completed": true,
+      "lecture_package_id": "PKG-002",
+      "lecture_block_indices": [
+        327,
+        330,
+        332,
+        334,
+        336,
+        340,
+        341,
+        342,
+        435,
+        455,
+        460
+      ],
+      "source_sha256": "c2195789348b846331c0fedb1e62a58dd690726b04663c954a471ac58b8faec2",
+      "source_preview_revision": "b848736b011ecb30bb2baa4088bf6f8a8ae678205108396db10fb66ecefb02e2",
+      "source_extraction_revision": "20260909-editable-chemistry-v2"
+    }
+  ]
+}

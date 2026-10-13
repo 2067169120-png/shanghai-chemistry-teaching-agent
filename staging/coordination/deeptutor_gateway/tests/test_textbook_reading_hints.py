@@ -114,8 +114,140 @@ def test_large_file_and_excess_file_count_are_withheld(tmp_path, monkeypatch):
     monkeypatch.setattr(hints, "MAX_FILE_BYTES", 512 * 1024)
     monkeypatch.setattr(hints, "MAX_FILES", 1)
     write_packet(tmp_path, [note()], "reading-notes-second.json")
-    assert load(tmp_path) == {"notes": [], "notices": [hints.UNAVAILABLE]}
+    assert load(tmp_path) == {"notes": [], "notices": [hints._capacity_notice("files")]}
     assert path.is_file()
+
+
+def test_five_books_sixty_sections_exceed_old_limits_without_losing_chapters(tmp_path):
+    scopes = {}
+    expected = {}
+    for book in range(5):
+        for section in range(12):
+            key = f"BOOK-{book}:SECTION-{section}"
+            scope = {"volume_id": f"BOOK-{book}", "section_key": key,
+                     "source_sha256": SHA, "pdf_pages": [1, 2]}
+            scopes[key] = scope
+            rows = [note(id=f"{key}:NOTE-{index}", title=f"提示{index}",
+                         summary=f"第{index}条不同提示", volume_id=scope["volume_id"], section_key=key)
+                    for index in range(10)]
+            expected[key] = [hints._note(value) for value in rows]
+            write_packet(tmp_path, rows, f"reading-notes-{book}-{section:02}.json")
+            # Five repeated packets remain part of the input budget, but cannot
+            # inflate the selectable count or consume another chapter's quota.
+            if section == 0:
+                write_packet(tmp_path, rows, f"reading-notes-{book}-duplicate.json")
+    loaded = hints.load_reading_hint_catalog_with_diagnostics(tmp_path, scopes)
+    assert len(scopes) == 60
+    assert loaded["diagnostics"] == {
+        "file_count": 65,
+        "bytes_read": sum(path.stat().st_size for path in (tmp_path / "knowledge/textbook").glob("*.json")),
+        "raw_note_count": 650, "selectable_note_count": 600, "failed_file_count": 0,
+        "scan_complete": True, "counts_complete": True, "capacity_exceeded": None,
+    }
+    assert {key: value["notes"] for key, value in loaded["scopes"].items()} == expected
+    assert all(not value["notices"] for value in loaded["scopes"].values())
+    assert hints.load_reading_hint_catalog(tmp_path, scopes) == loaded["scopes"]
+    selected = scopes[next(iter(scopes))]
+    assert hints.load_reading_hints(tmp_path, **selected) == loaded["scopes"][selected["section_key"]]
+
+
+@pytest.mark.parametrize("reason", ["files", "bytes", "raw_notes"])
+def test_global_capacity_boundary_accepts_exact_limit_then_withholds_all(tmp_path, monkeypatch, reason):
+    first = write_packet(tmp_path, [note()], "reading-notes-a.json")
+    second = write_packet(tmp_path, [note(id="NOTE-2", summary="另一条提示")], "reading-notes-b.json")
+    attribute, exact = {
+        "files": ("MAX_FILES", 2),
+        "bytes": ("MAX_TOTAL_BYTES", first.stat().st_size + second.stat().st_size),
+        "raw_notes": ("MAX_NOTES", 2),
+    }[reason]
+    monkeypatch.setattr(hints, attribute, exact)
+    before = {path.name: path.read_bytes() for path in (first, second)}
+    assert [row["id"] for row in load(tmp_path)["notes"]] == ["NOTE-1", "NOTE-2"]
+    monkeypatch.setattr(hints, attribute, exact - 1)
+    result = hints.load_reading_hint_catalog_with_diagnostics(tmp_path, {
+        "selected": {"volume_id": "TB-E2", "section_key": "TB-E2-C1:1.1",
+                     "source_sha256": SHA, "pdf_pages": [1, 2]}})
+    assert result["scopes"]["selected"] == {"notes": [], "notices": [hints._capacity_notice(reason)]}
+    assert result["diagnostics"]["capacity_exceeded"] == reason
+    assert not result["diagnostics"]["scan_complete"] and not result["diagnostics"]["counts_complete"]
+    assert result["diagnostics"]["selectable_note_count"] == 0
+    assert {path.name: path.read_bytes() for path in (first, second)} == before
+
+
+@pytest.mark.parametrize("rename", [False, True])
+def test_capacity_failure_never_returns_an_early_id_before_late_conflict(tmp_path, monkeypatch, rename):
+    rows = [note(), note(summary="后序冲突提示")]
+    if rename:
+        rows.reverse()
+    first = write_packet(tmp_path, rows[:1], "reading-notes-a.json")
+    second = write_packet(tmp_path, rows[1:], "reading-notes-z.json")
+    monkeypatch.setattr(hints, "MAX_TOTAL_BYTES", first.stat().st_size)
+    assert load(tmp_path) == {"notes": [], "notices": [hints._capacity_notice("bytes")]}
+    monkeypatch.setattr(hints, "MAX_TOTAL_BYTES", first.stat().st_size + second.stat().st_size)
+    assert load(tmp_path) == {"notes": [], "notices": [hints.UNAVAILABLE]}
+
+
+@pytest.mark.parametrize("raw", [note(), note(limitation=""), note(section_key="UNRELATED")],
+                         ids=["duplicate", "invalid", "unrelated"])
+def test_raw_records_keep_consuming_capacity_before_filter_or_dedup(tmp_path, monkeypatch, raw):
+    write_packet(tmp_path, [note()], "reading-notes-a.json")
+    write_packet(tmp_path, [raw] * 2, "reading-notes-z.json")
+    monkeypatch.setattr(hints, "MAX_NOTES", 2)
+    result = hints.load_reading_hint_catalog_with_diagnostics(tmp_path, {
+        "selected": {"volume_id": "TB-E2", "section_key": "TB-E2-C1:1.1",
+                     "source_sha256": SHA, "pdf_pages": [1, 2]}})
+    assert result["diagnostics"]["raw_note_count"] == 3
+    assert result["diagnostics"]["capacity_exceeded"] == "raw_notes"
+    assert result["scopes"]["selected"]["notes"] == []
+
+
+def test_configured_file_limit_accepts_256_then_rejects_257(tmp_path):
+    for position in range(hints.MAX_FILES):
+        write_packet(tmp_path, [note()] if position == 0 else [], f"reading-notes-{position:03}.json")
+    assert len(load(tmp_path)["notes"]) == 1
+    write_packet(tmp_path, [], "reading-notes-extra.json")
+    assert load(tmp_path) == {"notes": [], "notices": [hints._capacity_notice("files")]}
+
+
+def test_configured_raw_limit_counts_invalid_history_and_rejects_8193(tmp_path):
+    write_packet(tmp_path, [note()] + [None] * (hints.MAX_NOTES - 1), "reading-notes-a.json")
+    assert len(load(tmp_path)["notes"]) == 1
+    write_packet(tmp_path, [], "reading-notes-z.json")
+    assert len(load(tmp_path)["notes"]) == 1
+    write_packet(tmp_path, [note()], "reading-notes-z.json")
+    assert load(tmp_path) == {"notes": [], "notices": [hints._capacity_notice("raw_notes")]}
+
+
+def test_configured_total_byte_limit_accepts_32mib_then_rejects_one_more_byte(tmp_path):
+    assert hints.MAX_TOTAL_BYTES % hints.MAX_FILE_BYTES == 0
+    for position in range(hints.MAX_TOTAL_BYTES // hints.MAX_FILE_BYTES):
+        path = write_packet(tmp_path, [note()] if position == 0 else [], f"reading-notes-{position:03}.json")
+        raw = path.read_bytes()
+        path.write_bytes(raw + b" " * (hints.MAX_FILE_BYTES - len(raw)))
+    assert len(load(tmp_path)["notes"]) == 1
+    path = tmp_path / "knowledge/textbook/reading-notes-z.json"
+    path.write_bytes(b" ")
+    assert load(tmp_path) == {"notes": [], "notices": [hints._capacity_notice("bytes")]}
+
+
+def test_file_growth_after_stat_cannot_bypass_total_read_budget(tmp_path, monkeypatch):
+    first = write_packet(tmp_path, [note()], "reading-notes-a.json")
+    second = write_packet(tmp_path, [note(id="NOTE-2", summary="另一条提示")], "reading-notes-z.json")
+    grown = second.read_bytes() + b" " * 1000
+    budget = first.stat().st_size + second.stat().st_size + 10
+    monkeypatch.setattr(hints, "MAX_TOTAL_BYTES", budget)
+    original_open = Path.open
+
+    def opened(self, *args, **kwargs):
+        return io.BytesIO(grown) if self == second else original_open(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", opened)
+    result = hints.load_reading_hint_catalog_with_diagnostics(tmp_path, {
+        "selected": {"volume_id": "TB-E2", "section_key": "TB-E2-C1:1.1",
+                     "source_sha256": SHA, "pdf_pages": [1, 2]}})
+    assert result["diagnostics"]["bytes_read"] == budget + 1
+    assert result["diagnostics"]["capacity_exceeded"] == "bytes"
+    assert result["scopes"]["selected"] == {"notes": [], "notices": [hints._capacity_notice("bytes")]}
 
 
 def test_duplicate_ids_and_duplicate_content_do_not_repeat(tmp_path):

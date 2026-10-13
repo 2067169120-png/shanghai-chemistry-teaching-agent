@@ -1,0 +1,321 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-ORGANIC-NAMING-01",
+      "title": "普通命名与系统命名的适用范围",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.3",
+      "pdf_pages": [
+        20
+      ],
+      "printed_pages": [
+        16
+      ],
+      "summary": "本节以烷烃命名为基础介绍有机物名称。普通命名法按碳原子数加“烷”，用正、异等词头区别部分异构体；随异构体数增多，教材转向系统命名。主链作为母体，主链氢被其他原子或原子团取代时，该部分称为取代基。",
+      "classroom_check": "先标明采用普通名称还是系统名称，再在原结构中指出母体和取代基。",
+      "limitation": "普通名称不是可覆盖全部异构体的规则；本节未给全部官能团的命名优先级，不将烷烃的一般规则扩展成所有有机物的完整命名标准。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          20
+        ],
+        "printed_pages": [
+          16
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-NAMING-02",
+      "title": "常见烷基名称与连接位置须同时保留",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.3",
+      "pdf_pages": [
+        20
+      ],
+      "printed_pages": [
+        16
+      ],
+      "summary": "资料库列甲基CH₃—、乙基CH₃CH₂—、正丙基、异丙基、正丁基、异丁基、仲丁基和叔丁基，并画出各自连接关系与向外连接的键。名称对应的是取代基，接入母体的位置也是结构的一部分。",
+      "classroom_check": "对照原图追踪向外连接的键，比较碳数相同的烷基为何具有不同连接位置或支化方式。",
+      "limitation": "不把烷基直接当作同名独立烷烃分子，也不从这张取代基示意图推断自由基反应机理；复杂烷基结构仍引用完整原图，不补无依据的连接方式。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          20
+        ],
+        "printed_pages": [
+          16
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-NAMING-03",
+      "title": "最长碳链可以转弯，不能只数横向直线",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.3",
+      "pdf_pages": [
+        20,
+        21
+      ],
+      "printed_pages": [
+        16,
+        17
+      ],
+      "summary": "烷烃系统命名先选分子中最长碳链作主链，按主链碳数定母体，支链作为烷基。教材同一结构用两条路径比较：横向路径只有七个碳，另一条经支链转折的路径有八个碳，应以八碳链为主链。编号与命名示例在下一页继续。",
+      "classroom_check": "沿真实的碳碳连接依次计数，不重复经过同一碳；把选主链、定编号和写名称分成三个步骤。",
+      "limitation": "图画得较直或较长不等于化学上的最长链；本例不扩写同长主链的所有选择规则，也不把这一例当作所有含官能团分子的唯一主链依据。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          20,
+          21
+        ],
+        "printed_pages": [
+          16,
+          17
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-NAMING-04",
+      "title": "烷烃编号、相同取代基合并与书写符号",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.3",
+      "pdf_pages": [
+        21
+      ],
+      "printed_pages": [
+        17
+      ],
+      "summary": "教材让主链从一端依次编号，使取代基位次尽可能小；本例将最小位次3与2比较，采用以2开始的方向。相同取代基用二、三等表示数量，位次间用逗号，汉字与数字间用短线；不同取代基按教材所述简单在前、复杂在后。原例名称为2,5,6-三甲基-4-乙基辛烷。",
+      "classroom_check": "同时核对母体、每个取代基的位置与数量、逗号和短线；比较编号方向后再合并名称。",
+      "limitation": "保留本教材的书写体系，不擅改为另一套排序或最新国际规则；本例未给所有位次并列时的处理细则，不能只凭最小单个位次解释所有复杂并列情况。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          21
+        ],
+        "printed_pages": [
+          17
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-NAMING-05",
+      "title": "不饱和烃的主链与多键位次先核对",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.3",
+      "pdf_pages": [
+        21,
+        22
+      ],
+      "printed_pages": [
+        17,
+        18
+      ],
+      "summary": "烯烃或炔烃选择含碳碳双键或三键的最长碳链作主链，编号使相应多键位次最小，用该键两端较小的碳编号表示位置。多处同类多键逐一列位次，并以二烯、三炔等表示数目。已命名示例包括4-甲基-1-戊烯、1,3-丁二烯、3-甲基-1-戊炔和3,4-二甲基-2-戊烯。",
+      "classroom_check": "先在原结构上标出双键或三键，再选含这些键的主链，并比较多键和取代基的位次。",
+      "limitation": "不把取代基位次小放在多键位次小之前；未增补烯炔混合、顺反或E/Z的命名规则，原页留给学生的三道命名任务不补答案。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          21,
+          22
+        ],
+        "printed_pages": [
+          17,
+          18
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-NAMING-06",
+      "title": "苯的同系物以苯环为母体并保留烷基条件",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.3",
+      "pdf_pages": [
+        22,
+        23
+      ],
+      "printed_pages": [
+        18,
+        19
+      ],
+      "summary": "本节将苯环上的氢被烷基取代所得产物称为苯的同系物，以苯环作母体、烷基侧链作取代基，通常省去名称中的“基”字。跨页示例为甲苯、乙苯和丙苯，原图分别画甲基、乙基和正丙基侧链。",
+      "classroom_check": "同时指出苯环母体和侧链的连接关系，区分名称简写与结构信息。",
+      "limitation": "不把任意含苯环的物质都归为本节所述苯的同系物；丙苯示例以原图的正丙基为准，不把不同支化侧链混作同一个结构。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          22,
+          23
+        ],
+        "printed_pages": [
+          18,
+          19
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-NAMING-07",
+      "title": "二甲苯位次与邻、间、对的对应",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.3",
+      "pdf_pages": [
+        23
+      ],
+      "printed_pages": [
+        19
+      ],
+      "summary": "苯环有多个烷基时，对环上六个碳编号以确定取代基位次。二甲苯以一个甲基位次为1、另一甲基位次尽量小；原图给1,2-二甲苯即邻二甲苯，1,3-二甲苯即间二甲苯，1,4-二甲苯即对二甲苯。",
+      "classroom_check": "沿原苯环标出两处连接碳，再将数字位次与相对位置词逐一对照。",
+      "limitation": "邻、间、对描述的是两处取代基在苯环上的相对位置，不是碳链支化程度；不以图在纸面上的朝向增加异构体，不补未给的物性或反应数据。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          23
+        ],
+        "printed_pages": [
+          19
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-NAMING-08",
+      "title": "跨页纠错例题按主链与优先位次重命名",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.3",
+      "pdf_pages": [
+        23,
+        24
+      ],
+      "printed_pages": [
+        19,
+        20
+      ],
+      "summary": "教材已附的三组分析先由错误名称还原结构，再纠错：2,3,4-三甲基丁烷误选四碳主链，应改为2,3-二甲基戊烷；4-甲基戊烷编号方向不合适，应为2-甲基戊烷；2-甲基-4-戊烯未优先降低双键位次，应为4-甲基-1-戊烯。",
+      "classroom_check": "先检查主链是否最长且包含需命名的官能团，再检查相应官能团或取代基的位次，最后合并相同取代基。",
+      "limitation": "答案属于教材已附分析，不称考试官方答案或采分点；三个错误名称不得作为正确同义词进入检索标签，例题之外的练习仍未附答案。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          23,
+          24
+        ],
+        "printed_pages": [
+          19,
+          20
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORGANIC-NAMING-09",
+      "title": "书写表达与巩固练习保留未附答案状态",
+      "volume_id": "TB-E3",
+      "section_key": "TB-E3-C1:1.3",
+      "pdf_pages": [
+        21,
+        22,
+        24
+      ],
+      "printed_pages": [
+        17,
+        18,
+        20
+      ],
+      "summary": "PDF21的书写表达要求由结构命名以及由2,2,4-三甲基己烷、2-甲基丁烷写结构简式；PDF22有三道不饱和烃命名任务。PDF24巩固包括主链碳数选择、名称中数字2的含义、三种结构命名，以及“□,□-二甲基-1-丁□”标签污损情境。",
+      "classroom_check": "逐题保留原结构、完整文字条件及作答要求；区分已附纠错例题分析和仍待学生作答的练习。",
+      "limitation": "这些练习未附答案或评分细则，不猜污损数字与末字、不补选项或可能名称列表；PDF19为上一节，PDF25为本章复习，均只作边界证据，不计入本节正文研读页数。",
+      "source_path": "课本/沪科技化学选修第三册【高清教材】.pdf",
+      "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+      "textbook_evidence": {
+        "source_sha256": "26ccd86648c807476fd6f08db7e414571fa0d5e077db63b15c9880cb225cd137",
+        "pdf_pages": [
+          21,
+          22,
+          24
+        ],
+        "printed_pages": [
+          17,
+          18,
+          20
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ],
+  "source_conflicts": []
+}

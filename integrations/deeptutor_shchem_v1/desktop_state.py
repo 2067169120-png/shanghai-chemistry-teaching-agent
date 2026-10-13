@@ -194,6 +194,12 @@ class DesktopStateStore:
         )):
             raise DesktopStateError("草稿修订记录无法核验，已停止保存。")
         _reject_sensitive_fields(result)
+        if "teaching_templates" in result:
+            from .desktop_teaching_templates import validate_library
+            try:
+                validate_library(result["teaching_templates"])
+            except ValueError as exc:
+                raise DesktopStateError("个人教学模板无法完整读取，已保留原记录。" ) from exc
         _basket_snapshot(result)  # Never silently drop malformed durable rows.
         return result
 
@@ -211,6 +217,9 @@ class DesktopStateStore:
 
     def _write_unlocked(self, value: dict[str, Any], *, expected_token=_UNCHECKED) -> None:
         _reject_sensitive_fields(value)
+        if "teaching_templates" in value:
+            from .desktop_teaching_templates import validate_library
+            validate_library(value["teaching_templates"])
         value = deepcopy(value)
         value["schema_version"] = STATE_SCHEMA
         value["updated_at"] = utc_now()

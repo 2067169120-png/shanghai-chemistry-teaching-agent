@@ -1097,6 +1097,8 @@ class StudentPage(QWidget):
         QTimer.singleShot(0, self._load_context)
 
     def _load_context(self) -> None:
+        if getattr(self.tasks, "is_shutting_down", False):
+            return
         if self._context_task_id is not None:
             return
 

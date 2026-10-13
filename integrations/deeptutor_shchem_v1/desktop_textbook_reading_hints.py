@@ -1,4 +1,4 @@
-"""Bounded, read-only display of textbook reading notes; never model material."""
+"""Bounded local reading notes. Reading alone never selects preparation material."""
 
 from __future__ import annotations
 
@@ -7,10 +7,13 @@ import re
 from itertools import islice
 from pathlib import Path
 
-MAX_FILES = 64
+# Archive budgets include historical, invalid and duplicated raw records. They
+# cover the five-book/60-section library plus further local reading packets;
+# display deduplication must never let extra input bypass these resource limits.
+MAX_FILES = 256
 MAX_FILE_BYTES = 512 * 1024
-MAX_TOTAL_BYTES = 4 * 1024 * 1024
-MAX_NOTES = 512
+MAX_TOTAL_BYTES = 32 * 1024 * 1024
+MAX_NOTES = 8192
 MAX_TEXT = 4000
 SCHEMAS = {
     "shchem.textbook-reading-notes.v1",
@@ -18,6 +21,20 @@ SCHEMAS = {
 }
 UNAVAILABLE = "部分研读提示暂时无法读取或核对；教材原页仍可查看。"
 STALE = "有研读提示对应其他教材版本，暂未显示；教材原页仍可查看。"
+
+
+class _CapacityExceeded(ValueError):
+    pass
+
+
+def _capacity_notice(reason):
+    limits = {
+        "files": f"{MAX_FILES}个文件",
+        "bytes": f"{MAX_TOTAL_BYTES}字节总读取量",
+        "raw_notes": f"{MAX_NOTES}条原始记录（含重复、无效及不匹配记录）",
+    }
+    return (f"研读提示目录超过{limits[reason]}的读取容量，本次目录的提示全部暂未显示；"
+            "请检查本地研读档案后刷新，教材原页仍可查看。")
 
 
 def _unique_object(pairs):
@@ -50,6 +67,18 @@ def _note(value):
     result = {}
     for key in ("id", "title", "summary", "limitation", "classroom_check", "volume_id", "section_key"):
         text = value.get(key)
+        # Earlier source-bound packets store multiple restrictions. Normalize
+        # them for display without rewriting the archive or inventing evidence.
+        if key == "limitation" and key not in value:
+            limits = value.get("limitations")
+            if isinstance(limits, str):
+                text = limits
+            elif (isinstance(limits, list) and 1 <= len(limits) <= 30
+                    and all(isinstance(item, str) and item.strip()
+                            and "\x00" not in item and len(item) <= MAX_TEXT for item in limits)):
+                text = "\n".join(item.strip() for item in limits)
+            else:
+                raise ValueError("invalid legacy limitations")
         limit = 180 if key in {"id", "title", "volume_id", "section_key"} else MAX_TEXT
         if not isinstance(text, str) or not text.strip() or len(text) > limit or "\x00" in text:
             raise ValueError("invalid note text")
@@ -79,21 +108,52 @@ def load_reading_hints(workspace, *, volume_id, section_key, source_sha256, pdf_
     Only fixed local note files are opened. No path or instruction from their
     content is used. Optional evidence failures never block the verified PDF.
     """
-    result = {"notes": [], "notices": []}
-    unavailable = stale = False
+    return load_reading_hint_catalog(workspace, {"selected": {
+        "volume_id": volume_id, "section_key": section_key,
+        "source_sha256": source_sha256, "pdf_pages": pdf_pages,
+    }})["selected"]
+
+
+def load_reading_hint_catalog(workspace, scopes):
+    """Read the bounded archive once for registered chapter scopes.
+
+    This only returns metadata and candidate text. PDF identity is verified
+    separately when the teacher opens pages or explicitly compiles references.
+    """
+    return load_reading_hint_catalog_with_diagnostics(workspace, scopes)["scopes"]
+
+
+def load_reading_hint_catalog_with_diagnostics(workspace, scopes):
+    """Read once, retaining raw budget counts separately from selectable notes.
+
+    A global budget failure withholds the entire archive: returning an earlier
+    prefix would hide later chapters and skip possible conflicting note IDs.
+    Counts after an incomplete scan are observed lower bounds, not archive totals.
+    """
+    results = {key: {"notes": [], "notices": []} for key in scopes}
+    diagnostics = {
+        "file_count": 0, "bytes_read": 0, "raw_note_count": 0,
+        "selectable_note_count": 0, "failed_file_count": 0,
+        "scan_complete": True, "counts_complete": True, "capacity_exceeded": None,
+    }
+    unavailable, stale = set(), set()
+    candidates = {key: [] for key in scopes}
     try:
-        selected_pages = set(_pages(pdf_pages))
+        selected_pages = {key: set(_pages(scope["pdf_pages"])) for key, scope in scopes.items()}
+        lookup = {}
+        for key, scope in scopes.items():
+            lookup.setdefault((scope["volume_id"], scope["section_key"]), []).append(key)
         root = Path(workspace).resolve()
         folder = root / "knowledge" / "textbook"
         if not folder.exists():
-            return result
+            return {"scopes": results, "diagnostics": diagnostics}
         if not folder.resolve().is_relative_to(root):
             raise ValueError("note directory outside workspace")
         paths = list(islice(folder.glob("reading-notes-*.json"), MAX_FILES + 1))
+        diagnostics["file_count"] = len(paths)
         if len(paths) > MAX_FILES:
-            raise ValueError("too many note files")
+            raise _CapacityExceeded("files")
         total_bytes = total_notes = 0
-        candidates = []
         for path in sorted(paths, key=lambda p: p.name.casefold()):
             try:
                 if path.is_symlink() or not path.resolve().is_relative_to(folder.resolve()):
@@ -102,16 +162,15 @@ def load_reading_hints(workspace, *, volume_id, section_key, source_sha256, pdf_
                 if size > MAX_FILE_BYTES:
                     raise ValueError("oversized reading note file")
                 if total_bytes + size > MAX_TOTAL_BYTES:
-                    unavailable = True
-                    break
+                    raise _CapacityExceeded("bytes")
                 with path.open("rb") as stream:
-                    data = stream.read(MAX_FILE_BYTES + 1)
+                    data = stream.read(min(MAX_FILE_BYTES, MAX_TOTAL_BYTES - total_bytes) + 1)
+                total_bytes += len(data)
+                diagnostics["bytes_read"] = total_bytes
+                if total_bytes > MAX_TOTAL_BYTES:
+                    raise _CapacityExceeded("bytes")
                 if len(data) > MAX_FILE_BYTES:
                     raise ValueError("oversized reading note file")
-                total_bytes += len(data)
-                if total_bytes > MAX_TOTAL_BYTES:
-                    unavailable = True
-                    break
                 packet = json.loads(data.decode("utf-8-sig"), object_pairs_hook=_unique_object,
                                     parse_constant=_invalid_constant)
                 if (
@@ -120,52 +179,72 @@ def load_reading_hints(workspace, *, volume_id, section_key, source_sha256, pdf_
                 ):
                     raise ValueError("invalid reading note packet")
                 total_notes += len(packet["notes"])
+                diagnostics["raw_note_count"] = total_notes
                 if total_notes > MAX_NOTES:
-                    unavailable = True
-                    break
-                related = [value for value in packet["notes"] if not isinstance(value, dict)
-                           or (value.get("volume_id") == volume_id and value.get("section_key") == section_key)]
+                    raise _CapacityExceeded("raw_notes")
+                related = []
+                for value in packet["notes"]:
+                    keys = (list(scopes) if not isinstance(value, dict) else
+                            lookup.get((value.get("volume_id"), value.get("section_key")), []))
+                    if keys:
+                        related.append((value, keys))
                 if not related:
                     continue
                 if (packet.get("schema_version") not in SCHEMAS
                         or packet.get("candidate_only") is not True
                         or packet.get("human_reviewed") is not False):
                     raise ValueError("unsupported reading note packet")
-                for value in related:
+                for value, keys in related:
                     try:
                         note = _note(value)
                     except ValueError:
-                        unavailable = True
+                        unavailable.update(keys)
                         continue
-                    if note["textbook_sha256"] != source_sha256:
-                        stale = True
-                        continue
-                    if set(note["pdf_pages"]).issubset(selected_pages):
-                        candidates.append(note)
+                    for key in keys:
+                        if note["textbook_sha256"] != scopes[key]["source_sha256"]:
+                            stale.add(key)
+                        elif set(note["pdf_pages"]).issubset(selected_pages[key]):
+                            candidates[key].append(note)
+            except _CapacityExceeded:
+                raise
             except (OSError, UnicodeError, ValueError, TypeError, RecursionError):
-                unavailable = True
+                diagnostics["failed_file_count"] += 1
+                diagnostics["counts_complete"] = False
+                unavailable.update(scopes)
         # Identical duplicated notes display once. Conflicting reused IDs are
         # all withheld rather than choosing a file by incidental sort order.
-        by_id, conflicts = {}, set()
-        for note in candidates:
-            prior = by_id.get(note["id"])
-            if prior is not None and prior != note:
-                conflicts.add(note["id"])
-                unavailable = True
-            by_id[note["id"]] = note
-        seen = set()
-        for key, note in by_id.items():
-            fingerprint = json.dumps({k: v for k, v in note.items() if k != "id"}, sort_keys=True)
-            if key not in conflicts and fingerprint not in seen:
-                result["notes"].append(note)
-                seen.add(fingerprint)
+        for scope_key, rows in candidates.items():
+            by_id, conflicts = {}, set()
+            for note in rows:
+                prior = by_id.get(note["id"])
+                if prior is not None and prior != note:
+                    conflicts.add(note["id"])
+                    unavailable.add(scope_key)
+                by_id[note["id"]] = note
+            seen = set()
+            for key, note in by_id.items():
+                fingerprint = json.dumps({k: v for k, v in note.items() if k != "id"}, sort_keys=True)
+                if key not in conflicts and fingerprint not in seen:
+                    results[scope_key]["notes"].append(note)
+                    seen.add(fingerprint)
+    except _CapacityExceeded as exc:
+        diagnostics["capacity_exceeded"] = str(exc)
+        diagnostics["scan_complete"] = diagnostics["counts_complete"] = False
+        # No prefix is safe until all bounded files and possible conflicts have
+        # been checked. Source PDFs remain independent of this optional archive.
+        results = {key: {"notes": [], "notices": []} for key in scopes}
     except (OSError, ValueError, TypeError, RecursionError):
-        unavailable = True
-    if unavailable:
-        result["notices"].append(UNAVAILABLE)
-    if stale:
-        result["notices"].append(STALE)
-    return result
+        diagnostics["scan_complete"] = diagnostics["counts_complete"] = False
+        unavailable.update(scopes)
+    for key, result in results.items():
+        if diagnostics["capacity_exceeded"] is not None:
+            result["notices"].append(_capacity_notice(diagnostics["capacity_exceeded"]))
+        elif key in unavailable:
+            result["notices"].append(UNAVAILABLE)
+        if diagnostics["capacity_exceeded"] is None and key in stale:
+            result["notices"].append(STALE)
+    diagnostics["selectable_note_count"] = sum(len(row["notes"]) for row in results.values())
+    return {"scopes": results, "diagnostics": diagnostics}
 
 
 def reading_hints_for_page(hints, page, selected_pages):

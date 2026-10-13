@@ -45,7 +45,8 @@ def validate_editor_payload(payload) -> dict:
     if payload.get("image_input_mode", "local_only") not in {"local_only", "vision"}:
         raise PreparationRecoveryError("恢复表单的图片用法无法识别。")
     images = payload.get("image_assets", [])
-    if not isinstance(images, list) or len(images) > 12:
+    from .desktop_preparation_images import MAX_IMAGES
+    if not isinstance(images, list) or len(images) > MAX_IMAGES:
         raise PreparationRecoveryError("恢复表单的图片列表不受支持。")
     seen = set()
     for image in images:

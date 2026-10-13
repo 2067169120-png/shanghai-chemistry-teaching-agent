@@ -1,4 +1,5 @@
 from __future__ import annotations
+from pathlib import Path
 
 import threading
 from contextlib import suppress
@@ -63,6 +64,8 @@ class ImportDialog(QDialog):
         self._active_task_kind: str | None = None
         self._saved_visual_receipt: DesktopVisualImportReceipt | None = None
         self.preparation_reference: dict | None = None
+        self.open_textbooks_requested = False
+        self.open_word_library_requested = False
         self._word_receipts: dict[str, DesktopVisualImportReceipt] = {}
         self._pending_word_annotation: str | None = None
         self._word_annotation_messages: dict[str, str] = {}
@@ -162,6 +165,26 @@ class ImportDialog(QDialog):
         format_note.setObjectName("MutedLabel")
         format_note.setWordWrap(True)
         form.addRow("", format_note)
+        self.textbook_note = QLabel("整本教材PDF请用下方专用入口保存，再核对章节页范围和手工笔记。当前题目／讲义导入仍按页处理；按页识别不等于整本教材已经接入。")
+        self.textbook_note.setWordWrap(True)
+        self.textbook_note.setObjectName("MutedLabel")
+        self.textbook_note.setTextFormat(Qt.TextFormat.PlainText)
+        self.textbook_button = QPushButton("打开教材，按章节阅读与选材")
+        self.textbook_button.setObjectName("QuietButton")
+        self.textbook_button.clicked.connect(self._open_textbooks)
+        self.textbook_import_button = QPushButton("保存整本教材PDF…")
+        self.textbook_import_button.setObjectName("QuietButton")
+        self.textbook_import_button.clicked.connect(self._import_whole_textbooks)
+        form.addRow("", self.textbook_note)
+        form.addRow("", self.textbook_button)
+        form.addRow("", self.textbook_import_button)
+        def textbook_context(text):
+            visible = text == "教材与课程文件"
+            self.textbook_note.setVisible(visible)
+            self.textbook_button.setVisible(visible)
+            self.textbook_import_button.setVisible(visible)
+        self.source_type.currentTextChanged.connect(textbook_context)
+        textbook_context(self.source_type.currentText())
         content_layout.addWidget(type_card)
 
         self.question_files = FileSelectionPanel(
@@ -317,6 +340,13 @@ class ImportDialog(QDialog):
         self.status.setWordWrap(True)
         self.status.setAccessibleName("导入状态")
         root.addWidget(self.status)
+        self.word_library_button = QPushButton("去本地 Word 题库")
+        self.word_library_button.setObjectName("PrimaryAction")
+        self.word_library_button.setAccessibleName("去选题中心的本地 Word 题库")
+        self.word_library_button.setToolTip("关闭导入窗口，在选题中心查看当前本地资料库全部 Word 题；清空上次检索条件。")
+        self.word_library_button.clicked.connect(self._open_word_library)
+        self.word_library_button.hide()
+        root.addWidget(self.word_library_button, alignment=Qt.AlignmentFlag.AlignLeft)
         buttons = QHBoxLayout()
         buttons.addStretch(1)
         self.close_button = QPushButton("关闭")
@@ -535,7 +565,30 @@ class ImportDialog(QDialog):
         self._set_busy(True)
         set_status(self.status, "info", message)
 
+    def _open_textbooks(self) -> None:
+        if self._active_task_id:
+            set_status(self.status, "attention", "请等待当前导入结束，再打开教材。")
+            return
+        self.open_textbooks_requested = True
+        self.reject()
+
+    def _import_whole_textbooks(self) -> None:
+        if self._active_task_id:
+            return
+        from .textbook_import_dialog import TextbookImportDialog
+        dialog = TextbookImportDialog(self.facade, self.tasks, self)
+        files = [path for path in self.question_files.paths() if Path(path).suffix.casefold() == '.pdf']
+        if files:
+            dialog.files.file_list._append_paths(files)
+        imported = []
+        dialog.imported.connect(lambda: imported.append(True))
+        dialog.exec();dialog.deleteLater()
+        if imported:
+            self._open_textbooks()
+
     def _set_busy(self, busy: bool) -> None:
+        self.textbook_button.setEnabled(not busy)
+        self.textbook_import_button.setEnabled(not busy)
         self.source_type.setEnabled(not busy)
         for panel in self._role_panels():
             panel.setEnabled(not busy)
@@ -550,6 +603,7 @@ class ImportDialog(QDialog):
             not busy and self.word_batch_combo.count() > 0
         )
         self.word_questions_button.setEnabled(not busy)
+        self.word_library_button.setEnabled(not busy and self.word_batch_combo.count() > 0)
         self.word_continuation.setEnabled(not busy)
         self.personal_visual_questions_button.setEnabled(not busy)
         self.word_annotation_button.setEnabled(not busy and self.word_batch_combo.count() > 0)
@@ -621,16 +675,18 @@ class ImportDialog(QDialog):
     ) -> None:
         self._remember_word_receipt(receipt, select=True)
         question_count, answer_count, handout_count = self._source_role_counts(receipt)
+        word_hint = (" 已保存 Word 可去本地 Word 题库查看实际题目。"
+                     if receipt.batch_id in self._word_receipts else "")
         summary = (
             f"来源 {receipt.source_count} 份（题目 {question_count}、答案 {answer_count}、"
-            f"讲义 {handout_count}）；可完整读取的 Word 来源 {receipt.native_quick_count} 份；"
+            f"讲义 {handout_count}）；当次快速导入统计：完整读取 Word 来源 {receipt.native_quick_count} 份；"
             f"待视觉资料 {receipt.visual_queue_count} 份。"
-        )
+        ) + word_hint
         if receipt.native_failed_count:
             self.provider_card.setVisible(receipt.visual_queue_count > 0 and receipt.visual_status != "completed")
             if self.provider_card.isVisible():
                 self._refresh_visual_profiles()
-            set_status(self.status, "attention", receipt.message_zh)
+            set_status(self.status, "attention", receipt.message_zh + word_hint)
             return
         if receipt.visual_status == "completed" or receipt.visual_queue_count <= 0:
             self.provider_card.setVisible(False)
@@ -647,7 +703,7 @@ class ImportDialog(QDialog):
             set_status(
                 self.status,
                 "error",
-                ("已恢复未完成批次。" if resumed else "") + receipt.message_zh,
+                ("已恢复未完成批次。" if resumed else "") + receipt.message_zh + word_hint,
             )
             return
         lead = "已恢复最近一批。" if resumed else "离线保存完成。"
@@ -708,6 +764,16 @@ class ImportDialog(QDialog):
         self.word_history_card.setVisible(True)
         self.word_reference_button.setVisible(True)
         self.word_reference_button.setEnabled(self._active_task_id is None)
+        self.word_library_button.setVisible(True)
+        self.word_library_button.setEnabled(self._active_task_id is None)
+
+    def _open_word_library(self) -> None:
+        if self._active_task_id or self.word_batch_combo.currentData() not in self._word_receipts:
+            return
+        self._import_preview_epoch += 1
+        self._discard_import_preview()
+        self.open_word_library_requested = True
+        self.accept()
 
     def _open_word_reference(self) -> None:
         from .import_word_dialog import ImportWordDialog

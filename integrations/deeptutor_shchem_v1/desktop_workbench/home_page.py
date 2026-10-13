@@ -209,6 +209,8 @@ class HomePage(QWidget):
         self.editing_strip.setVisible(bool(present))
 
     def refresh(self, *, force_refresh=False):
+        if getattr(self.tasks, "is_shutting_down", False):
+            return
         self._epoch += 1
         epoch = self._epoch
         if self._task_id:

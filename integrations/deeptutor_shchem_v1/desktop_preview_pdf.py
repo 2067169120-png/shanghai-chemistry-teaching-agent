@@ -39,6 +39,28 @@ class FrozenPdfPages:
     def verify_file(self):
         self._checked_bytes()
 
+    def text(self, number):
+        """Read actual PDF text, never infer words from a picture or formula."""
+        check_read_cancelled()
+        if type(number) is not int or not 1 <= number <= self.count:
+            raise ValueError("该页不在本次课件中。")
+        import pypdfium2 as pdfium
+        from .desktop_local_pagination import _PDF_LOCK
+        with _PDF_LOCK, pdfium.PdfDocument(self._bytes) as document:
+            page = document[number - 1]
+            try:
+                textpage = page.get_textpage()
+                try:
+                    value = textpage.get_text_range()
+                finally:
+                    textpage.close()
+            finally:
+                page.close()
+        if len(value) > 20000:
+            raise ValueError("本页文字过长，请分段整理讲稿；原页和当前输入保留。")
+        check_read_cancelled()
+        return value
+
     def render(self, number, *, pixel_ratio=1.0):
         check_read_cancelled()
         if type(number) is not int or not 1 <= number <= self.count:

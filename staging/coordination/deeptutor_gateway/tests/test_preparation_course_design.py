@@ -296,7 +296,7 @@ def test_broad_atom_or_electron_topics_do_not_receive_notation_course(topic):
 
 def test_electron_reference_has_inspected_organization_and_source_boundaries():
     text = teacher_design_starter("专题", "核外电子排布的表示方法")
-    assert COURSE_DESIGN_REVISION == "20260912-electron-representation-reference-v5"
+    assert COURSE_DESIGN_REVISION == "20261012-backstage-source-reference-v6"
     assert "同一对象多种表示互译—例题—独立变式—可记比较表" in text
     assert "表示法／包含信息／适用问题／易错点" in text
     assert "第11—12页元素对照表" in text
@@ -310,7 +310,7 @@ def test_electron_reference_has_inspected_organization_and_source_boundaries():
     assert "不照抄平台例题" in text
     assert "未下载原PPT" in text and "没有自动带入原题或图片" in text
     assert "直接使用本次选定的原文、表格、公式、图片及例题答案" in text
-    assert "出处与采用说明放在教案或教师备注" in text
+    assert "出处与采用说明仅放在内部source_basis及资料记录" in text
     assert "不把这段设计说明直接放到学生PPT上" in text
     assert "首屏用章节名" in text
 

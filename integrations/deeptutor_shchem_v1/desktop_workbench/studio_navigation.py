@@ -5,7 +5,9 @@ from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import QDialog, QLineEdit, QListWidget, QListWidgetItem, QVBoxLayout
 from ..desktop_studio import TEMPLATES
 from .components import section_title
-from .teacher_help import TeacherHelpDialog as HelpDialog
+from .teacher_help import TeacherHelpDialog
+
+HelpDialog = TeacherHelpDialog
 
 COMMANDS = (
     ("exam-analysis", "考试分析", "Excel成绩 / 试卷 / 可视化 / 班级讲评 / 月考后先讲什么"),
@@ -13,6 +15,7 @@ COMMANDS = (
     ("paper", "组卷", "题篮 / 学生版 / 教师版 / 出一份练习卷 / 打印"),
     ("student", "学生分析", "作答 / 诊断 / 练习 / 复核作业 / 批改 / 复练 / 改分"),
     ("preparation", "备课", "PPT / 教案 / 学习单 / 明天讲一节新课"),
+    ("textbooks", "教材", "原书 / 册 / 章 / 节 / 知识摘要 / 图表 / 实验 / 从教材选参考"),
     ("templates", "教学模板", "场景 / 收藏 / 学习路径"),
     ("classroom", "课堂工具", '倒计时 / 点名 / 分组 / 动态平衡 / 随堂反馈'),
     ("backup", "备份与恢复", "备课作品 / 独立目录恢复 / 补回原图"),
@@ -29,6 +32,7 @@ ICON_PATHS = {
     "paper": '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
     "student": '<circle cx="12" cy="7" r="4"/><path d="M4 21v-3a8 8 0 0 1 16 0v3M8 18h8"/>',
     "preparation": '<path d="M3 4h18v13H3zM8 22l4-5 4 5M8 9h8M8 13h5"/>',
+    "textbooks": '<path d="M12 5v16M3 4c4-1 6-1 9 1 3-2 5-2 9-1v16c-4-1-6-1-9 1-3-2-5-2-9-1zM6 8h3m6 0h3"/>',
     "templates": '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
     "classroom": '<circle cx="12" cy="13" r="8"/><path d="M12 8v5l3 2M9 2h6M12 2v3"/>',
     "mywork": '<path d="M3 6h7l2 3h9v11H3zM3 6V4h7l2 2h7v3"/>',

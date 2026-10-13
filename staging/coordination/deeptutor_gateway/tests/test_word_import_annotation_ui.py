@@ -179,7 +179,7 @@ def test_real_saved_word_then_ui_auto_labels_persist_without_provider(
 ):
     from integrations.deeptutor_shchem_v1 import desktop_word_questions as module
 
-    monkeypatch.setattr(module, "load_attribute_catalog", lambda _root: {
+    monkeypatch.setattr(module, "load_attribute_catalog", lambda _root, *, allow_builtin=False: {
         "knowledge_points": [], "nodes": [],
     })
     word, _, _ = _files(tmp_path)

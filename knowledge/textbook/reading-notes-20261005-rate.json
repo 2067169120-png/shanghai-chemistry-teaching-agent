@@ -1,0 +1,372 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-RATE-01",
+      "title": "平均反应速率须说明物质和时间区间",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.1",
+      "pdf_pages": [
+        45,
+        46
+      ],
+      "printed_pages": [
+        41,
+        42
+      ],
+      "summary": "本节用化学反应速率表示反应快慢，以单位时间内反应物浓度的减少量或生成物浓度的增加量表示，v=Δc/Δt。常用单位为mol·L⁻¹·s⁻¹或mol·L⁻¹·min⁻¹，正文明确该值是所取时间间隔内的平均反应速率。",
+      "classroom_check": "同时标明被测物质、起止时刻、浓度单位和时间单位；以正的消耗量或生成量核算平均值。",
+      "limitation": "不同时间区间的平均值不能直接当作某一时刻的瞬时速率；原书定义中的变化量采用消耗或生成量，不把反应物浓度的带符号差值直接写成负的反应速率。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          45,
+          46
+        ],
+        "printed_pages": [
+          41,
+          42
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-RATE-02",
+      "title": "质量随时间实验先区分方案与实测记录",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.1",
+      "pdf_pages": [
+        45,
+        46
+      ],
+      "printed_pages": [
+        41,
+        42
+      ],
+      "summary": "大理石与盐酸实验先将干燥锥形瓶和棉花在天平上调零，加入1.0mol·L⁻¹盐酸记录m₁，准备质量为m₂的大理石；混合并塞棉花后记录总质量，从混合开始每隔10s记录一次至反应结束。图6.1提供质量—时间作图网格，记录表和网格均未填入实验结果。",
+      "classroom_check": "回查图6.1及装置步骤，说明每次读数的时刻、测量对象与实验条件；完成实际实验后再绘制曲线。",
+      "limitation": "原页仅给测量方案，不能把空白网格当作已观察到的下降曲线，不补造质量读数、拟合参数或气体生成速率；原书要求质量精确到0.001g。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          45,
+          46
+        ],
+        "printed_pages": [
+          41,
+          42
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-RATE-03",
+      "title": "同一反应各物质的速率按计量关系比较",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.1",
+      "pdf_pages": [
+        46,
+        51
+      ],
+      "printed_pages": [
+        42,
+        47
+      ],
+      "summary": "合成氨例题给出起始与5min时的浓度：氮气1.00→0.95、氢气1.00→0.85、氨0.00→0.10mol·L⁻¹。原页解析得到v(N₂)=0.01、v(H₂)=0.03、v(NH₃)=0.02mol·L⁻¹·min⁻¹，比值1∶3∶2，与该反应的化学计量数之比一致。",
+      "classroom_check": "采用同一时间区间，分别计算氮气、氢气消耗量和氨生成量，保留单位，再比较速率比与计量比。",
+      "limitation": "这些数值属于教材已附解析的例题，不称为考试官方采分点；各物质表示的速率不必相等，不能由本表推导反应级数或速率方程。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          46,
+          51
+        ],
+        "printed_pages": [
+          42,
+          47
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-RATE-04",
+      "title": "反应物自身性质与外界条件分开核对",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.1",
+      "pdf_pages": [
+        47
+      ],
+      "printed_pages": [
+        43
+      ],
+      "summary": "原书在相同外界条件下比较锌片、铜片与相同硝酸银溶液的反应；图6.2及正文以相同时间内生成的银单质不同说明反应物自身性质对速率的影响，随后分别探究浓度、温度和催化剂等外界条件。",
+      "classroom_check": "将“相同时间、相同溶液与外界条件”和“不同金属”分列，核对观察指标与比较对象。",
+      "limitation": "本条保留教材现象说明，不从照片面积计算银的质量或通用速率常数，也不把更换反应物当作同一反应的单因素外界条件实验。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          47
+        ],
+        "printed_pages": [
+          43
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-RATE-05",
+      "title": "浓度实验保留镁条处理与压强传感器条件",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.1",
+      "pdf_pages": [
+        47
+      ],
+      "printed_pages": [
+        43
+      ],
+      "summary": "浓度探究使用两支Y形管，各装2cm镁条及4mL盐酸，盐酸浓度分别为0.1与0.5mol·L⁻¹；镁条先除去氧化膜。两套接压强传感器，同时开始记录、倾斜使接触，并放入水浴保持相同温度。",
+      "classroom_check": "核对盐酸浓度这一比较因素，以及镁条、液体体积、温度和起始时刻的控制；说明气体压强变化作为该装置的观察指标。",
+      "limitation": "原页未提供传感器数值曲线；不虚构测量结果，不把气体压强指标直接等同于未经体积与温度条件换算的mol·L⁻¹·s⁻¹。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          47
+        ],
+        "printed_pages": [
+          43
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-RATE-06",
+      "title": "温度实验使用同一浑浊阈值比较时间",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.1",
+      "pdf_pages": [
+        47,
+        48
+      ],
+      "printed_pages": [
+        43,
+        44
+      ],
+      "summary": "两套实验将30mL的0.1mol·L⁻¹硫代硫酸钠溶液与15mL的0.1mol·L⁻¹盐酸分别置于热水浴、冰水浴，同浴中的两液温度平衡后混合；记录杯壁“×”看不清所需的时间。方程式Na₂S₂O₃+2HCl→S↓+SO₂↑+2NaCl+H₂O，对应硫代硫酸钠、盐酸、硫、二氧化硫、氯化钠和水。",
+      "classroom_check": "区分混合前温度平衡、混合开始计时与相同浑浊判断终点；对照图6.4核查两组条件。",
+      "limitation": "此处时间用于按同一现象终点比较快慢，未给浓度—时间数据；原页实验现象记录表为空白，不代填为学生实测结论。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          47,
+          48
+        ],
+        "printed_pages": [
+          43,
+          44
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-RATE-07",
+      "title": "催化剂探究须限定具体反应和添加物",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.1",
+      "pdf_pages": [
+        48,
+        49,
+        51
+      ],
+      "printed_pages": [
+        44,
+        45,
+        47
+      ],
+      "summary": "教材在两支试管中分别加入3mL的3%过氧化氢溶液，向其中一支加入少量固体二氧化锰，比较产生氧气的情况；本节归纳浓度、温度、催化剂等因素，合成氨例题则明确使用“合适的催化剂”。",
+      "classroom_check": "核对两支试管的溶液条件及唯一添加差别，注明观察的是氧气产生情况，并回查教材的现象与结论记录栏。",
+      "limitation": "本条不把二氧化锰推广为任何反应的催化剂，也不由催化加快推断反应热、平衡转化率或产量改变；记录表和归纳选择框未在原书填写。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          48,
+          49,
+          51
+        ],
+        "printed_pages": [
+          44,
+          45,
+          47
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-RATE-08",
+      "title": "气体压强影响须回到浓度变化条件",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.1",
+      "pdf_pages": [
+        48,
+        49,
+        51
+      ],
+      "printed_pages": [
+        44,
+        45,
+        47
+      ],
+      "summary": "图6.5通过活塞压缩展示同量气体占据体积变化时的浓度变化，图示p₂=2p₁、p₃=4p₁；提问明确限于有气态物质参加的反应，并要求联系浓度解释。合成氨例题把增大压强列为该气体反应加快的措施之一。",
+      "classroom_check": "先说明压强通过什么操作改变，以及气态反应物浓度是否改变，再联系教材例题讨论速率。",
+      "limitation": "图是示意而非实测速率曲线；不能直接推广为总压强增大必使一切反应加快，也不由这些压强比补出反应速率比或平衡产率。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          48,
+          49,
+          51
+        ],
+        "printed_pages": [
+          44,
+          45,
+          47
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-RATE-09",
+      "title": "锌与盐酸数据按单变量和相同终点比较",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.1",
+      "pdf_pages": [
+        52,
+        53
+      ],
+      "printed_pages": [
+        48,
+        49
+      ],
+      "summary": "练习给相同质量锌与相同浓度足量稀盐酸的三组数据，均以收集100mL氢气为终点：薄片15℃需200s、薄片25℃需90s、粉末25℃需10s；下一页要求比较温度、固体颗粒因素并设计浓度探究。",
+      "classroom_check": "比较时分别指出保持相同的条件、改变的因素和相同气体体积终点；区分给定实验数据与待填写的解释和设计。",
+      "limitation": "所列数值来自题设表格；后续填空和实验方案没有原书答案，不将本条当作标准答案，也不从100mL终点时间直接补造摩尔浓度变化率。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          52,
+          53
+        ],
+        "printed_pages": [
+          48,
+          49
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-RATE-10",
+      "title": "曲线读数先核对纵轴再换算所问物质",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C6:6.1",
+      "pdf_pages": [
+        50,
+        52,
+        53
+      ],
+      "printed_pages": [
+        46,
+        48,
+        49
+      ],
+      "summary": "练习4图的纵轴是B的物质的量/mol，横轴为时间/min；题设10L容器中的A(g)+B(g)→3C(g)，B由0min的2.0mol变为2min的1.2mol，所问为2min内用C表示的平均反应速率。本节另给避光、食物腐败、铁链生锈等情境要求联系外界条件。",
+      "classroom_check": "先标出曲线的物质、纵轴量纲、起止读数、容器体积与反应计量关系，再区分题设已知量和待求量。",
+      "limitation": "本条仅保留读图线索，不代写未附解析练习的标准答案；物质的量不是浓度，平均值不是瞬时切线斜率，生活图片也不提供定量速率数据。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          50,
+          52,
+          53
+        ],
+        "printed_pages": [
+          46,
+          48,
+          49
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ]
+}

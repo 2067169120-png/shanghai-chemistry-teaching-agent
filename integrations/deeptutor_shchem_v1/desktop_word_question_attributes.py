@@ -774,6 +774,58 @@ def _original_label(original):
     return "讲义收录题·" + "·".join([*parts, labels.get(exam, exam)])
 
 
+def _own_material_antecedent(text):
+    """Recognize an explicit material list in a completed, preceding sentence.
+
+    This is deliberately a narrow textual signal, not a completeness review.
+    A generic stem, option list, image count or extraction placeholder cannot
+    supply an antecedent. No material names or source identities are assumed.
+    """
+    for sentence in re.split(r"[。；;]", text)[:-1]:
+        if re.search(
+            r"上述|前述|上文|以上|这些|该材料|待查看原文|未提取到文字|"
+            r"缺失|省略|略去|略去了|[.．…]{2,}|_{2,}|＿{2,}",
+            sentence,
+        ):
+            continue
+        # Require at least two explicitly named entries and a material noun.
+        # The first entry can include the sentence's introductory wording.
+        for match in re.finditer(
+            r"([^。；;！？\n，,:：【】]+、[^。；;！？\n，,:：【】]+?)"
+            r"(?:等|[两二三四五六七八九十\d]+种)材料",
+            sentence,
+        ):
+            entries = [entry.strip() for entry in match.group(1).split("、")]
+            if len(entries) >= 2 and all(
+                re.fullmatch(r"[\w\u3400-\u9fff（）()·+−-]{2,80}", entry)
+                for entry in entries
+            ):
+                return True
+    return False
+
+
+def _missing_question_context(question_text, context, warnings):
+    """Keep external dependencies separate from a reference to this own stem."""
+    if context:
+        return False
+    if re.search(r"前题|上一题|前一题|上题|上一小题|前一小题|上一问|前一问", question_text):
+        return True
+    if any("共同材料" in warning for warning in warnings):
+        return True
+    references = list(re.finditer(r"(?:根据)?上述(?:材料)?", question_text))
+    if not references:
+        return False
+    choice = re.search(r"(?:^|\s)[A-DＡ-Ｄ][.．、:：）)]", question_text)
+    stem_end = choice.start() if choice else len(question_text)
+    for reference in references:
+        # Earlier options are never evidence for the stem. A leading deictic
+        # also remains unresolved even if materials appear later in the stem.
+        preceding_stem = question_text[:min(stem_end, reference.start())]
+        if not reference.group().endswith("上述材料") or not _own_material_antecedent(preceding_stem):
+            return True
+    return False
+
+
 def suggest_attributes(question, source_metadata, curriculum_entries=None):
     """Return deterministic suggestions; unknown facts never block saving."""
     if not isinstance(question, Mapping) or not isinstance(source_metadata, Mapping):
@@ -873,10 +925,7 @@ def suggest_attributes(question, source_metadata, curriculum_entries=None):
         re.search(r"如图|下图|图中|装置图|结构简式如下", question_text)
         and not image_count(qblocks + context)
     )
-    missing_context = not context and bool(
-        re.search(r"前题|上一题|上述材料|根据上述", question_text)
-        or any("共同材料" in w for w in warnings)
-    )
+    missing_context = _missing_question_context(question_text, context, warnings)
     answer_evidence = [
         _evidence(
             "question_text", str(block.get("text") or "原文答案图"), block.get("index")
@@ -985,6 +1034,38 @@ def automatic_tags_protected(value):
             )
         )
     )
+
+
+def automatic_scope_refresh_protected(value):
+    """A new scope must never silently discard any personal confirmation."""
+    def confirmed(item):
+        if isinstance(item, Mapping):
+            return item.get("status") == "teacher_confirmed" or any(
+                confirmed(child) for child in item.values()
+            )
+        return isinstance(item, list) and any(confirmed(child) for child in item)
+
+    return automatic_tags_protected(value) or bool(value["teacher_note"]) or confirmed(value)
+
+
+def rebase_automatic_scope_attributes(existing, proposed):
+    """Replace only an unprotected automatic baseline for an explicitly new scope.
+
+    The proposed labels come entirely from the current source scope. Old labels
+    cannot be copied as current evidence. Persistence retains the old history.
+    """
+    old, new = validate_attributes(existing), validate_attributes(proposed)
+    if any(old[key] != new[key] for key in (
+        "key", "source_sha256", "source_revision", "index_revision", "extraction_revision",
+    )):
+        raise WordQuestionAttributeError("新范围与原标签的来源版本不一致，请重新核对原文件。")
+    if old["question_revision"] == new["question_revision"]:
+        raise WordQuestionAttributeError("当前标签已对应本题范围，无需重新整理。")
+    if automatic_scope_refresh_protected(old):
+        raise WordQuestionAttributeError("本题保留了教师修改、确认或固定标签，请在修改教学标签中核对。")
+    if new["annotation_source"] != "auto_suggested" or automatic_scope_refresh_protected(new):
+        raise WordQuestionAttributeError("新范围只能使用当前原文的自动建议。")
+    return new
 
 
 def recheck_automatic_attributes(existing, proposed):

@@ -146,7 +146,10 @@ def test_capacity_rejected_before_background_reads_without_partial_text(qt_app):
 
     page, facade, tasks = page_for([asset(n) for n in range(MAX_IMAGES - 1)])
     before = deepcopy(page._payload())
-    assert not page.import_word_reference(reference(asset(100), asset(101)))
+    incoming = reference(asset(MAX_IMAGES), asset(MAX_IMAGES + 1))
+    assert {image['sha256'] for image in incoming['image_assets']}.isdisjoint(
+        image['sha256'] for image in before['image_assets'])
+    assert not page.import_word_reference(incoming)
     assert page._payload() == before and not tasks.pending and not facade.calls
     assert f"已有 {MAX_IMAGES - 1} 张" in page.status.text()
     page.close()

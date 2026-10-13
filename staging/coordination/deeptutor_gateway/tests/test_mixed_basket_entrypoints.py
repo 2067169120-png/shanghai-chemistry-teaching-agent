@@ -313,6 +313,7 @@ def test_three_word_entrypoints_forward_basket_signal_to_paper_page(
             self._active_task_id = None
             self.word_batch_combo = SimpleNamespace(currentData=lambda: "synthetic-batch")
             self.preparation_reference = None
+            self.open_textbooks_requested = False
 
         def exec(self):
             dialogs.ImportDialog._open_word_questions(self)

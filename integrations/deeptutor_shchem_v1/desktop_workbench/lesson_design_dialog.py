@@ -13,9 +13,14 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QFileDialog, QForm
     QTabWidget, QVBoxLayout, QWidget)
 from ..desktop_lesson_design import (KINDS, DesignHistory, bind_material,
     content_fingerprint, coverage, new_design, new_node, update_goal, update_node)
-from ..desktop_lesson_output import FILES, actual_ppt_preview, checked_file, export_design, copy_output_bundle
+from ..desktop_lesson_output import (FILES, actual_ppt_preview, actual_word_preview,
+    checked_file, export_design, copy_output_bundle, copy_primary_bundle, primary_output_names)
 from .components import page_scroll
 from .actual_ppt_preview_dialog import ActualPptPreview
+from .lesson_node_preview import LessonNodePreview
+from .lesson_composition_panel import LessonCompositionPanel
+from .lesson_editor_session import remember_editor, restore_editor
+from ..desktop_teaching_framework import FIELDS as FRAMEWORK_FIELDS, SCHEMA as FRAMEWORK_SCHEMA, framework_from_design
 
 
 def label(text):
@@ -40,6 +45,8 @@ class LessonDesignDialog(QDialog):
         if hasattr(self.tasks, "task_cancelled_detail"):
             self.tasks.task_cancelled_detail.connect(self.task_cancelled)
         self.current = None
+        self._preview_wide = None
+        self._layout_narrow = None
         self.setWindowTitle("教学设计 · " + (page.topic.text() or "未命名课题"))
         self.resize(1200, 790)
         self.setMinimumSize(320, 400)
@@ -60,6 +67,16 @@ class LessonDesignDialog(QDialog):
         self.import_candidate.setToolTip("读取已完成的备课初稿，预览后加入，不重复调用API。")
         self.import_candidate.clicked.connect(self.import_existing_candidate)
         l.addWidget(self.import_candidate)
+        self.save_structure_template = QPushButton("存为我的教学结构模板…")
+        self.save_structure_template.setObjectName("QuietButton")
+        self.save_structure_template.clicked.connect(self.save_personal_teaching_template)
+        l.addWidget(self.save_structure_template)
+        self.apply_structure_template = QPushButton("从我的模板预览应用…")
+        self.apply_structure_template.setObjectName("QuietButton")
+        self.apply_structure_template.clicked.connect(self.open_personal_teaching_templates)
+        l.addWidget(self.apply_structure_template)
+        self.to_canvas = QPushButton('把所选环节加入课件画布')
+        self.to_canvas.clicked.connect(self.add_current_activity); l.addWidget(self.to_canvas)
         actions = QGridLayout(); l.addLayout(actions)
         for i, (name, action) in enumerate((("新增", self.add_node), ("删除", self.delete_node),
             ("上移", lambda: self.move_node(-1)), ("下移", lambda: self.move_node(1)),
@@ -127,18 +144,72 @@ class LessonDesignDialog(QDialog):
         out = QWidget(); o = QVBoxLayout(out)
         self.report = QPlainTextEdit(); self.report.setReadOnly(True); o.addWidget(self.report, 1)
         self.outputs = QComboBox(); o.addWidget(self.outputs)
+        self.classroom_notes=QCheckBox('Word 学生文档按课件顺序生成课堂讲义（含分步讲解）')
+        self.classroom_notes.setChecked(self.history.value.get('classroom_notes',False))
+        self.classroom_notes.toggled.connect(self.set_classroom_notes);o.addWidget(self.classroom_notes)
+        o.addWidget(label('教案 Word用于备课与编辑，课堂演示 PPT用于上课展示。'))
+        primary = QGridLayout(); o.addLayout(primary)
+        self.open_word_button = QPushButton('打开教案 Word')
+        self.open_word_button.clicked.connect(lambda: self.open_file('lesson_plan.docx'))
+        self.preview_word_button = QPushButton('预览教案 Word')
+        self.preview_word_button.clicked.connect(self.preview_word)
+        self.open_classroom_button = QPushButton('打开课堂演示 PPT')
+        self.open_classroom_button.clicked.connect(self.open_classroom_ppt)
+        self.export_primary = QPushButton('导出教案 Word 和课堂演示 PPT…')
+        self.export_primary.setObjectName('PrimaryAction')
+        self.export_primary.clicked.connect(self.copy_primary_files)
+        for index, button in enumerate((self.open_word_button, self.preview_word_button, self.open_classroom_button)):
+            primary.addWidget(button, index // 2, index % 2)
+        primary.addWidget(self.export_primary, 2, 0, 1, 2)
+        o.addWidget(label('其他成品'))
         ar = QHBoxLayout(); o.addLayout(ar)
-        for name, filename in (("打开教案", FILES[1]), ("打开PPTX", FILES[0]), ("打开学习单", FILES[2])):
+        for name, filename in (("打开教师讲解 PPT", FILES[0]), ("打开学习单", FILES[2])):
             b = QPushButton(name); b.setObjectName("QuietButton")
             b.clicked.connect(lambda _=False, file=filename: self.open_file(file)); ar.addWidget(b)
-        self.export_copy = QPushButton("导出所选版本的三类文件…")
+        self.export_copy = QPushButton("导出所选版本的全部文件…")
         self.export_copy.setObjectName("QuietButton")
         self.export_copy.clicked.connect(self.copy_files)
         o.addWidget(self.export_copy)
         self.selected_output_status = label("")
         o.addWidget(self.selected_output_status)
+        self.preview_audience = QComboBox()
+        self._preview_audience_explicit = False
+        self.preview_audience.activated.connect(self._choose_preview_audience)
+        self.preview_audience.setAccessibleName("预览和朗读的课件版本")
+        o.addWidget(label("预览／朗读课件"))
+        o.addWidget(self.preview_audience)
         self.outputs.currentIndexChanged.connect(self.show_selected_output)
         self.tabs.addTab(page_scroll(out), "输出与检查")
+        self.content_preview = LessonNodePreview(self.facade)
+        self.preview_page = QWidget()
+        preview_layout = QVBoxLayout(self.preview_page)
+        preview_layout.setContentsMargins(0, 0, 0, 0)
+        preview_layout.addWidget(self.content_preview)
+        self.tabs.addTab(self.preview_page, "内容预览")
+        self.composition_panel = LessonCompositionPanel(self)
+        self.tabs.addTab(self.composition_panel, "素材与页面编排")
+        pdf_actions = QHBoxLayout()
+        for name, filename in (("打开教师PDF", "lesson_canvas.pdf"), ("打开学生PDF", "student_canvas.pdf"),
+                               ("打开学生PPTX", "student_presentation.pptx")):
+            b = QPushButton(name); b.setObjectName("QuietButton")
+            b.clicked.connect(lambda _=False, file=filename: self.open_file(file)); pdf_actions.addWidget(b)
+        o.addLayout(pdf_actions)
+        framework_page = QWidget(); framework_form = QFormLayout(framework_page)
+        framework_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapAllRows)
+        framework_form.addRow(label('填写教学目标、过程和板书。保存或生成会自动应用编辑；先同步到课件后，栏目内容可与教案一起更新。'))
+        self.framework_fields = {}
+        for key, text in FRAMEWORK_FIELDS:
+            editor = QPlainTextEdit(); editor.setMinimumHeight(70); editor.setMaximumHeight(150)
+            editor.setAccessibleName('教案框架 · ' + text)
+            self.framework_fields[key] = editor; framework_form.addRow(text, editor)
+        self.apply_framework_button = QPushButton('应用教案框架')
+        self.apply_framework_button.clicked.connect(self.apply_framework)
+        framework_form.addRow(self.apply_framework_button)
+        self.framework_slides_button = QPushButton('预览并同步教案栏目到课件…')
+        self.framework_slides_button.clicked.connect(self.framework_to_slides)
+        framework_form.addRow(self.framework_slides_button)
+        self.framework_scroll = page_scroll(framework_page)
+        self.tabs.addTab(self.framework_scroll, '教案框架')
         self.status = label("本地编辑，不调用模型。保存草稿沿用原备课；未保存编辑进入原恢复副本。")
         root.addWidget(self.status)
         self.stop_button = QPushButton("停止本次任务")
@@ -147,9 +218,9 @@ class LessonDesignDialog(QDialog):
         root.addWidget(self.stop_button)
         bottom = self.bottom_actions = QGridLayout(); root.addLayout(bottom)
         self.save = QPushButton("保存草稿"); self.save.clicked.connect(self.save_draft)
-        self.generate = QPushButton("生成教案 / PPT / 学习单"); self.generate.setObjectName("PrimaryAction")
+        self.generate = QPushButton("生成教案 Word / 课堂 PPT"); self.generate.setObjectName("PrimaryAction")
         self.generate.clicked.connect(self.generate_outputs)
-        self.preview = QPushButton("核对实际PPTX"); self.preview.clicked.connect(self.preview_ppt)
+        self.preview = QPushButton("预览课堂 PPT"); self.preview.clicked.connect(self.preview_ppt)
         self.return_button = QPushButton("返回"); self.return_button.clicked.connect(self.reject)
         self._bottom_buttons = (self.save, self.generate, self.preview, self.return_button)
         for i, b in enumerate(self._bottom_buttons):
@@ -169,6 +240,9 @@ class LessonDesignDialog(QDialog):
         self.loading = False
         self.refresh_lists()
         self.sync_page()
+        # Restore before any external material handoff: its new selection wins.
+        restore_editor(self)
+        self.finished.connect(lambda _result: remember_editor(self))
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -177,8 +251,27 @@ class LessonDesignDialog(QDialog):
         narrow = event.size().width() < 700
         self.nodes.setMaximumHeight(96 if narrow else 16777215)
         self.main_splitter.setOrientation(Qt.Orientation.Vertical if narrow else Qt.Orientation.Horizontal)
-        if narrow:
+        wide = event.size().width() >= 1100
+        changed = self._preview_wide != wide or self._layout_narrow != narrow
+        if self._preview_wide != wide:
+            if wide:
+                index = self.tabs.indexOf(self.preview_page)
+                preview_selected = self.tabs.currentWidget() is self.preview_page
+                if index >= 0:
+                    self.tabs.removeTab(index)
+                self.main_splitter.addWidget(self.content_preview)
+                if preview_selected:
+                    self.tabs.setCurrentWidget(self.main_splitter)
+            else:
+                self.preview_page.layout().addWidget(self.content_preview)
+                if self.tabs.indexOf(self.preview_page) < 0:
+                    self.tabs.addTab(self.preview_page, "内容预览")
+            self._preview_wide = wide
+        if changed and narrow:
             self.main_splitter.setSizes([120, 200])
+        elif changed:
+            self.main_splitter.setSizes([200, 510, 450] if wide else [220, 900])
+        self._layout_narrow = narrow
         for button in self._bottom_buttons:
             self.bottom_actions.removeWidget(button)
         for i, button in enumerate(self._bottom_buttons):
@@ -199,9 +292,21 @@ class LessonDesignDialog(QDialog):
             widget.addItem(item)
 
     def sync_page(self):
+        self.classroom_notes.blockSignals(True)
+        self.classroom_notes.setChecked(self.history.value.get('classroom_notes',False))
+        self.classroom_notes.blockSignals(False)
+        self.export_primary.setText('导出教案、课堂讲义 Word 和课堂演示 PPT…' if self.classroom_notes.isChecked()
+            else '导出教案 Word 和课堂演示 PPT…')
         self.page._lesson_design = deepcopy(self.history.value)
         self.page.setWindowModified(self.page._payload() != self.page._form_baseline)
         self.refresh_report()
+        self.content_preview.set_payload(self.page._payload(), self.current)
+        self.composition_panel.set_payload(self.page._payload())
+
+    def set_classroom_notes(self,value):
+        if self.loading or self.busy:return
+        design=deepcopy(self.history.value);design['classroom_notes']=value
+        self.history.put(design);self.sync_page()
 
     def refresh_lists(self, selected=None):
         self.loading = True
@@ -213,14 +318,122 @@ class LessonDesignDialog(QDialog):
         self.loading = False
         index = next((i for i, n in enumerate(self.history.value["nodes"]) if n["id"] == selected), 0)
         self.nodes.setCurrentRow(index if self.nodes.count() else -1)
+        framework = framework_from_design({**self.page._payload(), 'lesson_design': self.history.value})
+        for key, editor in self.framework_fields.items(): editor.setPlainText(framework[key])
+
+    def _framework_editor_plan(self):
+        value = deepcopy(self.history.value)
+        value['teaching_framework'] = {'schema_version': FRAMEWORK_SCHEMA,
+            **{key: editor.toPlainText() for key, editor in self.framework_fields.items()}}
+        from ..desktop_lesson_design import validate_design
+        return validate_design(value)
+
+    def _teaching_template_fingerprint(self):
+        from ..desktop_lesson_design import digest
+        return digest({"payload": self.page._payload(), "history": self.history.value,
+                       "framework_editor": self._framework_editor_plan()["teaching_framework"]})
+
+    def save_personal_teaching_template(self):
+        if self.busy: return False
+        from ..desktop_teaching_templates import TeachingTemplateService
+        from .teaching_template_dialogs import SaveTeachingTemplateDialog
+        try:
+            expected = self._teaching_template_fingerprint()
+            dialog = SaveTeachingTemplateDialog(self._framework_editor_plan(), self,
+                suggested_name=(self.page.topic.text() + " · 教学结构").strip())
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                return False
+            if self._teaching_template_fingerprint() != expected:
+                raise ValueError("当前教学设计已变化，请重新预览要保存的模板。")
+            record = TeachingTemplateService(self.facade.state_store).save(dialog.name.text(), dialog.chosen_structure())
+            self.status.setText("已保存我的教学结构模板：" + record["name"])
+            return True
+        except (ValueError, RuntimeError) as exc:
+            self.status.setText(str(exc)); return False
+
+    def open_personal_teaching_templates(self):
+        if self.busy: return
+        from .teaching_template_dialogs import TeachingTemplateLibraryDialog
+        dialog = TeachingTemplateLibraryDialog(self.facade, self, apply_callback=self.apply_personal_teaching_template)
+        dialog.exec(); dialog.deleteLater()
+
+    def apply_personal_teaching_template(self, record):
+        if self.busy: return False
+        from ..desktop_lesson_design import digest
+        from ..desktop_teaching_templates import TeachingTemplateService, apply_structure, validate_record
+        from .teaching_template_dialogs import ApplyTeachingTemplateDialog
+        try:
+            record = validate_record(record)
+            service = TeachingTemplateService(self.facade.state_store)
+            if service.load(record["id"]) != record:
+                raise ValueError("模板已变化，请重新读取后预览。")
+            expected = self._teaching_template_fingerprint()
+            plan = self._framework_editor_plan()
+            dialog = ApplyTeachingTemplateDialog(record, plan, self)
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                return False
+            if self._teaching_template_fingerprint() != expected:
+                raise ValueError("当前教学设计已变化，请重新预览模板。")
+            if service.load(record["id"]) != record:
+                raise ValueError("模板已变化，请重新读取后预览。")
+            value = apply_structure(plan, record["structure"], expected_fingerprint=digest(plan),
+                mode=dialog.mode.currentData(), fill_framework=dialog.fill_framework.isChecked())
+            self.history.put(value); self.sync_page(); self.refresh_lists()
+            self.tabs.setCurrentWidget(self.main_splitter)
+            self.status.setText("已应用教学结构模板，可继续编辑；撤销可恢复应用前的设计。")
+            return True
+        except (ValueError, RuntimeError) as exc:
+            self.status.setText(str(exc)); return False
+
+    def apply_framework(self, quiet=False):
+        if self.busy: return False
+        try:
+            from ..desktop_framework_composition import refresh_linked_framework
+            value = self._framework_editor_plan()
+            if quiet and 'teaching_framework' not in self.history.value and value['teaching_framework'] == framework_from_design(
+                    {**self.page._payload(), 'lesson_design': self.history.value}):
+                return True
+            value = refresh_linked_framework(value)
+            if value != self.history.value:
+                self.history.put(value)
+            self.sync_page()
+            if not quiet:
+                self.status.setText('教案框架已应用，已联动的课件栏目同步更新；单独编辑的课件文字已保留。')
+        except ValueError as exc:
+            self.status.setText(str(exc))
+            return False
         self.select_node(self.nodes.currentRow())
         self.refresh_report()
+        return True
+
+    def framework_to_slides(self):
+        if self.busy: return
+        from ..desktop_lesson_composition import digest
+        from ..desktop_framework_composition import synchronize_framework
+        from .framework_slide_dialog import FrameworkSlideDialog
+        try:
+            expected = digest(self.history.value)
+            plan = self._framework_editor_plan()
+            dialog = FrameworkSlideDialog(plan, self)
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                return
+            if digest(self.history.value) != expected:
+                raise ValueError('作品已变化，请重新预览教案栏目。')
+            result = synchronize_framework(plan, dialog.chosen_sections(), replace_edited=not dialog.keep_edits.isChecked())
+            self.history.put(result['plan']); self.sync_page(); self.refresh_lists()
+            self.tabs.setCurrentWidget(self.composition_panel)
+            kept = sum(row['action'] == 'kept_copy' for row in result['changes'])
+            self.status.setText('教案栏目已同步到课件，可在页面编排中预览、调整并生成。'
+                                + (f' 保留了{kept}项已编辑的课件副本。' if kept else ''))
+        except ValueError as exc:
+            self.status.setText(str(exc))
 
     def select_node(self, index):
         if self.loading:
             return
         self.loading = True
         self.properties.setEnabled(index >= 0)
+        self.to_canvas.setEnabled(index >= 0 and not self.busy)
         self.current = self.history.value["nodes"][index]["id"] if index >= 0 else None
         n = self.history.value["nodes"][index] if index >= 0 else new_node()
         self.title_edit.setText(n["title"])
@@ -232,6 +445,7 @@ class LessonDesignDialog(QDialog):
         self.locked.setChecked(n["locked"]); self.confirmed.setChecked(n["confirmed"])
         self.student_material.setChecked(n["student_material"])
         self.lock_controls(n["locked"]); self.loading = False
+        self.content_preview.set_payload(self.page._payload(), self.current)
 
     def lock_controls(self, locked):
         for key in ("material_text", "teacher_answer"):
@@ -274,6 +488,23 @@ class LessonDesignDialog(QDialog):
         value = deepcopy(self.history.value); value["nodes"].append(n)
         self.history.put(value); self.refresh_lists(n["id"]); self.sync_page()
 
+    def add_current_activity(self):
+        if self.busy or self.current is None:
+            return
+        panel = self.composition_panel
+        existing = next((r for r in panel.composition()['resources']
+            if r['original']['kind'] == 'lesson_activity' and r['activity_link']['mode'] == 'linked'
+            and r['activity_link']['design_id'] == self.history.value['id']
+            and r['activity_link']['node_id'] == self.current), None)
+        try:
+            if existing:
+                panel.selected = existing['id']; panel.refresh(); panel.fit_view()
+            else:
+                panel.import_activity_nodes([self.current])
+            self.tabs.setCurrentWidget(panel)
+        except ValueError as exc:
+            self.status.setText(str(exc))
+
     def delete_node(self):
         if not self.current:
             return
@@ -291,6 +522,7 @@ class LessonDesignDialog(QDialog):
     def travel(self, redo):
         selected = self.current
         self.history.travel(redo); self.refresh_lists(selected); self.sync_page()
+        self.composition_panel.fit_view()
 
     def select_goal(self, index):
         if not self.loading:
@@ -339,7 +571,8 @@ class LessonDesignDialog(QDialog):
         chosen = self.outputs.currentData()
         self.outputs.clear()
         for out in reversed(self.history.value["exports"]):
-            self.outputs.addItem(out["created_at"][:19].replace("T", " ") + " · 三类成品", out["id"])
+            count = len(out["files"])
+            self.outputs.addItem(out["created_at"][:19].replace("T", " ") + f" · {count} 份成品", out["id"])
         if chosen:
             self.outputs.setCurrentIndex(max(0, self.outputs.findData(chosen)))
         self.preview.setEnabled(not self.busy and self.outputs.count() > 0)
@@ -347,7 +580,19 @@ class LessonDesignDialog(QDialog):
 
     def show_selected_output(self, *_):
         record = next((r for r in self.history.value["exports"] if r["id"] == self.outputs.currentData()), None)
+        name = self.preview_audience.currentData() if self._preview_audience_explicit else "student_presentation.pptx"
+        self.preview_audience.blockSignals(True);self.preview_audience.clear()
+        files = {f["name"] for f in record["files"]} if record else set()
+        for title, value in (("课堂演示 PPT", "student_presentation.pptx"),
+                             ("教师讲解 PPT · 答案与讲评", "lesson_presentation.pptx")):
+            if value in files:self.preview_audience.addItem(title, value)
+        index = self.preview_audience.findData(name)
+        if index >= 0:self.preview_audience.setCurrentIndex(index)
+        self.preview_audience.blockSignals(False)
+        self.preview_audience.setEnabled(not self.busy and record is not None)
         self.export_copy.setEnabled(not self.busy and record is not None)
+        for button in (self.open_word_button, self.preview_word_button, self.open_classroom_button, self.export_primary):
+            button.setEnabled(not self.busy and record is not None)
         if record is None:
             self.selected_output_status.setText("尚无成品。先生成，再查看或导出。")
         elif record["fingerprint"] != content_fingerprint(self.page._payload(), self.history.value):
@@ -355,16 +600,37 @@ class LessonDesignDialog(QDialog):
         else:
             self.selected_output_status.setText("所选成品与当前设计一致。导出会新建独立副本，不改工作台中的原版本。")
 
+    def _choose_preview_audience(self, *_):
+        self._preview_audience_explicit = True
+
+    def open_classroom_ppt(self):
+        record = next((r for r in self.history.value['exports'] if r['id'] == self.outputs.currentData()), None)
+        if record:
+            self.open_file(primary_output_names(record)[1])
+
+    def copy_primary_files(self):
+        identity = self.outputs.currentData()
+        if self.busy or not identity:
+            return
+        destination = QFileDialog.getExistingDirectory(self, '选择教案 Word 和课堂演示 PPT的导出位置')
+        if not destination:
+            return
+        plan = deepcopy(self.history.value)
+        self.run('正在导出教案 Word 和课堂演示 PPT…',
+                 lambda: copy_primary_bundle(self.facade, plan, identity, destination),
+                 lambda folder: self.status.setText('已导出到：' + folder + '；教案.docx和课堂演示.pptx可直接编辑。'),
+                 cancellable=True)
+
     def copy_files(self):
         identity = self.outputs.currentData()
         if self.busy or not identity:
             return
-        destination = QFileDialog.getExistingDirectory(self, "选择三类文件的导出位置")
+        destination = QFileDialog.getExistingDirectory(self, "选择教学成品的导出位置")
         if not destination:
             return
         plan = deepcopy(self.history.value)
         self.run("正在导出所选版本…", lambda: copy_output_bundle(self.facade, plan, identity, destination),
-                 lambda folder: self.status.setText("已导出到：" + folder + "；PPT备注含教师信息，外部修改不回写教学设计。"),
+                 lambda folder: self.status.setText("已导出到：" + folder + "；所选版本的全部成品已保存。"),
                  cancellable=True)
 
     def set_busy(self, value):
@@ -384,7 +650,10 @@ class LessonDesignDialog(QDialog):
         self.set_busy(True); self.status.setText(text)
         def finish(value):
             if not self._stopping:
-                self.set_busy(False); success(value)
+                self.set_busy(False)
+                try: success(value)
+                except (ValueError, OSError) as exc:
+                    self.status.setText(str(exc) + "；当前输入与已有成品保留。")
         def fail(message):
             self.set_busy(False); self.status.setText(message + "；当前输入与已有成品保留。")
         # Translate known local errors without exposing generic task-bridge errors.
@@ -425,15 +694,32 @@ class LessonDesignDialog(QDialog):
                 self.reject()
 
     def save_draft(self):
+        if not self.apply_framework(quiet=True): return
         self.sync_page()
+        # Explicitly selected full materials already live in the design. Give
+        # the core request a readable scope instead of making the teacher type
+        # that same selection again. Existing teacher text stays authoritative.
+        resources = self.history.value.get('composition', {}).get('resources', [])
+        if resources and not self.page.materials.toPlainText().strip():
+            names = {'complete_question': '完整题', 'knowledge_note': '知识卡',
+                     'textbook_image': '教材图', 'lesson_activity': '教学环节',
+                     'personal_text': '个人文字', 'lesson_framework': '教案栏目',
+                     'handout_knowledge': '讲义知识段', 'preparation_image': '教学图片',
+                     'handout_image': '讲义原图与知识网'}
+            lines = ['本次使用已明确加入“素材与页面编排”的资料：']
+            lines.extend(f"{index}. {names[item['original']['kind']]}：{item['title']}"
+                         for index, item in enumerate(resources, 1))
+            lines.append('完整题答、图像、页码和来源版本保存在各素材原始快照中。')
+            self.page.materials.setPlainText('\n'.join(lines))
         payload = deepcopy(self.page._payload())
         def done(receipt):
             self.page._form_baseline = deepcopy(payload)
             self.page.setWindowModified(self.page._payload() != payload)
-            self.status.setText("已保存备课草稿。教学环节和三类输出的版本记录一起保留。")
+            self.status.setText("已保存备课草稿。教学环节、素材编排和成品版本记录一起保留。")
         self.run("正在保存教学设计…", lambda: self.facade.create_preparation_draft(payload), done)
 
     def generate_outputs(self):
+        if not self.apply_framework(quiet=True): return
         self.sync_page()
         payload = deepcopy(self.page._payload())
         def done(record):
@@ -441,9 +727,9 @@ class LessonDesignDialog(QDialog):
             self.sync_page()
             self.outputs.setCurrentIndex(self.outputs.findData(record["id"]))
             self.tabs.setCurrentIndex(2)
-            self.status.setText("三类文件已生成；请查看版式并保存草稿。PPT备注含教师答案，不是匿名学生文件。")
+            self.status.setText("教案 Word和课堂演示 PPT已生成。可预览、打开编辑或导出，保存草稿可保留这次成品版本。")
         from ..reader_cancellation import cancellation_requested
-        self.run("正在生成三类文件（本地，不调用模型）…",
+        self.run("正在生成本地成品（不调用模型）…",
                  lambda: export_design(self.facade, payload, cancelled=cancellation_requested), done,
                  cancellable=True)
 
@@ -456,8 +742,28 @@ class LessonDesignDialog(QDialog):
 
     def preview_ppt(self):
         plan = deepcopy(self.history.value); identity = self.outputs.currentData()
-        self.run("正在转换实际PPTX…", lambda: actual_ppt_preview(self.facade, plan, identity),
-                 lambda report: ActualPptPreview(report, self, tasks=self.tasks).exec(), cancellable=True)
+        name = self.preview_audience.currentData()
+        def show(report):
+            from ..desktop_lesson_narration import narration_scripts, put_narration
+            def load(count):
+                return narration_scripts(self.history.value, identity, name, report["source_sha256"], count)
+            def save(scripts):
+                self.history.put(put_narration(self.history.value, identity, name, report["source_sha256"], scripts))
+                self.sync_page()
+                self.show_selected_output()
+            ActualPptPreview(report, self, tasks=self.tasks, script_load=load, script_save=save,
+                verify_presentation=lambda: checked_file(self.facade, plan, identity, name)).exec()
+        self.run("正在转换实际PPTX…", lambda: actual_ppt_preview(self.facade, plan, identity, name=name),
+                 show, cancellable=True)
+
+    def preview_word(self):
+        plan = deepcopy(self.history.value); identity = self.outputs.currentData()
+        if self.busy or not identity:
+            return
+        def show(report):
+            ActualPptPreview(report, self, tasks=self.tasks).exec()
+        self.run('正在生成教案 Word预览…', lambda: actual_word_preview(self.facade, plan, identity),
+                 show, cancellable=True)
 
     def reject(self):
         if self.busy:
@@ -466,6 +772,7 @@ class LessonDesignDialog(QDialog):
             if not self._cancellable:
                 self.status.setText("正在保存；完成后返回，保存结果会保留。")
             return
+        if not self.apply_framework(quiet=True): return
         self.sync_page()
         if self.page.recovery is not None and not self.page.recovery.flush():
             self.status.setText("恢复副本未保存成功。请先保存草稿或重试；当前输入仍在。")

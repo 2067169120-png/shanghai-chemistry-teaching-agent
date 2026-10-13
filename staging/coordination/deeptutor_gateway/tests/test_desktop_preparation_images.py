@@ -97,12 +97,12 @@ def test_reject_invalid_metadata(tmp_path, case):
         normalize_image_assets(rows)
 
 
-def test_twenty_eight_distinct_images_survive_draft_provider_and_real_pptx(tmp_path):
+def test_fifty_seven_distinct_images_survive_draft_provider_and_real_pptx(tmp_path):
     manager = DesktopPreparationManager(
         tmp_path / "manager", NativePreparationRenderer()
     )
     assets, originals = [], []
-    image_count = 28
+    image_count = 57
     for number in range(image_count):
         stream = io.BytesIO()
         Image.new(
@@ -119,7 +119,7 @@ def test_twenty_eight_distinct_images_survive_draft_provider_and_real_pptx(tmp_p
                 "检查原图嵌入顺序",
             )
         )
-    assert MAX_IMAGES == 48
+    assert MAX_IMAGES == 128
     assert normalize_image_assets(assets) == assets
     too_many = list(assets)
     for number in range(image_count, MAX_IMAGES + 1):
@@ -129,7 +129,8 @@ def test_twenty_eight_distinct_images_survive_draft_provider_and_real_pptx(tmp_p
         too_many.append(extra)
     with pytest.raises(PreparationImageError, match=rf"最多选择{MAX_IMAGES}张"):
         normalize_image_assets(too_many)
-    payload = {**_payload(output_kind="ppt"), "image_assets": assets}
+    payload = {**_payload(output_kind="ppt"), "lesson_timing": "2课时×40分钟",
+               "image_assets": assets}
     assert normalize_preparation_payload(payload)["image_assets"] == assets
     raw = _raw_candidate()
     template = raw["slides"][1]
@@ -242,9 +243,11 @@ def test_manager_renders_real_embedded_image_and_shared_preview(tmp_path, fmt):
     assert abs(picture.width / picture.height - 2) < 0.01
     rendered = Presentation(pptx).slides[1]
     assert asset["purpose"] in rendered.notes_slide.notes_text_frame.text
-    assert asset["source"] in "\n".join(
+    assert asset["source"] not in "\n".join(
         s.text for s in rendered.shapes if s.has_text_frame
     )
+    assert asset["source"] not in rendered.notes_slide.notes_text_frame.text
+    assert asset["caption"] in "\n".join(s.text for s in rendered.shapes if s.has_text_frame)
     qa = json.loads((pptx.parent / "qa_report.json").read_text(encoding="utf-8"))
     assert all(c["passed"] for c in qa["checks"]), qa["checks"]
     assert len(provider.calls) == 1

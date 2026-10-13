@@ -55,29 +55,38 @@ class _ImageFacade:
 
 
 def test_maximum_images_reload_and_limit_match_backend(qt_app, image_asset):
-    from integrations.deeptutor_shchem_v1.desktop_preparation_images import MAX_IMAGES
+    from integrations.deeptutor_shchem_v1.desktop_preparation_images import (
+        MAX_IMAGES, PreparationImageError, normalize_image_assets,
+    )
 
     widget = PreparationImagesWidget(_ImageFacade())
     assets = []
     for number in range(MAX_IMAGES + 1):
         sha = f"{number:064x}"
         assets.append({**image_asset, "asset_id": "IMG-" + sha, "sha256": sha})
-    assert widget.MAX_ASSETS == MAX_IMAGES == 48
+    assert widget.MAX_ASSETS == MAX_IMAGES
+    assert normalize_image_assets(assets[:MAX_IMAGES]) == assets[:MAX_IMAGES]
+    with pytest.raises(PreparationImageError, match=f'最多选择{MAX_IMAGES}张'):
+        normalize_image_assets(assets)
     for asset in assets[:MAX_IMAGES]:
         assert widget.append_asset(asset)
     assert not widget.add_button.isEnabled()
     assert not widget.append_asset(assets[MAX_IMAGES])
     assert f"{MAX_IMAGES}张" in widget.status.text()
     assert widget.assets() == assets[:MAX_IMAGES]
+    assert widget.asset_list.count() == MAX_IMAGES
     reopened = PreparationImagesWidget(_ImageFacade())
     reopened.set_assets(widget.assets())
     assert reopened.assets() == assets[:MAX_IMAGES]
     assert reopened.asset_list.count() == MAX_IMAGES
+    assert not reopened.add_button.isEnabled()
     reopened.asset_list.setCurrentRow(MAX_IMAGES - 1)
     reopened._remove_selected()
     assert reopened.add_button.isEnabled()
     assert reopened.append_asset(assets[MAX_IMAGES])
     assert reopened.assets()[-1] == assets[MAX_IMAGES]
+    assert reopened.assets() == assets[:MAX_IMAGES - 1] + [assets[MAX_IMAGES]]
+    assert reopened.asset_list.count() == MAX_IMAGES and not reopened.add_button.isEnabled()
     widget.close()
     reopened.close()
 

@@ -1,0 +1,269 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-REDOX-ADV-01",
+      "title": "氧化还原过程以化合价与电子转移相互核对",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.1",
+      "pdf_pages": [
+        91
+      ],
+      "printed_pages": [
+        85
+      ],
+      "summary": "教材把化合价升高、失去电子对应为氧化过程，把化合价降低、得到电子对应为还原过程。还原剂被氧化生成氧化产物；氧化剂被还原生成还原产物。氧化与还原同时发生，失去与得到的电子总数相等。",
+      "classroom_check": "分别指认反应物角色、过程和产物，再用化合价变化核对电子方向与总数。",
+      "limitation": "不把氧化剂与氧化产物混用；本页镁在二氧化碳中燃烧的思考题没有附答案，本条不代填。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          91
+        ],
+        "printed_pages": [
+          85
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-ADV-02",
+      "title": "锌与铜离子的反应用于比较相应氧化性和还原性",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.1",
+      "pdf_pages": [
+        91
+      ],
+      "printed_pages": [
+        85
+      ],
+      "summary": "本页反应为Zn+CuSO₄=ZnSO₄+Cu，标签为锌、硫酸铜、硫酸锌、铜。锌失去电子，是还原剂；铜离子得到电子，是氧化剂。正文据此比较Zn的还原性强于Cu、Cu²⁺的氧化性强于Zn²⁺。",
+      "classroom_check": "在已发生的反应中分别找出两组对应比较，保留反应条件与化学物种。",
+      "limitation": "比较限于该反应语境，不把忽略介质和条件的大小次序作为所有体系的通用结论；未补写原页未标注的状态。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          91
+        ],
+        "printed_pages": [
+          85
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-ADV-03",
+      "title": "氧化和还原半反应分别呈现电子方向",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.1",
+      "pdf_pages": [
+        92
+      ],
+      "printed_pages": [
+        86
+      ],
+      "summary": "教材把锌与铜离子的电子转移拆为Zn−2e⁻=Zn²⁺和Cu²⁺+2e⁻=Cu，分别是氧化半反应、还原半反应；标签为锌、电子、锌离子、铜离子与铜。相加时两个电子抵消，电子转移总数保持一致。",
+      "classroom_check": "逐项核对电子位置、离子电荷和两个半反应的电子数。",
+      "limitation": "保留教材Zn−2e⁻的代数表示；不把半反应误作可独立发生且无需其他反应物的完整实验反应。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          92
+        ],
+        "printed_pages": [
+          86
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-ADV-04",
+      "title": "半反应配平须同时核对介质和实际物种",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.1",
+      "pdf_pages": [
+        92
+      ],
+      "printed_pages": [
+        86
+      ],
+      "summary": "本页说明书写半反应时须考虑反应介质和主要化学物种，并结合离子反应的要求。电子得失之外，还须核对原子与电荷守恒。",
+      "classroom_check": "先从题设列出酸性、碱性或其他介质，再决定用于配平的物种。",
+      "limitation": "教材拓展栏的配位桥电子转移示意属于特定研究语境，本条未把它推广为全部氧化还原反应机制，也未补写不同介质的未给定方程式。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          92
+        ],
+        "printed_pages": [
+          86
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-ADV-05",
+      "title": "酸性高锰酸根氧化亚铁的配平同时检查原子和电荷",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.1",
+      "pdf_pages": [
+        93
+      ],
+      "printed_pages": [
+        87
+      ],
+      "summary": "原例题中Mn由+7降至+2，Fe由+2升至+3，电子变化按1∶5相配。最终离子方程式为MnO₄⁻+5Fe²⁺+8H⁺=Mn²⁺+5Fe³⁺+4H₂O，标签为高锰酸根、亚铁离子、氢离子、锰(Ⅱ)离子、铁(Ⅲ)离子与水。",
+      "classroom_check": "先配电子数，再配其他原子，最后检查两侧总电荷同为+17。",
+      "limitation": "保留酸性条件及8H⁺、4H₂O；不挪用到碱性介质或不同锰产物，也不把教材例题解析称作考试官方采分点。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          93
+        ],
+        "printed_pages": [
+          87
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-ADV-06",
+      "title": "跨页过氧化氢例题保留酸性条件与两电子还原",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.1",
+      "pdf_pages": [
+        93,
+        94
+      ],
+      "printed_pages": [
+        87,
+        88
+      ],
+      "summary": "例题从PDF93续至94：稀酸中H₂O₂将Fe²⁺氧化成Fe³⁺，自身还原成水。还原半反应H₂O₂+2H⁺+2e⁻=2H₂O；总反应H₂O₂+2Fe²⁺+2H⁺=2H₂O+2Fe³⁺。标签为过氧化氢、氢离子、电子、亚铁离子、水和铁(Ⅲ)离子。一个H₂O₂得到2个电子，每个Fe²⁺失去1个电子。",
+      "classroom_check": "完整读取跨页条件和电子式，核对过氧化氢中氧的−1价及两个铁离子的电子数。",
+      "limitation": "本条只保留教材给定稀酸体系；不从定性电子式推算速率或产率，不补成该节未给出的实验评分细则。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          93,
+          94
+        ],
+        "printed_pages": [
+          87,
+          88
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-ADV-07",
+      "title": "硫转化链和氯气实验练习保留待答状态",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.1",
+      "pdf_pages": [
+        94
+      ],
+      "printed_pages": [
+        88
+      ],
+      "summary": "练习1给出FeS₂→SO₂→SO₃→H₂S₂O₇→H₂SO₄的含硫转化链，要求判断化合价变化；练习2给出氯气通入NaOH、KI、FeCl₂、KBr溶液的颜色变化判断。标签依次保留二硫化亚铁、二氧化硫、三氧化硫、焦硫酸、硫酸及四种溶液。",
+      "classroom_check": "先读清题目判断对象和实验试剂，不把前后物质名称或化合价混在一起。",
+      "limitation": "原页没有附这两题答案；本条是题型与条件摘要，未编造颜色、产物或答案。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          94
+        ],
+        "printed_pages": [
+          88
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-REDOX-ADV-08",
+      "title": "半反应、整式配平和燃料练习须保留原有条件",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C4:4.1",
+      "pdf_pages": [
+        94
+      ],
+      "printed_pages": [
+        88
+      ],
+      "summary": "练习3要求在酸性条件下书写高锰酸根与亚硫酸根反应的半反应与总反应；练习4给出含钒离子与碘离子、铅与二氧化铅及硫酸、过氧化氢与硫酸及碘化钾三组待配平式；练习5给出肼N₂H₄与二氧化氮NO₂及声明的氮气、水产物，并提出棕色烟雾问题。",
+      "classroom_check": "把介质、物种、待填系数和题设声明的产物与问题逐项保存。",
+      "limitation": "原页未附标准答案或评分细则，保留待答状态；不补造反应系数、燃料数据或烟雾原因。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          94
+        ],
+        "printed_pages": [
+          88
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ],
+  "source_conflicts": []
+}

@@ -1,0 +1,368 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-CYCLES-01",
+      "title": "硫循环同时追踪储积库、物质形态和元素价态",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.3",
+      "pdf_pages": [
+        96,
+        97
+      ],
+      "printed_pages": [
+        91,
+        92
+      ],
+      "summary": "教材把硫循环描述为硫在岩石圈、水圈、大气圈、生物圈及地质系统间的迁移与转化，主要储积库包括岩石和海洋。图3.14涉及硫化氢H₂S、二氧化硫SO₂、硫酸根SO₄²⁻等形态，硫可呈−2、+4、+6价；运输与氧化还原转化共同构成循环。",
+      "classroom_check": "沿原图箭头分别写出出发介质、到达介质及含硫微粒名称，再区分仅发生迁移和硫元素价态发生变化的环节。",
+      "limitation": "图是循环示意而非含硫物质的定量通量图；不从箭头粗细推算排放量，不把所有介质迁移都当成氧化还原反应。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          96,
+          97
+        ],
+        "printed_pages": [
+          91,
+          92
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CYCLES-02",
+      "title": "人类排放是硫循环图中的一类过程",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.3",
+      "pdf_pages": [
+        96,
+        97
+      ],
+      "printed_pages": [
+        91,
+        92
+      ],
+      "summary": "原页把火山活动、生物分解、降水与沉降、径流输送和人类燃烧冶炼活动放入同一硫循环。教材讨论工农业排放二氧化硫对循环的影响，因此梳理来源时需区分天然过程与人为活动，同时保留海洋和陆地之间的联系。",
+      "classroom_check": "在图3.14中分别定位天然来源、工农业来源及返回陆地或海洋的途径，用正文核对箭头所代表的过程。",
+      "limitation": "原图未提供各过程的当前统计，不把教材对排放影响的描述转成今天的精确数量、地区排名或政策效果。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          96,
+          97
+        ],
+        "printed_pages": [
+          91,
+          92
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CYCLES-03",
+      "title": "固氮从游离态氮进入含氮化合物判断",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.3",
+      "pdf_pages": [
+        97,
+        102
+      ],
+      "printed_pages": [
+        92,
+        97
+      ],
+      "summary": "PDF97以氮气N₂转向一氧化氮NO、二氧化氮NO₂、硝酸HNO₃及硝酸根NO₃⁻展示大气固氮中的氮价态变化，并以固氮酶作用下的N₂→NH₃及氨进入水后的NH₄⁺展示生物固氮。图3.15还列出工业固氮，PDF102将固定途径概括为天然与人工两类。",
+      "classroom_check": "逐项标出氮的游离态或化合态，给两条转化路线添加微粒名称与价态，并区分图中的过程箭头和已配平的化学方程式。",
+      "limitation": "过程链不等于一条完整配平方程式；不把氨溶于水或植物吸收硝酸盐再次称为氮气固氮，也不根据图片推定固定量。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          97,
+          102
+        ],
+        "printed_pages": [
+          92,
+          97
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CYCLES-04",
+      "title": "硝化与反硝化分别保留条件和价态方向",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.3",
+      "pdf_pages": [
+        97,
+        98
+      ],
+      "printed_pages": [
+        92,
+        93
+      ],
+      "summary": "教材将土壤细菌作用下NH₄⁺→NO₂⁻→NO₃⁻称为硝化，氮依次为−3、+3、+5价。在氧气不足时，硝酸根经细菌参与的还原过程转向NO、N₂O和N₂，这一返回氮气的过程称为反硝化，氮价态依次降低。微粒名称分别为铵根、亚硝酸根、硝酸根、一氧化氮、一氧化二氮和氮气。",
+      "classroom_check": "把两个过程并列，用电子得失与氮价态说明氧化或还原方向，再回到正文核对反硝化的氧气条件。",
+      "limitation": "原文未给菌种速率、生态通量或所有中间步骤的平衡式；不把示意链外推为任何土壤中都按同一速率发生。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          97,
+          98
+        ],
+        "printed_pages": [
+          92,
+          93
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CYCLES-05",
+      "title": "酸雨判据不能只用小于7",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.3",
+      "pdf_pages": [
+        99
+      ],
+      "printed_pages": [
+        94
+      ],
+      "summary": "教材说明未受污染的大气降水因溶解二氧化碳可显弱酸性，并在本节以降水pH小于5.6作为酸雨判据。pH表示溶液酸碱性，氢离子浓度越大，pH越小；需要区分酸性降水与达到本节酸雨判据两种说法。",
+      "classroom_check": "从原页找出判据中的对象、数值和不等号，用假设读数比较“酸性”与“酸雨”的分类依据，并记录读数条件。",
+      "limitation": "这里只整理本版教材的分类表达，不宣称它就是当前监测法规；原页没有实测降水样本，不补造环境监测数据。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          99
+        ],
+        "printed_pages": [
+          94
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CYCLES-06",
+      "title": "二氧化硫转为硫酸有不同路径",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.3",
+      "pdf_pages": [
+        99,
+        100
+      ],
+      "printed_pages": [
+        94,
+        95
+      ],
+      "summary": "原页列出SO₂+H₂O⇌H₂SO₃、2H₂SO₃+O₂→2H₂SO₄，以及2SO₂+O₂⇌2SO₃（催化剂、加热）、SO₃+H₂O→H₂SO₄。物质依次为二氧化硫、水、亚硫酸、氧气、硫酸和三氧化硫；硫由+4价转到+6价的环节要与溶解、结合环节区分。",
+      "classroom_check": "并列两条成酸路线，核对可逆符号、反应条件、物质名称和硫的价态，说明哪些步骤涉及氧化。",
+      "limitation": "按原图保留条件，不把大气转化概括成一条无条件完全反应；不以示意路线推算实际生成硫酸的量。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          99,
+          100
+        ],
+        "printed_pages": [
+          94,
+          95
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CYCLES-07",
+      "title": "氮氧化物的不同环境转化分别整理",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.3",
+      "pdf_pages": [
+        98,
+        99,
+        100
+      ],
+      "printed_pages": [
+        93,
+        94,
+        95
+      ],
+      "summary": "教材将一氧化氮NO和二氧化氮NO₂与酸雨形成联系，并在拓展栏目讨论NO₂受光产生NO和原子氧、随后参与臭氧形成及光化学烟雾的情境。同一种排放相关物质可进入不同反应路线，需逐条核对条件、后续物质和所讨论的环境现象。",
+      "classroom_check": "分别制作酸雨路线与光照情境的物质关系表，标出原文给出的条件，避免用一个环境问题名称概括所有转化。",
+      "limitation": "不把原页历史污染事件、健康表述或汽车措施直接当作当前事实与建议；本条仅整理教材的化学情境，未核验其历史和医学细节。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          98,
+          99,
+          100
+        ],
+        "printed_pages": [
+          93,
+          94,
+          95
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CYCLES-08",
+      "title": "酸雨影响和防治用成因对应证据",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.3",
+      "pdf_pages": [
+        100,
+        101
+      ],
+      "printed_pages": [
+        95,
+        96
+      ],
+      "summary": "本节从土壤养分流失、水体酸化、植物生长与建筑材料腐蚀等角度讨论酸雨影响，再把低硫燃料、燃料脱硫和烟气处理等措施与减少二氧化硫排放联系起来。分析防治措施应先指出针对哪类来源或哪一步转化，再说明需要怎样的效果证据。",
+      "classroom_check": "用“来源或过程—措施—待观察指标”组织备课问题，区分教材说明、学生方案与真实环境监测结果。",
+      "limitation": "这些是教材中的措施类别，未附现行技术参数、地方规范或成本数据；不提供当前工程、饮用水或健康决策建议。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          100,
+          101
+        ],
+        "printed_pages": [
+          95,
+          96
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CYCLES-09",
+      "title": "脱氮硫杆菌例题从守恒和土壤成分变化分析",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.3",
+      "pdf_pages": [
+        102
+      ],
+      "printed_pages": [
+        97
+      ],
+      "summary": "教材例题用5K₂S+8KNO₃+4H₂O→4N₂↑+5K₂SO₄+8KOH（脱氮硫杆菌）表达一种转化，依次涉及硫化钾、硝酸钾、水、氮气、硫酸钾和氢氧化钾。原分析从氮元素离开土壤及生成碱使pH增大两个角度讨论其影响。",
+      "classroom_check": "逐元素核对守恒，再比较氮和硫的价态变化；分别说明氮气生成与碱生成支持原分析的哪个角度。",
+      "limitation": "例题属于教材分析，未作为考试官方评分点；不把该模型反应直接等同于任意实际土壤的完整生化机制或肥效实验。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          102
+        ],
+        "printed_pages": [
+          97
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CYCLES-10",
+      "title": "环境化学材料和练习保留需要回答的证据问题",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.3",
+      "pdf_pages": [
+        101,
+        102,
+        103
+      ],
+      "printed_pages": [
+        96,
+        97,
+        98
+      ],
+      "summary": "链接学科栏目把环境化学的研究对象与大气、水、土壤中物质的存在状态、转化和效应联系起来。后续练习比较硫氮循环，讨论酸性气溶胶与氨的反应，并提出为何用硫酸根浓度反映初始硫酸量而不只测pH的问题，可用于组织跨页证据检索。",
+      "classroom_check": "先定位题目引用的循环图和成酸正文，再让学生区分微粒总量、酸碱性与发生中和后的测量指标，提出还需核对哪些条件。",
+      "limitation": "PDF102—103的练习未附完整答案或考试评分细则；不代填其空白，不将所有表格陈述当作正确结论，也未新增为正式题库题。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          101,
+          102,
+          103
+        ],
+        "printed_pages": [
+          96,
+          97,
+          98
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ]
+}

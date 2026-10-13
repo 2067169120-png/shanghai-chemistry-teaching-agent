@@ -240,6 +240,7 @@ class PreparationImageMetadataDialog(QDialog):
         purpose: str = "",
         display_name: str = "",
         preview_bytes: bytes | None = None,
+        classroom_only: bool = False,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("添加教学图片说明")
@@ -258,11 +259,11 @@ class PreparationImageMetadataDialog(QDialog):
         selected.setAccessibleName(f"已选择图片：{file_name}")
         root.addWidget(selected)
 
-        hint = QLabel(
+        hint = QLabel('填写图题与课堂用途，来源保存在素材记录中。' if classroom_only else (
             "请填写给模型和课堂使用的文字说明。图片先导入本机素材库；"
             "是否发送图片像素，由备课页面的“图片用法”决定。"
             "图注、来源和用途会随确认后的备课文字发送。"
-        )
+        ))
         hint.setObjectName("MutedLabel")
         hint.setWordWrap(True)
         root.addWidget(hint)
@@ -311,7 +312,7 @@ class PreparationImageMetadataDialog(QDialog):
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         self.confirm_button = buttons.button(QDialogButtonBox.StandardButton.Ok)
-        self.confirm_button.setText("导入图片")
+        self.confirm_button.setText("使用这张图片" if classroom_only else "导入图片")
         self.confirm_button.setAccessibleName("确认导入教学图片")
         cancel_button = buttons.button(QDialogButtonBox.StandardButton.Cancel)
         cancel_button.setText("取消")

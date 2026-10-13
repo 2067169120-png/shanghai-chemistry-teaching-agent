@@ -22,6 +22,7 @@ from integrations.deeptutor_shchem_v1.desktop_word_ranges import (
 from integrations.deeptutor_shchem_v1.desktop_word_source_reference import (
     WordSourceReferenceError,
 )
+from integrations.deeptutor_shchem_v1.desktop_preparation_limits import MAX_MATERIALS
 
 
 def _multi_reference(facade, selection, ranges, **kwargs):
@@ -200,7 +201,8 @@ def test_unselected_long_block_is_not_imported_but_selected_long_block_is_reject
 ):
     document = Document()
     document.add_paragraph("短选段")
-    document.add_paragraph("长正文" * 8000)
+    long_text = "长正文" * (MAX_MATERIALS // len("长正文") + 1)
+    document.add_paragraph(long_text)
     document.add_paragraph("最后一段")
     facade, selection, _ = _from_document(desktop_paths, tmp_path, document)
 
@@ -215,6 +217,18 @@ def test_unselected_long_block_is_not_imported_but_selected_long_block_is_reject
             facade, selection, [{"start": 2, "end": 2}], include_images=False
         )
     assert not _image_root(facade).exists()
+
+
+def test_previously_long_24000_character_block_is_preserved_under_current_limit(desktop_paths, tmp_path):
+    body = '长正文' * 8000
+    document = Document(); document.add_paragraph(body)
+    facade, selection, preview = _from_document(desktop_paths, tmp_path, document)
+    before = deepcopy(preview); state = deepcopy(facade.state_store.snapshot())
+    ref = _multi_reference(facade, selection, [{'start': 1, 'end': 1}], include_images=False)
+    assert body in ref['materials'] and len(ref['materials']) <= MAX_MATERIALS
+    assert ref['image_assets'] == [] and not _image_root(facade).exists()
+    assert facade.state_store.snapshot() == state
+    assert facade.imported_word_preview(selection['batch_id'], selection['source_id']) == before
 
 
 def test_teaching_flow_requires_complete_cross_segment_support_and_keeps_original_selection(

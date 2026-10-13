@@ -1,0 +1,348 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-NITROGEN-01",
+      "title": "固氮先判断游离态是否转为化合态",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.2",
+      "pdf_pages": [
+        89
+      ],
+      "printed_pages": [
+        84
+      ],
+      "summary": "教材把将空气中的游离态氮转化为化合态氮的过程称为固氮，并区分生物固氮、大气固氮和人工固氮。大多数氮以游离态存在于空气中，植物通常从含氮化合物中获得氮元素；单纯改变氮气的物理状态不属于这里的固氮。",
+      "classroom_check": "对照原页的定义，给每种情境分别标出氮的存在形态和转化前后物质，避免仅凭“出现氮元素”就判定固氮。",
+      "limitation": "此为教材定义的化学整理，不根据配图推断实际固氮效率，也不把氮气液化视作生成含氮化合物。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          89
+        ],
+        "printed_pages": [
+          84
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-NITROGEN-02",
+      "title": "大气固氮的反应链保留放电条件和产物区别",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.2",
+      "pdf_pages": [
+        89,
+        95
+      ],
+      "printed_pages": [
+        84,
+        90
+      ],
+      "summary": "原页用N₂+O₂→2NO（放电）、2NO+O₂→2NO₂、3NO₂+H₂O→2HNO₃+NO表示大气固氮中的反应，依次涉及氮气、氧气、一氧化氮、二氧化氮、水和硝酸。一氧化氮无色且难溶于水，常温下易与空气中的氧气化合成红棕色二氧化氮；不能把两种气体的颜色和水反应互换。",
+      "classroom_check": "把反应条件、产物名称、氮的价态及颜色分栏，回到PDF95的转化图核对每一步的依据。",
+      "limitation": "PDF95练习未附本节官方答案或评分细则，本条不代填其选择与空白，也不把放电条件省略成无条件反应。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          89,
+          95
+        ],
+        "printed_pages": [
+          84,
+          90
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-NITROGEN-03",
+      "title": "合成氨使用可逆反应而不是单向完全转化",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.2",
+      "pdf_pages": [
+        89,
+        90
+      ],
+      "printed_pages": [
+        84,
+        85
+      ],
+      "summary": "教材说明人工固氮主要通过工业合成氨实现，写出N₂+3H₂⇌2NH₃，并标注高温、高压和催化剂；对应氮气、氢气和氨。PDF90把工业条件与根瘤菌固氮的温和条件作比较，作为化学仿生学的情境。",
+      "classroom_check": "让学生从方程式找出物质比例、可逆信息和反应条件，再说明比较工业合成与生物固氮时需要哪些共同证据。",
+      "limitation": "原文条件只代表这版教材的介绍，不推断当前工厂装置、催化剂配方、产率或技术性能；配图不构成实测数据。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          89,
+          90
+        ],
+        "printed_pages": [
+          84,
+          85
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-NITROGEN-04",
+      "title": "肥料与粮食图表先读年份和两个纵轴",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.2",
+      "pdf_pages": [
+        91,
+        95
+      ],
+      "printed_pages": [
+        86,
+        90
+      ],
+      "summary": "图3.10并列展示1980—2018年的我国粮食产量和化肥施用量，分别使用左右纵轴；PDF95的练习图又把世界人口、可耕地总面积及按生产水平所需耕地放在一起。读图必须先辨认变量、时间范围和单位，再描述各条曲线或柱形的变化。",
+      "classroom_check": "分别抄出两个纵轴的名称和单位，定位同一年份对应的读数，再区分“图中同时变化”和“已经证明因果关系”两种陈述。",
+      "limitation": "图表是教材中的历史材料，不能当作当前统计或未来预测；本条不补造精确读数、来源年份或政策结论。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          91,
+          95
+        ],
+        "printed_pages": [
+          86,
+          90
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-NITROGEN-05",
+      "title": "氨的喷泉情境分别检查溶解性和溶液碱性",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.2",
+      "pdf_pages": [
+        91,
+        92
+      ],
+      "printed_pages": [
+        86,
+        87
+      ],
+      "summary": "教材描述氨NH₃为无色、有刺激性气味的气体，极易溶于水；原页注明常温常压下1体积水约可溶解700体积氨。氨水可使酚酞试液变红，支持溶液显碱性。图3.11的喷泉情境把压强变化相关现象和指示剂变化联系起来，但两类现象所支持的性质不同。",
+      "classroom_check": "对照装置原图，用两栏记录能够支持溶解性和碱性的证据，再检查数量描述是否保留“约”及温压条件。",
+      "limitation": "原页现象记录与实验结论栏目为空，未视为学生已完成实验；不转写制气操作或把图像当作实际体积和压强测量。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          91,
+          92
+        ],
+        "printed_pages": [
+          86,
+          87
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-NITROGEN-06",
+      "title": "氨水用两组平衡说明一水合氨和弱碱性",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.2",
+      "pdf_pages": [
+        92
+      ],
+      "printed_pages": [
+        87
+      ],
+      "summary": "原页依次写出NH₃+H₂O⇌NH₃·H₂O，以及NH₃·H₂O⇌NH₄⁺+OH⁻，对应氨、水、一水合氨、铵根离子和氢氧根离子。一水合氨不稳定，NH₃·H₂O→NH₃↑+H₂O标注加热；少部分电离使溶液显弱碱性。",
+      "classroom_check": "把溶解后结合、部分电离及受热分解分开标注，核对可逆符号、电荷、气体状态和加热条件。",
+      "limitation": "不把氨水当成纯的一水合氨，也不把弱电解质说成不电离或完全电离；本页没有给电离程度和pH的实测数值。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          92
+        ],
+        "printed_pages": [
+          87
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-NITROGEN-07",
+      "title": "氨与酸成盐同时保留物质名称和可观察产物",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.2",
+      "pdf_pages": [
+        92
+      ],
+      "printed_pages": [
+        87
+      ],
+      "summary": "教材说明氨与氯化氢气体反应生成白色氯化铵固体，并列出NH₃+HCl→NH₄Cl、2NH₃+H₂SO₄→(NH₄)₂SO₄和NH₃+HNO₃→NH₄NO₃，依次涉及氨、氯化氢或相应酸及氯化铵、硫酸铵、硝酸铵。成盐关系与气体溶于水的过程需要分别说明。",
+      "classroom_check": "用原文核对“白色固体”的物质名称，比较三式的氨与酸的化学计量关系，再说明为什么氨水和铵盐不能混用名称。",
+      "limitation": "图3.12只属于教材示例，空白现象栏目不自动补成实测记录；本条不采用原页用量或操作步骤。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          92
+        ],
+        "printed_pages": [
+          87
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-NITROGEN-08",
+      "title": "铵盐受热与遇碱的性质用于不同判断",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.2",
+      "pdf_pages": [
+        93
+      ],
+      "printed_pages": [
+        88
+      ],
+      "summary": "教材说明氯化铵受热会分解成氨和氯化氢，冷却后又结合生成氯化铵；铵盐与碱反应可放出氨，常用于检验NH₄⁺（铵根离子）的存在。图3.13和空白表格要求分别记录现象、性质及方程式，而不是把三栏视为同一种信息。",
+      "classroom_check": "先分辨受热分解与遇碱反应，再把观察、所支持的性质和化学表达对应，说明检验结论依赖哪些条件和证据。",
+      "limitation": "原页实验表格未提供已完成记录，本条不代填；不把氯化铵的具体分解产物外推为所有铵盐都相同。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          93
+        ],
+        "printed_pages": [
+          88
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-NITROGEN-09",
+      "title": "硝酸氧化铜时保留浓稀与氮氧化物产物",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.2",
+      "pdf_pages": [
+        93,
+        94
+      ],
+      "printed_pages": [
+        88,
+        89
+      ],
+      "summary": "原文说明浓硝酸和稀硝酸都有强氧化性。PDF94列出Cu+4HNO₃(浓)→Cu(NO₃)₂+2NO₂↑+2H₂O，以及3Cu+8HNO₃(稀)→3Cu(NO₃)₂+2NO↑+4H₂O；物质分别为铜、硝酸、硝酸铜、二氧化氮或一氧化氮及水。两式的酸浓度、气体产物和化学计量不能混换。",
+      "classroom_check": "并列核对两式中铜的价态、含氮产物和配比，从氮的价态变化说明原文中的氧化性。",
+      "limitation": "按原页表达保留浓稀与气体状态，不额外猜测未标出的温度；不推广为所有金属在所有条件下生成同一种产物，也不提供实验配方。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          93,
+          94
+        ],
+        "printed_pages": [
+          88,
+          89
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-NITROGEN-10",
+      "title": "比较氮肥含氮量时区分质量分数与实际肥效",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.2",
+      "pdf_pages": [
+        94
+      ],
+      "printed_pages": [
+        89
+      ],
+      "summary": "教材例题比较尿素CO(NH₂)₂、硝酸铵NH₄NO₃和硫酸铵(NH₄)₂SO₄，用氮元素质量除以化合物质量得到约0.467、0.350和0.212。原文还从尿素的运输、使用及与水缓慢反应等特点解释其应用，因而含氮量计算与具体使用条件应分开整理。",
+      "classroom_check": "先标出每种物质每个化学式中的氮原子数，再用教材的摩尔质量核对分子分母和无量纲质量分数；讨论还需哪些证据才能比较某一具体情境的使用效果。",
+      "limitation": "例题是教材分析，不是考试官方评分细则；不把单一含氮量直接等同于任意土壤条件下的实际肥效，也不提供当前施肥建议。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          94
+        ],
+        "printed_pages": [
+          89
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ]
+}

@@ -39,10 +39,22 @@ def new_design(payload):
 
 def validate_design(value):
     """Accept incomplete drafts, but never silently drop an unknown field."""
-    if not isinstance(value, dict) or set(value) != {"schema_version", "id", "objectives", "nodes", "exports"}:
+    from .desktop_lesson_composition import DESIGN_SCHEMA, validate_composition
+    fields = {"schema_version", "id", "objectives", "nodes", "exports"}
+    if isinstance(value, dict) and 'teaching_framework' in value:
+        fields.add('teaching_framework')
+    if isinstance(value, dict) and 'classroom_notes' in value:
+        fields.add('classroom_notes')
+    if isinstance(value, dict) and "narrations" in value:
+        fields.add("narrations")
+    if isinstance(value, dict) and value.get("schema_version") == DESIGN_SCHEMA:
+        fields.add("composition")
+    if not isinstance(value, dict) or set(value) != fields:
         raise ValueError("教学设计字段不完整。")
-    if value["schema_version"] != SCHEMA or not re.fullmatch(r"LD-[a-f0-9]{32}", str(value["id"])):
+    if value["schema_version"] not in (SCHEMA, DESIGN_SCHEMA) or not re.fullmatch(r"LD-[a-f0-9]{32}", str(value["id"])):
         raise ValueError("教学设计版本或标识不正确。")
+    if 'classroom_notes' in value and type(value['classroom_notes']) is not bool:
+        raise ValueError('课堂讲义选项须为开启或关闭。')
     for key, limit in (("objectives", 40), ("nodes", 80), ("exports", 100)):
         if not isinstance(value[key], list) or len(value[key]) > limit:
             raise ValueError("教学设计内容过多，请按课时拆分。")
@@ -87,15 +99,27 @@ def validate_design(value):
             if (set(f) != {"name", "sha256"} or not re.fullmatch(r"[A-Za-z0-9_.-]+", f["name"])
                     or not re.fullmatch(r"[a-f0-9]{64}", f["sha256"])):
                 raise ValueError("成品文件记录不正确。")
+    if "composition" in value:
+        validate_composition(value["composition"])
+    if 'teaching_framework' in value:
+        from .desktop_teaching_framework import validate_framework
+        validate_framework(value['teaching_framework'])
+    if "narrations" in value:
+        from .desktop_lesson_narration import validate_narrations
+        validate_narrations(value["narrations"], value["exports"])
     return deepcopy(value)
 
 
 def content_fingerprint(payload, plan=None):
     plan = validate_design(plan if plan is not None else payload["lesson_design"])
-    return digest({"design": {k: v for k, v in plan.items() if k != "exports"},
+    value = {"design": {k: v for k, v in plan.items() if k not in ("exports", "narrations")},
                    "topic": payload.get("topic", ""), "audience": payload.get("audience", ""),
                    "timing": payload.get("lesson_timing", ""),
-                   "image_assets": payload.get("image_assets", [])})
+                   "image_assets": payload.get("image_assets", [])}
+    if 'composition' in plan:
+        from .desktop_lesson_composition import RENDER_REVISION
+        value['composition_render_revision'] = RENDER_REVISION
+    return digest(value)
 
 
 def coverage(plan, budget=None):
@@ -182,6 +206,8 @@ class DesignHistory:
 def candidate_from_design(payload):
     """Project the same ordered nodes to the existing native PPT renderer."""
     plan = validate_design(payload["lesson_design"])
+    if plan.get("composition", {}).get("resources"):
+        raise ValueError("本作品含页面编排素材，须先完成整份作品的输出核对；原内容保留。")
     if not payload.get("topic", "").strip() or not plan["nodes"]:
         raise ValueError("请填写课题并至少安排一个教学环节。")
     from .desktop_preparation import normalize_preparation_payload

@@ -1,0 +1,348 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-SULFUR-01",
+      "title": "硫的物性与反应事实分开整理",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.1",
+      "pdf_pages": [
+        80,
+        81
+      ],
+      "printed_pages": [
+        75,
+        76
+      ],
+      "summary": "教材把硫描述为黄色或淡黄色、易碎的固体，不溶于水，微溶于酒精，易溶于二硫化碳。硫能与一些金属和非金属反应；物性证据与反应产物证据应分别记录。",
+      "classroom_check": "从原页圈出颜色、状态和溶解性，再单列反应条件与生成物，避免把性质名称直接当作实验观察。",
+      "limitation": "本条只整理原页化学认识，不转写黑火药配比或实验操作；空白的现象与结论栏目未视作学生实测记录。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          80,
+          81
+        ],
+        "printed_pages": [
+          75,
+          76
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-SULFUR-02",
+      "title": "比较硫与金属反应时保留条件和产物价态",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.1",
+      "pdf_pages": [
+        81
+      ],
+      "printed_pages": [
+        76
+      ],
+      "summary": "原页列出S+Fe→FeS、S+2Cu→Cu₂S，两式均标注加热；对应硫与铁生成硫化亚铁、硫与铜生成硫化亚铜。S+Hg→HgS对应硫与汞生成硫化汞，正文注明常温。比较硫与氯气时，教材要求同时考虑反应条件和生成物中金属元素的价态。",
+      "classroom_check": "为每个方程式添加物质名称和原文条件，再用生成物组成确定铁或铜的价态，提出与既学氯气反应的比较问题。",
+      "limitation": "比较问题未在本页附官方评分细则；不把加热或常温条件省掉，也不推广为所有金属必定得到同一价态。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          81
+        ],
+        "printed_pages": [
+          76
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-SULFUR-03",
+      "title": "二氧化硫溶于水与溶液显酸性使用不同证据",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.1",
+      "pdf_pages": [
+        81,
+        82
+      ],
+      "printed_pages": [
+        76,
+        77
+      ],
+      "summary": "二氧化硫SO₂是无色、易溶于水的气体；溶于水后与水反应生成不稳定的弱酸亚硫酸H₂SO₃。教材用SO₂+H₂O⇌H₂SO₃表达可逆过程，依次对应二氧化硫、水和亚硫酸。溶解现象与石蕊的变化分别支撑溶解性和溶液酸性。",
+      "classroom_check": "对照图3.2及正文，把水进入试管的现象与指示剂变化分成两条证据，再说明可逆符号保留了什么信息。",
+      "limitation": "原页的实验记录表是空白；本条概念整理不冒充已完成实验，不把亚硫酸溶液表述成纯的稳定物质。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          81,
+          82
+        ],
+        "printed_pages": [
+          76,
+          77
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-SULFUR-04",
+      "title": "二氧化硫漂白保留恢复原色的后续现象",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.1",
+      "pdf_pages": [
+        82,
+        83
+      ],
+      "printed_pages": [
+        77,
+        78
+      ],
+      "summary": "教材说明二氧化硫能与品红等某些有色物质形成不稳定的无色物质；受热后无色物质易分解，有色物质恢复原色。图3.3把溶有二氧化硫的品红试液、加热后和冷却后的状态并列，判断时要追踪同一体系。",
+      "classroom_check": "让学生按时间顺序描述图3.3，再把暂时褪色与后续颜色变化对应到产物稳定性；与既学氯水漂白提出有依据的比较。",
+      "limitation": "漂白作用不能外推为所有有色物质都褪色；侧栏食品加工数值只属于这版教材历史内容，本条不采用为当前食品法规或健康建议。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          82,
+          83
+        ],
+        "printed_pages": [
+          77,
+          78
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-SULFUR-05",
+      "title": "二氧化硫的氧化性与还原性要指定反应对象",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.1",
+      "pdf_pages": [
+        83
+      ],
+      "printed_pages": [
+        78
+      ],
+      "summary": "SO₂中硫为+4价。原页用SO₂+2H₂S→3S+2H₂O说明二氧化硫与硫化氢反应生成硫和水时表现氧化性；又用2SO₂+O₂⇌2SO₃说明在一定温度及催化剂条件下，二氧化硫被氧气氧化成三氧化硫。",
+      "classroom_check": "分别追踪二氧化硫中硫的价态变化，再说明同一物质的氧化还原角色为什么随反应对象而变化。",
+      "limitation": "保留第二式的可逆、温度及催化剂条件，不猜测工业产率或具体催化剂；实验空白不自动补成官方结论。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          83
+        ],
+        "printed_pages": [
+          78
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-SULFUR-06",
+      "title": "三氧化硫与二氧化硫的水反应不可混同",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.1",
+      "pdf_pages": [
+        83,
+        88
+      ],
+      "printed_pages": [
+        78,
+        83
+      ],
+      "summary": "原页写出SO₃+H₂O→H₂SO₄，对应三氧化硫、水和硫酸，并说明三氧化硫为酸性氧化物。二氧化硫与水的可逆反应得到弱酸亚硫酸，三氧化硫与水生成硫酸；名称、化学式和反应关系要一起核对。",
+      "classroom_check": "以两种氧化物为行、与水反应及生成酸为列建立比较表，再回到PDF88练习核查每条连接的证据。",
+      "limitation": "整理正文已给关系，不代填PDF88整道连线题，也不把“酸性氧化物”直接等同于“与水生成弱酸”。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          83,
+          88
+        ],
+        "printed_pages": [
+          78,
+          83
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-SULFUR-07",
+      "title": "浓硫酸的吸水性和脱水性分别说明",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.1",
+      "pdf_pages": [
+        84
+      ],
+      "printed_pages": [
+        79
+      ],
+      "summary": "教材区分浓硫酸的吸水性与脱水性：吸水性用于干燥不与它反应的气体；脱水性指把某些有机化合物中的氢、氧元素按水的组成脱去，使其炭化。图3.4提供蔗糖与浓硫酸作用的图像证据。",
+      "classroom_check": "比较“已有水分被吸收”和“化合物的元素按水组成脱去”两种叙述，再检查所选气体是否会与浓硫酸反应。",
+      "limitation": "不把所有干燥任务都指派给浓硫酸；此处不转写用量和操作，不用图像代替实际温度、产气量或学生实验记录。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          84
+        ],
+        "printed_pages": [
+          79
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-SULFUR-08",
+      "title": "浓硫酸的强氧化性与钝化限定温度",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.1",
+      "pdf_pages": [
+        85
+      ],
+      "printed_pages": [
+        80
+      ],
+      "summary": "教材说明浓硫酸能把铜氧化成+2价铜离子，其中硫由+6价降为+4价并生成二氧化硫。正文区分加热时与多数金属反应、常温时铁铝表面形成致密氧化层的钝化。原页C+2H₂SO₄(浓)→CO₂↑+2SO₂↑+2H₂O标注加热，依次对应碳、浓硫酸、二氧化碳、二氧化硫和水。",
+      "classroom_check": "把浓度、温度、反应物及价态变化并列，解释常温钝化为什么不能理解为铁铝在任何条件下都不反应。",
+      "limitation": "铜反应方程式的书写栏目未带官方评分细则；本条不补填实验数据、不把“多数金属”扩大成全部金属，也不提供制气操作。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          85
+        ],
+        "printed_pages": [
+          80
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-SULFUR-09",
+      "title": "硫酸根检验先排除能产生类似沉淀的干扰",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.1",
+      "pdf_pages": [
+        86
+      ],
+      "printed_pages": [
+        81
+      ],
+      "summary": "教材用Ba²⁺+SO₄²⁻→BaSO₄↓表示钡离子与硫酸根形成硫酸钡沉淀，并比较碳酸钡也呈白色、却能被酸溶解的情况。原页据此说明先用盐酸酸化待测液，再加入氯化钡溶液，以排除碳酸根等离子的干扰。",
+      "classroom_check": "把“白色沉淀”“酸处理”“试剂顺序”分别与其排除或支持的判断对应，不只记最后的颜色。",
+      "limitation": "此为原页给出的检验范围；复杂混合体系仍需逐项核对题设和试剂干扰，不把单一白色沉淀视作万能充分证据。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          86
+        ],
+        "printed_pages": [
+          81
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-SULFUR-10",
+      "title": "鉴别方案要能从条件和性质推到可观察证据",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C3:3.1",
+      "pdf_pages": [
+        87,
+        88
+      ],
+      "printed_pages": [
+        82,
+        83
+      ],
+      "summary": "教材例题分析用脱水性、遇水放热及物理性质比较浓稀硫酸，并指出常温下铝会钝化、硫酸难挥发，使相关方案不能按预想产生鉴别现象。后续练习把硫的−2、0、+4、+6价态及其物质转化放在一起，要求核对化学方程式。",
+      "classroom_check": "评议每种方案时先写所依赖性质，再检查条件是否支持预想现象；用价态表组织转化，回查对应正文的反应条件。",
+      "limitation": "例题是教材解析而非考试官方评分标准；练习图示及空表仍保留原状，未新建为完整题库题或为药物功效背书。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          87,
+          88
+        ],
+        "printed_pages": [
+          82,
+          83
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ]
+}

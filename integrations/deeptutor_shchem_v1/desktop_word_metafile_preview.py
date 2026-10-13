@@ -19,7 +19,7 @@ from contextlib import ExitStack
 
 from PIL import Image
 
-RENDERER_REVISION = "20260913-word-metafile-preview-v5-wmf-font-preflight"
+RENDERER_REVISION = "20261008-word-metafile-preview-v7-win16-paths"
 MAX_SOURCE_BYTES = 32 * 1024 * 1024
 MAX_PNG_BYTES = 32 * 1024 * 1024
 MAX_DIMENSION = 8192

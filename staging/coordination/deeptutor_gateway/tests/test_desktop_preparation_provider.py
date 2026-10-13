@@ -342,7 +342,9 @@ def test_preparation_provider_matches_manager_contract_and_reports_progress() ->
     assert json.loads(request_text)["max_output_tokens"] == 32000
     assert "teacher_notes" in request_text
     assert "slides[0].title必须使用本次教师确认的topic章节名或课题名" in request_text
-    assert "只有确实取得的教材原文才标‘教材原文’" in request_text
+    assert "只有确实取得的教材原文才能作为原句" in request_text
+    assert "来源、页码和改写属性保留在内部source_basis" in request_text
+    assert "不写入PPT或Word正文" in request_text
     assert "学生投影的知识表格要填写完整" in request_text
     assert "uncertainties" in request_text
     assert "每个 lesson_stages 的 objective_numbers 和 activity_numbers" in request_text
@@ -409,9 +411,32 @@ def test_learning_sequence_contract_reaches_actual_request_without_mutating_brie
     )
     assert PREPARATION_PROMPT_REVISION in prompt
     assert TEACHING_SOURCE_RULES in prompt
-    assert PREPARATION_PROMPT_REVISION == "20260913-lecture-practice-notes-v26"
+    assert PREPARATION_PROMPT_REVISION == "20261012-backstage-material-gaps-v36"
+    assert '按约40名学生的普通教室设计投影' in prompt
+    assert '左上角标题优先用具体问题' in prompt
+    assert '问题必须能由本页或紧邻页的材料回答' in prompt
+    assert '教材原图、讲义知识结构网和与本页概念对应的课外实景图片' in prompt
+    assert '每页要接住前一页的概念' in prompt
+    assert '利用版面把对应关系讲清楚' in prompt
+    assert "可编辑Word教案" in prompt and "课堂演示PPT" in prompt
+    assert "教师备注和板书直接呈现教学内容" in prompt
+    assert "不写‘仅供参考’‘请教师自行检查’‘AI可能有误’‘不保证准确性’" in prompt
+    assert '生成正文、表格、图注、教师备注和板书直接呈现教学内容' in prompt
+    assert 'PPT必须是一堂课的设计' in prompt
+    assert '实际使用已提供且适用的教材图表、教材思考题和讲义完整例题' in prompt
+    assert '答案和关键依据可在同页点击显示' in prompt
+    assert '正式题目少量用于关键例证与理解检查' in prompt
+    assert '逐步出现的结构标注、作用力指认和因果链' in prompt
+    assert '先读取配套复习讲义的知识结构网' in prompt
+    assert '不能只从专项训练抽题' in prompt
+    assert '课堂PPT可以有较多文字，方便学生记笔记' in prompt
+    assert '不能把知识解释只留备注' in prompt
+    assert '开课展示知识联系，讲解时展开分支，课末重新连起来' in prompt
+    assert '先作答、下一页核对答案和依据，不能依赖动画遮挡' not in prompt
+    assert '讲者备注不写来源名称、出处、文件路径、页码或来源提醒' in prompt
+    assert '情感态度与价值观' in prompt and '板书设计' in prompt
     assert "Word题目的图文对应关系" in prompt
-    assert "答案与解析图仅用于相应题目的后续讲评页" in prompt
+    assert "答案与解析图只用于相应题目的点击显示分析或后续讲评" in prompt
     assert "原图附入本地素材库不等于图中条件已被识别" in prompt
     assert prompt.endswith(CLASSROOM_NOTE_FINAL_CHECK)
     for rule in (
@@ -426,7 +451,7 @@ def test_learning_sequence_contract_reaches_actual_request_without_mutating_brie
         "逐课时核对PPT、活动、教案的时间",
         "具体例题的题干、分析过程、结论和依据",
         "区分教材原题、教材例式复写、讲义收录题和原创课堂变式",
-        "练习页与讲评页保留相同题号和对应评价关联",
+        "题目与讲评保持对应；可以同页安排并在教师点击后展示答案分析",
         "不固定照搬示例课的38页或题量",
         "逐项回看对应讲义的知识点总结、得分速记、例题与变式",
         "不把‘常考’写成未经统计的频次结论",
@@ -454,7 +479,7 @@ def test_learning_sequence_contract_reaches_actual_request_without_mutating_brie
         "实际内容写进 visual",
         "各行values数等于列数",
         "不冒充化学反应箭头",
-        "不重复抄写整张表或流程",
+        "图形页配完整必要的定义、条件和解释",
         "对应activity.worksheet提供具体内容",
         "不预填答案、教师评分提示或待审核说明",
         "不借学习单扩写题干",
@@ -494,7 +519,7 @@ def test_learning_sequence_contract_reaches_actual_request_without_mutating_brie
         "软件未逐字核验",
         "摘录与蒸馏摘要冲突时不得混合拼接成原句",
         "讲义研读落实",
-        "在相关teacher_notes写简洁的采用说明",
+        "在内部source_basis写简洁的采用说明",
         "讲义中的好例题优先于自行拼凑题目",
         "教案里的总结说明不能代替PPT知识页",
         "笔记总结应能脱离教师口头补充独立阅读",

@@ -6,9 +6,9 @@ import pytest
 pytest.importorskip("PySide6")
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QLineEdit, QPlainTextEdit
-from PySide6.QtGui import QFont, QFontInfo
+from PySide6.QtGui import QFont, QFontDatabase, QFontInfo
 from integrations.deeptutor_shchem_v1.desktop_workbench.typography import (
-    BODY_POINTS, HAN_SAMPLE, choose_family, install_ui_font, ui_font,
+    BODY_POINTS, HAN_SAMPLE, CHEMISTRY_SAMPLE, choose_family, choose_symbol_families, install_ui_font, ui_font,
     typography_report, glyph_report,
 )
 from integrations.deeptutor_shchem_v1.desktop_workbench.app import create_application
@@ -38,6 +38,12 @@ def test_family_is_checked_for_actual_chinese_glyphs():
 
 def test_family_alias_matching_is_case_insensitive():
     assert choose_family(["microsoft yahei"], lambda _: True) == "microsoft yahei"
+
+
+def test_symbol_fallbacks_use_only_available_faces_in_preferred_order():
+    assert choose_symbol_families(['Arial', 'segoe ui symbol', 'CAMBRIA MATH']) == [
+        'CAMBRIA MATH', 'segoe ui symbol']
+    assert choose_symbol_families(['Arial', 'Segoe UI']) == []
 
 
 def test_font_installation_is_idempotent_and_does_not_reset_controls(app):
@@ -81,6 +87,21 @@ def test_chemistry_symbols_remain_available_without_disabling_font_merging(app):
     assert details["chemistry"]["missing_glyphs"] == 0
     assert not (ui_font().styleStrategy() & QFont.StyleStrategy.NoFontMerging)
     assert all(word not in str(details) for word in ("AppData", "site-packages", "api_key"))
+
+
+@pytest.mark.parametrize('points', [BODY_POINTS, 12.0])
+def test_adjacent_equilibrium_arrow_and_chinese_subsup_context_have_real_glyphs(app, points):
+    text = ('化学式与中文标签连续排版：H₂A（二元酸）⇌H⁺（氢离子）＋HA⁻（酸式酸根）；'
+            '第二行式子HA⁻⇌H⁺+A²⁻，逐一辨认平衡箭头与上、下标。')
+    font = ui_font(points)
+    record = glyph_report(font, text)
+    assert record['runs'] and record['missing_glyphs'] == 0
+    assert font.families()[0] == app._shchem_typography['family']
+    available = {family.casefold() for family in QFontDatabase.families()}
+    assert all(family.casefold() in available for family in font.families()[1:])
+    assert font.weight() == QFont.Weight.Normal and font.pointSizeF() == points
+    assert 'H₂A（二元酸）⇌H⁺（氢离子）＋HA⁻（酸式酸根）' in CHEMISTRY_SAMPLE
+    assert 'HA⁻⇌H⁺+A²⁻' in CHEMISTRY_SAMPLE
 
 
 def test_stylesheet_does_not_override_family_selected_by_qt():

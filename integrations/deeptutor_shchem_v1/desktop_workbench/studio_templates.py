@@ -69,6 +69,11 @@ class TemplatePage(QWidget):
         root.setContentsMargins(28, 24, 28, 28)
         root.setSpacing(18)
         root.addWidget(section_title("教学模板", "从一条清晰的学习路径开始，再加入你的教材、原题与课堂判断。"))
+        self.my_templates = QPushButton("我的模板 · 搜索、管理与预览应用…")
+        self.my_templates.setObjectName("QuietButton")
+        self.my_templates.setAccessibleName("我的教学结构模板")
+        self.my_templates.clicked.connect(self.open_my_templates)
+        root.addWidget(self.my_templates)
         filters = QHBoxLayout()
         self.query = QLineEdit()
         self.query.setPlaceholderText("搜索模板、场景或能力，例如：实验、错因、两课时")
@@ -83,7 +88,7 @@ class TemplatePage(QWidget):
         self.only_favorites = QCheckBox("只看我的收藏")
         self.only_favorites.setAccessibleName("只看已收藏教学模板")
         root.addWidget(self.only_favorites)
-        self.status = text_label("6个原创教学组织模板 · 可以离线预览与选用，生成PPT/教案另走原有AI流程。")
+        self.status = text_label("6个内置教学组织模板 · 我的教学结构可离线预览、复用与管理。")
         root.addWidget(self.status)
         self.grid = QGridLayout()
         self.grid.setSpacing(16)
@@ -106,6 +111,21 @@ class TemplatePage(QWidget):
         except Exception:
             set_status(self.status, "attention", "收藏暂时无法读取，模板仍可使用。")
             return set()
+
+    def open_my_templates(self):
+        from .teaching_template_dialogs import TeachingTemplateLibraryDialog
+        window = self.window()
+        preparation = getattr(window, "preparation_page", None)
+        apply = getattr(preparation, "apply_personal_teaching_template", None)
+        def apply_current(record):
+            if apply is not None and apply(record):
+                navigate = getattr(window, "navigate", None)
+                if callable(navigate): navigate("preparation")
+                return True
+            return False
+        dialog = TeachingTemplateLibraryDialog(self.facade, self,
+            apply_callback=apply_current if callable(apply) else None)
+        dialog.exec(); dialog.deleteLater()
 
     def _favorite(self, key, checked):
         values = self._favorites()

@@ -1,0 +1,1342 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "notes": [
+    {
+      "id": "READ-TB-E1-20260927-WEAK-01",
+      "title": "怎样用实验区分强弱电解质与浓稀？",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        70,
+        73
+      ],
+      "printed_pages": [
+        64,
+        67
+      ],
+      "summary": "强、弱电解质按水溶液中的电离情况区分：强电解质全部电离，弱电解质部分电离。浓、稀描述配制浓度，溶液当前的氢离子浓度还受电离程度影响。判断一元酸是否部分电离时，可在已知温度和配制浓度的条件下比较氢离子浓度与配制浓度；显色、与金属放气或与碳酸盐反应分别提供酸性或反应能力的信息。",
+      "classroom_check": "将“强弱”“配制浓度”“当前c(H⁺)”分别写在三栏，给每一栏补充判断依据。比较盐酸与醋酸时先列出温度、浓度、用量和反应物状态，再说明观察结果支持哪一栏。",
+      "limitation": "浓度与pH的判据限定于题设的一元酸水溶液，并须明确温度、其他酸碱来源及水电离是否可以忽略；导电性和初始反应速率比较还须控制装置与反应物状态。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          70,
+          73
+        ],
+        "printed_pages": [
+          64,
+          67
+        ],
+        "source_anchors": [
+          "印刷64页强弱电解质定义及盐酸、醋酸与镁的思考题",
+          "印刷67页练习巩固第4题"
+        ],
+        "current_page_visual_review": "reported_by_parent; not_this_worker",
+        "human_reviewed": false
+      },
+      "lecture_evidence": {
+        "package_id": "PKG-056",
+        "source_sha256": "8cda068028bafa475614cd124effaf56caea133084813b9609926af8e325bfb2",
+        "source_preview_revision": "465eee61e5e2c5d94a478c24b857e17eb64f9d33e3725d75aadea3eff8f20556",
+        "source_extraction_revision": "20260909-editable-chemistry-v2",
+        "legacy_block_indices": [
+          31,
+          42,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63,
+          64,
+          67,
+          68,
+          70,
+          71,
+          72,
+          73,
+          74
+        ],
+        "current_complete_support_indices": [
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          73,
+          74
+        ],
+        "original_image_sha256": [
+          "1d1574a13a15c508224d72ba2c680a0ef38b3870abe0ccd0d3f42e10c41a4787",
+          "b2fdf16a48718ab1d62913767c7517b62439378d0c5e1bf7653f4536289ae44e",
+          "b1a30c972198af8dc6d4486988c69c98d79b723bab64b71e4c0ea8ddd7e6d2c8",
+          "8c9458a39ac2a943b095f040b67ce089a2cb544300d1144501e88fe5d3937f6b",
+          "81715d6a8152e7270daeecfca83fa87b6696ba69724c8aec5a17225a0720eb2d",
+          "9b63a480354e0509e8dc2102b484589696fa7c92fc044f4be5413b4cf1019762"
+        ],
+        "mapping_note_id": "READ-TB-E1-20260927-WEAK-01",
+        "mapping_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-weak-electrolyte-note-recovery\\candidate-note-evidence-mapping.json",
+        "mapping_sha256": "80018f769a162763513053d791803436d8aa5aaf0a71ac9414af2fe81253a1b7"
+      },
+      "legacy_source_record": {
+        "original_note_package_sha256": "bf5d805f1031a58b71c928d00ed87def2f26f747b4d3a68137c9dff0d982dcba",
+        "verbatim_copy_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-weak-electrolyte-note-recovery\\candidate-original-note-package.json",
+        "original_id_preserved": true,
+        "original_record_unmodified": true
+      },
+      "candidate_gaps": {
+        "extraction_warning_block_indices": [
+          29,
+          31,
+          34,
+          36,
+          37,
+          40,
+          57,
+          65,
+          69
+        ],
+        "current_original_word_page_visual_review": "not_performed_by_this_worker",
+        "current_image_visual_review": "root_model_reviewed_blocks_31_40_218_only",
+        "formula_completeness": "unresolved for source placeholders and special fonts listed in block evidence",
+        "chemistry_review": "root_model_selected_derived_content_review_completed",
+        "human_review": "not_performed",
+        "original_exam_identity": "unknown",
+        "teacher_verified_answer_or_scoring": "unknown",
+        "formal_import": "not_performed"
+      },
+      "root_model_review_completed": true,
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false,
+      "root_model_review": {
+        "method": "root_model_selected_original_pixels_and_current_word_support_text",
+        "textbook_pdf_pages": [
+          70,
+          71,
+          72,
+          73
+        ],
+        "textbook_printed_pages": [
+          64,
+          65,
+          66,
+          67
+        ],
+        "word_original_image_blocks": [
+          31,
+          40,
+          218
+        ],
+        "word_selected_support_text_ranges": [
+          [
+            29,
+            74
+          ],
+          [
+            122,
+            132
+          ],
+          [
+            203,
+            224
+          ],
+          [
+            227,
+            231
+          ]
+        ],
+        "human_reviewed": false,
+        "whole_word_page_layout_reviewed": false,
+        "unresolved_original_extraction_gaps_retained": true
+      }
+    },
+    {
+      "id": "READ-TB-E1-20260927-WEAK-02",
+      "title": "怎样用速率图和平衡响应解释电离变化？",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        70
+      ],
+      "printed_pages": [
+        64
+      ],
+      "summary": "弱电解质电离成离子和离子结合成分子的过程同时发生；达到平衡时两种速率相等且不为零。施加扰动后，先识别外加物质、反应消耗或体积变化直接改变的量，再判断体系的平衡响应。平衡向电离方向移动与离子浓度增大是不同的判断：稀释会改变体积，加入盐会引入额外离子。",
+      "classroom_check": "画出正、逆过程的速率曲线并标出平衡段。对加水、加醋酸钠、加盐酸和加氢氧化钠分别填写“直接改变的量—平衡响应—最终比较的量”，同时比较物质的量与浓度。",
+      "limitation": "讨论限定于题设温度、体积变化和副反应条件；升温时需结合给定热效应及挥发条件。速率相等不提供不同微粒浓度或数量相等的结论。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          70
+        ],
+        "printed_pages": [
+          64
+        ],
+        "source_anchors": [
+          "图3.5弱电解质电离平衡的建立示意图",
+          "醋酸和一水合氨的电离方程式",
+          "本页下方加水、氢氧化钠、盐酸和醋酸钠的思考题"
+        ],
+        "current_page_visual_review": "reported_by_parent; not_this_worker",
+        "human_reviewed": false
+      },
+      "lecture_evidence": {
+        "package_id": "PKG-056",
+        "source_sha256": "8cda068028bafa475614cd124effaf56caea133084813b9609926af8e325bfb2",
+        "source_preview_revision": "465eee61e5e2c5d94a478c24b857e17eb64f9d33e3725d75aadea3eff8f20556",
+        "source_extraction_revision": "20260909-editable-chemistry-v2",
+        "legacy_block_indices": [
+          39,
+          40,
+          44,
+          46,
+          47,
+          48,
+          49,
+          52,
+          53,
+          54,
+          55,
+          90,
+          91,
+          92,
+          93,
+          94,
+          96
+        ],
+        "current_complete_support_indices": [
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          89,
+          90,
+          91,
+          92,
+          93,
+          94,
+          95,
+          96
+        ],
+        "original_image_sha256": [
+          "b1a30c972198af8dc6d4486988c69c98d79b723bab64b71e4c0ea8ddd7e6d2c8",
+          "8c9458a39ac2a943b095f040b67ce089a2cb544300d1144501e88fe5d3937f6b",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "b2fdf16a48718ab1d62913767c7517b62439378d0c5e1bf7653f4536289ae44e",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8"
+        ],
+        "mapping_note_id": "READ-TB-E1-20260927-WEAK-02",
+        "mapping_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-weak-electrolyte-note-recovery\\candidate-note-evidence-mapping.json",
+        "mapping_sha256": "80018f769a162763513053d791803436d8aa5aaf0a71ac9414af2fe81253a1b7"
+      },
+      "legacy_source_record": {
+        "original_note_package_sha256": "bf5d805f1031a58b71c928d00ed87def2f26f747b4d3a68137c9dff0d982dcba",
+        "verbatim_copy_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-weak-electrolyte-note-recovery\\candidate-original-note-package.json",
+        "original_id_preserved": true,
+        "original_record_unmodified": true
+      },
+      "candidate_gaps": {
+        "extraction_warning_block_indices": [
+          37,
+          40,
+          48,
+          50,
+          54,
+          89,
+          90
+        ],
+        "current_original_word_page_visual_review": "not_performed_by_this_worker",
+        "current_image_visual_review": "root_model_reviewed_blocks_31_40_218_only",
+        "formula_completeness": "unresolved for source placeholders and special fonts listed in block evidence",
+        "chemistry_review": "root_model_selected_derived_content_review_completed",
+        "human_review": "not_performed",
+        "original_exam_identity": "unknown",
+        "teacher_verified_answer_or_scoring": "unknown",
+        "formal_import": "not_performed"
+      },
+      "root_model_review_completed": true,
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false,
+      "root_model_review": {
+        "method": "root_model_selected_original_pixels_and_current_word_support_text",
+        "textbook_pdf_pages": [
+          70,
+          71,
+          72,
+          73
+        ],
+        "textbook_printed_pages": [
+          64,
+          65,
+          66,
+          67
+        ],
+        "word_original_image_blocks": [
+          31,
+          40,
+          218
+        ],
+        "word_selected_support_text_ranges": [
+          [
+            29,
+            74
+          ],
+          [
+            122,
+            132
+          ],
+          [
+            203,
+            224
+          ],
+          [
+            227,
+            231
+          ]
+        ],
+        "human_reviewed": false,
+        "whole_word_page_layout_reviewed": false,
+        "unresolved_original_extraction_gaps_retained": true
+      }
+    },
+    {
+      "id": "READ-TB-E1-20260927-WEAK-03",
+      "title": "电离常数为什么使用实际平衡浓度？",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        71
+      ],
+      "printed_pages": [
+        65
+      ],
+      "summary": "一元弱酸HA（酸分子）⇌H⁺（氢离子）＋A⁻（酸根离子）的浓度式为Ka=c(H⁺)c(A⁻)/c(HA)，各浓度均取平衡时的实际值，分母为未电离的酸分子浓度。外加酸带来的H⁺也计入实际c(H⁺)。将20 mL 0.1 mol·L⁻¹次氯酸溶液加酸后定容至40 mL，测得c(H⁺)=0.050 mol·L⁻¹，题给Ka=4.0×10⁻⁸。先用c(HClO)+c(ClO⁻)=0.050 mol·L⁻¹表示总量守恒，再将实际c(H⁺)代入Ka表达式。",
+      "classroom_check": "为每个浓度标注微粒来源。设x=c(ClO⁻)，写出c(HClO)=0.050−x，再列4.0×10⁻⁸=0.050x/(0.050−x)，求解后用x/0.050检查近似。",
+      "limitation": "本条使用题设稀溶液浓度式。c(H⁺)=c(A⁻)需要单一一元弱酸及可忽略水电离等条件；混合体系须另列守恒。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          71
+        ],
+        "printed_pages": [
+          65
+        ],
+        "source_anchors": [
+          "醋酸Ka表达式",
+          "一水合氨Kb表达式",
+          "25℃常数与表3.3"
+        ],
+        "current_page_visual_review": "reported_by_parent; not_this_worker",
+        "human_reviewed": false
+      },
+      "lecture_evidence": {
+        "package_id": "PKG-056",
+        "source_sha256": "8cda068028bafa475614cd124effaf56caea133084813b9609926af8e325bfb2",
+        "source_preview_revision": "465eee61e5e2c5d94a478c24b857e17eb64f9d33e3725d75aadea3eff8f20556",
+        "source_extraction_revision": "20260909-editable-chemistry-v2",
+        "legacy_block_indices": [
+          122,
+          123,
+          124,
+          132,
+          198,
+          200,
+          227,
+          231
+        ],
+        "current_complete_support_indices": [
+          120,
+          121,
+          122,
+          123,
+          124,
+          125,
+          126,
+          127,
+          128,
+          129,
+          130,
+          131,
+          132,
+          133,
+          134,
+          197,
+          198,
+          199,
+          200,
+          225,
+          226,
+          227,
+          228,
+          229,
+          230,
+          231
+        ],
+        "original_image_sha256": [
+          "b1a30c972198af8dc6d4486988c69c98d79b723bab64b71e4c0ea8ddd7e6d2c8",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "b2fdf16a48718ab1d62913767c7517b62439378d0c5e1bf7653f4536289ae44e",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "6c8ed93ab586e88ca0a5c592a10945591977f5a2fb55b21afd35316095a1421b",
+          "23f92d46e86471087dd35f5e4d07fd8fe404a6a571829add20cbde34c59d5f0d",
+          "fe5ca3ba1e9b833b3540222409940d2c944cae4aa418b12026f109fb04a428e0",
+          "00b680f791ebbe0b16e83fb97bfde35628042078456b7ba0c27b346fa71b0cb7",
+          "882da036a2d92d9ed0d5ddde80e708902524ecde74a94832aa513a4ec803b60b",
+          "e9682113815674bcfe23ae6109472420cf7fe87c9c0d48dd7611bafb4087f72a",
+          "1095a87226ee46c3fe60de6d5ef4353465f3891b92dae113e0a2dc4f50792b18",
+          "52eaec9869032c3be92d20fdcf59da282f172bb76d87019041a333a132663657",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "e1a3f7d50372fcd925aab8fa73db030a992f7da22de0e4b3ed4be58abfa15e56",
+          "c13585dbc26e7eaeaff5f6b4c12b78511b577e0293b66c88517b3324c400518e",
+          "b5a19c51db01dc0259289a6d76ca828d8bea2920ef52b182ff50940b3a505a2c",
+          "01210d2801c74ebec4340a730007692a6d3bf604743e1d51c7b1b4067c128014",
+          "2339014eb62f3b9b35f800f590261e85a30dc4125ecfd7e135d1c881ce724a79",
+          "e71869cedada76c601012e5505e291c09f6628cdd3a657123a24e52e51970ce5",
+          "d9a6805ed7a919f908aed76c9a8b70f6f681950356ec301553feb25deef18747",
+          "00b680f791ebbe0b16e83fb97bfde35628042078456b7ba0c27b346fa71b0cb7",
+          "ee3a7904ddbec257ba892e30b9d43e90e1e3347a4571d193a57d8a155a2d9a3c",
+          "cd1ff09c438e2797cc4c19855d67979af932e529a1690786cb1766280804402b"
+        ],
+        "mapping_note_id": "READ-TB-E1-20260927-WEAK-03",
+        "mapping_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-weak-electrolyte-note-recovery\\candidate-note-evidence-mapping.json",
+        "mapping_sha256": "80018f769a162763513053d791803436d8aa5aaf0a71ac9414af2fe81253a1b7"
+      },
+      "legacy_source_record": {
+        "original_note_package_sha256": "bf5d805f1031a58b71c928d00ed87def2f26f747b4d3a68137c9dff0d982dcba",
+        "verbatim_copy_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-weak-electrolyte-note-recovery\\candidate-original-note-package.json",
+        "original_id_preserved": true,
+        "original_record_unmodified": true
+      },
+      "candidate_gaps": {
+        "extraction_warning_block_indices": [
+          120,
+          123,
+          124,
+          130,
+          131,
+          197,
+          199,
+          200,
+          228,
+          229,
+          231
+        ],
+        "current_original_word_page_visual_review": "not_performed_by_this_worker",
+        "current_image_visual_review": "root_model_reviewed_blocks_31_40_218_only",
+        "formula_completeness": "unresolved for source placeholders and special fonts listed in block evidence",
+        "chemistry_review": "root_model_selected_derived_content_review_completed",
+        "human_review": "not_performed",
+        "original_exam_identity": "unknown",
+        "teacher_verified_answer_or_scoring": "unknown",
+        "formal_import": "not_performed"
+      },
+      "root_model_review_completed": true,
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false,
+      "evidence_limitations": [
+        "讲义原式中的旧对象或特殊字体缺口仍保留在逐块证据，不用残缺提取文本认证完整答案。"
+      ],
+      "root_model_review": {
+        "method": "root_model_selected_original_pixels_and_current_word_support_text",
+        "textbook_pdf_pages": [
+          70,
+          71,
+          72,
+          73
+        ],
+        "textbook_printed_pages": [
+          64,
+          65,
+          66,
+          67
+        ],
+        "word_original_image_blocks": [
+          31,
+          40,
+          218
+        ],
+        "word_selected_support_text_ranges": [
+          [
+            29,
+            74
+          ],
+          [
+            122,
+            132
+          ],
+          [
+            203,
+            224
+          ],
+          [
+            227,
+            231
+          ]
+        ],
+        "human_reviewed": false,
+        "whole_word_page_layout_reviewed": false,
+        "unresolved_original_extraction_gaps_retained": true
+      }
+    },
+    {
+      "id": "READ-TB-E1-20260927-WEAK-04",
+      "title": "怎样从分步电离和分布曲线求各级常数？",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        71,
+        72
+      ],
+      "printed_pages": [
+        65,
+        66
+      ],
+      "summary": "二元弱酸分两步电离：H₂A（二元酸）⇌H⁺（氢离子）＋HA⁻（酸式酸根），HA⁻⇌H⁺＋A²⁻（酸根）。两步分别使用Ka1=c(H⁺)c(HA⁻)/c(H₂A)与Ka2=c(H⁺)c(A²⁻)/c(HA⁻)。各形态的分布分数使用同一总量作分母，两条曲线交点的分数相等可转为对应浓度相等；H₂A与HA⁻交点关联Ka1，HA⁻与A²⁻交点关联Ka2。",
+      "classroom_check": "在pH为1.2和4.2的两个交点旁分别写出相等的浓度和所用电离平衡，再代入c(H⁺)=10^(−pH) mol·L⁻¹求对应常数。比较HF与H₂A、HA⁻的酸性时逐次选择相应级次。",
+      "limitation": "分布曲线读数使用图示精度；酸性比较须保持温度、溶剂及具体电离级次一致。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          71,
+          72
+        ],
+        "printed_pages": [
+          65,
+          66
+        ],
+        "source_anchors": [
+          "表3.3的Ka1、Ka2标记",
+          "碳酸第一步、第二步电离方程式及常数式",
+          "多元弱酸第二步通常较难的说明"
+        ],
+        "current_page_visual_review": "reported_by_parent; not_this_worker",
+        "human_reviewed": false
+      },
+      "lecture_evidence": {
+        "package_id": "PKG-056",
+        "source_sha256": "8cda068028bafa475614cd124effaf56caea133084813b9609926af8e325bfb2",
+        "source_preview_revision": "465eee61e5e2c5d94a478c24b857e17eb64f9d33e3725d75aadea3eff8f20556",
+        "source_extraction_revision": "20260909-editable-chemistry-v2",
+        "legacy_block_indices": [
+          122,
+          128,
+          132,
+          217,
+          218,
+          219,
+          220,
+          221,
+          222,
+          223,
+          224
+        ],
+        "current_complete_support_indices": [
+          120,
+          121,
+          122,
+          123,
+          124,
+          125,
+          126,
+          127,
+          128,
+          129,
+          130,
+          131,
+          132,
+          133,
+          134,
+          217,
+          218,
+          219,
+          220,
+          221,
+          222,
+          223,
+          224
+        ],
+        "original_image_sha256": [
+          "b1a30c972198af8dc6d4486988c69c98d79b723bab64b71e4c0ea8ddd7e6d2c8",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "b2fdf16a48718ab1d62913767c7517b62439378d0c5e1bf7653f4536289ae44e",
+          "1711e3b43a20fe9d47c9fdf31347986c23f7b94e9de413dfbcc9701b008b3ee4",
+          "5ab9fe0498417ce6621951c7b8bd8fa6a6ef22640259e5ac303db12999cfb4bf",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8"
+        ],
+        "mapping_note_id": "READ-TB-E1-20260927-WEAK-04",
+        "mapping_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-weak-electrolyte-note-recovery\\candidate-note-evidence-mapping.json",
+        "mapping_sha256": "80018f769a162763513053d791803436d8aa5aaf0a71ac9414af2fe81253a1b7"
+      },
+      "legacy_source_record": {
+        "original_note_package_sha256": "bf5d805f1031a58b71c928d00ed87def2f26f747b4d3a68137c9dff0d982dcba",
+        "verbatim_copy_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-weak-electrolyte-note-recovery\\candidate-original-note-package.json",
+        "original_id_preserved": true,
+        "original_record_unmodified": true
+      },
+      "candidate_gaps": {
+        "extraction_warning_block_indices": [
+          120,
+          123,
+          124,
+          130,
+          131,
+          217,
+          218,
+          221,
+          223,
+          224
+        ],
+        "current_original_word_page_visual_review": "not_performed_by_this_worker",
+        "current_image_visual_review": "root_model_reviewed_blocks_31_40_218_only",
+        "formula_completeness": "unresolved for source placeholders and special fonts listed in block evidence",
+        "chemistry_review": "root_model_selected_derived_content_review_completed",
+        "human_review": "not_performed",
+        "original_exam_identity": "unknown",
+        "teacher_verified_answer_or_scoring": "unknown",
+        "formal_import": "not_performed"
+      },
+      "root_model_review_completed": true,
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false,
+      "evidence_limitations": [
+        "该讲义图题的原始考试出处未在本候选中核验。"
+      ],
+      "root_model_review": {
+        "method": "root_model_selected_original_pixels_and_current_word_support_text",
+        "textbook_pdf_pages": [
+          70,
+          71,
+          72,
+          73
+        ],
+        "textbook_printed_pages": [
+          64,
+          65,
+          66,
+          67
+        ],
+        "word_original_image_blocks": [
+          31,
+          40,
+          218
+        ],
+        "word_selected_support_text_ranges": [
+          [
+            29,
+            74
+          ],
+          [
+            122,
+            132
+          ],
+          [
+            203,
+            224
+          ],
+          [
+            227,
+            231
+          ]
+        ],
+        "human_reviewed": false,
+        "whole_word_page_layout_reviewed": false,
+        "unresolved_original_extraction_gaps_retained": true
+      }
+    },
+    {
+      "id": "READ-TB-E1-20260927-WEAK-05",
+      "title": "电离度、浓度与温度怎样联系？",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        72
+      ],
+      "printed_pages": [
+        66
+      ],
+      "summary": "电离度α表示一定条件下达到平衡时，已电离的电解质分子占原电解质分子总数的比例。相同温度下，同一弱电解质溶液变稀，电离度增大；电离常数与电离度分别描述平衡浓度的比值与已电离比例。对初始浓度为C的单一一元弱酸，在无其他相关离子来源且忽略水电离的模型中，平衡浓度为C(1−α)、Cα和Cα，因而Ka=Cα²/(1−α)；只有α足够小时才使用1−α≈1。",
+      "classroom_check": "给“增大”“减小”“不变”分别补上对象和条件，分开比较恒温稀释与同浓度变温。写三段式后先计算相对电离量，再说明是否采用近似。",
+      "limitation": "温度方向须依据题给热效应或数据，醋酸例的ΔH＞0不替代所有体系的依据。Cα形式还须满足单一一元弱酸、无其他相关离子来源及可忽略水电离等模型条件。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          72
+        ],
+        "printed_pages": [
+          66
+        ],
+        "source_anchors": [
+          "拓展视野：电离度的分子数比例",
+          "溶液越稀电离度越大的说明",
+          "温度对电离常数影响及近似处理的正文"
+        ],
+        "current_page_visual_review": "reported_by_parent; not_this_worker",
+        "human_reviewed": false
+      },
+      "lecture_evidence": {
+        "package_id": "PKG-056",
+        "source_sha256": "8cda068028bafa475614cd124effaf56caea133084813b9609926af8e325bfb2",
+        "source_preview_revision": "465eee61e5e2c5d94a478c24b857e17eb64f9d33e3725d75aadea3eff8f20556",
+        "source_extraction_revision": "20260909-editable-chemistry-v2",
+        "legacy_block_indices": [
+          44,
+          45,
+          48,
+          49,
+          126,
+          137,
+          142,
+          143,
+          146,
+          147,
+          148,
+          149,
+          150,
+          152,
+          203,
+          205,
+          206,
+          207,
+          208,
+          210,
+          211,
+          212
+        ],
+        "current_complete_support_indices": [
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          125,
+          126,
+          127,
+          128,
+          135,
+          136,
+          137,
+          138,
+          139,
+          140,
+          141,
+          142,
+          143,
+          144,
+          145,
+          146,
+          147,
+          148,
+          149,
+          150,
+          151,
+          152,
+          202,
+          203,
+          204,
+          205,
+          206,
+          207,
+          208,
+          209,
+          210,
+          211,
+          212
+        ],
+        "original_image_sha256": [
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "b2fdf16a48718ab1d62913767c7517b62439378d0c5e1bf7653f4536289ae44e",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "b2fdf16a48718ab1d62913767c7517b62439378d0c5e1bf7653f4536289ae44e",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8"
+        ],
+        "mapping_note_id": "READ-TB-E1-20260927-WEAK-05",
+        "mapping_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-weak-electrolyte-note-recovery\\candidate-note-evidence-mapping.json",
+        "mapping_sha256": "80018f769a162763513053d791803436d8aa5aaf0a71ac9414af2fe81253a1b7"
+      },
+      "legacy_source_record": {
+        "original_note_package_sha256": "bf5d805f1031a58b71c928d00ed87def2f26f747b4d3a68137c9dff0d982dcba",
+        "verbatim_copy_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-weak-electrolyte-note-recovery\\candidate-original-note-package.json",
+        "original_id_preserved": true,
+        "original_record_unmodified": true
+      },
+      "candidate_gaps": {
+        "extraction_warning_block_indices": [
+          48,
+          50,
+          54,
+          135,
+          139,
+          140,
+          146,
+          150,
+          151,
+          204,
+          207,
+          209,
+          212
+        ],
+        "current_original_word_page_visual_review": "not_performed_by_this_worker",
+        "current_image_visual_review": "root_model_reviewed_blocks_31_40_218_only",
+        "formula_completeness": "unresolved for source placeholders and special fonts listed in block evidence",
+        "chemistry_review": "root_model_selected_derived_content_review_completed",
+        "human_review": "not_performed",
+        "original_exam_identity": "unknown",
+        "teacher_verified_answer_or_scoring": "unknown",
+        "formal_import": "not_performed"
+      },
+      "root_model_review_completed": true,
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false,
+      "root_model_review": {
+        "method": "root_model_selected_original_pixels_and_current_word_support_text",
+        "textbook_pdf_pages": [
+          70,
+          71,
+          72,
+          73
+        ],
+        "textbook_printed_pages": [
+          64,
+          65,
+          66,
+          67
+        ],
+        "word_original_image_blocks": [
+          31,
+          40,
+          218
+        ],
+        "word_selected_support_text_ranges": [
+          [
+            29,
+            74
+          ],
+          [
+            122,
+            132
+          ],
+          [
+            203,
+            224
+          ],
+          [
+            227,
+            231
+          ]
+        ],
+        "human_reviewed": false,
+        "whole_word_page_layout_reviewed": false,
+        "unresolved_original_extraction_gaps_retained": true
+      }
+    },
+    {
+      "id": "READ-TB-E1-20260927-WEAK-06",
+      "title": "稀释弱酸时怎样判断离子浓度与pH变化？",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        73
+      ],
+      "printed_pages": [
+        67
+      ],
+      "summary": "恒温稀释醋酸时，电离平衡向电离方向移动，电离程度增大，氢离子浓度减小。由Kw=c(H⁺)c(OH⁻)及同温Kw不变，可判断氢氧根离子浓度增大，pH增大。稀释的体积倍数、氢离子浓度比与pH差值是不同的量；pH采用对数定义。接近中性时，水电离对氢离子浓度的贡献需要纳入计算。",
+      "classroom_check": "为稀释前后写出c(H⁺)、c(OH⁻)、电离程度和平衡移动方向，并逐项解释。将十倍稀释分为可忽略水电离与需要计入水电离两种情形，用pH差值表达变化。",
+      "limitation": "十倍稀释使pH恰增加1的近似有初始浓度及温度条件，不能脱离水电离单独作为弱酸判据；实验比较须给出初始状态、稀释倍数与温度。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          73
+        ],
+        "printed_pages": [
+          67
+        ],
+        "source_anchors": [
+          "练习巩固第1题醋酸稀释",
+          "练习巩固第4题强弱酸实验判断"
+        ],
+        "current_page_visual_review": "reported_by_parent; not_this_worker",
+        "human_reviewed": false
+      },
+      "lecture_evidence": {
+        "package_id": "PKG-056",
+        "source_sha256": "8cda068028bafa475614cd124effaf56caea133084813b9609926af8e325bfb2",
+        "source_preview_revision": "465eee61e5e2c5d94a478c24b857e17eb64f9d33e3725d75aadea3eff8f20556",
+        "source_extraction_revision": "20260909-editable-chemistry-v2",
+        "legacy_block_indices": [
+          49,
+          52,
+          55,
+          58,
+          60,
+          61,
+          62,
+          64,
+          68,
+          111,
+          112,
+          117
+        ],
+        "current_complete_support_indices": [
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          111,
+          112,
+          113,
+          114,
+          115,
+          116,
+          117
+        ],
+        "original_image_sha256": [
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "b2fdf16a48718ab1d62913767c7517b62439378d0c5e1bf7653f4536289ae44e",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "81715d6a8152e7270daeecfca83fa87b6696ba69724c8aec5a17225a0720eb2d",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8"
+        ],
+        "mapping_note_id": "READ-TB-E1-20260927-WEAK-06",
+        "mapping_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-weak-electrolyte-note-recovery\\candidate-note-evidence-mapping.json",
+        "mapping_sha256": "80018f769a162763513053d791803436d8aa5aaf0a71ac9414af2fe81253a1b7"
+      },
+      "legacy_source_record": {
+        "original_note_package_sha256": "bf5d805f1031a58b71c928d00ed87def2f26f747b4d3a68137c9dff0d982dcba",
+        "verbatim_copy_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-weak-electrolyte-note-recovery\\candidate-original-note-package.json",
+        "original_id_preserved": true,
+        "original_record_unmodified": true
+      },
+      "candidate_gaps": {
+        "extraction_warning_block_indices": [
+          48,
+          50,
+          54,
+          57,
+          65,
+          117
+        ],
+        "current_original_word_page_visual_review": "not_performed_by_this_worker",
+        "current_image_visual_review": "root_model_reviewed_blocks_31_40_218_only",
+        "formula_completeness": "unresolved for source placeholders and special fonts listed in block evidence",
+        "chemistry_review": "root_model_selected_derived_content_review_completed",
+        "human_review": "not_performed",
+        "original_exam_identity": "unknown",
+        "teacher_verified_answer_or_scoring": "unknown",
+        "formal_import": "not_performed"
+      },
+      "root_model_review_completed": true,
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false,
+      "root_model_review": {
+        "method": "root_model_selected_original_pixels_and_current_word_support_text",
+        "textbook_pdf_pages": [
+          70,
+          71,
+          72,
+          73
+        ],
+        "textbook_printed_pages": [
+          64,
+          65,
+          66,
+          67
+        ],
+        "word_original_image_blocks": [
+          31,
+          40,
+          218
+        ],
+        "word_selected_support_text_ranges": [
+          [
+            29,
+            74
+          ],
+          [
+            122,
+            132
+          ],
+          [
+            203,
+            224
+          ],
+          [
+            227,
+            231
+          ]
+        ],
+        "human_reviewed": false,
+        "whole_word_page_layout_reviewed": false,
+        "unresolved_original_extraction_gaps_retained": true
+      }
+    },
+    {
+      "id": "READ-TB-E1-20260927-WEAK-07",
+      "title": "导电性怎样反映溶液中的微粒变化？",
+      "volume_id": "TB-E1",
+      "section_key": "TB-E1-C3:3.2",
+      "pdf_pages": [
+        71,
+        72,
+        73
+      ],
+      "printed_pages": [
+        65,
+        66,
+        67
+      ],
+      "summary": "溶液导电来自可迁移离子的共同作用，讨论灯光变化时应比较混合前后的离子种类、浓度及体积。稀醋酸与稀氨水混合时，酸碱反应与两种弱电解质的电离共同改变微粒分布。向醋酸加入醋酸钠时，醋酸电离受到抑制，同时外加盐带入钠离子和醋酸根离子；导电变化要结合所有离子分析。",
+      "classroom_check": "列出醋酸、氨水以及混合后溶液中的主要分子和离子，画出物质变化关系，再解释灯光变化。比较加入醋酸钠前后时，分别记录外加离子与醋酸自身电离出的离子。",
+      "limitation": "灯光比较须明确浓度、用量、温度和装置。",
+      "source_path": "课本/沪科技化学选修第一册【高清教材】.pdf",
+      "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+      "textbook_evidence": {
+        "source_sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+        "pdf_pages": [
+          71,
+          72,
+          73
+        ],
+        "printed_pages": [
+          65,
+          66,
+          67
+        ],
+        "source_anchors": [
+          "表3.3碳酸第二级常数",
+          "印刷66页碳酸第二步常数式",
+          "印刷67页练习巩固第2题混合后灯光变化"
+        ],
+        "current_page_visual_review": "reported_by_parent; not_this_worker",
+        "human_reviewed": false
+      },
+      "lecture_evidence": {
+        "package_id": "PKG-056",
+        "source_sha256": "8cda068028bafa475614cd124effaf56caea133084813b9609926af8e325bfb2",
+        "source_preview_revision": "465eee61e5e2c5d94a478c24b857e17eb64f9d33e3725d75aadea3eff8f20556",
+        "source_extraction_revision": "20260909-editable-chemistry-v2",
+        "legacy_block_indices": [
+          49,
+          68,
+          104,
+          110,
+          130,
+          156,
+          166,
+          183
+        ],
+        "current_complete_support_indices": [
+          48,
+          49,
+          66,
+          67,
+          68,
+          104,
+          105,
+          106,
+          107,
+          108,
+          109,
+          110,
+          129,
+          130,
+          155,
+          156,
+          157,
+          158,
+          159,
+          160,
+          161,
+          162,
+          163,
+          164,
+          165,
+          166,
+          167,
+          168,
+          169,
+          170,
+          171,
+          172,
+          173,
+          182,
+          183,
+          184,
+          185,
+          186,
+          187,
+          188,
+          189,
+          190,
+          191,
+          192,
+          193,
+          194,
+          195,
+          196
+        ],
+        "original_image_sha256": [
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8",
+          "dbbf3a29835dbe325f65ee66e0cad30917e657f864ba8a7a633dcd5c741fd2d8"
+        ],
+        "mapping_note_id": "READ-TB-E1-20260927-WEAK-07",
+        "mapping_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-weak-electrolyte-note-recovery\\candidate-note-evidence-mapping.json",
+        "mapping_sha256": "80018f769a162763513053d791803436d8aa5aaf0a71ac9414af2fe81253a1b7"
+      },
+      "legacy_source_record": {
+        "original_note_package_sha256": "bf5d805f1031a58b71c928d00ed87def2f26f747b4d3a68137c9dff0d982dcba",
+        "verbatim_copy_path": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-weak-electrolyte-note-recovery\\candidate-original-note-package.json",
+        "original_id_preserved": true,
+        "original_record_unmodified": true
+      },
+      "candidate_gaps": {
+        "extraction_warning_block_indices": [
+          48,
+          106,
+          108,
+          110,
+          130,
+          186,
+          189,
+          190,
+          191,
+          193,
+          195
+        ],
+        "current_original_word_page_visual_review": "not_performed_by_this_worker",
+        "current_image_visual_review": "root_model_reviewed_blocks_31_40_218_only",
+        "formula_completeness": "unresolved for source placeholders and special fonts listed in block evidence",
+        "chemistry_review": "root_model_selected_derived_content_review_completed",
+        "human_review": "not_performed",
+        "original_exam_identity": "unknown",
+        "teacher_verified_answer_or_scoring": "unknown",
+        "formal_import": "not_performed"
+      },
+      "root_model_review_completed": true,
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false,
+      "evidence_limitations": [
+        "碳酸Ka2在教材印刷65页表3.3为4.8×10⁻¹¹、印刷66页式中为4.7×10⁻¹¹，讲义不同题表还采用不同给定值；计算使用所选题或表的明确数据和温度。"
+      ],
+      "root_model_review": {
+        "method": "root_model_selected_original_pixels_and_current_word_support_text",
+        "textbook_pdf_pages": [
+          70,
+          71,
+          72,
+          73
+        ],
+        "textbook_printed_pages": [
+          64,
+          65,
+          66,
+          67
+        ],
+        "word_original_image_blocks": [
+          31,
+          40,
+          218
+        ],
+        "word_selected_support_text_ranges": [
+          [
+            29,
+            74
+          ],
+          [
+            122,
+            132
+          ],
+          [
+            203,
+            224
+          ],
+          [
+            227,
+            231
+          ]
+        ],
+        "human_reviewed": false,
+        "whole_word_page_layout_reviewed": false,
+        "unresolved_original_extraction_gaps_retained": true
+      }
+    }
+  ],
+  "legacy_source_verbatim": {
+    "volume_id": "TB-E1",
+    "title": "普通高中教科书 化学 选择性必修1 化学反应原理",
+    "sha256": "79e1e8391749b01a2d9d632531615ef9b644613130e28b98279aaea71aab2b05",
+    "pdf_pages_viewed": [
+      70,
+      71,
+      72,
+      73
+    ],
+    "printed_pages_viewed": [
+      64,
+      65,
+      66,
+      67
+    ],
+    "toc_pdf_pages_viewed": [
+      5,
+      6
+    ],
+    "linked_pdf_pages": [
+      70,
+      71,
+      72,
+      73
+    ]
+  },
+  "original_note_package_sha256": "bf5d805f1031a58b71c928d00ed87def2f26f747b4d3a68137c9dff0d982dcba",
+  "root_model_review_completed": true,
+  "candidate_only": true,
+  "human_reviewed": false,
+  "teaching_use_allowed": false,
+  "generation_allowed": false,
+  "publication_allowed": false,
+  "root_model_review": {
+    "method": "root_model_selected_original_pixels_and_current_word_support_text",
+    "textbook_pdf_pages": [
+      70,
+      71,
+      72,
+      73
+    ],
+    "textbook_printed_pages": [
+      64,
+      65,
+      66,
+      67
+    ],
+    "word_original_image_blocks": [
+      31,
+      40,
+      218
+    ],
+    "word_selected_support_text_ranges": [
+      [
+        29,
+        74
+      ],
+      [
+        122,
+        132
+      ],
+      [
+        203,
+        224
+      ],
+      [
+        227,
+        231
+      ]
+    ],
+    "human_reviewed": false,
+    "whole_word_page_layout_reviewed": false,
+    "unresolved_original_extraction_gaps_retained": true
+  },
+  "origin_note_package_sha256": "bf5d805f1031a58b71c928d00ed87def2f26f747b4d3a68137c9dff0d982dcba"
+}

@@ -240,6 +240,32 @@ def _observe_bound_process_exit(pid, start_filetime, *, timeout=30.0):
 
 
 def word_pdf(source, target, *, timeout=180, exit_timeout=30.0, session_root=None):
+    return _private_office_pdf(source, target, timeout=timeout, exit_timeout=exit_timeout,
+                              session_root=session_root, script=_WORD_SCRIPT, app="Word",
+                              suffix=".docx", automation="singleuse_empty_com", before_open=False)
+
+
+def powerpoint_available():
+    """Read registration without starting or attaching to PowerPoint."""
+    if os.name != "nt":
+        return False
+    import winreg
+    try:
+        with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, r"PowerPoint.Application\CLSID") as key:
+            return bool(winreg.QueryValueEx(key, None)[0])
+    except OSError:
+        return False
+
+
+def powerpoint_pdf(source, target, *, timeout=180, exit_timeout=30.0, session_root=None):
+    from .powerpoint_conversion_script import POWERPOINT_SCRIPT
+    return _private_office_pdf(source, target, timeout=timeout, exit_timeout=exit_timeout,
+                              session_root=session_root, script=POWERPOINT_SCRIPT, app="PowerPoint",
+                              suffix=".pptx", automation="new_pid_empty_com", before_open=True)
+
+
+def _private_office_pdf(source, target, *, timeout, exit_timeout, session_root,
+                        script, app, suffix, automation, before_open):
     check_read_cancelled()
     source, target = Path(source).resolve(), Path(target).resolve()
     if target.exists():
@@ -247,17 +273,19 @@ def word_pdf(source, target, *, timeout=180, exit_timeout=30.0, session_root=Non
     # Do not change persistent Word Options to suppress external-link updates.
     # Reject external OOXML relationships before asking Word to open a copy.
     from zipfile import ZipFile
+    from io import BytesIO
     from xml.etree import ElementTree
-    with ZipFile(source) as archive:
+    source_bytes = source.read_bytes()
+    source_sha = hashlib.sha256(source_bytes).hexdigest()
+    with ZipFile(BytesIO(source_bytes)) as archive:
         types = archive.read("[Content_Types].xml").lower()
         if b"macroenabled" in types or any("vbaproject" in name.lower() for name in archive.namelist()):
-            raise OfficeConversionError("文档包含宏内容，未启动 Word；请先提供无宏 DOCX。")
+            raise OfficeConversionError(f"文档包含宏内容，未启动 {app}；请先提供无宏 {suffix[1:].upper()}。")
         for name in archive.namelist():
             if name.endswith(".rels"):
                 if any(row.get("TargetMode", "").lower() == "external"
                        for row in ElementTree.fromstring(archive.read(name))):
-                    raise OfficeConversionError("文档包含外部链接，未启动 Word；请先核对本地转换副本。")
-    source_sha = hashlib.sha256(source.read_bytes()).hexdigest()
+                    raise OfficeConversionError(f"文档包含外部链接，未启动 {app}；请先核对本地转换副本。")
     identity = uuid4().hex
     # The caller may delete its own temporary renderer directory immediately
     # after cancellation. Keep the COM stack, immutable copy and late output in
@@ -265,10 +293,11 @@ def word_pdf(source, target, *, timeout=180, exit_timeout=30.0, session_root=Non
     sessions = Path(session_root) if session_root is not None else Path(tempfile.gettempdir()) / "shchem-office-sessions"
     session = sessions.resolve() / identity
     session.mkdir(parents=True, exist_ok=False)
-    immutable_input, pending_output = session / "input.docx", session / "converted.pdf"
-    shutil.copyfile(source, immutable_input)
-    if hashlib.sha256(immutable_input.read_bytes()).hexdigest() != source_sha:
-        raise OfficeConversionError("转换输入发生变化，未启动 Word。")
+    immutable_input, pending_output = session / ("input" + suffix), session / "converted.pdf"
+    immutable_input.write_bytes(source_bytes)
+    if (hashlib.sha256(immutable_input.read_bytes()).hexdigest() != source_sha
+            or hashlib.sha256(source.read_bytes()).hexdigest() != source_sha):
+        raise OfficeConversionError(f"转换输入发生变化，未启动 {app}。")
     env = {**os.environ, "SHCHEM_OFFICE_SESSION": str(session),
            "SHCHEM_OFFICE_ID": identity, "SHCHEM_WORD_INPUT": str(immutable_input),
            "SHCHEM_WORD_OUTPUT": str(pending_output), "SHCHEM_WORD_SHA": source_sha,
@@ -277,20 +306,20 @@ def word_pdf(source, target, *, timeout=180, exit_timeout=30.0, session_root=Non
                 "output_path": str(pending_output), "input_sha256": source_sha,
                 "source_path": str(source), "target_path": str(target)}
     (session / "request.json").write_text(json.dumps({**expected,
-        "script_sha256": hashlib.sha256(_WORD_SCRIPT.encode("utf-8")).hexdigest(),
-        "pid_verified_before_open": False}, ensure_ascii=False), encoding="utf-8")
+        "script_sha256": hashlib.sha256(script.encode("utf-8")).hexdigest(),
+        "application": app, "pid_verified_before_open": before_open}, ensure_ascii=False), encoding="utf-8")
 
     def record(name):
         value = _record(session / (name + ".json"))
         return value if all(value.get(key) == item for key, item in expected.items()) else {}
 
     def valid_owner():
-        owner, automation = record("owner"), record("automation")
+        owner, binding = record("owner"), record("automation")
         positive = lambda value: type(value) is int and value > 0
         return (owner.get("held_handle") is True and owner.get("private") is True
                 and positive(owner.get("pid")) and positive(owner.get("start_filetime"))
-                and automation.get("identity") == "singleuse_empty_com"
-                and automation.get("pid_verified_before_open") is False)
+                and binding.get("identity") == automation
+                and binding.get("pid_verified_before_open") is before_open)
 
     def private_exited():
         cleanup = record("cleanup")
@@ -311,7 +340,7 @@ def word_pdf(source, target, *, timeout=180, exit_timeout=30.0, session_root=Non
         error.office_session = str(session)
         error.cleanup_complete = bool(getattr(error, "cleanup_complete", complete))
         if isinstance(error, ReadCancelled) and not error.cleanup_complete and record("automation"):
-            error.message_zh = "已停止等待，未发布本次结果；Word 清理尚未核实，未强制关闭实例。"
+            error.message_zh = f"已停止等待，未发布本次结果；{app} 清理尚未核实，未强制关闭实例。"
         payload = {**expected, "status": "cancelled" if isinstance(error, ReadCancelled) else
                    "timed_out" if isinstance(error, ProcessTimeout) else "failed",
                    "result_discarded": True, "cleanup_complete": error.cleanup_complete,
@@ -344,17 +373,19 @@ def word_pdf(source, target, *, timeout=180, exit_timeout=30.0, session_root=Non
     created_output_sha = None
     try:
         completed = run_owned([str(executable), "-STA", "-NoProfile", "-NonInteractive", "-EncodedCommand",
-                               base64.b64encode(_WORD_SCRIPT.encode("utf-16le")).decode("ascii")],
+                               base64.b64encode(script.encode("utf-16le")).decode("ascii")],
                               env=env, timeout=timeout, contain=False, cooperative_stop=stop)
         check_read_cancelled()
         error = record("error")
         if error:
             if error.get("code") == "cancelled":
                 raise ReadCancelled()
+            if error.get("code") == "powerpoint_in_use":
+                raise OfficeConversionError("PowerPoint 正在使用，请保存并关闭后重试实际预览；现有窗口保留。", "powerpoint_in_use")
             raise OfficeConversionError(
-                "Word 实例归属或文档状态未通过核对，已保留其他文档；本次结果不可用。"
+                f"{app} 实例归属或文档状态未通过核对，已保留其他文档；本次结果不可用。"
                 if error.get("code") in {"ownership_unproven", "session_taken_over"} else
-                "Word 未完成本次转换，请核对文档后重试。", error.get("code"))
+                f"{app} 未完成本次转换，请核对文档后重试。", error.get("code"))
         cleanup = record("cleanup")
         if (completed.returncode or record("result").get("status") != "converted"
                 or not valid_owner()
@@ -370,9 +401,11 @@ def word_pdf(source, target, *, timeout=180, exit_timeout=30.0, session_root=Non
             (session / "parent_exit_verified.json").write_text(
                 json.dumps({**expected, **observed}, ensure_ascii=False), encoding="utf-8")
         if not private_exited():
-            raise OfficeConversionError("Word 转换后的实例状态无法确认，未发布本次结果；请核对保留的 Word 窗口。")
+            raise OfficeConversionError(f"{app} 转换后的实例状态无法确认，未发布本次结果；请核对保留的 {app} 窗口。")
+        if hashlib.sha256(source.read_bytes()).hexdigest() != source_sha:
+            raise OfficeConversionError("等待转换实例退出期间原文件已变化，未发布本次结果。")
         if not pending_output.is_file() or not pending_output.read_bytes().startswith(b"%PDF-"):
-            raise OfficeConversionError("Word 未生成有效 PDF。")
+            raise OfficeConversionError(f"{app} 未生成有效 PDF。")
         check_read_cancelled()
         pdf_bytes = pending_output.read_bytes()
         with target.open("xb") as output:
@@ -388,7 +421,7 @@ def word_pdf(source, target, *, timeout=180, exit_timeout=30.0, session_root=Non
             except OSError:
                 pass
         raise
-    return "Word 私有实例只读转换，已核对该实例退出。"
+    return f"{app} 私有实例只读转换，已核对该实例退出。"
 
 
 def libreoffice_pdf(source, output, office, *, export_filter="writer_pdf_Export", timeout=180):

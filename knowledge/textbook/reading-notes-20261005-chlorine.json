@@ -1,0 +1,380 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-CHLORINE-01",
+      "title": "先区分粗盐中的两类杂质",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.1",
+      "pdf_pages": [
+        48,
+        49
+      ],
+      "printed_pages": [
+        43,
+        44
+      ],
+      "summary": "粗盐中的泥沙等难溶杂质与钙、镁、硫酸根等可溶杂质需要不同的分离思路。前者可通过过滤分离，后者需要先转化为可分离的物质，再进行后续处理。",
+      "classroom_check": "画“杂质—转化或分离方法”对应表，让学生说明为什么只过滤不能清除所有杂质。",
+      "limitation": "这里整理教材中的除杂思路；具体试剂用量、步骤和实验实施须由教师另行核对。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          48,
+          49
+        ],
+        "printed_pages": [
+          43,
+          44
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CHLORINE-02",
+      "title": "除杂顺序同时考虑原杂质和过量试剂",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.1",
+      "pdf_pages": [
+        49,
+        56
+      ],
+      "printed_pages": [
+        44,
+        51
+      ],
+      "summary": "沉淀试剂既要除去目标杂质，也要避免留下新的杂质。教材例题把过量的钡离子纳入后续处理，并把过滤后的酸碱调整与沉淀步骤区分。",
+      "classroom_check": "用离子清单追踪每一步：原杂质是否消除、引入了什么离子、哪一步能处理过量试剂。",
+      "limitation": "碳酸根用于处理过量钡离子时，相关加料顺序受约束；不能把教材中的几组可选顺序推广成任意互换。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          49,
+          56
+        ],
+        "printed_pages": [
+          44,
+          51
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CHLORINE-03",
+      "title": "把电解食盐水的产物对应到电极",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.1",
+      "pdf_pages": [
+        49,
+        50
+      ],
+      "printed_pages": [
+        44,
+        45
+      ],
+      "summary": "教材讨论电解饱和食盐水：阳极生成氯气，阴极生成氢气，溶液中得到氢氧化钠。氯化钠与水在通电条件下的总反应为2NaCl+2H₂O→2NaOH+H₂↑+Cl₂↑。",
+      "classroom_check": "在纸上标出电源正负极与电极，再把产物、电极反应和总反应对应起来，检查元素及电荷守恒。",
+      "limitation": "箭头的条件为通电；总结限定于教材本页的饱和食盐水体系，不能直接推广到任意盐溶液。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          49,
+          50
+        ],
+        "printed_pages": [
+          44,
+          45
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CHLORINE-04",
+      "title": "沿氯碱工业图追踪原料和产品",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.1",
+      "pdf_pages": [
+        50,
+        51
+      ],
+      "printed_pages": [
+        45,
+        46
+      ],
+      "summary": "教材把食盐水电解得到的烧碱、氯气和氢气联系到后续生产。备课可用物质流向图区分直接电解产物与由这些产物继续制备的物质。",
+      "classroom_check": "让学生把图中的物质标成“直接产物”或“后续用途”，再解释图中两个原料共同指向一种产品的含义。",
+      "limitation": "这里只概括教材的工业联系；不将教材描述当作当前行业数据，也不补入未核验的效率和成本数值。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          50,
+          51
+        ],
+        "printed_pages": [
+          45,
+          46
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CHLORINE-05",
+      "title": "氯气与金属反应要核验生成物",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.1",
+      "pdf_pages": [
+        51,
+        52,
+        53
+      ],
+      "printed_pages": [
+        46,
+        47,
+        48
+      ],
+      "summary": "教材用氯气与铁、钠、铜的反应比较生成的氯化物。氯气与铁点燃生成氯化铁：2Fe+3Cl₂→2FeCl₃；产物名称和铁的价态应与方程式对应。",
+      "classroom_check": "先从原页读现象和产物，再给铁、钠、铜的氯化物分别标出金属元素价态。",
+      "limitation": "方程式箭头的条件为点燃；不能从“都是金属与氯气反应”推出所有金属生成同一价态的盐。课堂实施另行核对。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          51,
+          52,
+          53
+        ],
+        "printed_pages": [
+          46,
+          47,
+          48
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CHLORINE-06",
+      "title": "区分氯化氢气体与盐酸",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.1",
+      "pdf_pages": [
+        52,
+        53
+      ],
+      "printed_pages": [
+        47,
+        48
+      ],
+      "summary": "教材中氢气与氯气反应生成氯化氢气体，氯化氢溶于水所得溶液称为盐酸。把气体、溶液以及所观察到的指示剂变化分开记录，有助于说明现象所对应的物质。",
+      "classroom_check": "制作“名称—组成或状态—原页现象”卡片，让学生解释氯化氢与盐酸名称不同的原因。",
+      "limitation": "教材注明反应条件；这里不提供氢氯混合、点燃或气体制备操作方案。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          52,
+          53
+        ],
+        "printed_pages": [
+          47,
+          48
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CHLORINE-07",
+      "title": "用干湿对照判断漂白物质的来源",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.1",
+      "pdf_pages": [
+        53,
+        54
+      ],
+      "printed_pages": [
+        48,
+        49
+      ],
+      "summary": "教材比较干燥与湿润有色纸条，借对照说明漂白作用与氯气遇水产生的新物质有关。氯气与水可逆反应生成氯化氢和次氯酸：Cl₂+H₂O⇌HCl+HClO。",
+      "classroom_check": "让学生先写对照实验中改变的条件，再说明“遇水后产生新物质”的推理依据。",
+      "limitation": "保留可逆符号；纸条褪色只支持相应条件下的解释，不能把现象直接等同于气态氯气本身的漂白作用。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          53,
+          54
+        ],
+        "printed_pages": [
+          48,
+          49
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CHLORINE-08",
+      "title": "氯水的颜色、酸性与漂白分别解释",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.1",
+      "pdf_pages": [
+        52,
+        54,
+        57
+      ],
+      "printed_pages": [
+        47,
+        49,
+        52
+      ],
+      "summary": "氯水中的溶解氯气及其与水反应的产物共同影响现象。备课可以把溶液颜色、指示剂变红和随后褪色分开讨论，再对应到物质与性质。",
+      "classroom_check": "给一张现象记录卡，要求学生逐项说明证据支持哪种性质，并检查是否把变色与褪色混为同一个过程。",
+      "limitation": "氯水中多种成分共存；只凭一个观察不能确定全部组成。本条没有录入原书练习答案。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          52,
+          54,
+          57
+        ],
+        "printed_pages": [
+          47,
+          49,
+          52
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CHLORINE-09",
+      "title": "比较次氯酸与次氯酸盐的稳定性",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.1",
+      "pdf_pages": [
+        54,
+        55
+      ],
+      "printed_pages": [
+        49,
+        50
+      ],
+      "summary": "教材说明次氯酸不稳定，光照会加快分解；次氯酸盐相对更易保存。氯气与氢氧化钠溶液生成氯化钠、次氯酸钠和水：Cl₂+2NaOH→NaCl+NaClO+H₂O。",
+      "classroom_check": "把次氯酸、次氯酸钠和漂白粉的有效成分分别列出，说明名称、组成与稳定性之间的联系。",
+      "limitation": "本条限定于教材的化学性质比较，不给消毒产品的剂量、混配或实际使用建议；漂白粉为混合物。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          54,
+          55
+        ],
+        "printed_pages": [
+          49,
+          50
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-CHLORINE-10",
+      "title": "把电解计量与气体条件一起检查",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.1",
+      "pdf_pages": [
+        50,
+        56,
+        57
+      ],
+      "printed_pages": [
+        45,
+        51,
+        52
+      ],
+      "summary": "依据配平的食盐水电解总反应，氯化钠与氯气的物质的量比为2∶1。由质量推算氯气体积时，还要核验摩尔质量、气体状态及所给温度压强。",
+      "classroom_check": "让学生先写m→n(NaCl)→n(Cl₂)→V的换算路径，在每条箭头旁补关系和单位。",
+      "limitation": "只讨论题设理想计量；实际产率另核。22.4 L·mol⁻¹须与教材采用的标准状况相符，不直接套用于其他条件。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          50,
+          56,
+          57
+        ],
+        "printed_pages": [
+          45,
+          51,
+          52
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ]
+}

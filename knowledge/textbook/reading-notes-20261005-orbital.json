@@ -1,0 +1,348 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-ORBITAL-01",
+      "title": "电子层按离核距离与能量分层表述",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.3",
+      "pdf_pages": [
+        132
+      ],
+      "printed_pages": [
+        127
+      ],
+      "summary": "原页介绍核外电子的分层排布：通常离核较近区域的电子能量较低，较远区域的电子能量较高。电子层由内向外用n=1—7或K、L、M、N、O、P、Q表示；第一个电子层离核最近、能量最低。",
+      "classroom_check": "把电子层序数、层符号和由内向外的顺序对应起来，再区分示意层与电子真实运动路径。",
+      "limitation": "本条限于教材电子层模型；不把层的画法理解为电子沿固定圆轨道运动，也不新增原页未给出的轨道能级。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          132
+        ],
+        "printed_pages": [
+          127
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORBITAL-02",
+      "title": "前20号元素的实际排布回查原表",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.3",
+      "pdf_pages": [
+        132
+      ],
+      "printed_pages": [
+        127
+      ],
+      "summary": "表4.6列出核电荷数1—20的元素原子排布。例如钠为2、8、1，氯为2、8、7，氩为2、8、8，钾为2、8、8、1，钙为2、8、8、2。中性原子各层电子数相加与核电荷数对应。",
+      "classroom_check": "从原表选择相邻元素，先核对电子数总和，再比较电子层数和最外层电子数的变化。",
+      "limitation": "表中数值是这些原子的实际排布，不能把各层最大容量直接当作实际占有数；不扩推未列出的过渡元素。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          132
+        ],
+        "printed_pages": [
+          127
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORBITAL-03",
+      "title": "最大容量与实际占有数分开使用",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.3",
+      "pdf_pages": [
+        132,
+        133
+      ],
+      "printed_pages": [
+        127,
+        128
+      ],
+      "summary": "原页给各电子层最多容纳2n²个电子，K层最多2个，M层最多18个。表4.6中的钾、钙M层却为8；表4.7中的氪M层为18，说明容量上限和实际电子数必须分别核对。",
+      "classroom_check": "同时写出电子层序数、2n²上限与原表实际数，说明“最多”与“实际”属于不同判断。",
+      "limitation": "本条不引入原页未展开的亚层填充顺序；2n²不能单独决定每个元素的全部实际排布。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          132,
+          133
+        ],
+        "printed_pages": [
+          127,
+          128
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORBITAL-04",
+      "title": "外层稳定结构保留K层例外",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.3",
+      "pdf_pages": [
+        133
+      ],
+      "printed_pages": [
+        128
+      ],
+      "summary": "教材在本节模型中归纳：最外层电子数不超过8，K层为最外层时不超过2；最外层达到8个、K层达到2个时形成第18族元素原子的稳定结构。另列次外层不超过18、倒数第三层不超过32的规律。",
+      "classroom_check": "以氦、氖、氩及原表其他第18族原子逐项核对，先判断最外层是哪一层，再讨论稳定结构。",
+      "limitation": "用于本节所列原子的基础模型，不把简化规律推广为全部元素、全部离子或所有成键形式都必须满足八电子。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          133
+        ],
+        "printed_pages": [
+          128
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORBITAL-05",
+      "title": "结构示意图中的核与层分别识读",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.3",
+      "pdf_pages": [
+        134
+      ],
+      "printed_pages": [
+        129
+      ],
+      "summary": "图4.22以碳原子说明结构示意图：圆圈表示原子核，圈内+6对应质子数，弧线表示电子层，2和4表示相应层的电子数。原子失去或得到电子形成离子时，需要重新核对总电子数与电荷。",
+      "classroom_check": "先解释图中的每类标记，再比较图4.24氧离子与钠离子的核内质子数、电子总数和净电荷。",
+      "limitation": "图中的弧线是结构表示，不能当作真实轨迹；形成通常的单原子离子时不把核内质子数随电子得失改写。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          134
+        ],
+        "printed_pages": [
+          129
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORBITAL-06",
+      "title": "电子式区分原子外层点与离子电荷",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.3",
+      "pdf_pages": [
+        134,
+        136,
+        137
+      ],
+      "printed_pages": [
+        129,
+        131,
+        132
+      ],
+      "summary": "教材用元素符号周围的小黑点或×表示最外层电子。图4.23列第3周期元素原子电子式；图4.24中氧离子用方括号内8个电子并标2−，钠离子写Na⁺。后续练习要求比较结构示意图与电子式。",
+      "classroom_check": "先注明对象是原子还是离子，逐项核对元素符号、最外层电子、方括号与电荷，再回查原图。",
+      "limitation": "不能仅凭点的数量判定核电荷数或全部电子数；此条不代填未附解析的练习空表，不把电子式字符排布当作图形已审核。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          134,
+          136,
+          137
+        ],
+        "printed_pages": [
+          129,
+          131,
+          132
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORBITAL-07",
+      "title": "元素性质解释连接最外层电子变化",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.3",
+      "pdf_pages": [
+        134
+      ],
+      "printed_pages": [
+        129
+      ],
+      "summary": "原页把元素化学性质与原子的最外层电子排布相联系：金属原子常容易失去最外层电子，非金属原子常容易得到电子；第18族原子外层已达稳定结构，得失电子相对不易。",
+      "classroom_check": "以本页钠、氧等基础例子连接“原子排布—电子得失—离子电荷”，用原图核对前后质子数与电子数。",
+      "limitation": "保留教材基础模型的适用范围，不推广为全部金属与非金属均只按一种方式反应；不声称稀有气体绝对不能发生反应。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          134
+        ],
+        "printed_pages": [
+          129
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORBITAL-08",
+      "title": "半径趋势先区分同周期与同主族",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.3",
+      "pdf_pages": [
+        135
+      ],
+      "printed_pages": [
+        130
+      ],
+      "summary": "教材解释同周期原子半径一般随原子序数递增而减小，同主族从上到下增大；前者连接相同电子层数与核电荷增大，后者连接电子层数增加及对最外层电子吸引的变化。",
+      "classroom_check": "比较前先注明同周期或同主族，再列电子层数和核电荷变化，以本章已学主族元素组织解释。",
+      "limitation": "本节为趋势性结构解释，不把简化趋势当成跨周期、离子半径或不同半径定义之间的通用数值排序。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          135
+        ],
+        "printed_pages": [
+          130
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORBITAL-09",
+      "title": "周期律的性质变化回连电子排布",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.3",
+      "pdf_pages": [
+        135,
+        136
+      ],
+      "printed_pages": [
+        130,
+        131
+      ],
+      "summary": "教材把核外电子排布的周期性变化与元素性质的周期性变化相联系。同周期主族元素通常金属性减弱、非金属性增强，同主族从上到下相反；第17族例题据此比较氯与碘，指出氯更容易与金属铁反应。",
+      "classroom_check": "结合第17族原图，分别记录层数、最外层7个电子与非金属性变化，解释例题比较而不补造未给出的实验数据。",
+      "limitation": "限于本节主族元素趋势和例题，不由趋势替代反应条件、实测数据或原试卷官方采分点。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          135,
+          136
+        ],
+        "printed_pages": [
+          130,
+          131
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ORBITAL-10",
+      "title": "用多种表示核对同一个微粒",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C4:4.3",
+      "pdf_pages": [
+        136,
+        137
+      ],
+      "printed_pages": [
+        131,
+        132
+      ],
+      "summary": "练习把微粒符号、核内质子数、核外电子数、结构示意图、电子式与稳定结构放在同一表中，列出C、K⁺、Br⁻、Ar等对象。相互核对时需同时保留元素身份和电荷，不能只比较是否有8个外层电子。",
+      "classroom_check": "按表列逐项说明所需证据，先核对符号和电荷，再检查结构示意图与电子式是否表示同一个对象。",
+      "limitation": "本条整理练习的核对方法，未把空表填成已核验标准答案；K⁺与Ar电子数相同也不代表属于同一种元素。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          136,
+          137
+        ],
+        "printed_pages": [
+          131,
+          132
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ]
+}

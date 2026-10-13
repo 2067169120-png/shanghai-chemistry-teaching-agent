@@ -1,0 +1,212 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-BROMINE-IODINE-01",
+      "title": "比较卤素物性时保留状态与测定条件",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.3",
+      "pdf_pages": [
+        68
+      ],
+      "printed_pages": [
+        63
+      ],
+      "summary": "氯、溴、碘单质均由双原子分子构成，常温常压下依次呈气体、液体、固体。教材把颜色、熔沸点与溶解度并列，比较物性时应同时保留表中的状态、温度和单位。",
+      "classroom_check": "让学生把物性表中的现象、数值、单位和测定条件分别列出，再归纳可以直接比较的变化。",
+      "limitation": "表中气态氯与液态溴、固态碘的密度单位及温度不同，不能把数值直接排成同一密度序列；本条不增加未给出的实验参数。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          68
+        ],
+        "printed_pages": [
+          63
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-BROMINE-IODINE-02",
+      "title": "萃取卤素要对应溶剂、颜色与置换证据",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.3",
+      "pdf_pages": [
+        69
+      ],
+      "printed_pages": [
+        64
+      ],
+      "summary": "溴、碘在有机溶剂中的溶解度通常比在水中大，教材据此说明可从水溶液中萃取。单质在不同溶剂中的颜色也有差别；比较卤素活性时，需要把置换反应与用于观察的溶剂分开说明。",
+      "classroom_check": "先用原页表格对应物质、溶剂和颜色，再说明有机相颜色是怎样帮助观察置换现象的。",
+      "limitation": "颜色判断要限定溶剂与浓度，不能把所有棕色或紫色现象只凭颜色当成某一单质；原页实验空白不作为已有记录或官方答案补填。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          69
+        ],
+        "printed_pages": [
+          64
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-BROMINE-IODINE-03",
+      "title": "提溴流程分开解释浓缩、氧化与取出",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.3",
+      "pdf_pages": [
+        70
+      ],
+      "printed_pages": [
+        65
+      ],
+      "summary": "教材把海水提溴概括为浓缩、氧化和提取：海水制盐后得到含溴离子较多的苦卤，氯气把溴离子氧化成溴单质，再利用其易挥发等性质取出粗溴并精制。离子表示为Cl₂+2Br⁻→2Cl⁻+Br₂，依次对应氯气、溴离子、氯离子和溴。",
+      "classroom_check": "对照图2.19，在每个步骤旁分别写“改变浓度”“改变物质形态”或“分离物质”，并核对离子方程式的元素与电荷。",
+      "limitation": "苦卤酸化、氧化和吹出是不同操作；这里整理流程作用，不提供工业控制条件、实验实施方案或未经核验的产率。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          70
+        ],
+        "printed_pages": [
+          65
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-BROMINE-IODINE-04",
+      "title": "提碘时追踪海带富集与离子到单质的转换",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.3",
+      "pdf_pages": [
+        70,
+        71
+      ],
+      "printed_pages": [
+        65,
+        66
+      ],
+      "summary": "教材说明海水中碘浓度较低，海带等海洋藻类能富集碘。干海带浸泡、过滤得到含碘离子的溶液，经氧化得到粗碘，再提纯；工业提取还可采用离子交换法处理含碘离子的溶液。",
+      "classroom_check": "用流程图区分富集载体、浸泡液、碘离子与碘单质，说明过滤与氧化分别解决什么问题。",
+      "limitation": "图2.20只给出主要流程，不能补猜浸泡时间、温度、投料量或纯化操作；本条不替原文练习生成答案。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          70,
+          71
+        ],
+        "printed_pages": [
+          65,
+          66
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-BROMINE-IODINE-05",
+      "title": "卤素离子检验同时保留沉淀颜色与酸核对",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.3",
+      "pdf_pages": [
+        71,
+        72
+      ],
+      "printed_pages": [
+        66,
+        67
+      ],
+      "summary": "教材用硝酸银和稀硝酸比较卤素离子：氯化银、溴化银、碘化银沉淀分别呈白色、浅黄色、黄色，且不溶于稀硝酸。分别写为Ag⁺+Cl⁻→AgCl↓、Ag⁺+Br⁻→AgBr↓、Ag⁺+I⁻→AgI↓；银离子与氯、溴、碘离子形成相应卤化银。",
+      "classroom_check": "让学生依次解释银盐沉淀、颜色和加入稀硝酸后的变化各提供什么证据，再对照侧栏讨论碳酸根的干扰。",
+      "limitation": "出现银盐沉淀本身不能单独证明卤素离子；教材指出碳酸银也会沉淀而可被稀硝酸溶解。混合离子体系仍要核对题设，不把课内比较外推成万能鉴别步骤。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          71,
+          72
+        ],
+        "printed_pages": [
+          66,
+          67
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-BROMINE-IODINE-06",
+      "title": "用物质与价态变化解释提溴后的富集",
+      "volume_id": "TB-M1",
+      "section_key": "TB-M1-C2:2.3",
+      "pdf_pages": [
+        72,
+        73
+      ],
+      "printed_pages": [
+        67,
+        68
+      ],
+      "summary": "教材的综合流程在得到低浓度溴溶液后，还用空气吹出、二氧化硫溶液吸收及再次氧化来富集和提纯。吸收阶段中溴Br₂转化为含氢溴酸HBr的溶液，溴元素从0价降至−1价；后续氯气Cl₂氧化使其重新成为溴单质。",
+      "classroom_check": "分别追踪物理转移与价态变化，说明“已有粗溴”为什么仍需要后续步骤；把吸收与再次氧化的作用分开解释。",
+      "limitation": "只整理图2.21与原文分析的过程证据，不新增反应产物、控制条件或计算结论；原页练习与参考分析未新建为题库题目或官方评分标准。",
+      "source_path": "课本/沪科技化学必修第一册【高清教材】.pdf",
+      "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+      "textbook_evidence": {
+        "source_sha256": "a565f0a15ffd10c704f4be42bfe7200c125b68959d11ef582acdc45dde2ccf22",
+        "pdf_pages": [
+          72,
+          73
+        ],
+        "printed_pages": [
+          67,
+          68
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ]
+}

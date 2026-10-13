@@ -1566,8 +1566,8 @@ def _image_elements(slide, *, index, candidate, image_data, draw, fonts):
             y=760,
             width=1430,
             height=96,
-            source_texts=[asset["caption"], asset["source"]],
-            source_paths=[asset_base + "/caption", asset_base + "/source"],
+            source_texts=[asset["caption"]],
+            source_paths=[asset_base + "/caption"],
             preferred_px=26,
             minimum_px=22,
             color=_PALETTE["muted"],
@@ -1772,10 +1772,6 @@ def _write_pptx(
                 [
                     "看图任务：" + binding["observation_prompt"],
                     "图片教学用途：" + asset["purpose"],
-                    "图片来源：" + asset["source"],
-                    ("图片内容需教师复核；本页由本地教学环节生成，未调用模型。"
-                     if candidate.get("source_basis", {}).get("mode") == "teacher_nodes_local"
-                     else "图片内容需教师复核；模型只收到图片说明，未查看像素。"),
                 ]
             )
         if notes:
@@ -2111,7 +2107,6 @@ def _write_docx(path: Path, candidate: Mapping[str, Any], *, root: Path) -> None
         ("对象", "audience"),
         ("课型", "lesson_route"),
         ("课时", "timing"),
-        ("内容依据", "source_basis"),
     ):
         text = _metadata_text(candidate, key)
         if text and text != title:
@@ -2137,15 +2132,10 @@ def _write_docx(path: Path, candidate: Mapping[str, Any], *, root: Path) -> None
         document.add_paragraph().paragraph_format.space_after = Pt(2)
 
     objectives = candidate.get("objectives")
-    if isinstance(objectives, list) and objectives:
-        document.add_heading("教学目标", level=1)
-        for objective in objectives:
-            if not isinstance(objective, Mapping):
-                continue
-            statement = _as_text(objective.get("statement"))
-            if statement:
-                paragraph = document.add_paragraph(style="List Number")
-                _set_docx_font(paragraph.add_run(statement), size=11)
+    from .desktop_teaching_framework import HEADINGS, add_framework_opening, framework_from_candidate
+    framework = framework_from_candidate(candidate)
+    add_framework_opening(document, framework)
+    document.add_heading(HEADINGS[3], level=1)
 
     activities = candidate.get("activities")
     assessments = candidate.get("assessments")
@@ -2270,7 +2260,6 @@ def _write_docx(path: Path, candidate: Mapping[str, Any], *, root: Path) -> None
 
     lesson_stages = candidate.get("lesson_stages")
     if isinstance(lesson_stages, list) and lesson_stages:
-        document.add_heading("教学过程", level=1)
         for stage in lesson_stages:
             if not isinstance(stage, Mapping):
                 continue
@@ -2373,14 +2362,11 @@ def _write_docx(path: Path, candidate: Mapping[str, Any], *, root: Path) -> None
         homework_values = _string_values(homework.get("tasks"))
         homework_title = _as_text(homework.get("title"))
         if homework_title or homework_values:
-            document.add_heading(homework_title or "课后任务", level=1)
+            document.add_heading("4. 布置作业", level=2)
             _add_docx_lines(document, homework_values)
-
-    uncertainties = candidate.get("uncertainties")
-    uncertainty_values = _uncertainty_lines(uncertainties)
-    if uncertainty_values:
-        document.add_heading("待教师确认", level=1)
-        _add_docx_lines(document, uncertainty_values)
+    document.add_heading(HEADINGS[4], level=1)
+    if framework['board_design']:
+        _add_docx_lines(document, framework['board_design'].splitlines())
 
     document.core_properties.title = title
     _save_docx_document(document, path, root=root)
@@ -2810,8 +2796,10 @@ class NativePreparationRenderer:
         _check_cancelled(is_cancelled)
         _report_progress(report_progress, 2, "validating", "正在检查备课候选。")
         root = _safe_output_root(output_dir)
+        from .desktop_teaching_framework import classroom_candidate
+        classroom = classroom_candidate(canonical)
         layouts = _make_layouts(
-            canonical, image_data=image_data, classroom_projection=True
+            classroom, image_data=image_data, classroom_projection=True
         )
         wants_ppt = normalized_kind in {"ppt", "linked_bundle"}
         wants_docx = normalized_kind in {"lesson_plan", "linked_bundle"}
@@ -2868,7 +2856,7 @@ class NativePreparationRenderer:
             _check_cancelled(is_cancelled)
 
             pptx_path = root / _FILENAMES["pptx"]
-            _write_pptx(pptx_path, layouts, canonical, root=root)
+            _write_pptx(pptx_path, layouts, classroom, root=root)
             _report_progress(
                 report_progress, 42, "pptx_written", "可编辑 PPTX 已生成。"
             )
@@ -2901,7 +2889,7 @@ class NativePreparationRenderer:
 
         if wants_docx:
             docx_path = root / _FILENAMES["lesson_plan_docx"]
-            _write_docx(docx_path, canonical, root=root)
+            _write_docx(docx_path, classroom, root=root)
             _report_progress(
                 report_progress, 88, "lesson_plan_written", "可编辑教案已生成。"
             )
@@ -2910,7 +2898,7 @@ class NativePreparationRenderer:
         if wants_worksheet:
             worksheet_path = root / _FILENAMES["student_worksheet_docx"]
             _save_docx_document(
-                build_worksheet_document(canonical), worksheet_path, root=root
+                build_worksheet_document(classroom), worksheet_path, root=root
             )
             _report_progress(
                 report_progress, 92, "worksheet_written", "活动配套学习单已生成。"
@@ -2918,7 +2906,7 @@ class NativePreparationRenderer:
             _check_cancelled(is_cancelled)
 
         qa = _machine_qa(
-            candidate=canonical,
+            candidate=classroom,
             output_kind=normalized_kind,
             layouts=layouts,
             pptx_path=pptx_path,

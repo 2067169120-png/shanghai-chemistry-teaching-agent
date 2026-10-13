@@ -1,0 +1,471 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261004-CHIRALITY-INTERMOLECULAR-01",
+      "title": "手性先看完整分子及其镜像",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "pdf_pages": [
+        51,
+        52
+      ],
+      "printed_pages": [
+        47,
+        48
+      ],
+      "source_anchors": [
+        "手性先看完整分子及其镜像"
+      ],
+      "summary": "教材从镜像能否重合引出手性，以乳酸等完整结构展示四面体碳连接不同基团；教材限定为大多数有机分子的辨认线索。局部立体中心与整个分子手性须分别判断，不能由中心个数直接得到整体结论。",
+      "classroom_check": "标出乳酸的四个基团，并分别说明局部中心与整体镜像的判断对象。",
+      "limitation": "整体和局部概念另有IUPAC推荐文本核验；不依据球色缺图例的模型或药物情境猜测结论。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          51,
+          52
+        ],
+        "printed_pages": [
+          47,
+          48
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-064",
+      "lecture_block_indices": [
+        32,
+        33,
+        35,
+        37,
+        40,
+        41
+      ],
+      "source_sha256": "084da90dae9f2a26007164e070290255325995241de4c34051c4ffc97bbe3d71",
+      "source_preview_revision": "c52af5a16efb4dde13a7107e229188bcbf11ac53f6d992273ffa59b232f15a95",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-CHIRALITY-INTERMOLECULAR-02",
+      "title": "基团比较须沿连接路径继续",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "pdf_pages": [
+        51,
+        52
+      ],
+      "printed_pages": [
+        47,
+        48
+      ],
+      "source_anchors": [
+        "基团比较须沿连接路径继续"
+      ],
+      "summary": "教材乳酸连接氢、羟基、甲基和羧基，两个含碳基团仍不相同。比较四个基团须沿结构继续辨认，而非只比较第一层元素；桥环和复杂图也要追踪实际路径及空间标记。",
+      "classroom_check": "解释甲基与羧基虽然都从碳连接，为什么不能算同一基团。",
+      "limitation": "只使用实际结构与已读图；图例、桥环路径或立体标记不全时继续待核，正式unit仍unknown。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          51,
+          52
+        ],
+        "printed_pages": [
+          47,
+          48
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-064",
+      "lecture_block_indices": [
+        32,
+        33,
+        34,
+        43,
+        45,
+        47,
+        53
+      ],
+      "source_sha256": "084da90dae9f2a26007164e070290255325995241de4c34051c4ffc97bbe3d71",
+      "source_preview_revision": "c52af5a16efb4dde13a7107e229188bcbf11ac53f6d992273ffa59b232f15a95",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-CHIRALITY-INTERMOLECULAR-03",
+      "title": "相变与化学分解的变化对象",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "pdf_pages": [
+        52,
+        55,
+        56
+      ],
+      "printed_pages": [
+        48,
+        51,
+        52
+      ],
+      "source_anchors": [
+        "相变与化学分解的变化对象"
+      ],
+      "summary": "教材用干冰说明分子间作用，又用水、氨、氟化氢讨论氢键。升华或汽化不因物态改变就拆开分子内共价键，水分解则涉及不同变化；熔沸点比较不能直接代替分子化学稳定性比较。",
+      "classroom_check": "在干冰升华和水分解两张过程卡上分别标注变化对象。",
+      "limitation": "未采用讲义缺出处的分解温度或统一能量阈值，也未作实验实测。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          52,
+          55,
+          56
+        ],
+        "printed_pages": [
+          48,
+          51,
+          52
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-064",
+      "lecture_block_indices": [
+        65,
+        108,
+        112,
+        155,
+        160,
+        169,
+        171
+      ],
+      "source_sha256": "084da90dae9f2a26007164e070290255325995241de4c34051c4ffc97bbe3d71",
+      "source_preview_revision": "c52af5a16efb4dde13a7107e229188bcbf11ac53f6d992273ffa59b232f15a95",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-CHIRALITY-INTERMOLECULAR-04",
+      "title": "取向力、诱导力和色散力分别辨认",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "pdf_pages": [
+        53
+      ],
+      "printed_pages": [
+        49
+      ],
+      "source_anchors": [
+        "取向力、诱导力和色散力分别辨认"
+      ],
+      "summary": "教材用永久偶极、受影响的电子分布及瞬时偶极分别讨论取向力、诱导力和色散力。非极性分子仍有色散力，缺少永久偶极不等于缺少分子间作用；模型讨论须保留作用距离和条件。",
+      "classroom_check": "给非极性分子的相互作用补出色散力线索，再与极性分子比较。",
+      "limitation": "定性教材模型未给任意分子的作用能定量值，不能由分类直接排出所有物性次序。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          53
+        ],
+        "printed_pages": [
+          49
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-064",
+      "lecture_block_indices": [
+        65,
+        67,
+        68,
+        69,
+        70,
+        71,
+        73,
+        74
+      ],
+      "source_sha256": "084da90dae9f2a26007164e070290255325995241de4c34051c4ffc97bbe3d71",
+      "source_preview_revision": "c52af5a16efb4dde13a7107e229188bcbf11ac53f6d992273ffa59b232f15a95",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-CHIRALITY-INTERMOLECULAR-05",
+      "title": "相对分子质量趋势的比较前提",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "pdf_pages": [
+        54,
+        59
+      ],
+      "printed_pages": [
+        50,
+        55
+      ],
+      "source_anchors": [
+        "相对分子质量趋势的比较前提"
+      ],
+      "summary": "教材在组成、结构相近的分子间讨论相对分子质量与熔沸点趋势，并用卤化物数据练习解释。先确定可比对象和结构，再提出作用力线索；不能跨越任意物质类别只按相对分子质量排序。",
+      "classroom_check": "读教材数据表，写出排序依据以及这一依据适用的共同条件。",
+      "limitation": "数据表支持限定比较；对称性、支链、晶体堆积等不能被压缩为所有熔点和沸点同方向的规则。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          54,
+          59
+        ],
+        "printed_pages": [
+          50,
+          55
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-064",
+      "lecture_block_indices": [
+        73,
+        74,
+        75,
+        123,
+        126
+      ],
+      "source_sha256": "084da90dae9f2a26007164e070290255325995241de4c34051c4ffc97bbe3d71",
+      "source_preview_revision": "c52af5a16efb4dde13a7107e229188bcbf11ac53f6d992273ffa59b232f15a95",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-CHIRALITY-INTERMOLECULAR-06",
+      "title": "氢键的供体、受体与共价连接",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "pdf_pages": [
+        55
+      ],
+      "printed_pages": [
+        51
+      ],
+      "source_anchors": [
+        "氢键的供体、受体与共价连接"
+      ],
+      "summary": "教材以X—H···Y表示常见氢键，N、O、F相关结构是本节常见例子。X—H与虚线表达不同作用，判断需同时找供氢部分和受体孤电子对，不能只凭出现某元素就连虚线。",
+      "classroom_check": "在两分子水之间先画共价键，再标供体、受体和氢键。",
+      "limitation": "常见元素范围不排除题给另种模型；未据讲义86排他判断任意氨水环境的全部供受方向。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          55
+        ],
+        "printed_pages": [
+          51
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-064",
+      "lecture_block_indices": [
+        79,
+        80,
+        81,
+        82,
+        84,
+        85,
+        86,
+        128,
+        136
+      ],
+      "source_sha256": "084da90dae9f2a26007164e070290255325995241de4c34051c4ffc97bbe3d71",
+      "source_preview_revision": "c52af5a16efb4dde13a7107e229188bcbf11ac53f6d992273ffa59b232f15a95",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-CHIRALITY-INTERMOLECULAR-07",
+      "title": "分子内与分子间氢键按归属区分",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "pdf_pages": [
+        55,
+        57
+      ],
+      "printed_pages": [
+        51,
+        53
+      ],
+      "source_anchors": [
+        "分子内与分子间氢键按归属区分"
+      ],
+      "summary": "教材邻羟基苯甲醛图的羟基与醛基处于同一分子，可形成分子内氢键；不同水分子间为分子间氢键。讲义83的两处标签对调，依据连接对象修正备课提示并保留原文。",
+      "classroom_check": "给教材两幅图各圈出分子边界，再解释氢键分类。",
+      "limitation": "这是备课纠错提示，未修改来源文件或认证其余原答案；局部结构不推出全部物性。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          55,
+          57
+        ],
+        "printed_pages": [
+          51,
+          53
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-064",
+      "lecture_block_indices": [
+        18,
+        83,
+        89,
+        90,
+        91,
+        94
+      ],
+      "source_sha256": "084da90dae9f2a26007164e070290255325995241de4c34051c4ffc97bbe3d71",
+      "source_preview_revision": "c52af5a16efb4dde13a7107e229188bcbf11ac53f6d992273ffa59b232f15a95",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-CHIRALITY-INTERMOLECULAR-08",
+      "title": "沸点异常与异构体数据分开解释",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "pdf_pages": [
+        56,
+        57
+      ],
+      "printed_pages": [
+        52,
+        53
+      ],
+      "source_anchors": [
+        "沸点异常与异构体数据分开解释"
+      ],
+      "summary": "教材氢化物沸点图展示水、氨和氟化氢的异常，又给邻、对位异构体比较数据。前者涉及分子间氢键，后者须核结构与氢键位置；不能将一个数据例子的结论扩大为所有能形成氢键的物质都更易溶或所有熔沸点都更高。",
+      "classroom_check": "从图表选一组可比对象，写出观察、模型解释和尚不能推出的结论。",
+      "limitation": "定性解释保留温度、组成和结构条件，不补猜其他物质溶解度或熔点数值。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          56,
+          57
+        ],
+        "printed_pages": [
+          52,
+          53
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-064",
+      "lecture_block_indices": [
+        75,
+        77,
+        89,
+        90,
+        91,
+        94,
+        117,
+        120,
+        126
+      ],
+      "source_sha256": "084da90dae9f2a26007164e070290255325995241de4c34051c4ffc97bbe3d71",
+      "source_preview_revision": "c52af5a16efb4dde13a7107e229188bcbf11ac53f6d992273ffa59b232f15a95",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-CHIRALITY-INTERMOLECULAR-09",
+      "title": "生物大分子的链内与链间氢键",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "pdf_pages": [
+        58
+      ],
+      "printed_pages": [
+        54
+      ],
+      "source_anchors": [
+        "生物大分子的链内与链间氢键"
+      ],
+      "summary": "教材用蛋白质螺旋和DNA示意氢键对空间组织的作用。链内连接与不同链间的连接要分别沿图辨认；氢键不能替代链骨架的共价连接，也不能由一段示意图推断任意样品的活性。",
+      "classroom_check": "在两幅示意图中用不同颜色标链骨架和氢键，指出连接双方属于哪条链。",
+      "limitation": "本页只支持教材结构示意；未增加生物活性实测、医疗用途或缺失原图信息。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          58
+        ],
+        "printed_pages": [
+          54
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-064",
+      "lecture_block_indices": [
+        83,
+        89,
+        90,
+        91,
+        114,
+        117
+      ],
+      "source_sha256": "084da90dae9f2a26007164e070290255325995241de4c34051c4ffc97bbe3d71",
+      "source_preview_revision": "c52af5a16efb4dde13a7107e229188bcbf11ac53f6d992273ffa59b232f15a95",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    },
+    {
+      "id": "READ-20261004-CHIRALITY-INTERMOLECULAR-10",
+      "title": "冰结构共享计数与题给能量模型",
+      "volume_id": "TB-E2",
+      "section_key": "TB-E2-C2:2.2",
+      "pdf_pages": [
+        55,
+        56
+      ],
+      "printed_pages": [
+        51,
+        52
+      ],
+      "source_anchors": [
+        "冰结构共享计数与题给能量模型"
+      ],
+      "summary": "教材水氢键与沸点模型用于理解讲义冰结构题。讲义给每个水分子四个邻居时，氢键须除以二避免重复计数；再用题给升华焓与熔化焓差计算，必须注明题设理想化模型与单位。",
+      "classroom_check": "画三个相邻水分子的共享连接，说明为什么“每个四条”不等于每摩尔水有四摩尔氢键。",
+      "limitation": "四邻居及51、11 kJ·mol⁻¹来自讲义题设，不冒充这两页教材实测数据或普适氢键能；原生旧公式缺口仍保留。",
+      "textbook_evidence": {
+        "source_sha256": "4eb751c3bc879d2ad41a2faa723b3b4af05b29ff78f3e89a2eaf9727ebb8a848",
+        "pdf_pages": [
+          55,
+          56
+        ],
+        "printed_pages": [
+          51,
+          52
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "lecture_package_id": "PKG-064",
+      "lecture_block_indices": [
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        151
+      ],
+      "source_sha256": "084da90dae9f2a26007164e070290255325995241de4c34051c4ffc97bbe3d71",
+      "source_preview_revision": "c52af5a16efb4dde13a7107e229188bcbf11ac53f6d992273ffa59b232f15a95",
+      "source_extraction_revision": "20260909-editable-chemistry-v2",
+      "candidate_only": true,
+      "human_reviewed": false
+    }
+  ]
+}

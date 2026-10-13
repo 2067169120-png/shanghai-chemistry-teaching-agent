@@ -41,7 +41,7 @@ def window(tmp_path):
 
 def test_all_routes_keep_existing_primary_shortcuts(window):
     win, app = window
-    assert len(ROUTE_ORDER) == 5 and len(ALL_ROUTES) == 8
+    assert len(ROUTE_ORDER) == 5 and len(ALL_ROUTES) == 9
     for route in ALL_ROUTES:
         win.navigate(route)
         settle(app)
@@ -91,6 +91,66 @@ def test_command_search_routes_without_running_generation(window):
     dialog.deleteLater()
 
 
+def test_textbook_entry_and_confirmed_reference_preserve_teacher_work(window, monkeypatch):
+    win, app = window
+    prep = win.preparation_page
+    prep.topic.setText('教师当前课题')
+    prep.objective.setPlainText('当前目标')
+    prep.materials.setPlainText('已选讲义与原题')
+    prep.textbook_button.click()
+    settle(app, lambda: not win.textbook_page._loading)
+    assert win.stack.currentWidget() is win.textbook_page
+    dialog = CommandPalette(win)
+    dialog.query.setText('从教材选参考')
+    assert dialog.results.count() == 1
+    dialog.choose();assert dialog.command == 'textbooks'
+    dialog.deleteLater()
+    original_images = prep.image_assets_widget.assets()
+    reference = {'materials':'候选教材参考：请对照原页核对','warnings':[]}
+    win.textbook_page.preparation_reference_requested.emit(reference)
+    assert win.stack.currentWidget() is prep
+    assert prep.materials.toPlainText().startswith('已选讲义与原题')
+    assert '候选教材参考' in prep.materials.toPlainText()
+    assert prep.topic.text() == '教师当前课题' and prep.objective.toPlainText() == '当前目标'
+    assert prep.image_assets_widget.assets() == original_images
+    assert '教材' in prep.status.text() and reference == {'materials':'候选教材参考：请对照原页核对','warnings':[]}
+    from integrations.deeptutor_shchem_v1.desktop_workbench.lesson_design_dialog import LessonDesignDialog
+    lesson = LessonDesignDialog(prep)
+    assert lesson.source.toPlainText() == prep.materials.toPlainText()
+    lesson.add_node()
+    lesson.bind_source()
+    node = next(n for n in lesson.history.value['nodes'] if n['id'] == lesson.current)
+    assert '候选教材参考' in node['material_text'] and '已选讲义与原题' in node['material_text']
+    assert node['locked'] and not node['student_material'] and not node['confirmed']
+    assert prep._lesson_design['nodes'][0]['material_text'] == node['material_text']
+    lesson.reject();lesson.deleteLater()
+    from PySide6.QtWidgets import QMessageBox
+    monkeypatch.setattr(QMessageBox,'information',lambda *a,**k: None)
+    before = prep._payload()
+    prep._word_import_in_flight = True
+    win._textbook_to_preparation({'materials':'不能并发追加','warnings':[]})
+    assert prep._payload() == before
+    prep._word_import_in_flight = False
+
+
+def test_import_textbook_context_has_clear_route_and_blocks_active_import(window):
+    from integrations.deeptutor_shchem_v1.desktop_workbench.dialogs import ImportDialog
+    win, app = window
+    dialog = ImportDialog(win.facade,win.tasks,win)
+    dialog.show();settle(app)
+    assert not dialog.textbook_button.isVisible()
+    dialog.source_type.setCurrentText('教材与课程文件')
+    assert dialog.textbook_button.isVisible() and '整本教材' in dialog.textbook_note.text()
+    dialog._active_task_id = 'isolated-test-task'
+    dialog._open_textbooks()
+    assert dialog.isVisible() and not dialog.open_textbooks_requested
+    dialog._active_task_id = None
+    dialog._open_textbooks()
+    assert dialog.open_textbooks_requested and not dialog.isVisible()
+    assert dialog.preparation_reference is None and dialog.question_files.paths() == []
+    dialog.deleteLater()
+
+
 def test_participation_resets_on_roster_change(window):
     win, _ = window
     panel = win.classroom_page.participation
@@ -136,7 +196,7 @@ def test_saved_template_brief_is_found_by_my_work(window):
     prep = win.preparation_page
     assert prep.apply_studio_template("concept", "合成演示课", "高二")
     prep.materials.setPlainText("合成材料，不含真实题目。")
-    receipt = win.facade.create_preparation_draft(prep._payload())
+    win.facade.create_preparation_draft(prep._payload())
     win.navigate("mywork")
     settle(app, lambda: not win.my_work_page._loading)
     page = win.my_work_page

@@ -10,6 +10,30 @@ import shutil
 import sys
 import tempfile
 import time
+import traceback
+
+
+def _scope_status(scope):
+    status=getattr(scope,'status',None)
+    return status.text() if status is not None else ''
+
+
+def _independent_workspace_ready(workspace):
+    if workspace._busy:
+        return False
+    if workspace._mixed_panel is None:
+        raise AssertionError('Independent paper creation failed: '+_scope_status(workspace))
+    return True
+
+
+def _independent_panel_ready(panel):
+    if panel._restore_failed:
+        raise AssertionError('Independent paper load failed: '+_scope_status(panel))
+    if panel._busy:
+        return False
+    if not panel._loaded_once:
+        raise AssertionError('Independent paper did not finish loading: '+_scope_status(panel))
+    return True
 
 
 def verify_answer_openings(path):
@@ -41,6 +65,7 @@ def run_probe(output):
     from docx.shared import Inches
     from .desktop_facade import build_default_facade
     from .desktop_paths import DesktopPaths
+    from .desktop_independent_paper import IndependentPaperSession
     from .desktop_version import DESKTOP_VERSION
     from .desktop_raster_numbers import render_numbered_image
     from .desktop_raster_paper_service import RasterPaperService
@@ -62,6 +87,10 @@ def run_probe(output):
         root=Path(getattr(sys,'_MEIPASS',Path(__file__).resolve().parents[2]))
         facade=build_default_facade(DesktopPaths.from_workspace(root,state_root=temp/'state'))
         win=TeacherWorkbenchWindow(facade);win.resize(1280,900);win.show()
+        workspace=panel=None;stage='synthetic_source_setup'
+        task_failures=[]
+        win.tasks.task_failed.connect(lambda task_id,label,message:task_failures.append(
+            {'task_id':task_id,'label':label,'message':message}))
         try:
             doc=Document();raw_images={};new_numbers={}
             for number,new in ((27,2),(38,1)):
@@ -84,8 +113,18 @@ def run_probe(output):
             assert len(rows)==2
             facade.add_word_questions_to_basket([{'key':r['key'],'revision':r['revision']} for r in reversed(rows)])
             original_state=deepcopy(facade.basket())
-            win.navigate('paper');settle(lambda:win.paper_page._mixed_panel is not None and not win.paper_page._mixed_panel._busy)
-            panel=win.paper_page._mixed_panel
+            win.navigate('paper');settle()
+            workspace=win.paper_page._composer
+            settle(lambda:not workspace._busy)
+            assert workspace.new_button.isEnabled(),_scope_status(workspace)
+            stage='creating_independent_paper'
+            workspace.new_button.click();settle(lambda:_independent_workspace_ready(workspace))
+            panel=workspace._mixed_panel;stage='loading_independent_paper'
+            settle(lambda:_independent_panel_ready(panel))
+            assert panel._loaded_once and not panel._restore_failed
+            paper_session=panel.facade
+            assert isinstance(paper_session,IndependentPaperSession) and paper_session is not facade
+            capture(win,'scan-independent-paper.png');stage='selecting_number_regions'
             assert panel.number_button.isEnabled();panel.number_button.click()
             settle(lambda:panel._number_dialog is not None or not panel._busy)
             dialog=panel._number_dialog;assert dialog is not None, panel.status.text()
@@ -108,17 +147,19 @@ def run_probe(output):
             remembered = deepcopy(facade.state_store.snapshot()['scan_number_regions'])
             assert all('number' not in r for im in remembered['images'].values() for r in im['regions'])
             dialog.original.setChecked(True);capture(dialog,'scan-number-original.png');dialog.original.setChecked(False)
+            stage='first_corrected_preview'
             dialog.apply.click()
             settle(lambda:panel._preview_dialog is not None or not panel._busy)
             assert panel._preview_dialog is not None, panel.status.text()
             preview=panel._preview
             assert preview.preview_model['scan_numbering']['edits']==edits
-            service=RasterPaperService(facade)
+            service=RasterPaperService(paper_session)
             for role in ('student','teacher'):
                 for page in preview.preview_model['pagination']['documents'][role]['pages']:
                     data=service.image(preview.preview_id,page['image_id'])['data']
                     path=output/f'scan-{role}-page-{page["page_number"]}.png';path.write_bytes(data)
                     screenshots.append({'file':path.name,'sha256':sha256(data).hexdigest()})
+            stage='first_corrected_export'
             service.approve(preview.preview_id,preview.preview_hash)
             exported=service.export(preview.preview_id,preview.preview_hash)
             for artifact in exported['artifacts']:
@@ -131,11 +172,18 @@ def run_probe(output):
             from .desktop_state import DesktopStateStore
             from .desktop_workbench.scan_number_dialog import ScanNumberDialog
             panel._preview_dialog.reject();settle()
-            reordered = deepcopy(panel.request())
-            reordered['section_order'] = list(reversed(reordered['section_order']))
-            next_preview = facade.create_paper_preview(reordered)
-            next_catalog = RasterPaperService(facade).inspect_images(next_preview.preview_id, next_preview.preview_hash)
+            stage='reordering_independent_paper'
+            previous_request=deepcopy(panel.request())
+            panel.sections.setCurrentRow(0)
+            assert panel.down_button.isEnabled(),panel.status.text()
+            panel.down_button.click();settle(lambda:_independent_panel_ready(panel))
+            reordered=deepcopy(panel.request())
+            assert reordered['section_order']==list(reversed(previous_request['section_order']))
+            assert reordered['draft_binding']!=previous_request['draft_binding']
+            next_preview = paper_session.create_paper_preview(reordered)
+            next_catalog = service.inspect_images(next_preview.preview_id, next_preview.preview_hash)
             reusable = NumberRegionStore(DesktopStateStore(facade.paths.state_root))
+            stage='reusing_saved_number_regions'
             reopened = ScanNumberDialog(next_catalog, win, region_store=reusable)
             reopened.show();settle()
             for index, image in enumerate(reopened.images):
@@ -154,7 +202,8 @@ def run_probe(output):
             capture(reopened,'scan-reused-regions.png')
             second_edits=deepcopy(reopened.edits)
             reopened.accept();reopened.deleteLater();settle()
-            second=RasterPaperService(facade).prepare_corrected(next_preview.preview_id,next_preview.preview_hash,second_edits)
+            stage='second_corrected_preview'
+            second=service.prepare_corrected(next_preview.preview_id,next_preview.preview_hash,second_edits)
             # View every newly generated page before using the existing approval.
             for role in ('student','teacher'):
                 for page in second.preview_model['pagination']['documents'][role]['pages']:
@@ -179,6 +228,7 @@ def run_probe(output):
                     'frozen':getattr(sys,'frozen',False),'qt_platform':app.platformName(),
                     'image_resolutions':[[800,240],[1600,480]],'edits':len(edits),'raw_word_import':True,
                     'native_entry_opened':True,'undo_exercised':True,'two_audiences_exported':True,
+                    'independent_paper_entry':True,'production_session_facade':True,'ui_reorder_saved_new_binding':True,
                     'outside_regions_unchanged':True,'source_unchanged':True,
                     'region_reuse':{'saved_positions_only':True,'reopened_state':True,'new_order_new_numbers':True,
                                    'load_requires_add':True,'actions_visible_800x700':True,
@@ -186,6 +236,20 @@ def run_probe(output):
                     'pages':{r:preview.preview_model['pagination']['documents'][r]['page_count'] for r in ('student','teacher')},
                     'screenshots':screenshots,'model_calls':0,'scope':'Synthetic Word-hosted raster images; manual pixel selection, no OCR or real-library acceptance.'}
             (output/'scan-probe.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+        except Exception:
+            details={'stage':stage,'exception':traceback.format_exc(),'task_failures':task_failures,
+                     'workspace':{'type':type(workspace).__name__,'busy':getattr(workspace,'_busy',None),
+                                  'status':_scope_status(workspace)} if workspace is not None else None,
+                     'panel':{'type':type(panel).__name__,'facade_type':type(getattr(panel,'facade',None)).__name__,
+                              'busy':getattr(panel,'_busy',None),'loaded_once':getattr(panel,'_loaded_once',None),
+                              'restore_failed':getattr(panel,'_restore_failed',None),'status':_scope_status(panel)} if panel is not None else None}
+            (output/'scan-failure-state.json').write_text(json.dumps(details,ensure_ascii=False,indent=2),encoding='utf-8')
+            try:
+                capture(win,'scan-failure.png')
+            except Exception as capture_error:
+                details['failure_capture_error']=str(capture_error)
+                (output/'scan-failure-state.json').write_text(json.dumps(details,ensure_ascii=False,indent=2),encoding='utf-8')
+            raise
         finally:
             if not (output/'scan-probe.json').is_file():
                 for index,path in enumerate((temp/'state').rglob('*.docx')):

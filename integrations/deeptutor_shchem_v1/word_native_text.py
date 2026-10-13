@@ -7,6 +7,8 @@ It reads no files, follows no links and never treats embedded/OLE pixels as text
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
+from .word_static_eq import paragraph_fields
 
 from .word_native_math import omml_text
 
@@ -50,6 +52,7 @@ class NativeText:
     text: str
     features: tuple[str, ...]
     native_math_count: int
+    static_eqs: tuple[dict, ...] = ()
 
 
 def _check_tree_budget(element):
@@ -135,6 +138,9 @@ class WordNativeTextReader:
         _check_tree_budget(element)
         features = set()
         math_count = 0
+        eq_fields = []
+        eq_enabled = not any(any(char in (node.text or '') for char in ('\ue100','\ue101','\ue102'))
+                             for node in element.iter())
 
         def gap(feature, label):
             features.add(feature)
@@ -224,6 +230,21 @@ class WordNativeTextReader:
                 )
                 if node.find(f"{W}pPr/{W}numPr") is not None:
                     features.add("automatic_numbering")
+                fields = (paragraph_fields(node, lambda run,name:
+                    self._run_property(run,paragraph_style,name)) if eq_enabled else [])
+                if fields:
+                    by_start = {field['run_start']:field for field in fields}
+                    parts=[]; children=list(node);position=0
+                    while position<len(children):
+                        field=by_start.get(position)
+                        if field is not None:
+                            ordinal=len(eq_fields);eq_fields.append(field)
+                            parts.append('\ue100'+str(ordinal)+'\ue101'+field['transcription']+'\ue102')
+                            position=field['run_end']+1
+                        else:
+                            parts.append(visit(children[position],paragraph_style,depth+1));position+=1
+                    features.add('static_eq_overlay')
+                    return ''.join(parts)
             if local == "r":
                 hidden = self._run_property(node, paragraph_style, "vanish")
                 if hidden is not None and hidden.casefold() not in {
@@ -317,6 +338,15 @@ class WordNativeTextReader:
             return "".join(parts)
 
         text = visit(element).strip()
+        eq_spans=[]
+        pattern=re.compile('\ue100' + r'(\d+)' + '\ue101([^\ue102]*)\ue102')
+        output=[];offset=0;cursor=0
+        for match in (pattern.finditer(text) if eq_fields else ()):
+            prefix=text[cursor:match.start()];output.append(prefix);offset+=len(prefix)
+            field=eq_fields[int(match[1])];output.append(match[2])
+            eq_spans.append({'start':offset,'end':offset+len(match[2]),'field':field})
+            offset+=len(match[2]);cursor=match.end()
+        output.append(text[cursor:]);text=''.join(output)
         if len(text) > _MAX_TEXT:
             raise ValueError("Word block exceeds text limit")
-        return NativeText(text, tuple(sorted(features)), math_count)
+        return NativeText(text, tuple(sorted(features)), math_count, tuple(eq_spans))

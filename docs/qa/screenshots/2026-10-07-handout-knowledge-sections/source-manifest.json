@@ -1,0 +1,112 @@
+{
+  "schema": "shchem.qa-screenshot-copy.v1",
+  "source_root": "E:/项目/上海高中化学等级考/outputs/2026-10-07-handout-knowledge-sections",
+  "pixel_edits": false,
+  "files": [
+    {
+      "file": "picker-wide.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\native-knowledge-v1\\04-selected-wide-accept.png",
+      "surface": "native Qt picker, earlier selection check",
+      "sha256": "8bf973ed4a425fb28e72178d416662553b7c7520f8dfb0a3ee7de0ac677201e8",
+      "bytes": 156645
+    },
+    {
+      "file": "picker-narrow.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\native-knowledge-v1\\03-selected-narrow-accept.png",
+      "surface": "native Qt picker, earlier selection check",
+      "sha256": "e72ef41899fcdcd5e11c3094775ce66b804988a06c01c1849c3577ae93b833b1",
+      "bytes": 89131
+    },
+    {
+      "file": "saved-textbook-question-page.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\saved-workbench\\01-saved-textbook-question-page.png",
+      "surface": "native reopened normal workbench",
+      "sha256": "e6b94273f177272024b47476c7d08ee896e5971d336a0d0c67034f910543986e",
+      "bytes": 341641
+    },
+    {
+      "file": "saved-full-knowledge-entry.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\saved-workbench\\02-saved-full-knowledge-entry.png",
+      "surface": "native reopened normal workbench",
+      "sha256": "ed36a23bc79d00ae105b0477c621facee10fc6271ff9dc0bd5428a1ff599c960",
+      "bytes": 337132
+    },
+    {
+      "file": "actual-all-pages-1.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\classroom-final-v10\\actual-all-pages-1.png",
+      "surface": "actual Microsoft PowerPoint PDF contact sheet",
+      "sha256": "dd824e765dede0b58c62a95d74b086196914b73d01b948676d1fb68a147bf613",
+      "bytes": 597329
+    },
+    {
+      "file": "actual-all-pages-2.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\classroom-final-v10\\actual-all-pages-2.png",
+      "surface": "actual Microsoft PowerPoint PDF contact sheet",
+      "sha256": "b510c1ad93b378b9e89f7ecaff676212602d6eaadf6f737d90e21d6e9d5b6a4c",
+      "bytes": 486657
+    },
+    {
+      "file": "actual-all-pages-3.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\classroom-final-v10\\actual-all-pages-3.png",
+      "surface": "actual Microsoft PowerPoint PDF contact sheet",
+      "sha256": "73838c4b8af69ec9a18b9a1f5e83db285fefe096eeb32291020569bd1a733eca",
+      "bytes": 517495
+    },
+    {
+      "file": "actual-all-pages-4.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\classroom-final-v10\\actual-all-pages-4.png",
+      "surface": "actual Microsoft PowerPoint PDF contact sheet",
+      "sha256": "9c0899a933f6d11378c906dea0e1e961354dd1b3baa72fa0f947eaba5b8d3c15",
+      "bytes": 45713
+    },
+    {
+      "file": "actual-knowledge-64-4.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\classroom-final-v10\\actual-knowledge-64-4.png",
+      "surface": "actual Microsoft PowerPoint PDF",
+      "sha256": "479ee0e4dedbac0c0db9dfa4775d1d4722c4623e4c644cd19bd4f142266656e0",
+      "bytes": 439637
+    },
+    {
+      "file": "actual-knowledge-95-2.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\classroom-final-v10\\actual-knowledge-95-2.png",
+      "surface": "actual Microsoft PowerPoint PDF",
+      "sha256": "54e08f0058d0c94b2ca5212138096d932045fd4463fb9fecc12cf08bf4affde8",
+      "bytes": 282741
+    },
+    {
+      "file": "actual-gecko-paw.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\classroom-final-v10\\actual-photo-green-gecko-paw.jpg-1.png",
+      "surface": "actual Microsoft PowerPoint PDF",
+      "sha256": "47b28bcd49b9a5b43fd14d81c1c00fe84fa68495c6db4ebb77153a8f4782fe65",
+      "bytes": 545054
+    },
+    {
+      "file": "actual-water-strider.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\classroom-final-v10\\actual-photo-water-strider.jpg-1.png",
+      "surface": "actual Microsoft PowerPoint PDF",
+      "sha256": "a51fd88ff76582f3fe71f14445a8c72048ab51eebd8b64393f71cc138996b5f5",
+      "bytes": 386830
+    },
+    {
+      "file": "actual-word-plan-page-1.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\classroom-final-v10\\actual-word-page-1.png",
+      "surface": "actual Microsoft Word lesson-plan PDF",
+      "sha256": "9afa36c1248299e900241686bf5443ee511566e5ea27c50e65aef62fb38e829c",
+      "bytes": 277181
+    },
+    {
+      "file": "actual-word-lecture-page-11.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\classroom-final-v10\\actual-word-lecture-page-11.png",
+      "surface": "actual Microsoft Word classroom-lecture PDF",
+      "sha256": "6215ff51ef259dfc806103da1433bdfb758fc20678dc74df42fe00f58669879c",
+      "bytes": 382025
+    },
+    {
+      "file": "actual-final-question-and-click-answer.png",
+      "source": "E:\\项目\\上海高中化学等级考\\outputs\\2026-10-07-handout-knowledge-sections\\classroom-final-v10\\actual-final-question-and-click-answer-1.png",
+      "surface": "actual Microsoft PowerPoint PDF, static timing-independent page",
+      "sha256": "023c9821b1817fa02328eb003115589cbf2da37739bd6fbbcce46a1256aebb36",
+      "bytes": 190703
+    }
+  ]
+}

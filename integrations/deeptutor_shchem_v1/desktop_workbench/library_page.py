@@ -49,6 +49,8 @@ class LibraryPage(QWidget):
     preparation_image_requested = Signal(dict)
     preparation_reference_requested = Signal(object)
     word_reference_requested = Signal(dict)
+    word_cards_requested = Signal(dict)
+    handout_materials_requested = Signal(dict)
 
     def __init__(
         self,
@@ -71,6 +73,9 @@ class LibraryPage(QWidget):
         self._previewed_detail_key: str | None = None
         self._detail_dialog: LibraryDetailDialog | None = None
         self._handout_candidate_dialog = None
+        self._handout_materials_dialog = None
+        self._handout_materials_source = None
+        self._handout_materials_closed = False
 
         content = QWidget()
         content.setObjectName("PageContent")
@@ -178,6 +183,11 @@ class LibraryPage(QWidget):
         self.word_questions_button.setObjectName("PrimaryButton")
         self.word_questions_button.clicked.connect(self._open_word_questions)
         root.addWidget(self.word_questions_button)
+        self.handout_materials_button = QPushButton("讲义选材…")
+        self.handout_materials_button.setObjectName("PrimaryButton")
+        self.handout_materials_button.setAccessibleName("选一份讲义的知识、原图与完整题加入当前备课")
+        self.handout_materials_button.clicked.connect(self.open_handout_materials)
+        root.addWidget(self.handout_materials_button)
         self.personal_visual_questions_button = QPushButton("已识别图片题 · 逐题预览与挑选")
         self.personal_visual_questions_button.setObjectName("QuietButton")
         self.personal_visual_questions_button.setVisible(
@@ -781,11 +791,39 @@ class LibraryPage(QWidget):
     def _open_word_questions(self) -> None:
         from .word_question_dialog import WordQuestionDialog
 
-        dialog = WordQuestionDialog(self.facade, self.tasks, self.window())
+        dialog = WordQuestionDialog(self.facade, self.tasks, self.window(), handoff_mode="both")
         dialog.basket_changed.connect(self._word_basket_changed)
-        if dialog.exec() == dialog.DialogCode.Accepted and dialog.preparation_reference is not None:
-            self.word_reference_requested.emit(dialog.preparation_reference)
+        if dialog.exec() == dialog.DialogCode.Accepted:
+            if dialog.composition_result is not None:
+                self.word_cards_requested.emit(dialog.composition_result)
+            elif dialog.preparation_reference is not None:
+                self.word_reference_requested.emit(dialog.preparation_reference)
         dialog.deleteLater()
+
+    def open_handout_materials(self) -> None:
+        from .handout_material_workspace import HandoutMaterialWorkspace
+        if self._handout_materials_closed:
+            return
+        dialog = self._handout_materials_dialog
+        if dialog is not None:
+            dialog.raise_()
+            dialog.activateWindow()
+            return
+        source = self._handout_materials_source
+        options = {'initial_source': source, 'resume_source': True} if source is not None else {}
+        dialog = HandoutMaterialWorkspace(self.facade, self.tasks, self.window(), **options)
+        self._handout_materials_dialog = dialog
+        def finished(result):
+            if self._handout_materials_dialog is dialog:
+                self._handout_materials_dialog = None
+                if not self._handout_materials_closed:
+                    source = getattr(dialog, 'continuation_source', lambda: None)()
+                    self._handout_materials_source = source
+                    if result == dialog.DialogCode.Accepted and dialog.request is not None:
+                        self.handout_materials_requested.emit(dialog.request)
+            dialog.deleteLater()
+        dialog.finished.connect(finished)
+        dialog.open()
 
     def _word_basket_changed(self, count: int) -> None:
         self._refresh_basket_label()
@@ -855,6 +893,9 @@ class LibraryPage(QWidget):
         super().resizeEvent(event)
 
     def closeEvent(self, event: QCloseEvent) -> None:
+        self._handout_materials_closed = True
+        if self._handout_materials_dialog is not None:
+            self._handout_materials_dialog.reject()
         self._invalidate_detail(close_dialog=True)
         super().closeEvent(event)
 

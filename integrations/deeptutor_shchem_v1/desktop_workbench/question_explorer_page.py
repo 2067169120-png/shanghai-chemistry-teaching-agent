@@ -82,6 +82,8 @@ class QuestionExplorerPage(QWidget):
     preparation_image_requested = Signal(dict)
     preparation_reference_requested = Signal(object)
     word_reference_requested = Signal(dict)
+    word_cards_requested = Signal(dict)
+    handout_materials_requested = Signal(dict)
     preview_requested = Signal()
     assembly_requested = Signal()
     PAGE_SIZE = 8
@@ -95,6 +97,9 @@ class QuestionExplorerPage(QWidget):
         self._search_task = None
         self._detail_task = None
         self._reader = None
+        self._reading_restore = None
+        self._reading_restore_epoch = None
+        self._reading_restore_context = None
         self._active_card = None
         self._catalogs = {}
         self._sessions = {}
@@ -112,6 +117,8 @@ class QuestionExplorerPage(QWidget):
         self.cards = []
         self._closed = False
         self._adding = set()
+        self._handout_materials_dialog = None
+        self._handout_materials_source = None
         self._search_timer = QTimer(self)
         self._search_timer.setSingleShot(True)
         self._search_timer.setInterval(160)
@@ -124,6 +131,11 @@ class QuestionExplorerPage(QWidget):
         self.page_heading.setWordWrap(False)
         self.page_heading.setFixedHeight(40)
         heading.addWidget(self.page_heading, 1)
+        self.handout_materials_button = QPushButton("讲义选材…")
+        self.handout_materials_button.setObjectName("PrimaryAction")
+        self.handout_materials_button.setAccessibleName("选一份讲义的知识、原图与完整题加入当前备课")
+        self.handout_materials_button.clicked.connect(self.open_handout_materials)
+        heading.addWidget(self.handout_materials_button)
         self.basket_button = QPushButton("选题篮  0")
         self.basket_button.setObjectName("ExplorerBasketButton")
         self.basket_button.clicked.connect(self.open_basket)
@@ -193,8 +205,14 @@ class QuestionExplorerPage(QWidget):
         self.query.returnPressed.connect(self.search)
         self.search_button = QPushButton("搜索题目")
         self.search_button.clicked.connect(self.search)
+        self.word_composition_button = QPushButton("选完整题加入课件…")
+        self.word_composition_button.setObjectName("PrimaryAction")
+        self.word_composition_button.setAccessibleName("从本地Word题库选完整题加入当前课件")
+        self.word_composition_button.setToolTip("阅读并勾选完整题，预览后把题面、原图与教师答案加入当前课件素材。")
+        self.word_composition_button.clicked.connect(lambda: self.open_advanced(composition=True))
         for widget, stretch in ((self.filter_toggle, 0), (self.query, 1), (self.search_button, 0)):
             self.search_row.addWidget(widget, stretch)
+        self.search_row.addWidget(self.word_composition_button)
         work.addLayout(self.search_row)
         chips_row = QHBoxLayout()
         self.chip_body = QWidget()
@@ -222,6 +240,8 @@ class QuestionExplorerPage(QWidget):
         self.scroll.setWidgetResizable(True)
         self.scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.scroll.verticalScrollBar().actionTriggered.connect(self._cancel_reading_restore)
+        self.scroll.verticalScrollBar().sliderPressed.connect(self._cancel_reading_restore)
         self.list_body = QWidget()
         self.list_layout = QVBoxLayout(self.list_body)
         self.list_layout.setContentsMargins(0, 0, 4, 0)
@@ -253,6 +273,7 @@ class QuestionExplorerPage(QWidget):
         self.tree.itemClicked.connect(self.curriculum_clicked)
         self.refresh_basket()
         self.advanced_button.setText("题图与标签管理" if self.scope.currentData() == "visual_native" else "Word原文与标签管理")
+        self.word_composition_button.setVisible(self.scope.currentData() == "word_native")
 
     def showEvent(self, event):
         self.refresh_basket()
@@ -267,13 +288,62 @@ class QuestionExplorerPage(QWidget):
 
     def invalidate_catalogs(self):
         """Imports invalidate snapshots, including a cancelled cold reader."""
+        position = self._reading_position() if self.isVisible() and self._started else None
         self._catalogs.clear()
         self._sessions.clear()
         self._base_facets = {}
-        if self.isVisible() and self._started:
-            self.reload()
+        if position is not None:
+            self.reload(reading_position=position)
         else:
             self._needs_reload = True
+
+    def _reading_context(self):
+        return (self.scope.currentData(), self.query.text().strip(),
+                tuple(sorted((key, tuple(sorted(values))) for key, values in self.filters.items() if values)),
+                tuple(sorted(self.curriculum.items())), self._page)
+
+    def _reading_position(self):
+        value = self.scroll.verticalScrollBar().value()
+        anchor = next((card for card in self.cards if card.geometry().bottom() >= value), None)
+        return {"context": self._reading_context(), "value": value,
+                "key": anchor.entry["key"] if anchor is not None else None,
+                "offset": value - anchor.geometry().top() if anchor is not None else 0}
+
+    def _restore_reading_position(self, position, epoch, *, layout_ready=False):
+        if (self._closed or epoch != self._epoch
+                or self._reading_restore != (epoch, position)
+                or position["context"] != self._reading_context()):
+            return
+        if not layout_ready or any(card._height_timer.isActive() for card in self.cards):
+            # Card height timers can queue another scroll-area layout. Restore
+            # after that turn, and recheck the search token before touching it.
+            QTimer.singleShot(0, self, lambda: self._restore_reading_position(
+                position, epoch, layout_ready=True))
+            return
+        self.list_layout.activate()
+        if any(card._height_timer.isActive() for card in self.cards):
+            QTimer.singleShot(0, self, lambda: self._restore_reading_position(
+                position, epoch, layout_ready=True))
+            return
+        anchor = next((card for card in self.cards if card.entry["key"] == position["key"]), None)
+        value = anchor.geometry().top() + position["offset"] if anchor is not None else position["value"]
+        self.scroll.verticalScrollBar().setValue(value)
+        self._reading_restore = None
+
+    def _cancel_reading_restore(self, *_):
+        self._reading_restore = None
+        self._reading_restore_epoch = None
+        self._reading_restore_context = None
+
+    def _queue_reading_restore(self, *, reader_failed=False):
+        pending = self._reading_restore
+        if pending is None:
+            return
+        epoch, position = pending
+        if (not reader_failed and self._active_card is not None
+                and self._active_card.entry["lane"] not in PERSONAL_LANES and self._reader is None):
+            return  # The deferred original-paper reader will change card height.
+        QTimer.singleShot(0, self, lambda: self._restore_reading_position(position, epoch))
 
     def copy_load_metrics(self):
         metrics = dict(self.load_metrics)
@@ -307,16 +377,30 @@ class QuestionExplorerPage(QWidget):
         self.filters, self.curriculum, self._base_facets = {}, {}, {}
         self._page, self._cursors = 0, [None]
         self.advanced_button.setText('题图与标签管理' if self.scope.currentData() == "visual_native" else "Word原文与标签管理")
+        self.word_composition_button.setVisible(lane == "word_native")
         self._render_tree()
         if self._started:
             self.search()
 
-    def reload(self):
+    def open_word_library(self):
+        """An explicit receipt action opens all Word questions in this profile."""
+        index = self.scope.findData("word_native")
+        if index < 0 or self._closed:
+            return
+        self.query.clear()
+        # Reset once even if Word was already selected. Old keyword, chapter
+        # and tag filters must not hide the just-imported local material.
+        with QSignalBlocker(self.scope):
+            self.scope.setCurrentIndex(index)
+        self._needs_reload = False
+        self.scope_changed()
+
+    def reload(self, *, reading_position=None):
         self._catalogs.pop(self.scope.currentData(), None)
         self._sessions.pop(self.scope.currentData(), None)
         self._base_facets = {}
         self.load_curriculum()
-        self.search()
+        self.search(reset=reading_position is None, reading_position=reading_position)
 
     def load_curriculum(self):
         loader = getattr(self.facade, "curriculum_catalog", None)
@@ -329,10 +413,11 @@ class QuestionExplorerPage(QWidget):
             self._curriculum_catalog = value
             self._render_tree()
 
-    def search(self, *_args, reset=True):
+    def search(self, *_args, reset=True, reading_position=None):
         if self._closed:
             return
         self._search_timer.stop()
+        self._cancel_reading_restore()
         if reset:
             self._page, self._cursors = 0, [None]
         self._epoch += 1
@@ -379,6 +464,11 @@ class QuestionExplorerPage(QWidget):
                 self._catalogs[lane] = catalog
             display_started = perf_counter()
             self._apply(value)
+            if reading_position is not None:
+                self._reading_restore_epoch = epoch
+                self._reading_restore_context = reading_position["context"]
+                self._reading_restore = (epoch, reading_position)
+                self._queue_reading_restore()
             self.load_metrics = {"schema": "question-page-timing-v1", "lane": lane,
                 **value.get("performance", {}), "visible_cards": len(self.cards),
                 "card_setup_ms": round((perf_counter() - display_started) * 1000, 2),
@@ -591,6 +681,7 @@ class QuestionExplorerPage(QWidget):
         self._active_card = None
 
     def expand(self, card):
+        self._cancel_reading_restore()
         same = card is self._active_card
         self.close_reader()
         if same:
@@ -622,6 +713,7 @@ class QuestionExplorerPage(QWidget):
             def failed(message):
                 if epoch == self._reader_epoch and not self._closed:
                     card.note.setText(str(message))
+                    self._queue_reading_restore(reader_failed=True)
             self._detail_task = self.tasks.submit("读取完整题面", lambda: self.facade.library_theme_detail(entry["payload"]),
                                                    on_success=ready, on_failure=failed)
 
@@ -634,13 +726,22 @@ class QuestionExplorerPage(QWidget):
         card.excerpt.hide()
         card.open.setText("收起题面")
         reader.show()
+        self._queue_reading_restore()
 
     def reader_ready(self, epoch, card, ready):
         if self._closed or epoch != self._reader_epoch or card is not self._active_card:
             return
+        message = "题面与公共材料已加载。" if ready else "题面仍在加载或有原图缺口，可到原文与标签入口核对。"
+        position = (self._reading_position() if self._reading_restore is None
+                    and self._reading_restore_epoch == self._epoch
+                    and self._reading_restore_context == self._reading_context()
+                    and card.note.text() != message else None)
         card.ready = ready
-        card.note.setText("题面与公共材料已加载。" if ready else "题面仍在加载或有原图缺口，可到原文与标签入口核对。")
+        card.note.setText(message)
         self.refresh_basket()
+        if position is not None:
+            self._reading_restore = (self._epoch, position)
+            self._queue_reading_restore()
 
     def add(self, card):
         if not card.ready or card is not self._active_card or card.entry["key"] in self._adding:
@@ -710,22 +811,54 @@ class QuestionExplorerPage(QWidget):
         dialog.deleteLater()
         self.refresh_basket()
 
-    def open_advanced(self):
+    def open_advanced(self, *, composition=False):
         lane = self.scope.currentData()
+        if composition and lane != "word_native":
+            return
         if lane == "visual_native":
             from .personal_visual_question_dialog import PersonalVisualQuestionDialog
             dialog = PersonalVisualQuestionDialog(self.facade, self.tasks, self.window())
         else:
             from .word_question_dialog import WordQuestionDialog
-            dialog = WordQuestionDialog(self.facade, self.tasks, self.window())
-        if dialog.exec() == dialog.DialogCode.Accepted and dialog.preparation_reference is not None:
-            self.word_reference_requested.emit(dialog.preparation_reference)
+            dialog = WordQuestionDialog(self.facade, self.tasks, self.window(),
+                handoff_mode="composition" if composition else "both")
+        if dialog.exec() == dialog.DialogCode.Accepted:
+            cards = getattr(dialog, "composition_result", None)
+            if cards is not None:
+                self.word_cards_requested.emit(cards)
+            elif dialog.preparation_reference is not None:
+                self.word_reference_requested.emit(dialog.preparation_reference)
         dialog.deleteLater()
         count = self.refresh_basket()
         if count is not None:
             self.basket_changed.emit(count)
         if lane in PERSONAL_LANES:
             self.reload()
+
+    def open_handout_materials(self):
+        from .handout_material_workspace import HandoutMaterialWorkspace
+        if self._closed:
+            return
+        dialog = self._handout_materials_dialog
+        if dialog is not None:
+            dialog.raise_()
+            dialog.activateWindow()
+            return
+        source = self._handout_materials_source
+        options = {'initial_source': source, 'resume_source': True} if source is not None else {}
+        dialog = HandoutMaterialWorkspace(self.facade, self.tasks, self.window(), **options)
+        self._handout_materials_dialog = dialog
+        def finished(result):
+            if self._handout_materials_dialog is dialog:
+                self._handout_materials_dialog = None
+                if not self._closed:
+                    source = getattr(dialog, 'continuation_source', lambda: None)()
+                    self._handout_materials_source = source
+                    if result == dialog.DialogCode.Accepted and dialog.request is not None:
+                        self.handout_materials_requested.emit(dialog.request)
+            dialog.deleteLater()
+        dialog.finished.connect(finished)
+        dialog.open()
 
     def resizeEvent(self, event):
         narrow = event.size().width() < 700
@@ -743,6 +876,8 @@ class QuestionExplorerPage(QWidget):
 
     def closeEvent(self, event):
         self._closed = True
+        if self._handout_materials_dialog is not None:
+            self._handout_materials_dialog.reject()
         self._epoch += 1
         self._search_timer.stop()
         if self._search_task:

@@ -265,14 +265,21 @@ def test_checked_in_part_b_is_a_traceable_auxiliary_not_full_lesson():
     cards = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
     assert len(cards) == 16
     assert {c["package_id"] for c in cards} == {f"PKG-{i:03}" for i in range(34, 65, 2)}
+    from integrations.deeptutor_shchem_v1.desktop_lecture_library import _index_cards
+    readable, warnings = _index_cards(workspace)
+    assert not any('part-b.jsonl' in warning for warning in warnings)
+    assert path.stat().st_size <= 4 * 1024 * 1024
     for card in cards:
         assert card["id"] == "LECT-" + card["package_id"]
         assert card["review_status"] == "ai_distilled_pending_teacher_review"
         assert card["human_reviewed"] is False
         assert len(card["source_sha256"]) == 64
         assert set(card["source_sha256"]) <= set("0123456789abcdef")
-        assert 4 <= len(card["knowledge"]) <= 8
-        assert 1 <= len(card["methods"]) + len(card["pitfalls"]) <= 3
+        assert len(card["knowledge"]) >= 4
+        # Expanded source-bound methods remain usable; the original three-line
+        # digest was not a permanent cardinality rule of the library reader.
+        assert len(card["methods"]) + len(card["pitfalls"]) >= 1
+        assert readable[card['source_sha256']] == card
         for point in card["knowledge"] + card["methods"] + card["pitfalls"]:
             assert point["summary"] and "待查看原文" not in point["summary"]
             assert point["block_indices"] and all(

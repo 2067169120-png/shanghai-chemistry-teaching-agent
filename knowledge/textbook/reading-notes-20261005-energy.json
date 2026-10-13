@@ -1,0 +1,352 @@
+{
+  "schema_version": "shchem.textbook-reading-notes.v1",
+  "candidate_only": true,
+  "human_reviewed": false,
+  "root_model_review_completed": true,
+  "notes": [
+    {
+      "id": "READ-20261005-ENERGY-01",
+      "title": "化学变化同时关联物质与多种能量形式",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.3",
+      "pdf_pages": [
+        28,
+        29
+      ],
+      "printed_pages": [
+        24,
+        25
+      ],
+      "summary": "教材指出化学变化既能创造新物质，也能实现能量转化。化学能与化学键等有关，反应中的能量变化可表现为热能、电能和光能；正文分别引出吸放热与化学能转化为电能。",
+      "classroom_check": "先记录物质变化的证据，再注明涉及的能量形式；对照学习聚焦，区分反应事实与能量转换关系。",
+      "limitation": "本条整理本节框架，不由能量转换名称推定反应速率、效率或具体电池性能，也不把所有能量变化都视作化学反应。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          28,
+          29
+        ],
+        "printed_pages": [
+          24,
+          25
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ENERGY-02",
+      "title": "吸放热判断保留反应对象与条件",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.3",
+      "pdf_pages": [
+        29
+      ],
+      "printed_pages": [
+        25
+      ],
+      "summary": "原页把放出热量的化学反应称为放热反应，吸收热量的化学反应称为吸热反应。甲烷与氧气点燃反应生成二氧化碳和水：CH₄+2O₂→CO₂+2H₂O；碳酸钙加热分解生成氧化钙和二氧化碳：CaCO₃→CaO+CO₂。原书分别用于放热与吸热举例。",
+      "classroom_check": "将反应物、生成物、点燃或加热条件与吸放热判断并列，回查原页方程式和正文，避免仅凭是否需要启动加热判断。",
+      "limitation": "原页未给反应焓数值或物质的状态标记，本条不补猜数据；加热条件与净吸放热不是同一个判断。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          29
+        ],
+        "printed_pages": [
+          25
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ENERGY-03",
+      "title": "断键吸能与成键放能比较总量",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.3",
+      "pdf_pages": [
+        29
+      ],
+      "printed_pages": [
+        25
+      ],
+      "summary": "正文说明反应物中的化学键断裂需要吸收能量，生成物中新化学键形成会放出能量。若断键吸收的总能量小于成键释放的总能量，反应放热；反之反应吸热。判断对象是两项总量。",
+      "classroom_check": "分别列出断键与成键过程的能量方向，再比较总量；解释为何不能只看某一根化学键或某一步过程。",
+      "limitation": "本节没有提供具体键能表；不补造键能、反应焓或活化能，不能把“断键”单独当成整个反应的吸热结论。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          29
+        ],
+        "printed_pages": [
+          25
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ENERGY-04",
+      "title": "能量图先核对反应物和生成物位置",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.3",
+      "pdf_pages": [
+        29
+      ],
+      "printed_pages": [
+        25
+      ],
+      "summary": "图5.21把反应物与生成物的总能量分成两种高低关系：甲烷燃烧例中反应物较高、生成物较低，向环境释放能量；碳酸钙分解例中生成物较高，需要从环境吸收能量。图中箭头方向和物质标签需一起读取。",
+      "classroom_check": "先指出纵轴与各水平线代表什么，再连接能量高低、箭头及吸放热名称；用物质标签核查图形方向。",
+      "limitation": "图是示意图而非按比例的数值曲线；不从线段长度推导反应热，不补入图中未画出的过渡态或活化能。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          29
+        ],
+        "printed_pages": [
+          25
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ENERGY-05",
+      "title": "铜锌原电池的现象对应电子转移证据",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.3",
+      "pdf_pages": [
+        30
+      ],
+      "printed_pages": [
+        26
+      ],
+      "summary": "原页比较铜片、锌片在稀硫酸中未用导线连接与连接后的情形。正文说明连接后铜片表面有气泡，电流计指针偏转；锌被氧化为Zn²⁺进入溶液，电子经导线流向铜片，H⁺在铜片上得电子形成氢气。总反应Zn+2H⁺→Zn²⁺+H₂↑，对应锌、氢离子、锌离子和氢气。",
+      "classroom_check": "把气泡所在电极、金属变化、电子流向和电流计响应分开记录，再说明各条证据支持的判断。",
+      "limitation": "实验记录表在原书中为空白；正文解释不冒充学生实测数据。本条限于铜锌与稀硫酸体系，不推定所有原电池的正极都析氢。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          30
+        ],
+        "printed_pages": [
+          26
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ENERGY-06",
+      "title": "正负极按电子得失及电极反应核对",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.3",
+      "pdf_pages": [
+        31
+      ],
+      "printed_pages": [
+        27
+      ],
+      "summary": "原页定义电子流出的电极为负极，电子流入的电极为正极。铜锌示例的负极为锌，发生氧化：Zn−2e⁻→Zn²⁺；正极为铜，氢离子发生还原：2H⁺+2e⁻→H₂。式中Zn、Zn²⁺、H⁺、e⁻、H₂分别为锌、锌离子、氢离子、电子和氢气。",
+      "classroom_check": "对照两电极反应，逐项核对电子数、电荷及氧化还原方向；区分电极材料和实际得电子的物质。",
+      "limitation": "保留原书电极反应的表达依据；铜作为正极材料不代表铜原子必定参加还原反应，也不把原电池极性直接套到电解池。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          31
+        ],
+        "printed_pages": [
+          27
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ENERGY-07",
+      "title": "工作电池同时需要电子和离子通路",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.3",
+      "pdf_pages": [
+        30,
+        33
+      ],
+      "printed_pages": [
+        26,
+        29
+      ],
+      "summary": "原书铁棒／铜罐／醋的例题列出电极材料、电极反应、离子导体和电子导体等构成工作原电池的要素；铜锌实验的导线及电流计提供电子通路，溶液对应离子导体。装置图与反应对象应共同核查。",
+      "classroom_check": "在图5.22和图5.25上分别指出电极、溶液、导线及电流计，说明断开哪条通路会影响工作状态。",
+      "limitation": "本条不凭两种金属的存在就认定一定能工作，不补猜原图未标出的盐桥、离子迁移方向或电流数值。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          30,
+          33
+        ],
+        "printed_pages": [
+          26,
+          29
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ENERGY-08",
+      "title": "铁醋例题保留弱电解质与体系条件",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.3",
+      "pdf_pages": [
+        33
+      ],
+      "printed_pages": [
+        29
+      ],
+      "summary": "图5.25例题中铁棒为负极，铜罐上发生还原反应；铁逐渐溶解、铜罐上析出气泡，电流计偏转。原书写Fe+2CH₃COOH→Fe²⁺+2CH₃COO⁻+H₂↑，对应铁、乙酸、亚铁离子、乙酸根和氢气；乙酸为弱电解质，在该离子方程式中保留分子式。例题说明不能用乙醇替代醋来获得所述电流。",
+      "classroom_check": "结合原图核对反应物、电极及通路，再说明乙酸和乙醇在该题体系中的区别；把现象与离子方程式一一对应。",
+      "limitation": "这是教材例题解析，未称为考试官方采分点；替换判断限于题设体系，不推广成所有含乙醇的混合液均不能导电。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          33
+        ],
+        "printed_pages": [
+          29
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ENERGY-09",
+      "title": "化学电源分类与能量转化口径分开",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.3",
+      "pdf_pages": [
+        29,
+        31,
+        32
+      ],
+      "printed_pages": [
+        25,
+        27,
+        28
+      ],
+      "summary": "原书列化学电源的原电池、蓄电池和燃料电池类别，随后将一次电池描述为放电后不可再充电、二次电池可反复充电，燃料电池的燃料从外部供给；另一处又以“原电池”广义表示化学能转化为电能的装置，并与电能转化为化学能的电解池比较。",
+      "classroom_check": "阅读时注明当前在讨论电池分类还是能量转化原理，再对照锌锰干电池、锂离子电池与燃料电池等教材例子。",
+      "limitation": "原书同一术语的广狭口径保留为阅读提示，不把一次电池描述当作一切原电池原理装置的永久定义；不推导当前产品性能或生命周期环境结论。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          29,
+          31,
+          32
+        ],
+        "printed_pages": [
+          25,
+          27,
+          28
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    },
+    {
+      "id": "READ-20261005-ENERGY-10",
+      "title": "练习中的能量变化先识别物质变化类型",
+      "volume_id": "TB-M2",
+      "section_key": "TB-M2-C5:5.3",
+      "pdf_pages": [
+        32,
+        33,
+        34
+      ],
+      "printed_pages": [
+        28,
+        29,
+        30
+      ],
+      "summary": "本节练习并列柠檬水果电池与生活／诗句中的物质变化，要求解释能量转换、电子流向及吸放热。阅读时应先核对对象和变化类型，再关联原电池或吸放热知识；能源化学侧栏还区分能源转化、储存、传输和利用等研究内容。",
+      "classroom_check": "将题设、待判断的能量关系与可回查的正文页码对应；比较凝固、燃烧与分解所需的不同证据。",
+      "limitation": "原书练习未附完整答案，本条不代填空格或发布标准答案；不把物理变化直接称为吸热或放热化学反应，也不采用教材背景作当前能源政策判断。",
+      "source_path": "课本/沪科技化学必修第二册【高清教材】.pdf",
+      "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+      "textbook_evidence": {
+        "source_sha256": "92f09535689cbb1192526a7f8b4dde2254869052d8e3b6d88b8bed9d354094ce",
+        "pdf_pages": [
+          32,
+          33,
+          34
+        ],
+        "printed_pages": [
+          28,
+          29,
+          30
+        ],
+        "review_method": "page_images_read_by_model"
+      },
+      "candidate_only": true,
+      "human_reviewed": false,
+      "teaching_use_allowed": false,
+      "generation_allowed": false,
+      "publication_allowed": false
+    }
+  ]
+}

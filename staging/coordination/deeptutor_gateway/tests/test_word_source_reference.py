@@ -401,15 +401,39 @@ def test_derived_payload_sha_mismatch_is_an_image_issue(
         facade.import_word_source_reference(ref, [])
 
 
-def test_picture_capacity_is_checked_before_any_save(desktop_paths, tmp_path):
-    facade, selection, _, _, _ = _import(desktop_paths, tmp_path, images=MAX_IMAGES + 1)
+@pytest.mark.parametrize('image_count', [MAX_IMAGES, MAX_IMAGES + 1])
+def test_picture_capacity_is_checked_before_any_save(desktop_paths, tmp_path, monkeypatch, image_count):
+    document = Document(); paragraph = document.add_paragraph('完整图像容量：')
+    pixels = [_png((number, 30, 50)) for number in range(image_count)]
+    for raw in pixels:
+        paragraph.add_run().add_picture(io.BytesIO(raw))
+    facade, selection, preview = _from_document(desktop_paths, tmp_path, document)
+    source = tmp_path / '原结构图文测试.docx'; original = source.read_bytes()
+    state = deepcopy(facade.state_store.snapshot()); frozen_preview = deepcopy(preview)
     ref = _reference(facade, selection)
-    assert len(ref["image_assets"]) == MAX_IMAGES + 1
-    assert any("未删减图片" in note for note in ref["warnings"])
-    assert ref["reference_issues"]
-    with pytest.raises(WordSourceReferenceError, match=f"最多选择{MAX_IMAGES}张"):
-        facade.import_word_source_reference(ref, [])
-    assert not _image_root(facade).exists()
+    frozen = deepcopy(ref)
+    assert len(ref["image_assets"]) == image_count
+    assert len({a['sha256'] for a in ref['image_assets']}) == image_count
+    assert len(ref['materials']) <= MAX_MATERIALS and ref['image_issues'] == []
+    save = PreparationImageStore.import_bytes; calls = []
+    def observe(store, *args, **kwargs):
+        calls.append(store.root)
+        return save(store, *args, **kwargs)
+    monkeypatch.setattr(PreparationImageStore, 'import_bytes', observe)
+    if image_count > MAX_IMAGES:
+        assert any("未删减图片" in note for note in ref["warnings"]) and ref['reference_issues']
+        with pytest.raises(WordSourceReferenceError, match=f"最多选择{MAX_IMAGES}张"):
+            facade.import_word_source_reference(ref, [])
+        assert calls == [] and not _image_root(facade).exists()
+    else:
+        result = facade.import_word_source_reference(ref, [])
+        assert result['image_assets'] == ref['image_assets']
+        assert len(calls) == image_count and all(_image_root(facade) in root.parents for root in calls)
+        store = PreparationImageStore(_image_root(facade))
+        assert [store.load(asset) for asset in result['image_assets']] == pixels
+    assert ref == frozen and source.read_bytes() == original
+    assert facade.state_store.snapshot() == state
+    assert facade.imported_word_preview(selection['batch_id'], selection['source_id']) == frozen_preview
 
 
 def test_merged_capacity_keeps_existing_assets_unchanged(desktop_paths, tmp_path):

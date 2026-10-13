@@ -31,6 +31,21 @@ def sample_payload():
     return p
 
 
+def _actual_preview_ready(preview, *, expected_pages, page):
+    """Wait for this preview's async source and displayed page, fail explicit errors."""
+    if preview._closed:
+        raise AssertionError("Actual PPT preview closed before readiness")
+    if preview._source is None and preview._active is None:
+        raise AssertionError("Actual PPT preview source failed to open")
+    if preview._failed_pages:
+        raise AssertionError("Actual PPT preview page failed: " + str(sorted(preview._failed_pages)))
+    if preview._source is not None and preview.count != expected_pages:
+        raise AssertionError(f"Unexpected actual PPT page count: {preview.count}")
+    return (preview.count == expected_pages and preview._source is not None
+            and preview._active is None and preview._shown == page
+            and preview._bitmap is not None and preview.index == page - 1)
+
+
 def run_probe(output):
     from io import BytesIO
     from PIL import Image, ImageDraw, ImageFont
@@ -191,9 +206,15 @@ def run_probe(output):
                 shutil.copyfile(checked_file(facade,evidence["plan"],latest["id"],name),target/name)
             actual=actual_ppt_preview(facade,evidence["plan"],latest["id"])
             shutil.copyfile(actual["path"],target/"actual-pptx.pdf")
-            pv=ActualPptPreview(actual,win);pv.show();settle();capture(pv,"lesson-actual-pptx.png")
+            pv=ActualPptPreview(actual,win);pv.show()
+            settle(lambda:_actual_preview_ready(pv,expected_pages=3,page=1))
+            capture(pv,"lesson-actual-pptx.png")
             assert pv.count==3,pv.count
-            pv.next.click();settle();pv.close();pv.deleteLater()
+            assert pv.index==0 and pv._shown==1
+            pv.next.click();settle(lambda:_actual_preview_ready(pv,expected_pages=3,page=2))
+            assert pv.index==1 and pv._shown==2
+            capture(pv,"lesson-actual-pptx-page-2.png")
+            pv.close();pv.deleteLater()
             from .desktop_local_pagination import render_docx
             for name in ("lesson_plan","student_worksheet"):
                 _,pdf,_=render_docx(target/(name+".docx"),target/(name+"-pages"))
