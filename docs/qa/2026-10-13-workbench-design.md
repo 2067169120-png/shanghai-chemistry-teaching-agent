@@ -243,3 +243,12 @@ GitHub干净检出发现本机可达、但因ignore未入Git的文档引用：16
 本次本机policy与14项README检查的通过记录保留；干净Git检出的引用闭包由Root按264文件清单补齐，**PR #59与CI结果仍待实际验收**，不据本机通过或Release成功预填PR／CI通过。Root仅在desktop-integration.yml的pip install追加PySide6==6.11.2，与实际EXE依赖一致；测试替身仅调整lambda签名，不把PySide6 6.12推断为唯一根因。生产682源码及已冻结EXE保持，旧v0.1.101附件、标签和历史证据不重写。
 
 知识readerproof SHA **4d4c217cb624e71fc30fab513c3e0f53484d58b775da1617f6a9a21129ba1115**；原seedmanifest SHA **7b5be6d09c6cecb1773d0a0d0c2b21ee91ad1fdf94b9302a6afb7b14e478835f**，作为历史candidate引用，最终发行清单按整个profile不存在才初始化的启动器契约，不沿用原清单较弱的state不存在表述。实质知识单元回执SHA **5bf44e1c7b9b4cfb24939e7a7dc37b81a6917a1d135769a2ed6c2a19be15a6b1**。
+
+
+## Git检出、检查版本与最终审查入口
+
+98d37da7的Git干净副本在E独立展开，没有复制ignored本机输入，documentation_policy.py自然exit0，完整README测试14 passed（1.82s）。165个可达Markdown、1114条本地引用在暂存闭包中无缺失；264个历史被引用文件经允许清单补齐，两份MD仅移除多余EOF空行，原字节另存E，正文、锚点与链接保持。
+
+f5ae07c7的原七类CI失败留账：缺文档链接、过期allow_builtin测试替身，以及95断言通过后的Qt进程exit1。98d37da7文档、教师手册、Windows工作台、复练Office与改分检查已成功；Home的原标签216项和后续115断言已通过，但后者进程exit1。GitHub安装6.12.0，本机及本次EXE为6.11.2；版本差异已确认，不能据此认证唯一根因。Windows工作台、Home与Basket检查现统一6.11.2，保留全部原检查与后续步骤。最终各次状态及合并结果以[PR59检查记录](https://github.com/2067169120-png/shanghai-chemistry-teaching-agent/pull/59/checks)为准，当前页不预报尚未执行的PASS。
+
+v0.1.103标签固定在f5ae07c7a3caba21228b74bb03f48710da3aeb25；默认分支后续只补充这些文档、测试替身与CI依赖固定，682生产源码保持本次构建对应。当前教师指南以默认分支为入口，标签保留当时冻结状态；源码Git换行规范和本机精确构建SHA分别记账。
