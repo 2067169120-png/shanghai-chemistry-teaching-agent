@@ -148,6 +148,65 @@ class MixedPaperService:
 
         return PersonalVisualThemeExportService(PersonalVisualQuestionService(self.facade))
 
+    def source_item_from_entry(self, entry):
+        """Build a canonical complete source reference without touching a basket.
+
+        The supplied picker row is only a locator. Original readers establish
+        the current range, source identity, readiness and entire theme closure.
+        """
+        if not isinstance(entry, Mapping):
+            raise MixedPaperError("替题候选定位不正确，请重新检索。")
+        lane, payload = entry.get("lane"), entry.get("payload")
+        if lane in _SCOPES:
+            def field(name, default=None):
+                return payload.get(name, default) if isinstance(payload, Mapping) else getattr(payload, name, default)
+            raw = {"key": field("key"), "scope": field("scope", lane),
+                   "source_identity_sha256": field("source_identity_sha256"),
+                   "data_snapshot_id": field("data_snapshot_id"),
+                   "title_zh": field("title_zh", "标题待核对"),
+                   "source_zh": field("source_zh", "来源待核对")}
+            if raw["scope"] != lane or not raw["source_identity_sha256"] or not raw["data_snapshot_id"]:
+                raise MixedPaperError("候选缺少当前正式主题来源绑定，请重新检索。")
+            rows, words, inventory, catalogs = self._resolve([raw])
+        elif lane == "word_native" and isinstance(payload, Mapping):
+            selection = {name: payload[name] for name in ("key", "revision")}
+            selection["points"] = payload.get("points", 2)
+            # Exact locators permit restart without scanning unrelated sources.
+            service = self.facade._word_questions()
+            if payload.get("batch_id") and payload.get("archive_source_id"):
+                with service._lock:
+                    service._locations[selection["key"]] = (payload["batch_id"], payload["archive_source_id"])
+            current, _ = service._resolve([selection])
+            if len(current) != 1 or current[0].get("selection_ready") is not True or current[0].get("export_ready") is not True:
+                raise MixedPaperError("Word 候选的完整题干、共同材料或答案范围尚未核对。")
+            row = current[0]
+            for name in ("batch_id", "archive_source_id", "source_sha256", "origin_block_start"):
+                if payload.get(name) is not None and payload[name] != row.get(name):
+                    raise MixedPaperError("Word 候选原件或题目范围已经变化，请重新检索。")
+            raw = {"item_kind": "word_question", "key": _word_key(row["key"]),
+                   "title_zh": row["title"], "source_zh": row["source_name"],
+                   "word_selection": selection, "source_ref": _word_ref(row)}
+            rows, words, inventory, catalogs = self._resolve([raw])
+        elif lane == "visual_native" and isinstance(payload, Mapping):
+            selection = {name: payload[name] for name in ("batch_id", "key", "revision")}
+            selection["points"] = 2
+            compiled, _ = self._visual_themes().compile([selection])
+            if len(compiled) != 1:
+                raise MixedPaperError("图片候选不能核验为单个完整来源主题。")
+            row = compiled[0]
+            if payload.get("theme_key") and payload["theme_key"] != row["key"]:
+                raise MixedPaperError("图片候选的完整主题来源已变化。")
+            raw = {"item_kind": "personal_visual_theme", "key": row["key"],
+                   "title_zh": row["title_zh"], "source_zh": row["source_zh"],
+                   "source_ref": deepcopy(row["source_ref"]),
+                   "visual_selections": deepcopy(row["source_ref"]["selections"])}
+            rows, words, inventory, catalogs = self._resolve([raw])
+        else:
+            raise MixedPaperError("此候选来源不支持完整题目段替换。")
+        if len(rows) != 1:
+            raise MixedPaperError("候选没有保留为单个完整来源单元。")
+        return raw, rows[0], words, inventory, catalogs
+
     def add_visual_questions(self, selections):
         themes, _ = self._visual_themes().compile(selections)
         items = [{"item_kind": "personal_visual_theme", "key": item["key"],
@@ -620,7 +679,10 @@ class MixedPaperService:
             elif item["kind"] == "personal_visual_theme":
                 from .desktop_personal_visual_theme_writer import build_theme_blocks
 
-                if item != visual_items[key]:
+                # Independent papers also pin effective teacher attributes.
+                # That dependency is verified by _resolve's scoped guard;
+                # the compiler owns the unchanged source/theme payload below.
+                if {name: value for name, value in item.items() if name != "dependency_sha256"} != visual_items[key]:
                     raise MixedPaperError("图片主题在准备期间已变化，请重新预览。", "paper_preview_stale")
                 audience_blocks = {}
                 descriptor_by_id = {image["asset_id"]: image for image in item["content"]["images"]}

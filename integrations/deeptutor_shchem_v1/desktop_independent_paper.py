@@ -45,6 +45,17 @@ def _dependencies(facade, rows, words):
             raw = words[row["key"]]
             row["dependency_sha256"] = digest({"catalog": catalog, **{key: raw.get(key) for key in
                 ("attributes", "attribute_stale", "attribute_protected", "attribute_warning")}})
+        elif row["kind"] == "personal_visual_theme":
+            from .desktop_personal_visual_questions import PersonalVisualQuestionService
+            service = PersonalVisualQuestionService(facade)
+            dependencies = []
+            for selection in row["source_ref"]["selections"]:
+                current = service._matched_row(selection["batch_id"], selection["key"], selection["revision"])[0]
+                dependencies.append({key: current.get(key) for key in
+                    ("key", "attributes", "attribute_revision", "attribute_stale", "attribute_warning")})
+            from .desktop_word_question_attributes import load_attribute_catalog
+            row["dependency_sha256"] = digest({"rows": dependencies,
+                "catalog": load_attribute_catalog(facade.paths.workspace_root)})
     return rows
 
 

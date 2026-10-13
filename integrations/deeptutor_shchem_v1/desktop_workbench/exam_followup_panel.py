@@ -10,17 +10,16 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QGridLayout, QLabel, QPushB
 from ..desktop_exam_data import ExamError, digest
 from ..desktop_exam_followup import (create_followup, practice_request,
     record_attempt, task_summary, followup_text)
-from ..desktop_question_explorer import personal_options
 from ..desktop_exam_practice import (freeze_selection, selection_items, paper_session,
     request_revision, revise_selection, append_export)
 
 
-def checked_rows(title, rows, parent):
+def checked_rows(title, rows, parent, *, selected=()):
     dialog = QDialog(parent); dialog.setWindowTitle(title); dialog.resize(650,480)
     box = QVBoxLayout(dialog); view = QListWidget(); box.addWidget(view,1)
     for key, text in rows:
         item = QListWidgetItem(text); item.setData(Qt.ItemDataRole.UserRole,key)
-        item.setCheckState(Qt.CheckState.Unchecked); view.addItem(item)
+        item.setCheckState(Qt.CheckState.Checked if key in selected else Qt.CheckState.Unchecked); view.addItem(item)
     buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
     buttons.accepted.connect(dialog.accept); buttons.rejected.connect(dialog.reject); box.addWidget(buttons)
     accepted = dialog.exec() == QDialog.DialogCode.Accepted
@@ -163,31 +162,76 @@ class _ExamFollowupPanelBase(QWidget):
     def find_questions(self):
         task=deepcopy(self.current())
         if not task:return
-        choices=['本地 Word 题库','个人图片题库']
-        choice,ok=QInputDialog.getItem(self,'选择真实题库来源','当前标签来自该来源的有效目录',choices,0,False)
-        if not ok:return
-        lane='word_native' if choice==choices[0] else 'visual_native'
-        def ready(catalog):
-            current = self.current_for(task)
-            options=personal_options(catalog,lane).get('knowledge',{}).get('values',[])
-            options=[option for option in options if option['value']!='unknown']
+        sources=[('master','核心原卷题库'),('wave1','已细分原卷题'),
+                 ('supplemental','公众号补充题'),('word_native','本地 Word 题库'),
+                 ('visual_native','个人图片题库')]
+        previous=task.get('library_filter') or {}
+        selected=previous.get('sources',previous.get('lanes')) or ([previous['lane']] if previous.get('lane') else [key for key,_ in sources])
+        chosen_sources=checked_rows('选择本次复练检索来源（可多选）',sources,self,selected=selected)
+        if chosen_sources is None:return
+        if not chosen_sources:
+            self.d.status.setText('请至少选择一个真实题库来源；任务与题篮未改变。');return
+        def current_task():
+            current=self.current_for(task)
+            if any(current.get(key)!=task.get(key) for key in
+                   ('targets','student_profile_ids','student_profile_id')):
+                raise ExamError('任务学生归属已变化，请重新核对；未改变已有选题条件。')
+            return current
+        # Read the same bounded, unified catalog used by the picker. Formal K
+        # and personal knowledge are mapped by that service, never by labels.
+        def ready(result):
+            current_task()
+            options=result.get('facets',{}).get('knowledge',{}).get('values',[])
+            options=[option for option in options if isinstance(option,dict)
+                     and isinstance(option.get('value'),str) and option['value'].strip()
+                     and option['value'].strip().casefold()!='unknown']
             if not options:
-                self.d.status.setText('此来源没有可筛选的知识点标签，请先导入并核对标签；未生成虚构命中。');return
-            labels=[option['label_zh']+' ['+str(option['value'])+']' for option in options]
-            suggested=[i for i,option in enumerate(options) if task['knowledge'] in (option['value'],option['label_zh'])]
-            chosen,ok=QInputDialog.getItem(self,'核对题库知识点','考试标签与题库标签不自动等同，请选择确切对应',labels,suggested[0] if len(suggested)==1 else 0,False)
+                self.d.status.setText('所选来源没有有效知识条件，请先核对标签；未生成虚构命中。');return
+            source_labels=dict(sources)
+            labels=[option.get('label_zh',option['value'])+' ['+option['value']+'] · '+
+                    '、'.join(source_labels.get(lane,lane) for lane in option.get('sources',chosen_sources))
+                    for option in options]
+            suggested=[i for i,option in enumerate(options) if task['knowledge']==option['value']]
+            chosen,ok=QInputDialog.getItem(self,'核对复练知识条件','考试知识点与题库标签不自动等同；请选择明确对应的有效条件',labels,suggested[0] if len(suggested)==1 else 0,False)
             if not ok:return
             option=options[labels.index(chosen)]
-            revised=deepcopy(current);revised['library_filter']={'lane':lane,'knowledge':option['value'],'label':option['label_zh']}
+            # A modal selection can outlive a score/task or on-disk revision.
+            current=current_task()
+            version=result.get('version_vector')
+            if version is not None:
+                gate=getattr(self.d.facade,'unified_question_search_is_current',None)
+                if not callable(gate) or not gate(version):
+                    raise ExamError('题库目录已变化，请重新核对知识条件；任务与学生归属未改变。')
+            revised=deepcopy(current);revised['library_filter']={
+                'sources':list(chosen_sources),
+                'filters':{'knowledge':[option['value']],'knowledge_mode':'any'},
+                'label':option.get('label_zh',option['value']),
+                'knowledge_mapping':{'value':option['value'],'sources':list(option.get('sources',chosen_sources)),
+                                     'confirmed_by':'teacher'}}
+            if version is not None:revised['library_filter']['knowledge_mapping']['version_vector']=deepcopy(version)
             if not self.store(revised, expected=current):return
-            self.d.pending_handoff={'exam_id':task['exam_id'],'task_id':task['id'],**revised['library_filter']}
+            handoff={'exam_id':task['exam_id'],'task_id':task['id'],
+                     'exam_student_ids':[target['exam_student_id'] for target in revised['targets']],
+                     'student_targets':deepcopy(revised['targets']),**deepcopy(revised['library_filter'])}
+            # Only explicit profile bindings may supply persistent ownership.
+            if 'student_profile_ids' in revised:
+                handoff['student_profile_ids']=deepcopy(revised['student_profile_ids'])
+            else:
+                profile_ids=[]
+                for target in revised['targets']:
+                    binding=target.get('reviewed_identity_binding',target.get('identity_binding'))
+                    identity=binding.get('profile_student_id') if isinstance(binding,dict) else None
+                    if isinstance(identity,str) and identity and identity not in profile_ids:profile_ids.append(identity)
+                handoff['student_profile_ids']=profile_ids
+            if 'student_profile_id' in revised:handoff['student_profile_id']=deepcopy(revised['student_profile_id'])
+            self.d.pending_handoff=handoff
             from PySide6.QtCore import QTimer
             def leave():
                 if self.d._task:QTimer.singleShot(30,leave)
                 else:self.d.close()
             QTimer.singleShot(0,leave)
-        loader=getattr(self.d.facade,'word_question_listing',self.d.facade.word_question_catalog) if lane=='word_native' else self.d.facade.personal_visual_questions
-        self.d.run('读取现有题库标签',lambda report,cancelled:loader(),ready)
+        self.d.run('读取所选来源的有效知识条件',lambda report,cancelled:
+                   self.d.facade.search_unified_questions(lanes=chosen_sources,limit=1,cancelled=cancelled),ready)
 
     def link_questions(self):
         task=deepcopy(self.current())

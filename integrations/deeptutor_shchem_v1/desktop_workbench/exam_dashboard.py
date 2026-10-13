@@ -14,9 +14,10 @@ from ..desktop_exam_mapping_profiles import ExamMappingProfileStore
 from ..desktop_exam_ai import load_paper, model_payload, generate_advice, advice_text
 from ..desktop_exam_report import number, percent, brief, html_report
 from .exam_import_dialog import ExamImportDialog
-from ..desktop_student_roster import (attach_roster, bind_exam_row, set_exam_status,
+from ..desktop_student_roster import (attach_roster, set_exam_status,
     empty_roster_exam, exam_status, STATUS_LABELS)
-from .student_roster_dialog import StudentRosterDialog, ExamRosterBindingDialog, ExamAttendanceDialog
+from ..desktop_student_roster_identity_actions import bind_exam_identity, unbind_exam_identity, undo_identity_action
+from .student_roster_dialog import StudentRosterDialog, ExamRosterBindingDialog, ExamAttendanceDialog, ExamIdentityActionDialog
 
 
 class ExamTable(QAbstractTableModel):
@@ -119,10 +120,13 @@ class _ExamDashboardBase(QDialog):
         self.identity_tools=QWidget();identity_bar=QGridLayout(self.identity_tools);identity_bar.setContentsMargins(0,0,0,0)
         self.attach_roster_button=QPushButton('确认本次班级名册');self.bind_student_button=QPushButton('绑定成绩行与原档案');self.attendance_button=QPushButton('核对学生／整班状态')
         self.identity_history_button=QPushButton('查看身份与状态核对记录')
-        for i,button in enumerate((self.attach_roster_button,self.bind_student_button,self.attendance_button,self.identity_history_button)):
+        self.unbind_student_button=QPushButton('独立解除本行身份');self.undo_identity_button=QPushButton('核对并撤销身份动作')
+        for i,button in enumerate((self.attach_roster_button,self.bind_student_button,self.unbind_student_button,self.undo_identity_button,self.attendance_button,self.identity_history_button)):
             identity_bar.addWidget(button,i//2,i%2);button.setAutoDefault(False)
         self.attach_roster_button.clicked.connect(self.attach_local_roster);self.bind_student_button.clicked.connect(self.open_identity_binding);self.attendance_button.clicked.connect(self.open_attendance)
         self.identity_history_button.clicked.connect(self.show_identity_history)
+        self.unbind_student_button.clicked.connect(lambda:self.open_identity_action('unbind'))
+        self.undo_identity_button.clicked.connect(lambda:self.open_identity_action('undo'))
         sv.addWidget(self.identity_tools)
         self.student_table=QTableView();self.student_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows);self.student_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         self.student_table.clicked.connect(self.select_student);sv.addWidget(self.student_table,1)
@@ -379,6 +383,12 @@ class _ExamDashboardBase(QDialog):
         try:self.check_disk_current();self._attendance_dialog=ExamAttendanceDialog(self);self._attendance_dialog.open()
         except ExamError as error:self.status.setText(error.message_zh)
 
+    def open_identity_action(self,mode):
+        if not self.exam or self._task:return
+        try:
+            self.check_disk_current();self._identity_action_dialog=ExamIdentityActionDialog(self,mode);self._identity_action_dialog.open()
+        except ExamError as error:self.status.setText(error.message_zh)
+
     def show_identity_history(self):
         if not self.exam:return
         dialog=QDialog(self);dialog.setWindowTitle('本机身份与状态核对记录');dialog.resize(760,560)
@@ -398,7 +408,16 @@ class _ExamDashboardBase(QDialog):
         self.render();self.status.setText('身份／状态核对已保存，原分数与历史复测保留；旧建议和受影响复练须按新依据核对。')
 
     def apply_identity_binding(self, student_id, member_id, submission_id, reason, *, expected):
-        proposed=bind_exam_row(self.exam,student_id,member_id,store=self.facade.student_roster_store(),submission_id=submission_id,reason=reason)
+        proposed=bind_exam_identity(self.exam,student_id,member_id,store=self.facade.student_roster_store(),submission_id=submission_id,reason=reason)
+        self.commit_identity_change(proposed,expected=expected)
+
+    def apply_identity_unbinding(self,student_id,reason,*,expected,expected_binding_sha256):
+        proposed=unbind_exam_identity(self.exam,student_id,expected_binding_sha256=expected_binding_sha256,reason=reason,store=self.facade.student_roster_store())
+        self.commit_identity_change(proposed,expected=expected)
+
+    def apply_identity_undo(self,action_id,reason,*,expected,expected_action_sha256,expected_binding_sha256):
+        proposed=undo_identity_action(self.exam,action_id,expected_action_sha256=expected_action_sha256,
+            expected_binding_sha256=expected_binding_sha256,reason=reason,store=self.facade.student_roster_store())
         self.commit_identity_change(proposed,expected=expected)
 
     def apply_attendance_status(self, target, status, reason, *, expected):

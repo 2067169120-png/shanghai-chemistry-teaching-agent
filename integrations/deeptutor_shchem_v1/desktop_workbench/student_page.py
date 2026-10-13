@@ -1250,6 +1250,11 @@ class StudentPage(QWidget):
             self.local_identity_label.setText("本地名册暂时无法读取；匿名档案身份保留，不按姓名猜测。")
 
     def _open_local_roster(self) -> None:
+        if any(getattr(self,name,None) for name in (
+                '_local_task_id','_matching_task_id','_confirmation_task_id',
+                '_analysis_task_id','_review_action_task_id','_practice_add_task_id')):
+            set_status(self.status,'attention','当前学生资料正在处理或保存，完成后再核对本地名册；本页输入保留。')
+            return
         try:
             from .student_roster_dialog import StudentRosterDialog
             dialog = StudentRosterDialog(self.facade, self)

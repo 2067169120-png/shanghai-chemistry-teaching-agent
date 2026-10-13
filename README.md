@@ -123,6 +123,6 @@ Word 导入预览会区分重复文件和同名新版本。重复文件可继续
 
 v0.1.103使用10月13日发行时冻结的源码，包含本节选材、素材画布、独立题集等改进；历史 v0.1.101 保留原功能范围。知识版可使用教材书架与已登记讲义，旧全试卷的册章映射尚未迁入时用关键词查题；Word 的实际分页由本机 Office 完成。Excel 对比重导、全业务迁移、复杂 Word 对象兼容与跨设备表现按实际验收范围记录。
 
-后续维护分支新增持久题目索引、跨重启撤销重做、成绩列映射方案、本地班级名册与明确学生绑定、缺考等整班状态，以及设置中的 [用量与费用](docs/teacher/getting-started.md#usage) 和 [缓存维护](docs/teacher/save-and-support.md#cache-maintenance)。这些改动尚未进入上方 v0.1.103 下载包；操作与专项验收见 [本轮记录](docs/qa/2026-10-13-full-closure-continuation.md)。
+后续维护分支新增持久题目索引、[五来源统一检索](docs/teacher/lesson-and-paper.md#unified-question-search)、跨重启撤销重做、[完整段替题与版本恢复](docs/teacher/lesson-and-paper.md#question-replacement)、成绩列映射方案、外部整班名册导入与身份解绑撤销，以及[动态平衡授课模型](docs/teacher/lesson-and-paper.md#equilibrium-model)。设置新增 [用量与费用](docs/teacher/getting-started.md#usage) 和 [缓存维护](docs/teacher/save-and-support.md#cache-maintenance)。这些改动尚未进入上方 v0.1.103 下载包；操作与专项验收见 [本轮记录](docs/qa/2026-10-13-full-closure-continuation.md)。
 
 [维护者入口](docs/maintainer/README.md) · [当前功能与限制](docs/WORKFLOW_STATUS.md) · [原 59 项与 X01—X10](docs/roadmaps/audit-followup.md)

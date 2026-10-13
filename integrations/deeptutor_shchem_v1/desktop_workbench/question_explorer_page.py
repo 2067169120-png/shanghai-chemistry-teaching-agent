@@ -2,14 +2,18 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
+from copy import deepcopy
 from time import perf_counter
 
 from PySide6.QtCore import Qt, QTimer, Signal, QSignalBlocker, QEvent
-from PySide6.QtWidgets import (QApplication, QBoxLayout, QComboBox, QFrame, QHBoxLayout, QLineEdit,
+from PySide6.QtWidgets import (QApplication, QBoxLayout, QCheckBox, QComboBox, QFrame, QHBoxLayout, QLineEdit,
     QPushButton, QScrollArea, QSizePolicy, QSplitter, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
 
 from ..desktop_question_explorer import PERSONAL_LANES, core_results, entry_is_selected
 from ..desktop_explorer_index import PersonalCatalogSession, check_cancelled
+from ..desktop_unified_question_search import LANES as UNIFIED_SOURCES
+from ..reader_cancellation import publication_guard
 from .components import CardFrame
 from .explorer_reader import PersonalQuestionReader, text_label
 from .explorer_basket import ExplorerBasketDialog
@@ -108,6 +112,10 @@ class QuestionExplorerPage(QWidget):
         self._needs_reload = False
         self.load_metrics = {}
         self._base_facets = {}
+        self._unified_version = None
+        self._unified_request = None
+        self._practice_context = None
+        self.practice_context = None
         self.filters = {}
         self.curriculum = {}
         self._curriculum_catalog = None
@@ -155,8 +163,13 @@ class QuestionExplorerPage(QWidget):
                             ("公众号补充题", "supplemental"), ("本地 Word 题库", "word_native"),
                             ("个人图片题库", "visual_native")):
             self.scope.addItem(label, lane)
+        self.scope.addItem("跨来源统一检索", "unified")
+        saved_search = {}
         try:
-            saved_lane = facade.state_store.snapshot().get("question_explorer", {}).get("lane")
+            saved_search = facade.state_store.snapshot().get("question_explorer", {})
+            if not isinstance(saved_search, dict):
+                saved_search = {}
+            saved_lane = saved_search.get("lane")
             saved_index = self.scope.findData(saved_lane)
             if saved_index >= 0:
                 self.scope.setCurrentIndex(saved_index)
@@ -164,6 +177,30 @@ class QuestionExplorerPage(QWidget):
             pass  # No preference must not stop the reader opening.
         self.scope.setAccessibleName("选题来源")
         side.addWidget(self.scope)
+        self.source_box = QWidget()
+        source_layout = QVBoxLayout(self.source_box)
+        source_layout.setContentsMargins(0, 0, 0, 0)
+        source_layout.setSpacing(3)
+        source_layout.addWidget(text_label("同时检索的来源", "MutedLabel"))
+        self.source_checks = {}
+        for label, lane in (("正式主题主库", "master"), ("扩展主题库", "wave1"),
+                            ("补充主题库", "supplemental"), ("Word 完整题段", "word_native"),
+                            ("图片印刷题 · 入篮整主题", "visual_native")):
+            box = QCheckBox(label)
+            box.setAccessibleName("统一检索来源：" + label)
+            saved_sources = saved_search.get("sources", UNIFIED_SOURCES)
+            box.setChecked(lane in saved_sources if isinstance(saved_sources, (list, tuple)) else True)
+            box.toggled.connect(self.unified_sources_changed)
+            self.source_checks[lane] = box
+            source_layout.addWidget(box)
+        self.knowledge_mode = QComboBox()
+        self.knowledge_mode.addItem("知识点满足任意一个", "any")
+        self.knowledge_mode.addItem("知识点全部满足", "all")
+        self.knowledge_mode.setAccessibleName("统一知识点匹配方式")
+        self.knowledge_mode.currentIndexChanged.connect(self.unified_sources_changed)
+        source_layout.addWidget(self.knowledge_mode)
+        self.source_box.setVisible(self.scope.currentData() == "unified")
+        side.addWidget(self.source_box)
         self.filter_hint = text_label("同类标签多选取并集，不同类同时满足。", "MutedLabel")
         side.addWidget(self.filter_hint)
         self.tree = QTreeWidget()
@@ -204,6 +241,7 @@ class QuestionExplorerPage(QWidget):
         self.query.setClearButtonEnabled(True)
         self.query.setAccessibleName("题目关键词")
         self.query.returnPressed.connect(self.search)
+        self.query.textChanged.connect(self.unified_query_changed)
         self.search_button = QPushButton("搜索题目")
         self.search_button.clicked.connect(self.search)
         self.word_composition_button = QPushButton("选完整题加入课件…")
@@ -280,6 +318,8 @@ class QuestionExplorerPage(QWidget):
         self._check_maintenance_epoch()
         self.refresh_basket()
         super().showEvent(event)
+        if getattr(self, "_handoff_navigation_pending", False):
+            return
         if not self._started:
             self._started = True
             self.load_curriculum()
@@ -294,6 +334,10 @@ class QuestionExplorerPage(QWidget):
         self._catalogs.clear()
         self._sessions.clear()
         self._base_facets = {}
+        invalidate = getattr(self.facade, "invalidate_unified_question_search", None)
+        if callable(invalidate):
+            invalidate()
+        self._unified_version = None
         if position is not None:
             self.reload(reading_position=position)
         else:
@@ -314,7 +358,8 @@ class QuestionExplorerPage(QWidget):
         self._word_maintenance_epoch = self._current_maintenance_epoch()
         self._catalogs.pop("word_native", None)
         self._sessions.pop("word_native", None)
-        if self.scope.currentData() == "word_native":
+        if self.scope.currentData() == "word_native" or (
+                self.scope.currentData() == "unified" and set(self.selected_sources()).intersection(PERSONAL_LANES)):
             self._epoch += 1
             self._loading = False
             self._search_timer.stop()
@@ -322,6 +367,7 @@ class QuestionExplorerPage(QWidget):
             self._clear_cards()
             self._entries = []
             self._base_facets = {}
+            self._unified_version = None
             self._needs_reload = True
             self.previous.setEnabled(False)
             self.next.setEnabled(False)
@@ -330,13 +376,15 @@ class QuestionExplorerPage(QWidget):
     def _reading_context(self):
         return (self.scope.currentData(), self.query.text().strip(),
                 tuple(sorted((key, tuple(sorted(values))) for key, values in self.filters.items() if values)),
-                tuple(sorted(self.curriculum.items())), self._page)
+                tuple(sorted(self.curriculum.items())), self._page,
+                self.selected_sources() if self.scope.currentData() == "unified" else (),
+                self.knowledge_mode.currentData())
 
     def _reading_position(self):
         value = self.scroll.verticalScrollBar().value()
         anchor = next((card for card in self.cards if card.geometry().bottom() >= value), None)
         return {"context": self._reading_context(), "value": value,
-                "key": anchor.entry["key"] if anchor is not None else None,
+                "key": self._entry_identity(anchor.entry) if anchor is not None else None,
                 "offset": value - anchor.geometry().top() if anchor is not None else 0}
 
     def _restore_reading_position(self, position, epoch, *, layout_ready=False):
@@ -355,7 +403,7 @@ class QuestionExplorerPage(QWidget):
             QTimer.singleShot(0, self, lambda: self._restore_reading_position(
                 position, epoch, layout_ready=True))
             return
-        anchor = next((card for card in self.cards if card.entry["key"] == position["key"]), None)
+        anchor = next((card for card in self.cards if self._entry_identity(card.entry) == position["key"]), None)
         value = anchor.geometry().top() + position["offset"] if anchor is not None else position["value"]
         self.scroll.verticalScrollBar().setValue(value)
         self._reading_restore = None
@@ -396,18 +444,119 @@ class QuestionExplorerPage(QWidget):
             layout.addWidget(button)
         return row
 
+    def selected_sources(self):
+        return tuple(lane for lane in UNIFIED_SOURCES if self.source_checks[lane].isChecked())
+
+    def unified_sources_changed(self, *_):
+        if self.scope.currentData() != "unified":
+            return
+        self._base_facets = {}
+        self._unified_conditions_changed()
+        self._render_tree()
+
+    def unified_query_changed(self, *_):
+        if self.scope.currentData() == "unified":
+            self._unified_conditions_changed()
+
+    def _unified_conditions_changed(self):
+        # A delayed search must not leave the previous request publishable or
+        # its reader selectable during the debounce interval.
+        self._epoch += 1
+        if self._search_task:
+            self.tasks.cancel(self._search_task)
+        self._loading = False
+        self.close_reader()
+        self._clear_cards()
+        self._unified_version = None
+        self.previous.setEnabled(False)
+        self.next.setEnabled(False)
+        if self._started:
+            self.result_summary.setText("检索条件已更新，正在等待重新检索…")
+            self._search_timer.start()
+
+    def apply_unified_handoff(self, payload):
+        """Bind a saved practice task after its navigation has been accepted."""
+        if self._closed or not isinstance(payload, dict):
+            return False
+        sources = payload.get("sources", payload.get("lanes"))
+        selected = payload.get("filters", {})
+        if (not isinstance(sources, (list, tuple)) or not sources
+                or any(lane not in UNIFIED_SOURCES for lane in sources)
+                or not isinstance(selected, dict)
+                or set(selected) - {"knowledge", "knowledge_mode"}):
+            return False
+        knowledge = selected.get("knowledge", [])
+        mode = selected.get("knowledge_mode", "any")
+        if (not isinstance(knowledge, (list, tuple, set))
+                or any(not isinstance(value, str) or not value.strip() for value in knowledge)
+                or mode not in ("any", "all")):
+            return False
+        # Validation completes before touching the previous search or task.
+        self._search_timer.stop()
+        with QSignalBlocker(self.scope):
+            self.scope.setCurrentIndex(self.scope.findData("unified"))
+        for lane, box in self.source_checks.items():
+            with QSignalBlocker(box):
+                box.setChecked(lane in sources)
+        with QSignalBlocker(self.knowledge_mode):
+            self.knowledge_mode.setCurrentIndex(self.knowledge_mode.findData(mode))
+        self.filters = {"knowledge": set(knowledge)} if knowledge else {}
+        self.curriculum = {}
+        with QSignalBlocker(self.query):
+            self.query.setText(payload.get("query", "") if isinstance(payload.get("query", ""), str) else "")
+        self._practice_context = deepcopy(payload)
+        self.practice_context = deepcopy(payload)
+        self._base_facets = {}
+        self._page, self._cursors = 0, [None]
+        self._unified_version = None
+        self.source_box.show()
+        self.advanced_button.hide()
+        self.word_composition_button.hide()
+        self._render_tree()
+        self._render_chips()
+        return True
+
+    @staticmethod
+    def _entry_identity(entry):
+        return entry.get("entry_id") or entry["lane"] + ":" + entry["key"]
+
+    def _unified_current(self, version=None):
+        value = self._unified_version if version is None else version
+        if value is None:
+            return True
+        gate = getattr(self.facade, "unified_question_search_is_current", None)
+        try:
+            return callable(gate) and gate(value)
+        except (OSError, ValueError, RuntimeError, TypeError):
+            return False
+
+    def _reject_stale_unified(self):
+        self._epoch += 1
+        self._loading = False
+        self.close_reader()
+        self._clear_cards()
+        self._unified_version = None
+        self._needs_reload = True
+        self.previous.setEnabled(False)
+        self.next.setEnabled(False)
+        self.result_summary.setText("来源或缓存版本已改变 · 请重新检索；当前条件、复练任务与题篮保留")
+
     def scope_changed(self, *_):
         lane = self.scope.currentData()
         try:
             def save(state):
-                state["question_explorer"] = {"lane": lane}
+                state["question_explorer"] = {"lane": lane,
+                    **({"sources": list(self.selected_sources())} if lane == "unified" else {})}
             self.facade.state_store._update(save)
         except (AttributeError, TypeError, ValueError, RuntimeError):
             self.scope.setToolTip("来源选择未能保存；当前找题仍可继续。")
         self.filters, self.curriculum, self._base_facets = {}, {}, {}
+        self._unified_version = None
         self._page, self._cursors = 0, [None]
         self.advanced_button.setText('题图与标签管理' if self.scope.currentData() == "visual_native" else "Word原文与标签管理")
         self.word_composition_button.setVisible(lane == "word_native")
+        self.source_box.setVisible(lane == "unified")
+        self.advanced_button.setVisible(lane != "unified")
         self._render_tree()
         if self._started:
             self.search()
@@ -426,8 +575,18 @@ class QuestionExplorerPage(QWidget):
         self.scope_changed()
 
     def reload(self, *, reading_position=None):
-        self._catalogs.pop(self.scope.currentData(), None)
-        self._sessions.pop(self.scope.currentData(), None)
+        lane = self.scope.currentData()
+        self._catalogs.pop(lane, None)
+        self._sessions.pop(lane, None)
+        if lane == "unified":
+            invalidate = getattr(self.facade, "invalidate_unified_question_search", None)
+            if callable(invalidate):
+                invalidate(lanes=self.selected_sources())
+            self._unified_version = None
+            # Composite cursors attest the previous source snapshots. A
+            # refreshed catalogue starts at its first page with the same
+            # teacher conditions, rather than reusing the retired cursor.
+            reading_position = None
         self._base_facets = {}
         self.load_curriculum()
         self.search(reset=reading_position is None, reading_position=reading_position)
@@ -468,11 +627,23 @@ class QuestionExplorerPage(QWidget):
         selection = {key: sorted(values) for key, values in self.filters.items() if values}
         selector = dict(self.curriculum)
         cursor = self._cursors[page] if lane not in PERSONAL_LANES else None
+        sources = self.selected_sources() if lane == "unified" else ()
+        if lane == "unified":
+            selection["knowledge_mode"] = self.knowledge_mode.currentData()
+            self._unified_request = {"lanes": sources, "query": query,
+                "filters": deepcopy(selection), "curriculum": deepcopy(selector)}
         session = self._sessions.setdefault(lane, PersonalCatalogSession(lane)) if lane in PERSONAL_LANES else None
         started = perf_counter()
         def run(report, cancelled):
             check_cancelled(cancelled)
             read_started = perf_counter()
+            if lane == "unified":
+                value = self.facade.search_unified_questions(lanes=sources, query=query,
+                    filters=selection, curriculum=selector or None, cursor=cursor,
+                    limit=self.PAGE_SIZE, progress=report, cancelled=cancelled)
+                check_cancelled(cancelled)
+                value["performance"] = {"catalog_and_query_ms": round((perf_counter() - read_started) * 1000, 2)}
+                return value, None
             if lane in PERSONAL_LANES:
                 loader = getattr(self.facade, "word_question_listing", self.facade.word_question_catalog) if lane == "word_native" else self.facade.personal_visual_questions
                 index, metrics = session.get(loader, cancelled=cancelled)
@@ -498,6 +669,11 @@ class QuestionExplorerPage(QWidget):
                     self.search(reset=False)
                 return
             value, catalog = result
+            if lane == "unified" and (not isinstance(value.get("version_vector"), Mapping)
+                    or set(value["version_vector"]) != set(sources)
+                    or not self._unified_current(value["version_vector"])):
+                self._reject_stale_unified()
+                return
             if catalog is not None:
                 self._catalogs[lane] = catalog
             display_started = perf_counter()
@@ -513,7 +689,14 @@ class QuestionExplorerPage(QWidget):
                 "request_to_cards_ms": round((perf_counter() - started) * 1000, 2),
                 "scope": "当前目录快照及卡片建立；题图读取另计，不等于全屏绘制或网络计时。"}
         self._search_task = self.tasks.submit_progress("筛选题目", run, on_success=done,
-            on_failure=lambda message: self.failed(epoch, message))
+            on_failure=lambda message: self.failed(epoch, message),
+            on_progress=lambda value: self._search_progress(epoch, value))
+
+    def _search_progress(self, epoch, value):
+        if self._closed or epoch != self._epoch or not self._loading:
+            return
+        if isinstance(value, dict) and value.get("message"):
+            self.result_summary.setText(str(value["message"]))
 
     def failed(self, epoch, message):
         if self._closed or epoch != self._epoch:
@@ -526,6 +709,7 @@ class QuestionExplorerPage(QWidget):
 
     def _apply(self, result):
         self._loading = False
+        self._unified_version = result.get("version_vector")
         self._entries = result["entries"]
         self._next_cursor = result["next_cursor"]
         for group, spec in result["facets"].items():
@@ -535,7 +719,22 @@ class QuestionExplorerPage(QWidget):
             old["values"] = list(values.values())
         self._render_tree(result["facets"])
         self._render_chips()
-        self.result_summary.setText(f"{result['total']} {result['count_unit']}  ·  第{self._page + 1}页")
+        if self.scope.currentData() == "unified":
+            counts = result.get("counts_by_unit", {})
+            labels = (("theme", "完整主题"), ("word_question_segment", "Word完整题段"),
+                      ("visual_printed_question", "图片印刷题命中（入篮为整主题）"))
+            present_units = {"theme" if lane not in PERSONAL_LANES else
+                             "word_question_segment" if lane == "word_native" else "visual_printed_question"
+                             for lane in self.selected_sources()}
+            summary = " / ".join(f"{label} {counts.get(kind) if counts.get(kind) is not None else '未知'}"
+                                 for kind, label in labels if kind in present_units)
+            if not self.selected_sources():
+                summary = "尚未选择资料来源"
+            elif result.get("incomplete"):
+                summary += " · 部分来源未完成核对"
+            self.result_summary.setText(summary + f" · 第{self._page + 1}页")
+        else:
+            self.result_summary.setText(f"{result['total']} {result['count_unit']}  ·  第{self._page + 1}页")
         self.previous.setEnabled(self._page > 0)
         self.next.setEnabled(bool(result["has_more"]))
         for index, entry in enumerate(self._entries, self._page * self.PAGE_SIZE + 1):
@@ -555,10 +754,20 @@ class QuestionExplorerPage(QWidget):
             self.list_layout.addWidget(self._personal_source_links())
         if result["warnings"]:
             self.list_layout.addWidget(text_label("\n".join(result["warnings"]), "MutedLabel"))
+        if self.scope.currentData() == "unified":
+            source_names = {lane: box.text() for lane, box in self.source_checks.items()}
+            for lane, status in result.get("source_status", {}).items():
+                state = status.get("status")
+                if state != "ok":
+                    state_label = {"unavailable": "来源未就绪", "unsupported_filter": "条件不支持",
+                                   "unknown_filter": "条件未知"}.get(state, "条件或来源待核对")
+                    reason = status.get("message") or ("来源完整性或版本无法核对，总数未知。" if state == "unavailable"
+                        else "当前筛选在本来源尚无等价依据，未把它计作零命中。")
+                    self.list_layout.addWidget(text_label(source_names.get(lane, lane) + "：" + state_label + " · " + reason, "StatusAttention"))
         self.list_layout.addStretch(1)
         self.scroll.verticalScrollBar().setValue(0)
         self.refresh_basket()
-        if self.cards:
+        if self.cards and self.scope.currentData() != "unified":
             self.expand(self.cards[0])
 
     def _clear_cards(self):
@@ -572,7 +781,7 @@ class QuestionExplorerPage(QWidget):
     def _render_tree(self, current=None):
         # A page change with the same facets does not need hundreds of new Qt
         # items. Counts and selections remain part of the key, never just lane.
-        tree_key = (self.scope.currentData(), id(self._curriculum_catalog),
+        tree_key = (self.scope.currentData(), self.selected_sources(), id(self._curriculum_catalog),
                     repr(self._base_facets), repr(current),
                     tuple(sorted((k, tuple(sorted(v))) for k, v in self.filters.items())))
         if tree_key == getattr(self, "_last_tree_key", None):
@@ -597,7 +806,7 @@ class QuestionExplorerPage(QWidget):
         expanded = {path[0] for path, opened in branch_state.items() if len(path) == 1 and opened}
         with QSignalBlocker(self.tree):
             self.tree.clear()
-            if self.scope.currentData() in {"master", "supplemental"}:
+            if self.scope.currentData() in {"master", "supplemental", "unified"}:
                 parent = QTreeWidgetItem(self.tree, ["教材章节"])
                 parent.setExpanded(True)
                 for volume in (self._curriculum_catalog or {}).get("volumes", []):
@@ -615,6 +824,8 @@ class QuestionExplorerPage(QWidget):
                     QTreeWidgetItem(parent, ["目录尚未连接"])
             order = ("K", "knowledge", "book", "chapter", "section", "grade", "exam", "item_type", "R", "D", "year", "region", "answer_status", "source", "teaching_use")
             for group in order:
+                if lane == "unified" and group not in {"knowledge", "grade", "exam", "teaching_use"}:
+                    continue
                 spec = self._base_facets.get(group)
                 if not spec:
                     continue
@@ -623,7 +834,7 @@ class QuestionExplorerPage(QWidget):
                 counts = {row["value"]: row.get("atomic_count") for row in (current or {}).get(group, {}).get("values", [])}
                 for row in spec["values"]:
                     count = counts.get(row["value"], 0) if current is not None else row.get("atomic_count")
-                    count = None if self.scope.currentData() in PERSONAL_LANES else count
+                    count = None if self.scope.currentData() in PERSONAL_LANES or lane == "unified" else count
                     label = row["label_zh"] + (f" ({count})" if count is not None else "")
                     child = QTreeWidgetItem(parent, [label])
                     child.setToolTip(0, row["label_zh"])
@@ -636,7 +847,10 @@ class QuestionExplorerPage(QWidget):
             self.tree.doItemsLayout()
             self.tree.verticalScrollBar().setValue(scroll_position)
         self._tree_lane = lane
-        self.filter_hint.setText("同类标签满足任意一个，不同类须同时满足。" + ("括号为当前匹配小问数。" if self.scope.currentData() not in PERSONAL_LANES else "使用已保存的来源标签。"))
+        if lane == "unified":
+            self.filter_hint.setText("关键词逐词同时匹配；知识点按所选方式匹配。正式 K 与个人知识标签明确对应；未知或不支持的条件分来源说明。")
+        else:
+            self.filter_hint.setText("同类标签满足任意一个，不同类须同时满足。" + ("括号为当前匹配小问数。" if self.scope.currentData() not in PERSONAL_LANES else "使用已保存的来源标签。"))
 
     def facet_changed(self, item, _column):
         data = item.data(0, Qt.ItemDataRole.UserRole)
@@ -648,6 +862,9 @@ class QuestionExplorerPage(QWidget):
             chosen.add(value)
         else:
             chosen.discard(value)
+        if self.scope.currentData() == "unified":
+            self._unified_conditions_changed()
+            return
         self._search_timer.start()
 
     def curriculum_clicked(self, item, _column):
@@ -719,6 +936,9 @@ class QuestionExplorerPage(QWidget):
         self._active_card = None
 
     def expand(self, card):
+        if self._unified_version is not None and not self._unified_current():
+            self._reject_stale_unified()
+            return
         if card.entry["lane"] == "word_native" and self._check_maintenance_epoch():
             if self.isVisible():
                 self.search(reset=False)
@@ -738,6 +958,9 @@ class QuestionExplorerPage(QWidget):
             def attach_personal(detail_entry):
                 if self._closed or epoch != self._reader_epoch or self._active_card is not card:
                     return
+                if self._unified_version is not None and not self._unified_current():
+                    self._reject_stale_unified()
+                    return
                 if entry["lane"] == "word_native" and self._check_maintenance_epoch():
                     if self.isVisible():
                         self.search(reset=False)
@@ -746,7 +969,23 @@ class QuestionExplorerPage(QWidget):
                 self.attach_reader(card, reader)
                 reader.readiness_changed.connect(lambda ready: self.reader_ready(epoch, card, ready))
                 self.reader_ready(epoch, card, reader.ready_to_select)
-            if entry["lane"] == "word_native" and entry["payload"].get("lightweight"):
+            if entry["lane"] == "visual_native" and entry.get("entry_id"):
+                row = entry["payload"]
+                def visual_ready(detail):
+                    if (detail.get("key") != row["key"] or detail.get("revision") != row["revision"]
+                            or detail.get("batch_id") != row["batch_id"]):
+                        visual_failed("题目已变化，请重新检索。")
+                        return
+                    attach_personal({**entry, "payload": detail})
+                def visual_failed(message):
+                    if epoch == self._reader_epoch and not self._closed:
+                        card.note.setText(str(message))
+                        self.reader_ready(epoch, card, False)
+                        self._queue_reading_restore(reader_failed=True)
+                self._detail_task = self.tasks.submit("读取图片原题与公共材料",
+                    lambda: self.facade.personal_visual_question_detail(row["batch_id"], row["key"], row["revision"]),
+                    on_success=visual_ready, on_failure=visual_failed)
+            elif entry["lane"] == "word_native" and (entry["payload"].get("lightweight") or entry.get("entry_id")):
                 row = entry["payload"]
                 def word_ready(detail):
                     if detail.get("key") != row["key"] or detail.get("revision") != row["revision"]:
@@ -765,6 +1004,9 @@ class QuestionExplorerPage(QWidget):
         else:
             def ready(detail):
                 if self._closed or epoch != self._reader_epoch or self._active_card is not card:
+                    return
+                if self._unified_version is not None and not self._unified_current():
+                    self._reject_stale_unified()
                     return
                 if detail.key != entry["key"] or detail.scope != entry["lane"]:
                     failed("题目已变化，请重新检索。")
@@ -796,6 +1038,9 @@ class QuestionExplorerPage(QWidget):
     def reader_ready(self, epoch, card, ready):
         if self._closed or epoch != self._reader_epoch or card is not self._active_card:
             return
+        if self._unified_version is not None and not self._unified_current():
+            self._reject_stale_unified()
+            return
         if card.entry["lane"] == "word_native" and self._check_maintenance_epoch():
             if self.isVisible():
                 self.search(reset=False)
@@ -813,11 +1058,15 @@ class QuestionExplorerPage(QWidget):
             self._queue_reading_restore()
 
     def add(self, card):
+        if self._unified_version is not None and not self._unified_current():
+            self._reject_stale_unified()
+            return
         if card.entry["lane"] == "word_native" and self._check_maintenance_epoch():
             if self.isVisible():
                 self.search(reset=False)
             return
-        if not card.ready or card is not self._active_card or card.entry["key"] in self._adding:
+        identity = self._entry_identity(card.entry)
+        if not card.ready or card is not self._active_card or identity in self._adding:
             return
         entry = card.entry
         try:
@@ -829,7 +1078,7 @@ class QuestionExplorerPage(QWidget):
             self.refresh_basket()
             return
         card.add.setEnabled(False)
-        self._adding.add(entry["key"])
+        self._adding.add(identity)
         row = entry["payload"]
         lane = entry["lane"]
         def run():
@@ -837,14 +1086,20 @@ class QuestionExplorerPage(QWidget):
                 return self.facade.add_word_questions_to_basket([{"key": row["key"], "revision": row["revision"], "points": 2}])
             if lane == "visual_native":
                 return self.facade.add_personal_visual_questions_to_basket([{key: row[key] for key in ("key", "revision", "batch_id")}])
+            if entry.get("entry_id"):
+                # Reuse the original source reader's identity/snapshot guard
+                # in this worker; the GUI gate never streams source bytes.
+                self.facade.library_theme_detail(row)
+                with publication_guard():
+                    return self.facade.add_theme_to_basket(row)
             return self.facade.add_theme_to_basket(row)
         def done(count):
-            self._adding.discard(entry["key"])
+            self._adding.discard(identity)
             if not self._closed:
                 self.refresh_basket()
                 self.basket_changed.emit(count)
         def failed(message):
-            self._adding.discard(entry["key"])
+            self._adding.discard(identity)
             if not self._closed:
                 self.result_summary.setText(str(message))
                 self.refresh_basket()
@@ -871,7 +1126,7 @@ class QuestionExplorerPage(QWidget):
         for card in self.cards:
             selected = entry_is_selected(card.entry, basket)
             card.add.setText("已在题篮" if selected else "＋ 加入选题篮")
-            card.add.setEnabled(card.ready and not selected and card.entry["key"] not in self._adding)
+            card.add.setEnabled(card.ready and not selected and self._entry_identity(card.entry) not in self._adding)
         return count
 
     def open_basket(self):

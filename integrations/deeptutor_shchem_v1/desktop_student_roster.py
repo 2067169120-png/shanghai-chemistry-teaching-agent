@@ -48,7 +48,8 @@ def new_member(alias):
 
 
 def validate_roster(roster):
-    if not isinstance(roster, dict) or set(roster) != {'schema','id','label','revision','members','created_at'} or roster.get('schema') != SCHEMA:
+    required = {'schema','id','label','revision','members','created_at'}
+    if not isinstance(roster, dict) or not required <= set(roster) or set(roster)-required-{'import_history'} or roster.get('schema') != SCHEMA:
         raise ExamError('本地名册格式不完整，请保留原文件。')
     _identity(roster['id']); _text(roster['label'], '班级别名')
     if roster['revision'] is not None:_identity(roster['revision'])
@@ -70,6 +71,16 @@ def validate_roster(roster):
                 raise ExamError('关联的匿名档案身份无效。')
             if profile in profiles:raise ExamError('同一名册中一个匿名档案不能绑定多个成员。')
             profiles.add(profile)
+    if 'import_history' in roster:
+        from .desktop_student_roster_import import validate_import_receipt
+        history=roster['import_history']
+        if not isinstance(history,list) or len(history)>10000:
+            raise ExamError('名单导入历史格式无法核验，已保留原记录。')
+        receipts=set()
+        for receipt in history:
+            validate_import_receipt(receipt)
+            if receipt['id'] in receipts:raise ExamError('名单导入历史凭据ID重复，已保留原记录。')
+            receipts.add(receipt['id'])
     return deepcopy(roster)
 
 
@@ -105,10 +116,15 @@ class DesktopStudentRosterStore:
 
     def check_profile(self, student_id):
         if student_id is None:return
-        if not callable(self.profiles):raise ExamError('当前匿名档案列表不可核验，未绑定。')
-        values=self.profiles()
-        if not any((v.get('student_id') if isinstance(v,dict) else getattr(v,'student_id',None))==student_id for v in values):
+        if student_id not in self.available_profile_ids():
             raise ExamError('匿名档案不存在于当前私有目录；未从别名猜测。')
+
+    def available_profile_ids(self):
+        if not callable(self.profiles):raise ExamError('当前匿名档案列表不可核验，未绑定。')
+        try:
+            return {v.get('student_id') if isinstance(v,dict) else getattr(v,'student_id',None) for v in self.profiles()}
+        except Exception:
+            raise ExamError('当前匿名档案目录无法读取，已保留教师输入与原记录。') from None
 
     def check_submission(self, student_id, submission_id):
         self.check_profile(student_id)
@@ -123,8 +139,7 @@ class DesktopStudentRosterStore:
         value=validate_roster(roster)
         requested={m['profile_student_id'] for m in value['members'] if m['profile_student_id']}
         if requested:
-            if not callable(self.profiles):raise ExamError('当前匿名档案列表不可核验，未保存关联。')
-            available={v.get('student_id') if isinstance(v,dict) else getattr(v,'student_id',None) for v in self.profiles()}
+            available=self.available_profile_ids()
             if not requested <= available:raise ExamError('匿名档案不存在于当前私有目录；未从别名猜测。')
         try:
             with self._lock, _state_file_lock(self.path):
@@ -133,6 +148,13 @@ class DesktopStudentRosterStore:
                     raise ExamError('名册已被另一窗口修改，请重新读取；未覆盖最新名册。')
                 if current and value['created_at'] != current['created_at']:
                     raise ExamError('名册创建身份发生变化，未保存。')
+                if current:
+                    history=current.get('import_history',[])
+                    if value.get('import_history',[])[:len(history)] != history:
+                        raise ExamError('原名单导入历史不可删除或改写，已保留磁盘与当前输入。')
+                if requested:
+                    available=self.available_profile_ids()
+                    if not requested <= available:raise ExamError('保存前匿名档案归属已变化，请重新核对；未保存关联。')
                 value['revision']=uuid4().hex
                 library['rosters'][value['id']]=value
                 self.root.mkdir(parents=True,exist_ok=True)

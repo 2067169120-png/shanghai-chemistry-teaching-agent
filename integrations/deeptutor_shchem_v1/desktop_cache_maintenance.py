@@ -42,6 +42,7 @@ _SHA = re.compile(r"^[0-9a-f]{64}$")
 _MAX_FILE_BYTES = 256 * 1024 * 1024
 EPOCH_SCHEMA = "shchem.desktop-cache-generation.v1"
 _EPOCH_FILE = "desktop-cache-generation.v1.json"
+_MAX_EPOCH_BYTES = 16 * 1024
 _SERVICES = WeakSet()
 _SERVICES_LOCK = threading.RLock()
 
@@ -308,8 +309,14 @@ class DesktopCacheMaintenance:
         _safe_path(self.root, path)
         if not path.exists():
             return {key: 0 for key in CATEGORIES}
-        raw, _, _ = _read(self.root, path)
-        if len(raw) > 16 * 1024:
+        # GUI epoch guards read only this small metadata record. Apply its
+        # limit before opening it, never the general cache-file/hash reader.
+        before = _fingerprint(path)
+        if before[2] > _MAX_EPOCH_BYTES:
+            raise ValueError("缓存维护代次无法核验，请保留记录")
+        with path.open("rb") as stream:
+            raw = stream.read(_MAX_EPOCH_BYTES + 1)
+        if len(raw) > _MAX_EPOCH_BYTES or _fingerprint(path) != before:
             raise ValueError("缓存维护代次无法核验，请保留记录")
         try:
             value = json.loads(raw)

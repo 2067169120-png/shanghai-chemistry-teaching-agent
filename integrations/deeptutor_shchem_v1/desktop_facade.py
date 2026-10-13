@@ -3168,12 +3168,32 @@ class DesktopWorkbenchFacade:
     def _word_questions(self):
         from .desktop_word_questions import WordQuestionService
 
-        service = self.__dict__.get("_word_question_service")
-        if service is None:
-            # Publish once and return the captured instance: maintenance may
-            # detach the attribute between lookups, never this local reader.
-            service = self.__dict__.setdefault("_word_question_service", WordQuestionService(self))
-        return service
+        while True:
+            epoch = self.desktop_cache_epoch("word")
+            service = self.__dict__.get("_word_question_service")
+            if service is not None and getattr(service, "_desktop_cache_epoch", epoch) == epoch:
+                # A captured reader may finish after a detach. Never re-fetch
+                # its attribute here: callers guard its result with their epoch.
+                service._desktop_cache_epoch = epoch
+                return service
+            candidate = WordQuestionService(self)
+            candidate._desktop_cache_epoch = self.desktop_cache_epoch("word")
+            # Only slot publication/detachment uses this lock. Construction,
+            # metadata I/O and old-reader disposal stay outside it.
+            with self._word_cache_identity_lock():
+                if self.__dict__.get("_word_question_service") is not service:
+                    # A later factory already published its own captured
+                    # generation. Never replace that object with this candidate.
+                    continue
+                if (service is not None
+                        and getattr(service, "_desktop_cache_epoch", None) == candidate._desktop_cache_epoch):
+                    # The first token may predate capturing this newer object;
+                    # the second token confirms it already has the right epoch.
+                    return service
+                detached = self.__dict__.pop("_word_question_service", None)
+                self._word_question_service = candidate
+            self._clear_detached_word_cache(detached)
+            return candidate
 
     def word_question_catalog(self):
         return self._word_questions().catalog()
@@ -3195,6 +3215,84 @@ class DesktopWorkbenchFacade:
     def word_question_detail(self, key, revision):
         """Read one current source-bound question after a search selection."""
         return self._word_questions().question(key, revision)
+
+    def _unified_question_search(self):
+        from .desktop_unified_question_search import UnifiedQuestionSearch
+
+        service = self.__dict__.get("_unified_question_search_service")
+        if service is None:
+            service = self.__dict__.setdefault(
+                "_unified_question_search_service", UnifiedQuestionSearch(self),
+            )
+        return service
+
+    def search_unified_questions(
+        self, *, lanes=None, query="", filters=None, lane_filters=None,
+        curriculum=None, cursor=None, limit=8, progress=None, cancelled=None,
+    ):
+        """Search source-bound metadata, keeping each source's reading route."""
+        with read_cancel_scope(cancelled):
+            return self._unified_question_search().search(
+                lanes=lanes, query=query, filters=filters, lane_filters=lane_filters,
+                curriculum=curriculum, cursor=cursor, limit=limit,
+                progress=progress, cancelled=cancelled,
+            )
+
+    def invalidate_unified_question_search(self, lanes=None):
+        service = self.__dict__.get("_unified_question_search_service")
+        if service is not None:
+            service.invalidate(lanes=lanes)
+
+    def unified_question_search_is_current(self, version_vector):
+        """Cheap GUI gate; source byte verification belongs to the search worker."""
+        service = self.__dict__.get("_unified_question_search_service")
+        return service is not None and service.is_current(version_vector)
+
+    def _question_replacements(self):
+        from .desktop_question_replacements import QuestionReplacementService
+
+        service = self.__dict__.get("_question_replacement_service")
+        if service is None:
+            service = self.__dict__.setdefault(
+                "_question_replacement_service", QuestionReplacementService(self),
+            )
+        return service
+
+    def _question_replacement_call(self, method, *args, **kwargs):
+        from .desktop_question_replacements import QuestionReplacementError
+        from .desktop_state import DesktopStateError
+
+        try:
+            # commit/restore validate cancellation at their publication guard.
+            # Once their durable write wins, a shutdown cannot relabel it.
+            mutating = method in {"commit", "restore"}
+            with read_cancel_scope(self._reader_stop_event, check_boundaries=not mutating):
+                return getattr(self._question_replacements(), method)(*args, **kwargs)
+        except (DesktopFacadeError, ReadCancelled):
+            raise
+        except QuestionReplacementError as exc:
+            raise DesktopFacadeError(exc.code, exc.message_zh) from exc
+        except DesktopStateError as exc:
+            raise DesktopFacadeError("question_replacement_blocked", str(exc)) from exc
+
+    def prepare_question_replacement(self, paper_id, target_key, *, goal, candidate_entry):
+        return self._question_replacement_call(
+            "prepare", paper_id, target_key, goal=goal, candidate_entry=candidate_entry,
+        )
+
+    def commit_question_replacement(self, plan_id, plan_sha256):
+        return self._question_replacement_call("commit", plan_id, plan_sha256)
+
+    def question_replacement_image(self, plan_id, plan_sha256, asset_id, *, side="after"):
+        return self._question_replacement_call(
+            "image", plan_id, plan_sha256, asset_id, side=side,
+        )
+
+    def list_question_replacement_versions(self, paper_id):
+        return self._question_replacement_call("versions", paper_id)
+
+    def restore_question_replacement_version(self, paper_id, version_id, expected_revision):
+        return self._question_replacement_call("restore", paper_id, version_id, expected_revision)
 
     def _word_semantic_tags(self):
         from .desktop_word_semantic_tags import WordSemanticTagService
@@ -7503,12 +7601,13 @@ class DesktopWorkbenchFacade:
 
     def _cache_maintenance_service(self):
         from .desktop_cache_maintenance import DesktopCacheMaintenance
-        if not hasattr(self, "_desktop_cache_maintenance"):
-            self._desktop_cache_maintenance = DesktopCacheMaintenance(
+        service = self.__dict__.get("_desktop_cache_maintenance")
+        if service is None:
+            service = self.__dict__.setdefault("_desktop_cache_maintenance", DesktopCacheMaintenance(
                 self.paths.state_root, busy=self._cache_maintenance_busy,
-                invalidate=self._invalidate_maintained_caches,
-            )
-        return self._desktop_cache_maintenance
+                invalidate=self._invalidate_published_cache_generation,
+            ))
+        return service
 
     def _cache_maintenance_busy(self):
         # Direct facade callers share the same conservative busy rule as the
@@ -7532,19 +7631,45 @@ class DesktopWorkbenchFacade:
                 frame = frame.f_back
         return False
 
-    def _invalidate_maintained_caches(self, categories):
+    def _word_cache_identity_lock(self):
+        return self.__dict__.setdefault("_word_cache_slot_lock", threading.RLock())
+
+    @staticmethod
+    def _clear_detached_word_cache(service):
+        # An active reader owns its captured instance until it finishes. Its
+        # private projections may be reclaimed with that object; never wait
+        # for its Word/state/Office lock or cancel that task to reclaim them.
+        if service is not None and service._lock.acquire(blocking=False):
+            try:
+                service._cache.clear()
+                service._locations.clear()
+                service._last_index_statistics.clear()
+            finally:
+                service._lock.release()
+
+    def _invalidate_published_cache_generation(self, categories):
+        # Snapshot identity before metadata I/O. Another maintenance/factory
+        # can publish a newer object while this notification reads its token.
+        captured = self.__dict__.get("_word_question_service")
+        self._invalidate_maintained_caches(
+            categories, word_epoch=self.desktop_cache_epoch("word"),
+            word_service_snapshot=(captured,),
+        )
+
+    def _invalidate_maintained_caches(self, categories, *, word_epoch=None, word_service_snapshot=None):
         if categories.intersection({"word_previews", "word_catalog"}):
-            # Detach once before waiting for the captured service's lock. A
-            # concurrent factory may create a fresh instance while this old
-            # one drains; never delete that new instance after the wait.
-            service = self.__dict__.pop("_word_question_service", None)
-            if service is not None:
-                with service._lock:
-                    service._cache.clear()
-                    service._locations.clear()
-                    service._last_index_statistics.clear()
-                # New listings receive a new service and search-provider
-                # identity. Teacher attributes, range drafts and history stay.
+            with self._word_cache_identity_lock():
+                service = self.__dict__.get("_word_question_service")
+                # A delayed maintenance notification must not erase a factory
+                # instance already bound to the published new generation.
+                if word_service_snapshot is not None and service is not word_service_snapshot[0]:
+                    service = None
+                elif (service is not None and word_epoch is not None
+                        and getattr(service, "_desktop_cache_epoch", None) == word_epoch):
+                    service = None
+                else:
+                    service = self.__dict__.pop("_word_question_service", None)
+            self._clear_detached_word_cache(service)
         if "registry" in categories:
             self._curriculum_catalog_cache = None
             with self._library_view_lock:
@@ -7557,13 +7682,8 @@ class DesktopWorkbenchFacade:
         return self._cache_maintenance_service().execute(plan_id, revision, categories)
 
     def desktop_cache_epoch(self, scope="word"):
-        value = self._cache_maintenance_service().epoch(scope)
-        if scope == "word":
-            previous = getattr(self, "_desktop_observed_word_cache_epoch", None)
-            if previous is not None and previous != value:
-                self._invalidate_maintained_caches({"word_previews", "word_catalog"})
-            self._desktop_observed_word_cache_epoch = value
-        return value
+        """Read bounded generation metadata; never invalidate or wait for readers."""
+        return self._cache_maintenance_service().epoch(scope)
 
 
 def build_default_facade(paths: DesktopPaths | None = None) -> DesktopWorkbenchFacade:

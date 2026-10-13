@@ -144,7 +144,7 @@ def test_unverified_generation_preserves_window_word_reads_and_cleanup(
 
 
 class _GateLock:
-    """Pause an invalidator after it has captured a particular old service."""
+    """Model an active reader: maintenance may try, but never wait on it."""
 
     def __init__(self):
         self.entered = threading.Event()
@@ -156,15 +156,15 @@ class _GateLock:
     def __enter__(self):
         with self._guard:
             self.entries += 1
-        self.entered.set()
-        if not self.release.wait(10):
-            raise TimeoutError("old service invalidation was not released")
-        self._lock.acquire()
-        return self
+        raise AssertionError("invalidation entered the active reader lock")
 
     def __exit__(self, *_args):
         self._lock.release()
 
+    def acquire(self, *, blocking=True):
+        assert blocking is False, "invalidation must not wait for an active reader"
+        self.entered.set()
+        return False
 
 def _invalidate_thread(facade, errors):
     def run():
@@ -187,8 +187,11 @@ def test_old_invalidator_does_not_erase_a_fresh_word_service(desktop_paths, tmp_
     worker.start()
     try:
         assert gate.entered.wait(5), "invalidator did not capture the old service"
-        # Install an actual newly constructed service while the old one waits
-        # on its lock. Its identity and projections belong to the next reader.
+        worker.join(5)
+        assert not worker.is_alive(), "invalidator waited for the old reader"
+        assert "_word_question_service" not in facade.__dict__
+        # Install an actual new service after the old reader was detached.
+        # The active old object remains private until its task drains.
         fresh = type(old)(facade)
         fresh._cache["fresh"] = object()
         fresh._locations["fresh"] = object()
@@ -202,7 +205,8 @@ def test_old_invalidator_does_not_erase_a_fresh_word_service(desktop_paths, tmp_
     assert facade._word_questions() is fresh
     assert set(fresh._cache) == set(fresh._locations) == {"fresh"}
     assert fresh._last_index_statistics == {"fresh": 1}
-    assert not old._cache and not old._locations and not old._last_index_statistics
+    assert old._locations and old._last_index_statistics
+    assert gate.entries == 0
 
 
 def test_two_concurrent_invalidators_capture_old_service_only_once(desktop_paths, tmp_path):
@@ -217,10 +221,12 @@ def test_two_concurrent_invalidators_capture_old_service_only_once(desktop_paths
     first.start()
     try:
         assert gate.entered.wait(5), "first invalidator did not capture the old service"
+        first.join(5)
+        assert not first.is_alive(), "first invalidator waited on the active reader"
         second.start()
         second.join(5)
         assert not second.is_alive(), "second invalidator also waited on the old service"
-        assert gate.entries == 1
+        assert gate.entries == 0
     finally:
         gate.release.set()
         first.join(5)
@@ -228,7 +234,7 @@ def test_two_concurrent_invalidators_capture_old_service_only_once(desktop_paths
             second.join(5)
     assert not first.is_alive() and not second.is_alive()
     assert not errors, errors
-    assert not old._cache and not old._locations and not old._last_index_statistics
+    assert old._locations and old._last_index_statistics
     assert facade._word_questions() is not old
 
 

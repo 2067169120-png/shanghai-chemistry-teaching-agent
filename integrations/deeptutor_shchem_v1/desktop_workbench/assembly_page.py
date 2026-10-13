@@ -2116,6 +2116,8 @@ class MixedPaperPanel(QWidget):
     load_finished = Signal(bool)
     scope_changed = Signal()
     draft_saved = Signal()
+    replacement_saved = Signal(dict)
+    action_state_changed = Signal()
 
     def __init__(self, facade, tasks, legacy_model, parent=None):
         super().__init__(parent)
@@ -2151,6 +2153,7 @@ class MixedPaperPanel(QWidget):
         self._details_dialog = None
         self._details_epoch = 0
         self._details_loading = False
+        self._replacement_dialog = None
         self._legacy_details_expectation = None
         self._legacy_details_conflict = False
         self.setMinimumWidth(0)
@@ -2235,6 +2238,11 @@ class MixedPaperPanel(QWidget):
         root.addLayout(row)
         self.restore_button = _quiet_button("恢复本卷移除项")
         root.addWidget(self.restore_button)
+        self.replace_button = _quiet_button("按明确目标替换所选完整段")
+        self.replace_button.setAccessibleName("检索并完整阅读候选后替换当前保存卷的所选完整段")
+        self.replace_button.setVisible(self._independent and bool(getattr(facade, "paper_id", None)))
+        self.replace_button.clicked.connect(self._replace_complete_section)
+        root.addWidget(self.replace_button)
         self.settings_note = _label(
             "选中一道完整题，调整本次练习的分值。", "MutedLabel"
         )
@@ -2333,7 +2341,7 @@ class MixedPaperPanel(QWidget):
         self.redo_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
         self.redo_shortcut.activated.connect(self._redo)
         for button in (self.up_button, self.down_button, self.remove_button, self.restore_button,
-                       self.reload_button, self.restart_button, self.preview_button, self.export_button, self.undo_button, self.redo_button, self.back_button, self.details_button):
+                       self.replace_button, self.reload_button, self.restart_button, self.preview_button, self.export_button, self.undo_button, self.redo_button, self.back_button, self.details_button):
             button.setAutoDefault(False)
         self.sections.currentRowChanged.connect(self._selection_changed)
         self.up_button.clicked.connect(lambda: self._move(-1))
@@ -2943,6 +2951,51 @@ class MixedPaperPanel(QWidget):
         self._edited(action="恢复本卷移除项")
         self._render()
 
+    def _replace_complete_section(self):
+        if (not self._independent or not getattr(self.facade, "paper_id", None)
+                or self._busy or self._saving or self._restore_failed
+                or self._current_key() not in self.model.order
+                or not self._flush_pending_title()):
+            return
+        try:
+            self._draft_session.check()
+        except Exception:
+            self._draft_failed("当前卷或来源已变化，请重新读取后再替换完整段。")
+            return
+        from .question_replacement_dialog import QuestionReplacementDialog
+        dialog = QuestionReplacementDialog(self.facade, self.tasks, self.facade.paper_id,
+                                           self._current_key(), self)
+        self._replacement_dialog = dialog
+        self._busy = True
+        self._update_actions()
+        dialog.saved.connect(self._replacement_committed)
+        dialog.save_unconfirmed.connect(self._replacement_unconfirmed)
+        dialog.finished.connect(lambda _result: self._replacement_closed(dialog))
+        dialog.open()
+
+    def _replacement_closed(self, dialog):
+        if dialog is self._replacement_dialog:
+            self._replacement_dialog = None
+            self._busy = False
+            if not self._closed:
+                self._update_actions()
+        dialog.deleteLater()
+
+    def _replacement_committed(self, result):
+        self._busy = False
+        self._invalidate_preview()
+        # The old session has a fixed source basis. It must not save over the
+        # committed replacement while the workspace opens a fresh session.
+        self._restore_failed = True
+        if self._draft_session is not None:
+            self._draft_session.invalidate()
+        self.status.setText("完整段替换已保存；正在重开当前卷，旧预览确认已失效。")
+        self._update_actions()
+        self.replacement_saved.emit(dict(result))
+
+    def _replacement_unconfirmed(self, _message):
+        self._draft_failed("替题或版本恢复的保存结果未能确认，旧预览与导出已停用；请关闭对话框，从顶部继续所选卷重新核对。不会自动重试或用旧稿覆盖。")
+
     def _invalidate_preview(self):
         self._invalidate_details()
         self._generation += 1
@@ -3064,6 +3117,11 @@ class MixedPaperPanel(QWidget):
         return saved and not self._pending_title_fields
 
     def prepare_leave(self):
+        if self._replacement_dialog is not None:
+            if self._replacement_dialog._committing:
+                self.status.setText("正在核对替题保存结果，请等待结果后再离开当前卷。")
+                return False
+            self._replacement_dialog.reject()
         return self._flush_pending_title()
 
     def _edited(self, *_args, action="修改卷面设置", selected=None):
@@ -3116,10 +3174,15 @@ class MixedPaperPanel(QWidget):
         self.down_button.setEnabled(enabled and 0 <= row < len(self.model.order) - 1)
         self.remove_button.setEnabled(enabled and row >= 0)
         self.restore_button.setEnabled(enabled and bool(self.model.excluded))
+        self.replace_button.setEnabled(enabled and row >= 0 and self._independent
+            and bool(getattr(self.facade, "paper_id", None))
+            and all(callable(getattr(self.facade, method, None)) for method in (
+                "search_unified_questions", "prepare_question_replacement", "commit_question_replacement")))
         key = self._current_key()
         kind = self.model.items.get(key, {}).get("kind")
         self.points.setEnabled(enabled and bool(key) and kind != "personal_visual_theme")
         self.space.setEnabled(enabled and bool(key) and kind == "core_theme")
+        self.action_state_changed.emit()
 
     def _preview_request(self):
         if not self._flush_pending_title():

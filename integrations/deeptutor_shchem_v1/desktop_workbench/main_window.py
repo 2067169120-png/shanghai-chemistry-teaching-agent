@@ -331,11 +331,70 @@ class TeacherWorkbenchWindow(QMainWindow):
         if handoff:self.open_exam_practice(handoff)
 
     def open_exam_practice(self, request):
-        if not self._prepare_paper_navigation('library'):
-            return
+        from collections.abc import Mapping
+        from copy import deepcopy
         from PySide6.QtCore import QSignalBlocker
         from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
+        if (not isinstance(request,Mapping) or any(
+                not isinstance(request.get(key),str) or not request[key].strip()
+                for key in ('exam_id','task_id','label'))):
+            return False
+        try:payload=deepcopy(dict(request))
+        except (TypeError,ValueError,RuntimeError):return False
+        if 'sources' not in payload and 'lanes' not in payload and payload.get('lane'):
+            if not isinstance(payload.get('knowledge'),str) or not payload['knowledge'].strip():return False
+            payload['sources']=[payload['lane']]
+            payload['filters']={'knowledge':[payload['knowledge']],'knowledge_mode':'any'}
+        sources=payload.get('sources',payload.get('lanes'))
+        selected=payload.get('filters',{})
+        if (not isinstance(sources,(list,tuple)) or not sources
+                or any(lane not in ('master','wave1','supplemental','word_native','visual_native') for lane in sources)
+                or not isinstance(selected,dict) or set(selected)-{'knowledge','knowledge_mode'}):
+            return False
+        knowledge=selected.get('knowledge',[])
+        if (not isinstance(knowledge,(list,tuple,set))
+                or any(not isinstance(value,str) or not value.strip() for value in knowledge)
+                or selected.get('knowledge_mode','any') not in ('any','all')):
+            return False
+        mapping=payload.get('knowledge_mapping',{})
+        if not isinstance(mapping,Mapping):return False
+        version=mapping.get('version_vector')
+        if version is not None:
+            gate=getattr(self.facade,'unified_question_search_is_current',None)
+            try:current=callable(gate) and gate(version)
+            except (OSError,ValueError,RuntimeError,TypeError):current=False
+            if not current:
+                self.statusBar().showMessage('题库目录已变化，请返回复练任务重新核对知识条件。',7000)
+                return False
+        if not self._prepare_paper_navigation('library'):
+            return False
         page=self.library_page
+        apply=getattr(page,'apply_unified_handoff',None)
+        if getattr(page,'_closed',False) or (not callable(apply) and not payload.get('lane')):
+            return False
+        # Navigation is itself guarded. Suppress first-show/empty-page search
+        # until the new conditions have been accepted, and restore temporary
+        # state even when a later prepare_leave call refuses the navigation.
+        loading=page._loading
+        had_pending=hasattr(page,'_handoff_navigation_pending')
+        pending=getattr(page,'_handoff_navigation_pending',False)
+        page._handoff_navigation_pending=True;page._loading=True
+        try:
+            navigated=self.navigate('library')
+        finally:
+            page._loading=loading
+            if had_pending:page._handoff_navigation_pending=pending
+            else:del page._handoff_navigation_pending
+        if not navigated:return False
+        if callable(apply):
+            if not apply(payload):return False
+        else:
+            # Keep older embedded pickers/probes usable; current production
+            # pages always receive the unified source/filter contract.
+            with QSignalBlocker(page.scope):page.scope.setCurrentIndex(page.scope.findData(payload['lane']))
+            page._base_facets={}
+            page.advanced_button.setText('Word原文与标签管理' if payload['lane']=='word_native' else '题图与标签管理')
+            page.filters={'knowledge':{payload['knowledge']}};page.curriculum={};page.query.clear()
         if not hasattr(page,'exam_context'):
             page.exam_context=QWidget();box=QHBoxLayout(page.exam_context)
             page.exam_context_label=QLabel();page.exam_context_label.setWordWrap(True)
@@ -345,16 +404,14 @@ class TeacherWorkbenchWindow(QMainWindow):
             page.layout().insertWidget(1,page.exam_context)
             page.exam_context_back.clicked.connect(lambda:self.open_exam_dialog(
                 identity=page.exam_context_request['exam_id'],task_id=page.exam_context_request['task_id']))
-        page.exam_context_request=dict(request)
-        page.exam_context_label.setText('考试复练 · '+request['label']+'；核对完整题面后入篮，再返回任务关联题目。')
+        page.exam_context_request=deepcopy(payload)
+        page.exam_context_label.setText('考试复练 · '+payload['label']+'；核对完整题面后入篮，再返回任务关联题目。')
         page.exam_context.show()
-        with QSignalBlocker(page.scope):page.scope.setCurrentIndex(page.scope.findData(request['lane']))
-        page._base_facets={}
-        page.advanced_button.setText('Word原文与标签管理' if request['lane']=='word_native' else '题图与标签管理')
-        page.filters={'knowledge':{request['knowledge']}};page.curriculum={};page.query.clear()
-        if not self.navigate('library'):
-            return
+        if hasattr(page,'_started') and not page._started:
+            page._started=True
+            page.load_curriculum()
         page.search()
+        return True
 
     def preview_selected_paper(self):
         self.navigate("paper")

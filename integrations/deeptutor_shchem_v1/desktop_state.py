@@ -56,7 +56,9 @@ def _draft_snapshot(value, draft_id):
 
 
 def _shared_lock(path: Path):
-    identity = os.path.normcase(str(path))
+    from .desktop_state_locking import canonical_lock_identity
+
+    identity = canonical_lock_identity(path)
     with _LOCKS_GUARD:
         return _LOCKS.setdefault(identity, threading.RLock())
 
@@ -65,36 +67,15 @@ def _shared_lock(path: Path):
 def _state_file_lock(path: Path):
     """Every store writer uses one OS lock; crashes do not leave a live lock.
 
-    Keep lock files outside personal state so a rejected edit does not create a
-    state directory. This follows the import identity/batch lock convention.
+    A canonical named mutex on Windows keeps all processes in one namespace,
+    including processes with different temporary directories or path aliases.
+    Rejected edits do not create a personal state directory.
     """
-    identity = hashlib.sha256(os.path.normcase(str(path)).encode("utf-8")).hexdigest()
-    directory = Path(tempfile.gettempdir()) / "shchem-desktop-state-locks"
-    lock_path = directory / f"{identity}.lock"
+    from .desktop_state_locking import process_state_lock
+
     try:
-        if directory.is_symlink() or lock_path.is_symlink():
-            raise DesktopStateError("个人状态锁无法核验，请稍后重试。")
-        directory.mkdir(parents=True, exist_ok=True)
-        with lock_path.open("a+b") as handle:
-            handle.seek(0, os.SEEK_END)
-            if handle.tell() == 0:
-                handle.write(b"0")
-                handle.flush()
-            handle.seek(0)
-            if os.name == "nt":
-                import msvcrt
-                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
-            else:
-                import fcntl
-                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-            try:
-                yield
-            finally:
-                handle.seek(0)
-                if os.name == "nt":
-                    msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
-                else:
-                    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+        with process_state_lock(path):
+            yield
     except OSError as exc:
         raise DesktopStateError("个人状态正被使用或无法保存，请重新读取后重试。") from exc
 

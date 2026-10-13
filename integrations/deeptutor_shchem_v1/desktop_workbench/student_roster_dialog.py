@@ -3,9 +3,10 @@ from copy import deepcopy
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel,
     QPushButton, QComboBox, QLineEdit, QPlainTextEdit, QTableWidget, QTableWidgetItem,
-    QDialogButtonBox, QInputDialog, QMessageBox)
+    QDialogButtonBox, QInputDialog, QMessageBox, QCheckBox)
 from ..desktop_exam_data import ExamError, digest
 from ..desktop_student_roster import new_roster, new_member, STATUS_LABELS, exam_status
+from ..desktop_student_roster_identity_actions import undoable_identity_actions
 
 
 def field(value, name, default=None):
@@ -20,7 +21,8 @@ class StudentRosterDialog(QDialog):
         box=QVBoxLayout(self)
         note=QLabel('班级与学生别名只保存在本机私有学生目录。每个成员有独立稳定ID；同名可以并存，不按姓名合并。名册不进入API或备课ZIP。');note.setWordWrap(True);box.addWidget(note)
         bar=QHBoxLayout();self.rosters=QComboBox();bar.addWidget(self.rosters,1)
-        self.new_button=QPushButton('新建班级名册');bar.addWidget(self.new_button);box.addLayout(bar)
+        self.new_button=QPushButton('新建班级名册');bar.addWidget(self.new_button)
+        self.import_button=QPushButton('导入整班名单');bar.addWidget(self.import_button);box.addLayout(bar)
         self.class_label=QLineEdit();self.class_label.setAccessibleName('班级本地别名');box.addWidget(self.class_label)
         self.members=QTableWidget(0,3);self.members.setHorizontalHeaderLabels(['学生本地别名','稳定成员ID','关联匿名档案'])
         self.members.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows);self.members.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
@@ -38,6 +40,7 @@ class StudentRosterDialog(QDialog):
         buttons.button(QDialogButtonBox.StandardButton.Close).setText('返回')
         buttons.accepted.connect(self.save);buttons.rejected.connect(self.reject);box.addWidget(buttons)
         self.new_button.clicked.connect(self.new_class);self.add_button.clicked.connect(self.add_member);self.edit_button.clicked.connect(self.edit_member)
+        self.import_button.clicked.connect(self.open_import)
         self.rosters.currentIndexChanged.connect(self.choose_class);self.members.itemSelectionChanged.connect(self.choose_member)
         self.class_label.textEdited.connect(self.class_edited);self.refresh()
 
@@ -73,7 +76,7 @@ class StudentRosterDialog(QDialog):
             for j,text in enumerate((member['local_alias'],member['id'],member['profile_student_id'] or '未绑定')):
                 item=QTableWidgetItem(text);item.setData(Qt.ItemDataRole.UserRole,member['id']);self.members.setItem(i,j,item)
         self.members.resizeColumnsToContents()
-        for button in (self.add_button,self.edit_button,self.save_button):button.setEnabled(self.draft is not None)
+        for button in (self.add_button,self.edit_button,self.save_button,self.import_button):button.setEnabled(self.draft is not None)
         self.alias.clear();self.profile.setCurrentIndex(0)
 
     def choose_member(self):
@@ -107,6 +110,23 @@ class StudentRosterDialog(QDialog):
             saved=self.store.save(candidate,expected_revision=self.draft['revision']);self.dirty=False;self.saved=True
             self.refresh(saved['id']);self.status.setText('本地名册已保存；匿名档案与考试历史未改写。')
         except ExamError as error:self.status.setText(error.message_zh)
+
+    def open_import(self):
+        if self.draft is None:return
+        if self.dirty and self.draft['revision'] is not None:
+            self.status.setText('请先保存当前名册输入，再按已保存版本核对外部名单；当前输入保留。');return
+        from .student_roster_import_dialog import StudentRosterImportDialog
+        try:
+            dialog=StudentRosterImportDialog(self.facade,self.draft,self)
+            self._import_dialog=dialog
+            dialog.accepted.connect(lambda:self.import_saved(dialog))
+            dialog.open()
+        except ExamError as error:self.status.setText(error.message_zh)
+
+    def import_saved(self,dialog):
+        if dialog.saved_roster is None:return
+        self.dirty=False;self.saved=True;self.refresh(dialog.saved_roster['id'])
+        self.status.setText('整班名单与源行核对历史已一并保存；稳定成员ID保留，旧考试名册快照不改写。')
 
     def reject(self):
         if self.dirty and QMessageBox.question(self,'未保存名册','放弃本次未保存输入并关闭？',QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
@@ -160,6 +180,79 @@ class ExamRosterBindingDialog(QDialog):
             member=self.member.currentData()
             if not member:raise ExamError('请明确选择名册成员。')
             self.d.apply_identity_binding(self.row.currentData(),member['id'],self.submission.currentData(),self.reason.toPlainText(),expected=self.expected)
+            self.accept()
+        except ExamError as error:self.status.setText(error.message_zh)
+
+
+class ExamIdentityActionDialog(QDialog):
+    def __init__(self,dashboard,mode):
+        super().__init__(dashboard);self.d=dashboard;self.mode=mode
+        self.expected=digest(dashboard.bundle());self.exam=deepcopy(dashboard.exam)
+        if mode not in {'unbind','undo'}:raise ExamError('请选择解除绑定或撤销身份动作。')
+        self.setWindowTitle('独立解除成绩行身份' if mode=='unbind' else '核对并撤销身份动作');self.resize(760,600)
+        box=QVBoxLayout(self)
+        notice=QLabel('原成绩、原作答、冻结名册和已记录复测均保留。解除只影响所选行的身份；撤销须原行、动作和占位行仍一致，并生成新的身份版本，旧复练须重新核对。')
+        notice.setWordWrap(True);box.addWidget(notice)
+        form=QFormLayout();self.row=QComboBox();self.action=QComboBox()
+        self.row.setAccessibleName('核对本次考试身份行');self.action.setAccessibleName('明确要撤销的原身份动作')
+        for row in dashboard.report['students']:
+            binding=row.get('identity_binding') or {}
+            self.row.addItem(f"{row['class']} · {row.get('local_alias',row['local_label'])} ({row['id']}) · 原表行{row['excel_row'] or '无'} · {'已绑定' if binding else '未绑定'}",row['id'])
+        selected=dashboard.student_table.currentIndex()
+        if selected.isValid():self.row.setCurrentIndex(selected.row())
+        form.addRow('当前考试行',self.row)
+        if mode=='undo':form.addRow('原身份动作',self.action)
+        box.addLayout(form)
+        self.basis=QPlainTextEdit();self.basis.setReadOnly(True);self.basis.setAccessibleName('当前身份、来源与原动作核对依据');box.addWidget(self.basis,1)
+        self.reason=QPlainTextEdit();self.reason.setMaximumHeight(90);self.reason.setPlaceholderText('明确填写本次解除／撤销原因及教师核对依据。');box.addWidget(self.reason)
+        self.confirm=QCheckBox('我已核对所选原行、源文件、身份版本与档案归属，并确认本次动作范围');box.addWidget(self.confirm)
+        self.status=QLabel();self.status.setWordWrap(True);box.addWidget(self.status)
+        buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel)
+        self.save_button=buttons.button(QDialogButtonBox.StandardButton.Save)
+        self.save_button.setText('确认解除并保存' if mode=='unbind' else '确认撤销并保存')
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText('取消')
+        buttons.accepted.connect(self.save);buttons.rejected.connect(self.reject);box.addWidget(buttons)
+        self.row.currentIndexChanged.connect(self.row_changed);self.action.currentIndexChanged.connect(self.show_basis);self.row_changed()
+
+    def current_row(self):
+        return next((row for row in self.exam['students'] if row['id']==self.row.currentData()),None)
+
+    def row_changed(self):
+        self.confirm.setChecked(False);self.action.blockSignals(True);self.action.clear()
+        self.action.addItem('请明确选择原身份动作',None)
+        try:
+            if self.mode=='undo':
+                for action in reversed(undoable_identity_actions(self.exam,self.row.currentData())):
+                    label='绑定' if action['action']=='bind_row' else '解除'
+                    self.action.addItem(f"{action['at']} · {label} · {action['id'][:8]}",action)
+            self.status.setText('')
+        except ExamError as error:self.status.setText(error.message_zh)
+        self.action.blockSignals(False);self.show_basis()
+
+    def show_basis(self):
+        self.confirm.setChecked(False);row=self.current_row();action=self.action.currentData()
+        if row is None:self.basis.clear();return
+        import json
+        evidence={'当前考试行':row['id'],'原表记录行':row['excel_row'],'源文件':self.exam.get('source'),
+                  '当前原行SHA256':digest(row),'当前身份':row.get('identity_binding'),
+                  '当前身份动作版本':row.get('identity_action_revision'),'原始得分保留':row['scores'],'原始总分保留':row['total']}
+        if action:
+            evidence['明确原动作']={key:deepcopy(action[key]) for key in ('id','action','reason','source_basis','before_row_sha256','after_row_sha256','action_sha256','added_roster_rows','removed_roster_rows')}
+        self.basis.setPlainText(json.dumps(evidence,ensure_ascii=False,indent=2))
+
+    def save(self):
+        try:
+            row=self.current_row()
+            if row is None:raise ExamError('请选择唯一的当前考试行。')
+            if not self.confirm.isChecked():raise ExamError('请明确确认原行、身份归属与本次动作范围。')
+            binding_sha=digest(row.get('identity_binding'))
+            if self.mode=='unbind':
+                self.d.apply_identity_unbinding(row['id'],self.reason.toPlainText(),expected=self.expected,expected_binding_sha256=binding_sha)
+            else:
+                action=self.action.currentData()
+                if action is None:raise ExamError('请明确选择要撤销的原身份动作。')
+                self.d.apply_identity_undo(action['id'],self.reason.toPlainText(),expected=self.expected,
+                    expected_action_sha256=action['action_sha256'],expected_binding_sha256=binding_sha)
             self.accept()
         except ExamError as error:self.status.setText(error.message_zh)
 

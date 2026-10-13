@@ -19,12 +19,13 @@ def test_rebuilt_template_cards_are_hidden_immediately(window):
 
 
 def test_equilibrium_chart_has_lines_not_filled_wedges(window):
+    from integrations.deeptutor_shchem_v1.desktop_classroom_models import ReversibleFirstOrderModel
     from integrations.deeptutor_shchem_v1.desktop_workbench.classroom_page import EquilibriumCanvas
     _, app = window
     canvas = EquilibriumCanvas()
-    canvas.resize(800, 300)
-    canvas.a, canvas.b = 25, 75
-    canvas.trace = [(100, 0), (50, 50), (25, 75)]
+    canvas.resize(1000, 400)
+    canvas.set_snapshot(ReversibleFirstOrderModel(), 15., 15.)
+    assert canvas.trace[0].t == 0 and canvas.trace[-1].t == 15
     canvas.show()
     settle(app)
     image = canvas.grab().toImage()
@@ -34,7 +35,7 @@ def test_equilibrium_chart_has_lines_not_filled_wedges(window):
     for x in range(left, right):
         for y in range(top, bottom):
             c = image.pixelColor(x, y)
-            colored += c.red() > 180 and 110 < c.green() < 200 and c.blue() < 120
+            colored += 120 < c.red() < 180 and 50 < c.green() < 140 and c.blue() < 80
     assert 0 < colored < (right - left) * (bottom - top) * .04
     canvas.close()
     canvas.deleteLater()
