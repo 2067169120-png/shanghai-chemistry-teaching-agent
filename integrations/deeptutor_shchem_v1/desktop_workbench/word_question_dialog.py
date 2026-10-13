@@ -594,6 +594,9 @@ class WordQuestionDialog(QDialog):
         self._jobs: dict[int, str | None] = {}
         self._job_serial = 0
         self._catalog_epoch = 0
+        self._maintenance_epoch = self._current_maintenance_epoch()
+        self._catalog_maintenance_epoch = self._maintenance_epoch
+        self._cache_projection_stale = False
         self._detail_epoch = 0
         self._reference_epoch = 0
         self._catalog_busy = False
@@ -1118,14 +1121,26 @@ class WordQuestionDialog(QDialog):
             (row['key'], row['revision'], row['points']) for row in self.selections
         )
 
-    def _submit(self, label, operation, success, failure=None, *, progress=None) -> str | None:
+    def _submit(self, label, operation, success, failure=None, *, progress=None,
+                maintenance_bound=True) -> str | None:
         self._job_serial += 1
         token = self._job_serial
         self._jobs[token] = None
+        maintenance_epoch = self._current_maintenance_epoch()
+
+        def run(*args, **kwargs):
+            if maintenance_bound and maintenance_epoch != self._current_maintenance_epoch():
+                from ..desktop_word_questions import WordQuestionError
+                raise WordQuestionError("本机缓存已更新，请重新读取题目后再操作。")
+            return operation(*args, **kwargs)
 
         def completed(value, failed=False):
             self._jobs.pop(token, None)
             if self._closed:
+                return
+            if maintenance_bound and not self._maintenance_callback_current(maintenance_epoch):
+                if failure is not None:
+                    failure("本机缓存已更新，请重新读取题目后再操作。")
                 return
             if failed:
                 if failure is not None:
@@ -1138,16 +1153,17 @@ class WordQuestionDialog(QDialog):
         try:
             if progress is not None and callable(getattr(self.tasks, "submit_progress", None)):
                 def updated(value):
-                    if token in self._jobs and not self._closed:
+                    if (token in self._jobs and not self._closed
+                            and (not maintenance_bound or self._maintenance_callback_current(maintenance_epoch))):
                         progress(value)
 
                 task_id = self.tasks.submit_progress(
-                    label, operation, on_progress=updated, on_success=completed,
+                    label, run, on_progress=updated, on_success=completed,
                     on_failure=lambda message: completed(message, True),
                 )
             else:
                 task_id = self.tasks.submit(
-                    label, operation, on_success=completed,
+                    label, run, on_success=completed,
                     on_failure=lambda message: completed(message, True),
                 )
             if token in self._jobs:
@@ -1163,6 +1179,52 @@ class WordQuestionDialog(QDialog):
             if pending == task_id:
                 self._jobs.pop(token, None)
 
+    def _current_maintenance_epoch(self):
+        reader = getattr(self.facade, "desktop_cache_epoch", None)
+        return reader("word") if callable(reader) else None
+
+    def _maintenance_callback_current(self, requested_epoch):
+        if self._closed:
+            return False
+        if requested_epoch == self._current_maintenance_epoch():
+            return True
+        self._ensure_cache_projection_current()
+        return False
+
+    def invalidate_cache_projection(self):
+        """Discard derived views, preserving the teacher's choices and filters."""
+        self._maintenance_epoch = self._current_maintenance_epoch()
+        self._cache_projection_stale = True
+        self._catalog_epoch += 1
+        self._catalog_busy = False
+        self._items = {}
+        self._detail_listing_rows = {}
+        self._image_cache.clear()
+        self._derived_image_keys.clear()
+        current = self._current_key
+        blocked = self.question_list.blockSignals(True)
+        self.question_list.clear()
+        self.question_list.blockSignals(blocked)
+        self._show_question(None)
+        self._current_key = current
+        self.result_count.setText("缓存已清理 · 需重新读取")
+        set_status(self.status, "info", "缓存已清理；刷新或继续检索时会从原资料重新读取。勾选、分值与筛选条件保留。")
+        self._update_actions()
+
+    def _ensure_cache_projection_current(self):
+        if self._maintenance_epoch != self._current_maintenance_epoch():
+            self.invalidate_cache_projection()
+        if self._cache_projection_stale:
+            if self.isVisible() and not self._catalog_busy:
+                self._load_catalog()
+            return True
+        return False
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if self._ensure_cache_projection_current():
+            return
+
     def _load_catalog(self) -> None:
         if self._catalog_busy or self._closed:
             return
@@ -1170,18 +1232,23 @@ class WordQuestionDialog(QDialog):
         epoch = self._catalog_epoch
         restore = not self._loaded_once
         self._catalog_busy = True
+        self._catalog_maintenance_epoch = self._current_maintenance_epoch()
         self._invalidate_preview()
         self._update_actions()
         set_status(self.status, "info", "正在本机读取逐题目录…")
         facade = self.facade
 
-        progressive = callable(getattr(facade, "word_question_catalog_progress", None))
+        listing = getattr(facade, "word_question_listing", facade.word_question_catalog)
+        listing_progress = getattr(facade, "word_question_listing_progress", None)
+        if not callable(listing_progress):
+            listing_progress = getattr(facade, "word_question_catalog_progress", None)
+        progressive = callable(listing_progress)
 
         def read(progress=None, cancelled=None):
             catalog = (
-                facade.word_question_catalog_progress(progress, cancelled)
+                listing_progress(progress, cancelled)
                 if progressive and progress is not None
-                else facade.word_question_catalog()
+                else listing()
             )
             saved = (facade.word_question_saved_selection() if self._persist_choices else []) if restore else None
             validate_context = getattr(facade, 'validate_textbook_question_context', None)
@@ -1216,6 +1283,11 @@ class WordQuestionDialog(QDialog):
 
     def _catalog_ready(self, epoch: int, result: Any) -> None:
         if epoch != self._catalog_epoch:
+            return
+        if self._catalog_maintenance_epoch != self._current_maintenance_epoch():
+            self.invalidate_cache_projection()
+            if self.isVisible():
+                self._load_catalog()
             return
         try:
             catalog, saved = result
@@ -1265,6 +1337,9 @@ class WordQuestionDialog(QDialog):
             }
             removed = before - len(self._selected)
             self._items = items
+            self._maintenance_epoch = self._catalog_maintenance_epoch
+            self._cache_projection_stale = False
+            self._detail_listing_rows = {}
             self._attribute_catalog = deepcopy(catalog.get("attribute_catalog"))
             self._set_curriculum_catalog(catalog.get("attribute_catalog"))
             self._catalog_revision = _text(catalog.get("revision"))
@@ -1776,6 +1851,8 @@ class WordQuestionDialog(QDialog):
         )
 
     def _filter_items(self, *_args) -> None:
+        if self._ensure_cache_projection_current():
+            return
         current = self._current_key
         query = self.search.text().strip().casefold()
         self._rendering_list = True
@@ -1810,7 +1887,7 @@ class WordQuestionDialog(QDialog):
                 continue
             if not matcher(value):
                 continue
-            question_text = " ".join(
+            question_text = value.get("excerpt", "") if value.get("lightweight") else " ".join(
                 _text(block.get("text"))
                 for block in value.get("question_blocks", ())
                 if isinstance(block, dict)
@@ -1837,8 +1914,11 @@ class WordQuestionDialog(QDialog):
             ]
             if assets:
                 state += f" · 来源图 {len(assets)} 处"
+            elif value.get("source_asset_count"):
+                state += f" · 来源图 {value['source_asset_count']} 处"
             if (
                 value.get("warnings")
+                or value.get("source_has_unpreviewable_assets")
                 or any(
                     block.get("warnings") for block in blocks if isinstance(block, dict)
                 )
@@ -1889,6 +1969,11 @@ class WordQuestionDialog(QDialog):
                 item.widget().deleteLater()
 
     def _show_question(self, key: str | None) -> None:
+        if key is not None and self._ensure_cache_projection_current():
+            return
+        prior_listings = getattr(self, "_detail_listing_rows", {})
+        if self._current_key in prior_listings:
+            self._items[self._current_key] = prior_listings.pop(self._current_key)
         for task_id in self._image_task_ids:
             self.tasks.cancel(task_id)
         self._image_task_ids.clear()
@@ -1937,7 +2022,41 @@ class WordQuestionDialog(QDialog):
         self.points.blockSignals(False)
         self.points.setEnabled(bool(value))
         self.tabs.setCurrentIndex(0)
-        self._render_tab(0)
+        if value.get("lightweight"):
+            epoch, revision = self._detail_epoch, value["revision"]
+            self._panel_layouts[0].addWidget(_label("正在核对原文件并读取本题正文…", muted=True))
+            def detail_ready(detail):
+                if self._closed or epoch != self._detail_epoch or key != self._current_key:
+                    return
+                if self._ensure_cache_projection_current():
+                    return
+                if detail.get("key") != key or detail.get("revision") != revision:
+                    detail_failed("题目已变化，请重新读取目录。")
+                    return
+                self._detail_listing_rows = getattr(self, "_detail_listing_rows", {})
+                self._detail_listing_rows[key] = value
+                self._items[key] = detail
+                self.attribute_note.setText("\n".join(part for part in (_attribute_text(detail), self._curriculum_summary(detail)) if part))
+                self.attribute_note.setVisible(bool(self.attribute_note.text()))
+                self.attributes_preview.setPlainText("\n".join(part for part in (_attribute_text(detail, details=True), self._curriculum_summary(detail)) if part))
+                for tab in (0, 1):
+                    self._clear_panel(tab)
+                self._loaded_tabs.clear()
+                self._render_tab(self.tabs.currentIndex() if self.tabs.currentIndex() in (0, 1) else 0)
+                self._update_actions()
+            def detail_failed(message):
+                if not self._closed and epoch == self._detail_epoch and key == self._current_key:
+                    self._clear_panel(0)
+                    failure_label = _label(str(message))
+                    failure_label.setObjectName("StatusAttention")
+                    self._panel_layouts[0].addWidget(failure_label)
+                    self._loaded_tabs.discard(0)
+                    self._update_actions()
+            task_id = self._submit("读取Word完整题面", lambda: self.facade.word_question_detail(key, revision), detail_ready, detail_failed)
+            if task_id:
+                self._image_task_ids.add(task_id)
+        else:
+            self._render_tab(0)
         self._update_actions()
 
     def _tab_changed(self, index: int) -> None:
@@ -1946,6 +2065,10 @@ class WordQuestionDialog(QDialog):
         self._adapt_reader_height()
 
     def _render_tab(self, index: int, *, native: bool = True) -> None:
+        if self._ensure_cache_projection_current():
+            return
+        if self._items.get(self._current_key, {}).get("lightweight"):
+            return
         if index in self._loaded_tabs:
             return
         self._loaded_tabs.add(index)
@@ -2042,9 +2165,11 @@ class WordQuestionDialog(QDialog):
         epoch = self._detail_epoch
         scope = "answer" if index else "question"
         key, revision = question["key"], question["revision"]
+        maintenance_epoch = self._current_maintenance_epoch()
 
         def current():
-            return (not self._closed and epoch == self._detail_epoch and self._current_key == key
+            return (self._maintenance_callback_current(maintenance_epoch)
+                    and epoch == self._detail_epoch and self._current_key == key
                     and self._items.get(key, {}).get("revision") == revision)
 
         def failed(_message):
@@ -2141,6 +2266,8 @@ class WordQuestionDialog(QDialog):
             self._image_task_ids.add(task_id)
 
     def _show_source_locations(self, key, revision, scope):
+        if self._ensure_cache_projection_current():
+            return
         if self._closed or self._current_key != key:
             return
         from .word_source_location_dialog import WordSourceLocationDialog
@@ -2171,7 +2298,10 @@ class WordQuestionDialog(QDialog):
         *,
         pending: list | None = None,
     ) -> None:
+        if self._ensure_cache_projection_current():
+            return
         cache_key = (question["key"], question["revision"], asset["asset_id"])
+        maintenance_epoch = self._current_maintenance_epoch()
         if cache_key in self._image_cache:
             self._image_cache.move_to_end(cache_key)
             self._display_image(widget, self._image_cache[cache_key])
@@ -2182,7 +2312,8 @@ class WordQuestionDialog(QDialog):
         facade = self.facade
 
         def ready(result):
-            if epoch != self._detail_epoch or self._current_key != question["key"]:
+            if (not self._maintenance_callback_current(maintenance_epoch)
+                    or epoch != self._detail_epoch or self._current_key != question["key"]):
                 return
             if (
                 not isinstance(result, dict)
@@ -2216,7 +2347,8 @@ class WordQuestionDialog(QDialog):
             self._update_actions()
 
         def failed(_message):
-            if epoch == self._detail_epoch and self._current_key == question["key"]:
+            if (self._maintenance_callback_current(maintenance_epoch)
+                    and epoch == self._detail_epoch and self._current_key == question["key"]):
                 widget.setText("此来源图片暂时无法读取，请重新选题或核对原始 Word。")
                 self._current_image_failures.add(cache_key)
                 self._current_displayed_images.discard(cache_key)
@@ -2259,6 +2391,8 @@ class WordQuestionDialog(QDialog):
         return True, "题面与公共材料已显示；请核对后明确选择。"
 
     def _select_current(self):
+        if self._ensure_cache_projection_current():
+            return
         if not self.select_current_button.isEnabled():
             return
         value = self._items.get(self._current_key)
@@ -2275,14 +2409,18 @@ class WordQuestionDialog(QDialog):
         self._filter_items()
 
     def _manage_knowledge_links(self):
+        if self._ensure_cache_projection_current():
+            return
         if not self._allow_knowledge_links or not self.knowledge_links_button.isEnabled():
             return
         row = deepcopy(self._items.get(self._current_key))
         if row is None:
             return
         epoch, revision = self._detail_epoch, self._catalog_revision
+        maintenance_epoch = self._current_maintenance_epoch()
         def current():
-            if (self._closed or self._detail_epoch != epoch or self._catalog_revision != revision
+            if (self._closed or maintenance_epoch != self._current_maintenance_epoch()
+                    or self._detail_epoch != epoch or self._catalog_revision != revision
                     or self._current_key != row['key'] or self._items.get(row['key']) != row):
                 raise ValueError('当前题目或来源版本在关联期间变化，请重新打开关联。')
         from .knowledge_question_links_dialog import KnowledgeQuestionLinksDialog
@@ -2347,6 +2485,8 @@ class WordQuestionDialog(QDialog):
             self._update_actions()
 
     def _ai_attributes(self) -> None:
+        if self._ensure_cache_projection_current():
+            return
         if self._attributes_busy or self._range_busy or self._catalog_busy or self._export_busy:
             return
         if not self.selections:
@@ -2362,10 +2502,13 @@ class WordQuestionDialog(QDialog):
             self._load_catalog()
 
     def _refresh_scope_labels(self) -> None:
+        if self._ensure_cache_projection_current():
+            return
         value = self._items.get(self._current_key)
         if not value or not self.scope_labels_button.isEnabled():
             return
         key, revision = value["key"], value["revision"]
+        maintenance_epoch = self._current_maintenance_epoch()
         self._attributes_busy = True
         self._update_actions()
         set_status(self.status, "info", "正在按当前范围整理本地自动建议…")
@@ -2388,6 +2531,10 @@ class WordQuestionDialog(QDialog):
             accepted = editor.exec() == QDialog.DialogCode.Accepted
             requested, expected = editor.save_requested, editor.expected_plan_sha256
             editor.deleteLater()
+            if not self._maintenance_callback_current(maintenance_epoch):
+                self._attributes_busy = False
+                self._update_actions()
+                return
             if not accepted or not requested:
                 self._attributes_busy = False
                 self._update_actions()
@@ -2402,6 +2549,7 @@ class WordQuestionDialog(QDialog):
                             or row["annotation_source"] != "auto_suggested"
                             or self._items.get(key, {}).get("revision") != revision):
                         raise ValueError("changed automatic label binding")
+                    getattr(self, "_detail_listing_rows", {}).pop(key, None)
                     self._items[key]["attributes"] = row
                     for field in ("attribute_stale", "attribute_protected", "attribute_warning", "automatic_scope_refresh_allowed"):
                         self._items[key].pop(field, None)
@@ -2427,6 +2575,8 @@ class WordQuestionDialog(QDialog):
         )
 
     def _edit_attributes(self) -> None:
+        if self._ensure_cache_projection_current():
+            return
         value = self._items.get(self._current_key)
         if (
             not value
@@ -2438,6 +2588,7 @@ class WordQuestionDialog(QDialog):
             return
         question = deepcopy(value)
         key, revision = question["key"], question["revision"]
+        maintenance_epoch = self._current_maintenance_epoch()
         facade = self.facade
         self._attributes_busy = True
         self._update_actions()
@@ -2467,6 +2618,10 @@ class WordQuestionDialog(QDialog):
             stored = editor.expected_stored_revision
             reconfirm_range = editor.reconfirm_range
             editor.deleteLater()
+            if not self._maintenance_callback_current(maintenance_epoch):
+                self._attributes_busy = False
+                self._update_actions()
+                return
             if not accepted or updates is None or (not updates and not reconfirm_range):
                 self._attributes_busy = False
                 self._update_actions()
@@ -2481,6 +2636,7 @@ class WordQuestionDialog(QDialog):
                         raise ValueError("mismatched attributes")
                     if self._items.get(key, {}).get("revision") != revision:
                         raise ValueError("changed question")
+                    getattr(self, "_detail_listing_rows", {}).pop(key, None)
                     self._items[key]["attributes"] = row
                     for field in ("attribute_stale", "attribute_protected", "attribute_warning", "automatic_scope_refresh_allowed"):
                         self._items[key].pop(field, None)
@@ -2519,11 +2675,14 @@ class WordQuestionDialog(QDialog):
         )
 
     def _adjust_range(self) -> None:
+        if self._ensure_cache_projection_current():
+            return
         value = self._items.get(self._current_key)
         if not value or self._range_busy or self._attributes_busy:
             return
         question = deepcopy(value)
         key, revision = question["key"], question["revision"]
+        maintenance_epoch = self._current_maintenance_epoch()
         facade = self.facade
         self._range_busy = True
         self._update_actions()
@@ -2548,6 +2707,10 @@ class WordQuestionDialog(QDialog):
             accepted = editor.exec() == editor.DialogCode.Accepted
             ranges = editor.ranges
             editor.deleteLater()
+            if not self._maintenance_callback_current(maintenance_epoch):
+                self._range_busy = False
+                self._update_actions()
+                return
             if not accepted or ranges is None:
                 self._range_busy = False
                 self._update_actions()
@@ -2563,6 +2726,7 @@ class WordQuestionDialog(QDialog):
                     failed("题目范围的保存结果无效，请刷新后重新核对。")
                     return
                 self._items.pop(key, None)
+                getattr(self, "_detail_listing_rows", {}).pop(key, None)
                 self._items[item["key"]] = deepcopy(item)
                 if key in self._selected:
                     self._selected.pop(key)
@@ -2628,6 +2792,7 @@ class WordQuestionDialog(QDialog):
             lambda: facade.word_question_save_selection(selections),
             finished,
             lambda message: finished(message, True),
+            maintenance_bound=False,
         )
 
     def _invalidate_preview(self) -> None:
@@ -2694,6 +2859,8 @@ class WordQuestionDialog(QDialog):
         )
 
     def _preview_selected(self) -> None:
+        if self._ensure_cache_projection_current():
+            return
         if (
             not self.selections
             or self._catalog_busy
@@ -2784,6 +2951,8 @@ class WordQuestionDialog(QDialog):
         self._confirm_reference(composition=True)
 
     def _confirm_reference(self, *, composition: bool) -> None:
+        if self._ensure_cache_projection_current():
+            return
         if (
             self._preview_reference is None
             or not self._reference_can_import()
@@ -2795,6 +2964,7 @@ class WordQuestionDialog(QDialog):
         ):
             return
         epoch = self._reference_epoch
+        maintenance_epoch = self._current_maintenance_epoch()
         previous = deepcopy(self._preview_reference)
         selections = self.selections
         include_images = self.include_images.isChecked()
@@ -2832,6 +3002,8 @@ class WordQuestionDialog(QDialog):
             if self._closed or epoch != self._reference_epoch or selection_key != self._selection_key():
                 return {"reference": None, "result": None} if composition else None
             current = facade.word_question_reference(selections, include_images=include_images)
+            if maintenance_epoch != self._current_maintenance_epoch():
+                return {"reference": None, "result": None} if composition else None
             if not composition:
                 return current
             result = None
@@ -2868,8 +3040,18 @@ class WordQuestionDialog(QDialog):
             lambda message: self._reference_failed(epoch, message),
         )
 
-    def _preview_for_basket(self) -> None:
+    def _preview_for_basket(self, *, _detail_rows=None) -> None:
+        if self._ensure_cache_projection_current():
+            return
         if not self.basket_preview_button.isEnabled():
+            return
+        if _detail_rows is None and any(self._items.get(choice["key"], {}).get("lightweight") for choice in self.selections):
+            selections, expected = self.selections, self._selection_key()
+            def ready(details):
+                if not self._closed and expected == self._selection_key():
+                    self._preview_for_basket(_detail_rows={row["key"]: row for row in details})
+            self._submit("核对所选Word题目正文", lambda: [self.facade.word_question_detail(row["key"], row["revision"]) for row in selections], ready,
+                         lambda message: set_status(self.status, "attention", str(message)))
             return
         from .assembly_page import MixedPaperPreviewDialog
 
@@ -2877,6 +3059,7 @@ class WordQuestionDialog(QDialog):
         if self._basket_preview_dialog is not None:
             self._basket_preview_dialog.reject()
         selection_key = self._selection_key()
+        maintenance_epoch = self._current_maintenance_epoch()
         sections, images, blockers = [], {}, []
 
         def blocks_for(question, blocks):
@@ -2897,7 +3080,7 @@ class WordQuestionDialog(QDialog):
             return result
 
         for chosen in self.selections:
-            question = deepcopy(self._items[chosen["key"]])
+            question = deepcopy(_detail_rows[chosen["key"]] if _detail_rows is not None else self._items[chosen["key"]])
             student = blocks_for(question, list(question.get("context_blocks", [])) + list(question.get("question_blocks", [])))
             answers = blocks_for(question, question.get("answer_blocks", []))
             sections.append({
@@ -2914,7 +3097,8 @@ class WordQuestionDialog(QDialog):
         self._basket_preview_dialog = dialog
 
         def confirmed():
-            if self._closed or selection_key != self._selection_key() or self._basket_preview_dialog is not dialog:
+            if (not self._maintenance_callback_current(maintenance_epoch)
+                    or selection_key != self._selection_key() or self._basket_preview_dialog is not dialog):
                 return
             self._basket_preview_key = selection_key
             dialog.mark_confirmed()
@@ -2926,6 +3110,8 @@ class WordQuestionDialog(QDialog):
         self._update_actions()
 
     def _add_to_basket(self) -> None:
+        if self._ensure_cache_projection_current():
+            return
         if not self.basket_add_button.isEnabled() or self._basket_preview_key != self._selection_key():
             return
         selections, selection_key = deepcopy(self.selections), self._selection_key()
@@ -2952,6 +3138,8 @@ class WordQuestionDialog(QDialog):
         self._submit('加入选题篮', lambda: facade.add_word_questions_to_basket(selections), ready, failed)
 
     def _export(self) -> None:
+        if self._ensure_cache_projection_current():
+            return
         if not self.export_button.isEnabled():
             return
         selections = self.selections

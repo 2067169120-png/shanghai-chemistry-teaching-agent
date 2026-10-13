@@ -170,9 +170,10 @@ class StudioPreparationPage(PreparationPage):
             set_status(self.status, 'error', str(exc)); return False
         return self._import_material_batch(request, prepare_handout_materials, '正在核对讲义选材并加入本课…')
 
-    def open_textbook_section_materials(self, selection, *, on_handoff=None):
+    def open_textbook_section_materials(self, selection, *, on_handoff=None, before_handoff=None):
         from .forward_section_entry import open_textbook_section_materials
-        return open_textbook_section_materials(self, selection, on_handoff=on_handoff)
+        return open_textbook_section_materials(self, selection, on_handoff=on_handoff,
+                                              before_handoff=before_handoff)
 
     def import_linked_question(self, request):
         from ..desktop_handout_material_handoff import prepare_linked_question
@@ -385,7 +386,7 @@ class StudioPreparationPage(PreparationPage):
                     self.setWindowModified(self._payload() != self._form_baseline)
             set_status(self.status, 'error', str(exc)); return False
 
-    def _import_material_batch(self, request, prepare, label):
+    def _import_material_batch(self, request, prepare, label, *, before_handoff=None):
         from copy import deepcopy
         from threading import Event
         from PySide6.QtWidgets import QDialog
@@ -444,6 +445,8 @@ class StudioPreparationPage(PreparationPage):
                         or digest(dialog.history.value) != expected_history
                         or self.image_assets_widget.assets() != assets):
                     raise ValueError('备课、图片或选材窗口在读取期间变化，本批未加入；请重新选择。')
+                if before_handoff is not None and not before_handoff():
+                    raise ValueError('组卷修改尚未保存，本批选材未加入；请处理后重新选择。')
 
             def receipt(ok, message, count=0):
                 box['reported'] = True

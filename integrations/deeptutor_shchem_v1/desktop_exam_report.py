@@ -33,14 +33,16 @@ def chart_svg(title, rows, ceiling, unit=''):
 
 def brief(report):
     s=report['overall']
-    return (f"考试分析：{report['title']}\n统计范围：{report['scope']}；导入{s['enrolled']}人，有效总分{s['n']}人，"
+    return (f"考试分析：{report['title']}\n统计范围：{report['scope']}；统计成员{s['enrolled']}人，有效总分{s['n']}人，"
             f"缺考{s['absent']}人，总分缺失/冲突{s['unavailable']}人。\n"
+            f"应到{s.get('expected',s['enrolled'])}人，实到{s.get('present',s['n'])}人，免考{s.get('exempt',0)}人，未录入{s.get('not_entered',0)}人；尚未绑定导入行{s.get('unbound',0)}条。\n"
             f"满分{number(report['maximum'])}，均分{number(s['mean'])}，中位数{number(s['median'])}，"
             f"总体标准差{number(s['sd'])}；自定达标线{number(report['pass_score'])}，达标率{percent(s['pass_rate'])}。\n"
             '以上为本次已提供数据，不据此判断已提分或确定错因。')
 
 
 def html_report(report, result=None, *, include_names=False):
+    from .desktop_student_roster import STATUS_LABELS, exam_status
     def table(headers, rows):
         return '<table><thead><tr>'+''.join('<th>'+escape(str(x))+'</th>' for x in headers)+'</tr></thead><tbody>'+''.join(
             '<tr>'+''.join('<td>'+escape(str(x))+'</td>' for x in row)+'</tr>' for row in rows)+'</tbody></table>'
@@ -58,7 +60,8 @@ def html_report(report, result=None, *, include_names=False):
         pieces.append('<h2>知识点表现</h2><p>按有效作答分值加权：合计得分÷有效作答对应满分；不是心理测量意义的能力值。</p>'+table(
             ['知识点','对应题','有效作答次数','综合得分率'],[(k['label'],'、'.join(k['questions']),k['responses'],percent(k['rate'])) for k in report['knowledge']]))
     pieces.append('<h2>学生复核与练习注意点</h2>'+table(['学生','总分','状态','复核行动'],[
-        (s['local_label'] if include_names else s['id'],number(s['total']),'缺考' if s['absent'] else '总分待核对' if s['total'] is None else '有总分',local_student_advice(s,report)) for s in report['students']]))
+        (s.get('local_alias',s['local_label']) if include_names else s['id'],number(s['total']),
+         '未绑定名册' if s.get('excluded_unbound') else STATUS_LABELS[exam_status(s)]+('／总分待核对' if exam_status(s)=='present' and s['total'] is None else ''),local_student_advice(s,report)) for s in report['students']]))
     pieces += ['<h2>API讲评建议</h2><pre>'+escape(advice_text(result))+'</pre>',
                '<h2>数据问题</h2>'+table(['Excel行','字段','问题'],[(i['row'],i['field'],i['detail']) for i in report['issues']]),
                '<div class="warning">'+ '<br>'.join(escape(w) for w in report['warnings'])+'</div>',

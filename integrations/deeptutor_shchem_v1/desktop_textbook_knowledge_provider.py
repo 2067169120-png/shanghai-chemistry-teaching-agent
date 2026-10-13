@@ -30,7 +30,8 @@ def generate_knowledge(context, prepared, *, transport=None, renderer=None):
             'chapter': prepared['section_title'], 'pdf_pages': prepared['pdf_pages']}, ensure_ascii=False))
     try:
         outbound = build_structured_visual_request(context, prompt=prompt, schema=knowledge_schema(),
-            schema_name='shchem_personal_textbook_knowledge_v1', pages=images, max_output_tokens=8000)
+            schema_name='shchem_personal_textbook_knowledge_v1', pages=images, max_output_tokens=8000,
+            task_type='textbook_knowledge')
         check_read_cancelled()
         response = (transport or PinnedVisualTransport(total_timeout_seconds=180)).send(outbound,
             cancel_event=_CancellationView(cancellation_requested), deadline_monotonic=time.monotonic() + 180)

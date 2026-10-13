@@ -559,6 +559,7 @@ class WordSemanticTagService:
                             "prompt": tag_prompt(unit, plan["catalog"]),
                             "schema": OUTPUT_SCHEMA,
                             "schema_name": "shchem_word_tags_v1",
+                            "task_type": "semantic_tags",
                             "max_output_tokens": plan["request_policy"][
                                 "max_output_tokens"
                             ],

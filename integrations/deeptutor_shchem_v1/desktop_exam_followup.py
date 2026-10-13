@@ -30,13 +30,17 @@ def create_followup(exam, question_number, student_ids, goal, due_date):
         raise ExamError('请明确选择学生，且不要重复。')
     students = {s['id']: s for s in exam['students']}
     targets = []
+    from .desktop_student_roster import exam_status, identity_evidence
     for sid in student_ids:
         s = students.get(sid)
         score = s['scores'].get(question_number) if s else None
-        if not s or s['absent'] or score is None:
+        if not s or exam_status(s) != 'present' or score is None:
             raise ExamError('缺考或本题缺少有效成绩的学生，请先补充证据，不作为本次失分复练对象。')
+        if any(snapshot['exam_class']==s['class'] for snapshot in exam.get('roster_snapshots',[])) and not s.get('identity_binding'):
+            raise ExamError('此成绩行尚未显式绑定本次名册成员，不能建立复练任务。')
         targets.append({'exam_student_id': sid, 'local_label': s['local_label'],
-                        'baseline_score': score, 'baseline_maximum': question['max_score']})
+                        'baseline_score': score, 'baseline_maximum': question['max_score'],
+                        'identity_binding': identity_evidence(s), 'local_alias': s.get('local_alias',s['local_label'])})
     from .desktop_exam_revision import bind_task
     return bind_task(exam, {'schema': 'shchem.exam-followup.v1', 'id': uuid4().hex, 'exam_id': exam['id'],
             'created_at': datetime.now(timezone.utc).isoformat(), 'question': question_number,
@@ -73,7 +77,7 @@ def practice_request(task, basket, projection):
             'section_order': [r['key'] for r in linked], 'settings_by_key': {}}
 
 
-def record_attempt(task, student_id, attempt_date, status, score=None, maximum=None, note=''):
+def record_attempt(task, student_id, attempt_date, status, score=None, maximum=None, note='', *, submission_id=None, roster_store=None):
     if student_id not in {r['exam_student_id'] for r in task['targets']}:
         raise ExamError('该学生不在本任务范围内。')
     when = _date(attempt_date)
@@ -94,10 +98,18 @@ def record_attempt(task, student_id, attempt_date, status, score=None, maximum=N
             raise ExamError('请简述本次作答依据或仍需核对的地方。')
     else:
         score = maximum = None
+    target = next(r for r in task['targets'] if r['exam_student_id'] == student_id)
+    binding = deepcopy(target.get('reviewed_identity_binding',target.get('identity_binding')))
+    if submission_id:
+        if not binding or not binding.get('profile_student_id') or roster_store is None:
+            raise ExamError('请先明确绑定学生档案，才能关联实际复测原作答。')
+        roster_store.check_submission(binding['profile_student_id'], submission_id)
     changed = deepcopy(task)
     changed['attempts'].append({'id': uuid4().hex, 'student_id': student_id,
         'date': when.isoformat(), 'status': status, 'score': score, 'maximum': maximum,
         'note': note.strip(), 'links': deepcopy(task['links']),
+        'identity_binding': binding, 'submission_id': submission_id,
+        'local_alias': target.get('reviewed_local_alias',target.get('local_alias',target['local_label'])),
         'recorded_at': datetime.now(timezone.utc).isoformat()})
     return changed
 
@@ -124,7 +136,7 @@ def followup_text(tasks):
         for row in task['links']:
             text.append('练习：' + row['title'] + ' / ' + row['source'])
         for sid, row in latest_attempts(task).items():
-            label = next(t['local_label'] for t in task['targets'] if t['exam_student_id'] == sid)
+            label = row.get('local_alias') or next(t.get('local_alias',t['local_label']) for t in task['targets'] if t['exam_student_id'] == sid)
             result = (f"{row['score']}/{row['maximum']}" if row['status'] == 'completed' else
                       '未作答' if row['status'] == 'not_attempted' else '资料不全')
             text.append(f"{label}：{row['date']} {result}；{row['note']}")
@@ -138,4 +150,8 @@ def followup_html(tasks, *, include_names=False):
         for task in export:
             for target in task['targets']:
                 target['local_label'] = target['exam_student_id']
+                target['local_alias'] = target['exam_student_id']
+                target['reviewed_local_alias'] = target['exam_student_id']
+            for attempt in task.get('attempts',[]):
+                attempt['local_alias'] = attempt['student_id']
     return '<section><h2>复练与实际复测</h2><p>目标、备注和题目标题可能含教师自由文字，请自行核对个人信息。</p><pre style="white-space:pre-wrap">' + escape(followup_text(export)) + '</pre></section>'

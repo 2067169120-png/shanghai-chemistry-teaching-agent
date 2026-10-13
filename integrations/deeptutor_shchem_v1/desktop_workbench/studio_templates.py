@@ -118,6 +118,9 @@ class TemplatePage(QWidget):
         preparation = getattr(window, "preparation_page", None)
         apply = getattr(preparation, "apply_personal_teaching_template", None)
         def apply_current(record):
+            prepare = getattr(window, "_prepare_paper_navigation", None)
+            if callable(prepare) and not prepare("preparation"):
+                return False
             if apply is not None and apply(record):
                 navigate = getattr(window, "navigate", None)
                 if callable(navigate): navigate("preparation")

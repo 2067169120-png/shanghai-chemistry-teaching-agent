@@ -18,6 +18,7 @@ from .desktop_word_question_filters import (
     FILTER_GROUPS, UNKNOWN_ID, _bound_attributes, _chosen, _directory,
     _exam, _grades, _knowledge, _mappings, _search_text, _text,
     chapter_filter_id, section_filter_id,
+    matches_query_text,
 )
 
 
@@ -64,7 +65,7 @@ class PersonalSearchIndex:
                           "section": section_filter_id(n["volume_id"], n["chapter_id"], n["node_key"])}
                          for n in mappings] or [{g: UNKNOWN_ID for g in ("book", "chapter", "section")}]
                 text = _search_text(row, attributes, mappings)
-                excerpt = "\n".join(str(b.get("text", "")) for b in
+                excerpt = row.get("excerpt", "") if row.get("lightweight") else "\n".join(str(b.get("text", "")) for b in
                                     row.get("context_blocks", []) + row.get("question_blocks", []))[:480]
             else:
                 values, paths = {}, []
@@ -114,7 +115,7 @@ class PersonalSearchIndex:
                             continue
                     elif not matches_personal_visual_filters(row, selection):
                         continue
-                    if token[1] and token[1] not in text:
+                    if token[1] and (not matches_query_text(row, token[1], text) if self.lane == "word_native" else token[1] not in text):
                         continue
                     result.append(i)
             check_cancelled(cancelled)

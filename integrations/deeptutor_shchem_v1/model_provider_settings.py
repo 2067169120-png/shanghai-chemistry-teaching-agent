@@ -195,6 +195,8 @@ class ModelProviderProbeContext:
     # estimate budget, not a generic provider API parameter.
     max_input_tokens: int | None = None
     max_output_tokens: int | None = None
+    # A local ledger destination; excluded from the context's safe repr.
+    usage_root: Path | None = None
 
     def __repr__(self) -> str:
         return (
@@ -946,6 +948,7 @@ class ModelProviderSettingsStore:
         "_project_root",
         "_settings_path",
         "_thread_lock",
+        "_usage_root",
     )
 
     def __init__(
@@ -955,8 +958,10 @@ class ModelProviderSettingsStore:
         project_root: str | Path,
         credential_backend: CredentialBackend | None = None,
         provider_policies: Mapping[str, ProviderPolicy] | None = None,
+        usage_root: str | Path | None = None,
     ) -> None:
         self._metadata_root = Path(metadata_root).absolute()
+        self._usage_root = Path(usage_root).absolute() if usage_root is not None else None
         self._project_root = Path(project_root).absolute()
         _assert_components_not_reparse(self._metadata_root)
         _assert_components_not_reparse(self._project_root)
@@ -1824,6 +1829,7 @@ class ModelProviderSettingsStore:
                 local_endpoint_policy=profile["local_endpoint_policy"],
                 max_input_tokens=profile["max_input_tokens"],
                 max_output_tokens=profile["max_output_tokens"],
+                usage_root=self._usage_root,
             )
         try:
             yield context

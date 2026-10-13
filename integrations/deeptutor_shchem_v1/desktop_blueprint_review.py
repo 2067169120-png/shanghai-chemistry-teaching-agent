@@ -272,6 +272,7 @@ def review_blueprint(
             prompt=prompt,
             schema=diagnosis_schema(),
             schema_name="shchem_blueprint_diagnosis_v1",
+            task_type="blueprint_diagnosis",
             validator=lambda value: validate_diagnosis(value, preview, original),
             transport=transport,
             should_cancel=should_cancel,
@@ -307,6 +308,7 @@ def review_blueprint(
         ),
         schema=blueprint_schema(),
         schema_name="shchem_blueprint_revision_v1",
+        task_type="blueprint_revision",
         max_output_tokens=32000,
         validator=lambda value: validate_review(
             {**diagnosis, "revised_blueprint": value},

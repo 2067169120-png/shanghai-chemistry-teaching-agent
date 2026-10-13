@@ -8,6 +8,8 @@ import math
 import sqlite3
 import threading
 from copy import deepcopy
+from datetime import datetime, timezone
+from types import SimpleNamespace
 from uuid import uuid4
 
 from .desktop_preparation_images import (
@@ -25,6 +27,14 @@ from .desktop_preparation_sources import (
 from .desktop_source_quality import apply_source_quality, source_quality_notes
 from .reader_cancellation import check_read_cancelled
 from .desktop_word_preview_cache import WordPreviewCache
+from .desktop_word_catalog_index import (
+    OBSERVATION_REVISION,
+    WordCatalogIndex,
+    WordListingSearchProvider,
+    compact_questions,
+    expand_questions,
+    source_binding,
+)
 from .desktop_word_question_attributes import (
     WordQuestionAttributeError,
     WordQuestionAttributeStore,
@@ -77,16 +87,22 @@ class WordQuestionService:
             facade.paths.state_root / "word-question-previews"
         )
         self.attribute_store = WordQuestionAttributeStore(facade.paths.state_root)
+        self.catalog_index = WordCatalogIndex(
+            facade.paths.state_root / "word-question-catalog-index"
+        )
         self._cache = {}
         self._locations = {}
         self._lock = threading.RLock()
+        self._last_index_statistics = {}
 
-    def _inventory(self, locations=None, *, read_only=False, progress=None):
+    def _inventory(self, locations=None, *, read_only=False, progress=None, lightweight=False):
         """Revalidate archive bytes each time; never cache authority by filename."""
         from .desktop_facade import DesktopFacadeError
 
         found = {}
         warnings = []
+        statistics = {"source_count": 0, "memory_hits": 0, "persistent_hits": 0,
+                      "rebuilt_indexes": 0, "parsed_previews": 0}
         if locations is None:
             batches = self.facade.list_imported_word_batches()
         else:
@@ -123,7 +139,9 @@ class WordQuestionService:
                     if callable(manifest):
                         manifest(descriptor)
                     check_read_cancelled()
-                sources = (
+                restore_progress = getattr(self.facade, "_restore_visual_import_sources_progress", None)
+                sources = restore_progress(descriptor, progress,
+                    source_ids=locations[batch_id] if locations is not None else None) if progress and callable(restore_progress) else (
                     self.facade._restore_visual_import_sources(
                         descriptor, source_ids=locations[batch_id]
                     )
@@ -148,7 +166,24 @@ class WordQuestionService:
                     or source.source_sha256 in found
                 ):
                     continue
+                if hashlib.sha256(source.content).hexdigest() != source.source_sha256:
+                    warnings.append(f"{source.filename} 的原文件已变化，请重新导入后核对。")
+                    continue
                 token = (source.source_sha256, source.filename)
+                source_metadata = SimpleNamespace(filename=source.filename,
+                    effective_source_file_id=source.effective_source_file_id,
+                    role=getattr(source, "role", "unknown")) if lightweight else source
+                record = self.catalog_index.load_source(source.content, source.filename) if lightweight else None
+                if record is not None:
+                    statistics["persistent_hits"] += 1
+                    binding = record["binding"]
+                    header = {"_binding": binding, "revision": binding["source_revision"],
+                              "source_block_count": binding["source_block_count"]}
+                    found[source.source_sha256] = (source_metadata, batch_id, header, record["items"])
+                    statistics["source_count"] = len(found)
+                    if progress:
+                        progress({"message": f"已复用 {len(found)} 份 Word 轻量目录，继续核对原文件…"})
+                    continue
                 with self._lock:
                     if token not in self._cache:
                         try:
@@ -156,6 +191,7 @@ class WordQuestionService:
                                 source.content, source.filename
                             )
                             if preview is None:
+                                statistics["parsed_previews"] += 1
                                 preview = self.reader.word_preview_bytes(
                                     source.content, source.filename
                                 )
@@ -165,25 +201,53 @@ class WordQuestionService:
                                     )
                             if locations is not None:
                                 check_read_cancelled()
-                            indexed = index_word_questions(preview)
+                            compact = self.catalog_index.load(
+                                source.content, source.filename, preview
+                            )
+                            if compact is None:
+                                indexed = index_word_questions(preview)
+                                compact = compact_questions(preview, indexed)
+                                statistics["rebuilt_indexes"] += 1
+                                check_read_cancelled()
+                                if not read_only:
+                                    saved_index = self.catalog_index.save(
+                                        source.content, source.filename, preview, compact
+                                    )
+                                    if saved_index:
+                                        compact = [{key: value for key, value in item.items() if key != "search_projection"} for item in compact]
+                            else:
+                                statistics["persistent_hits"] += 1
                         except (PreparationSourceError, ValueError, TypeError):
                             warnings.append(
                                 f"{source.filename} 暂时没有可读取的正文题目，请在导入历史核对原文件；其他来源仍可使用。"
                             )
                             continue
-                        self._cache[token] = (preview, indexed)
+                        if not lightweight:
+                            self._cache[token] = (preview, compact)
+                    else:
+                        statistics["memory_hits"] += 1
+                        preview, compact = self._cache[token]
                     # This inventory is private. Catalogue quality processing
                     # copies each row, and source() copies the whole preview.
                     # Keep the cached trees read-only instead of duplicating
                     # every source and then copying its questions again.
-                    preview, items = self._cache[token]
+                    if lightweight:
+                        items = compact
+                        binding = source_binding(preview)
+                        preview = {"_binding": binding, "revision": binding["source_revision"],
+                                   "source_block_count": binding["source_block_count"]}
+                    else:
+                        items = expand_questions(preview, compact, validate=False)
                 if locations is not None:
                     check_read_cancelled()
-                found[source.source_sha256] = (source, batch_id, preview, items)
+                found[source.source_sha256] = (source_metadata, batch_id, preview, items)
+                statistics["source_count"] = len(found)
                 if progress:
                     progress({"message": f"已整理 {len(found)} 份 Word 来源，继续核对…"})
         if locations is not None:
             check_read_cancelled()
+        with self._lock:
+            self._last_index_statistics = statistics
         return found, warnings
 
     def _catalog(self, locations=None, *, read_only=False, progress=None):
@@ -217,6 +281,7 @@ class WordQuestionService:
                     "source_id": digest,
                     "source_name": source.filename,
                     "batch_id": batch_id,
+                    "source_role": getattr(source, "role", "unknown"),
                 }
             )
             for original_item in indexed:
@@ -246,6 +311,7 @@ class WordQuestionService:
                     source_name=source.filename,
                     archive_source_id=source.effective_source_file_id,
                     source_block_count=len(preview["blocks"]),
+                    source_role=getattr(source, "role", "unknown"),
                 )
                 result.append(item)
             if progress:
@@ -286,12 +352,190 @@ class WordQuestionService:
                 }
             )
         revision = _digest([(row["key"], row["revision"]) for row in result])
+        check_read_cancelled()
+        if not read_only:
+            observations = self._catalog_observations(result, inventory, quality, overrides, attributes)
+            self.catalog_index.save_observations(observations)
         return {
             "revision": revision,
             "sources": sources,
             "items": result,
             "warnings": list(dict.fromkeys(warnings)),
         }, inventory
+
+    def _catalog_observations(self, rows, inventory, quality, overrides, attributes):
+        """Persist exact current question identities, never reuse saved effectiveness.
+
+        The timestamp identifies the observation, not a TTL or proof of present
+        validity. Source bytes, ranges, quality and labels are read anew by every
+        catalogue call; this projection is intended for later audit/merge work.
+        """
+        observed_at = datetime.now(timezone.utc).isoformat()
+        grouped = {digest: [] for digest in inventory}
+        for row in rows:
+            check_read_cancelled()
+            saved = attributes.get(row["key"])
+            current = row.get("attributes")
+            grouped[row["source_id"]].append({
+                "key": row["key"], "revision": row["revision"],
+                "origin_block_start": row["origin_block_start"],
+                "block_start": row["block_start"], "block_end": row["block_end"],
+                "question_end": row["question_end"], "answer_start": row["answer_start"],
+                "context_start": row["context_start"], "context_end": row["context_end"],
+                "boundary_status": row["boundary_status"],
+                "selection_ready": row["selection_ready"], "export_ready": row["export_ready"],
+                "content_quality": deepcopy(row["content_quality"]),
+                "attribute_state": "current" if current else "stale" if saved else "missing",
+                "attribute_protected": bool(saved and automatic_tags_protected(saved)),
+                "automatic_scope_refresh_allowed": row.get("automatic_scope_refresh_allowed"),
+                "stored_attribute_revision": saved["revision"] if saved else None,
+                "stored_question_revision": saved["question_revision"] if saved else None,
+                "stored_source_sha256": saved["source_sha256"] if saved else None,
+                "annotation_source": saved["annotation_source"] if saved else None,
+                "observed_attributes": deepcopy(saved),
+            })
+        result = []
+        for digest, (source, batch_id, preview, _indexed) in inventory.items():
+            check_read_cancelled()
+            questions = grouped[digest]
+            result.append({
+                "observation_revision": OBSERVATION_REVISION,
+                "binding": source_binding(preview),
+                "archive_location": {"batch_id": batch_id,
+                    "archive_source_id": source.effective_source_file_id,
+                    "source_role": getattr(source, "role", "unknown")},
+                "freshness": {"live_revalidated": False,
+                    "status": "observed_only_requires_live_revalidation",
+                    "observed_at_utc": observed_at,
+                    "scope": "inputs_observed_during_catalog_call",
+                    "timestamp_proves_current_validity": False},
+                "projection_inputs_revision": _digest({
+                    "binding": source_binding(preview), "quality": quality.get(digest),
+                    "ranges": {row["key"]: overrides.get(row["key"]) for row in questions},
+                    "attributes": {row["key"]: attributes.get(row["key"]) for row in questions}}),
+                "questions": questions,
+            })
+        return result
+
+    def catalog_index_statistics(self):
+        """Counters from the last completed inventory, for local diagnostics."""
+        with self._lock:
+            return dict(self._last_index_statistics)
+
+    def observed_catalog_snapshots(self):
+        """Read historical per-source states; this never grants source authority."""
+        return self.catalog_index.observations()
+
+    def catalog_listing(self, *, read_only=False, progress=None):
+        """Current lightweight search rows; full blocks are read only on demand.
+
+        A persistent hit verifies original DOCX bytes but does not decompress
+        the native preview. Cold extraction is discarded after its boundaries
+        and search postings are saved. Current quality, range and attribute
+        states are projected independently of that disposable source index.
+        """
+        inventory, warnings = self._inventory(read_only=read_only, progress=progress, lightweight=True)
+        statistics = self.catalog_index_statistics()
+        statistics.update(range_projection_hits=0, rebuilt_range_projections=0)
+        try:
+            quality = source_quality_notes(self.facade.paths.workspace_root)
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            raise WordQuestionError("来源修订记录无法读取，未继续选题；请检查资料完整性。") from exc
+        overrides = self.state.snapshot().get("drafts", {}).get(RANGES_DRAFT, {}).get("ranges", {})
+        rows, sources, search_bindings, memory_searches = [], [], {}, {}
+        for digest, (source, batch_id, header, indexed) in inventory.items():
+            check_read_cancelled()
+            binding = source_binding(header)
+            sources.append({"source_id": digest, "source_sha256": digest, "source_name": source.filename,
+                "source_revision": binding["source_revision"], "batch_id": batch_id,
+                "source_role": source.role, "archive_source_id": source.effective_source_file_id})
+            relevant = {item["key"]: overrides[item["key"]] for item in indexed if item["key"] in overrides}
+            current = self.catalog_index.load_ranges(binding, _digest(relevant)) if relevant else indexed
+            if relevant and current is not None:
+                statistics["range_projection_hits"] += 1
+            if current is None:
+                statistics["rebuilt_range_projections"] += 1
+                # A new manual range is the only reason a warm listing reads
+                # that source's preview. Its projected range is then reusable.
+                complete, more_warnings = self._inventory({batch_id: {source.effective_source_file_id}}, read_only=read_only)
+                warnings.extend(more_warnings)
+                if digest not in complete:
+                    continue
+                _original_source, _batch, preview, source_items = complete[digest]
+                effective = []
+                for item in source_items:
+                    override = relevant.get(item["key"])
+                    if override:
+                        if override.get("source_revision") != preview["revision"]:
+                            warnings.append(f"{source.filename} 的旧范围修订已失效，请重新核对。")
+                        else:
+                            try:
+                                item = apply_question_range(preview, item, **override["range"])
+                            except (ValueError, TypeError, KeyError):
+                                warnings.append(f"{source.filename} 的一条范围修订无法恢复，请重新核对。")
+                    effective.append(item)
+                current = compact_questions(preview, effective)
+                if not read_only and self.catalog_index.save_ranges(preview, _digest(relevant), current):
+                    current = [{key: value for key, value in item.items() if key != "search_projection"} for item in current]
+                # A listing must not retain source trees even for range misses.
+                with self._lock:
+                    self._cache.pop((digest, source.filename), None)
+            for item in current:
+                check_read_cancelled()
+                if "search_projection" in item:
+                    memory_searches[item["key"]] = item["search_projection"]
+                # The quality evaluator needs only original indices. Supplying
+                # those references preserves its existing rules without text.
+                evidence = {key: value for key, value in item.items() if key not in {"search_projection", "question_blocks", "answer_blocks", "context_blocks"}}
+                for group in ("question_blocks", "answer_blocks", "context_blocks"):
+                    evidence[group] = [{"index": ref["index"] if isinstance(ref, dict) else ref} for ref in item[group]]
+                row = apply_source_quality(evidence, quality)
+                for group in ("question_blocks", "answer_blocks", "context_blocks"):
+                    row.pop(group, None)
+                row.update(batch_id=batch_id, source_id=digest, source_name=source.filename,
+                    source_role=source.role, archive_source_id=source.effective_source_file_id,
+                    source_block_count=binding["source_block_count"], lightweight=True)
+                rows.append(row)
+                search_bindings[row["key"]] = (binding, row["revision"])
+            if progress:
+                progress({"message": f"已整理 {len(rows)} 道题的轻量目录，正在核对当前标签…"})
+        check_read_cancelled()
+        attributes = self.attribute_store.get_many([row["key"] for row in rows])
+        for row in rows:
+            saved = attributes.get(row["key"])
+            if saved and saved["source_sha256"] == row["source_sha256"] and saved["question_revision"] == row["revision"]:
+                row["attributes"] = saved
+            elif saved:
+                row["attribute_stale"] = True
+                row["attribute_protected"] = automatic_tags_protected(saved)
+                row["automatic_scope_refresh_allowed"] = not automatic_scope_refresh_protected(saved)
+                if saved["annotation_source"] == "teacher_modified":
+                    row["attribute_warning"] = "题目范围已变化，原教师标签保存在历史中，请重新核对后保存。"
+                    warnings.append(row["attribute_warning"])
+        provider = WordListingSearchProvider(self.catalog_index, search_bindings, memory_searches)
+        for row in rows:
+            row["search_provider"] = provider
+        with self._lock:
+            self._locations = {row["key"]: (row["batch_id"], row["archive_source_id"]) for row in rows}
+            self._last_index_statistics = statistics
+        check_read_cancelled()
+        if not read_only:
+            self.catalog_index.save_observations(self._catalog_observations(rows, inventory, quality, overrides, attributes))
+        result = {"revision": _digest([(row["key"], row["revision"]) for row in rows]),
+            "sources": sources, "items": rows, "warnings": list(dict.fromkeys(warnings)),
+            "projection": "source-bound-lightweight-word-listing-v1"}
+        try:
+            result["attribute_catalog"] = self._read_attribute_catalog()
+        except (OSError, ValueError, TypeError, KeyError):
+            result["attribute_catalog"] = None
+            result["warnings"].append("教材标签目录暂时无法读取，教材筛选不可用；原题列表与预览仍可使用。")
+        check_read_cancelled()
+        return result
+
+    def question(self, key, revision):
+        """Expand one current source-bound question, revalidating original bytes."""
+        rows, _inventory = self._resolve([{"key": key, "revision": revision}], read_only=True)
+        return rows[0]
 
     def catalog(self, *, progress=None):
         result = self._catalog(progress=progress)[0]
@@ -525,6 +769,15 @@ class WordQuestionService:
         if not choices:
             return [], {}
         locations = None
+        # Persisted observations supply only archive lookup hints. Every scoped
+        # catalogue below still validates its saved manifest and actual bytes;
+        # a stale/deleted source cannot be replaced by a cached question body.
+        with self._lock:
+            missing_locations = [value["key"] for value in choices if value["key"] not in self._locations]
+        if missing_locations:
+            persisted_locations = self.catalog_index.locations_for_keys(missing_locations)
+            with self._lock:
+                self._locations.update(persisted_locations)
         with self._lock:
             if all(value["key"] in self._locations for value in choices):
                 locations = {}

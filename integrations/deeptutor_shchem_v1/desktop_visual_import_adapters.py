@@ -588,6 +588,7 @@ class StructuredVisualShardProviderAdapter:
             prompt=self._prompt(request),
             schema=wire_schema,
             schema_name="shchem_visual_observation_fragment_v2",
+            task_type="visual_import",
             pages=tuple((page.mime_type, page.pixels) for page in request.pages),
             max_output_tokens=self._policy["max_output_tokens"],
         )
@@ -645,6 +646,7 @@ class StructuredVisualShardProviderAdapter:
                     prompt=batch.prompt,
                     schema=schema,
                     schema_name="shchem_visual_crop_review_v1",
+                    task_type="visual_crop_review",
                     pages=batch.pages,
                     max_output_tokens=self._policy["max_output_tokens"],
                 )

@@ -169,7 +169,7 @@ def read_xlsx(path):
         raise ExamError('无法读取成绩表。请检查文件完整性、加密状态并另存为xlsx。') from None
 
 
-MISSING = {'', '-', '—', '未批', '待批', '待核对', '未录入', '缺考', '缺', '请假'}
+MISSING = {'', '-', '—', '未批', '待批', '待核对', '未录入', '缺考', '缺', '请假', '免考'}
 ABSENT = {'缺考', '缺', '请假', 'absent'}
 
 
@@ -282,8 +282,15 @@ def build_exam(book, config):
                 total_score = None
         else:
             total_score = math.fsum(item_scores.values()) if all(v is not None for v in item_scores.values()) else None
+        row_status = display(row[status]).strip().lower() if status is not None else ''
+        total_status = display(row[total]).strip().lower() if total is not None else ''
+        attendance = ('absent' if absent else 'exempt' if row_status in {'免考','exempt'} or total_status in {'免考','exempt'} else
+                      'not_entered' if row_status in {'未录入','not_entered'} else
+                      'present' if row_status in {'实到','已到','present'} or total_score is not None
+                      or any(v is not None for v in item_scores.values()) else 'not_entered')
         students.append({'id': f'S{len(students)+1:04}', 'local_label': identity, 'class': class_name or '未填写班级',
-                         'excel_row': rn, 'absent': absent, 'total': total_score, 'scores': item_scores})
+                         'excel_row': rn, 'absent': absent, 'attendance_status': attendance,
+                         'total': total_score, 'scores': item_scores})
     if not students:
         raise ExamError('没有可分析的学生行，请检查表头行与学生列。')
     warnings = ['单次考试仅描述本次表现，不证明成绩已提升；分数不能直接确定失分原因。',
@@ -308,12 +315,29 @@ def _stats(values):
 
 
 def analyse(exam, class_name=None):
-    members = [s for s in exam['students'] if class_name is None or s['class'] == class_name]
-    valid = [s['total'] for s in members if s['total'] is not None and not s['absent']]
+    from .desktop_student_roster import exam_status
+    displayed = deepcopy([s for s in exam['students'] if class_name is None or s['class'] == class_name])
+    roster_classes = {snapshot['exam_class'] for snapshot in exam.get('roster_snapshots', [])}
+    for row in displayed:
+        row['attendance_status'] = exam_status(row)
+        row['excluded_unbound'] = row['class'] in roster_classes and not row.get('identity_binding')
+        if row['attendance_status'] != 'present' or row['excluded_unbound']:
+            row['total'] = None; row['scores'] = {q['question']: None for q in exam['questions']}
+    # Unbound imported rows remain visible for explicit reconciliation; they do
+    # not double-count the roster placeholders or enter the confirmed cohort.
+    members = [s for s in displayed if not s['excluded_unbound']]
+    valid = [s['total'] for s in members if s['total'] is not None and s['attendance_status'] == 'present']
     n = len(valid); maximum = exam['maximum']
     overall = _stats(valid)
-    overall.update(enrolled=len(members), absent=sum(s['absent'] for s in members),
-                   unavailable=sum(s['total'] is None and not s['absent'] for s in members),
+    overall.update(enrolled=len(members), absent=sum(s['attendance_status']=='absent' for s in members),
+                   exempt=sum(s['attendance_status']=='exempt' for s in members),
+                   not_entered=sum(s['attendance_status']=='not_entered' for s in members),
+                   present=sum(s['attendance_status']=='present' for s in members),
+                   expected=sum(s['attendance_status']!='exempt' for s in members),
+                   imported=sum(s.get('excel_row') is not None for s in displayed),
+                   unbound=sum(s['excluded_unbound'] for s in displayed),
+                   roster_enrolled=sum(bool(s.get('identity_binding')) for s in members),
+                   unavailable=sum(s['total'] is None and s['attendance_status'] not in {'absent','exempt'} for s in members),
                    pass_n=sum(v >= exam['pass_score'] for v in valid),
                    high_n=sum(v >= exam['excellent_score'] for v in valid))
     overall['pass_rate'] = overall['pass_n'] / n if n else None
@@ -324,9 +348,9 @@ def analyse(exam, class_name=None):
         distribution.append({'label': f'{a*100:g}–{b*100:g}%', 'n': sum(a <= v/maximum < b or (i == 5 and v == maximum) for v in valid)})
     items, groups = [], defaultdict(list)
     for q in exam['questions']:
-        vals = [s['scores'][q['question']] for s in members if not s['absent'] and s['scores'].get(q['question']) is not None]
+        vals = [s['scores'][q['question']] for s in members if s['attendance_status']=='present' and s['scores'].get(q['question']) is not None]
         st = _stats(vals); st.update(q)
-        st.update(missing=len(members) - overall['absent'] - len(vals),
+        st.update(missing=len(members) - overall['absent'] - overall['exempt'] - len(vals),
                   rate=math.fsum(vals)/(len(vals)*q['max_score']) if vals else None)
         items.append(st)
         if q['knowledge']:
@@ -342,16 +366,27 @@ def analyse(exam, class_name=None):
     for c in sorted({s['class'] for s in members}):
         vs = [s['total'] for s in members if s['class'] == c and not s['absent'] and s['total'] is not None]
         classes.append({'class': c, **_stats(vs)})
-    scoped_rows = {s['excel_row'] for s in members}
+    scoped_rows = {s['excel_row'] for s in displayed if s['excel_row'] is not None}
+    scoped_students = {s['id'] for s in displayed}
+    warnings = list(exam['warnings'])
+    if overall['unbound']:
+        warnings.append(f"当前有{overall['unbound']}条导入行尚未显式绑定已选名册，保留原记录，但不纳入名册统计；请逐行核对。")
     return {'title': exam['title'], 'scope': class_name or '全部导入班级', 'maximum': maximum,
             'pass_score': exam['pass_score'], 'excellent_score': exam['excellent_score'],
             'overall': overall, 'distribution': distribution, 'items': items, 'knowledge': knowledge,
-            'classes': classes, 'students': members, 'warnings': exam['warnings'],
-            'issues': [i for i in exam['issues'] if class_name is None or i['row'] in scoped_rows]}
+            'classes': classes, 'students': displayed, 'warnings': warnings,
+            'issues': [i for i in exam['issues'] if class_name is None or i['row'] in scoped_rows or i.get('student_id') in scoped_students]}
 
 
 def local_student_advice(student, report):
     """Observable priorities rather than unsupported mental/causal diagnoses."""
+    from .desktop_student_roster import exam_status
+    if student.get('excluded_unbound'):
+        return '此导入行尚未显式绑定当前班级名册；先核对身份，原成绩保留，暂不纳入名册统计。'
+    if exam_status(student) == 'exempt':
+        return '免考记录：不进入成绩分母；核对免考依据，不按零分或知识错误处理。'
+    if exam_status(student) == 'not_entered':
+        return '未录入记录：先核对出勤与成绩资料；未录入不等于缺考或0分，缺失不等于不会。'
     if student['absent']:
         return '缺考记录：先核实补考或补测安排，不把缺考作为知识错误。'
     missing = [q['question'] for q in report['items'] if student['scores'].get(q['question']) is None]
@@ -381,19 +416,21 @@ _UNCHECKED = object()
 
 class ExamStore:
     def __init__(self, state_root):
-        self.root = Path(state_root) / 'exam-analyses'
+        self.root = Path(state_root).resolve() / 'exam-analyses'
 
     def save(self, bundle, *, expected_revision=_UNCHECKED):
-        with _EXAM_WRITE_LOCK:
-            identity=bundle['exam']['id']
-            if not re.fullmatch('[0-9a-f]{32}', identity):
-                raise ExamError('分析记录身份无效。')
-            path=self.root/(identity+'.json')
-            if expected_revision is not _UNCHECKED:
-                current=digest(self.load(identity)) if path.exists() else None
-                if current != expected_revision:
-                    raise ExamError('这份考试分析已在其他窗口更新，请先另存当前输入并重新打开；未覆盖最新记录。')
-            return self._save(bundle)
+        from .desktop_state import _state_file_lock, DesktopStateError
+        identity=bundle['exam']['id']
+        if not re.fullmatch('[0-9a-f]{32}', identity):raise ExamError('分析记录身份无效。')
+        path=self.root/(identity+'.json')
+        try:
+            with _EXAM_WRITE_LOCK, _state_file_lock(path):
+                if expected_revision is not _UNCHECKED:
+                    current=digest(self.load(identity)) if path.exists() else None
+                    if current != expected_revision:
+                        raise ExamError('这份考试分析已在其他窗口更新，请先另存当前输入并重新打开；未覆盖最新记录。')
+                return self._save(bundle)
+        except DesktopStateError:raise ExamError('分析记录正在使用或无法保存，请重新读取后核对；未覆盖最新记录。') from None
 
     def _save(self, bundle):
         identity = bundle['exam']['id']

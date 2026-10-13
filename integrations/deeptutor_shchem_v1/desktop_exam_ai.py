@@ -82,9 +82,12 @@ def model_payload(report, paper, notes, include_students=False):
                for i, c in enumerate(report['classes'])]
     students = []
     if include_students:
-        if len(report['students']) > 100:
+        confirmed_students = [s for s in report['students'] if not s.get('excluded_unbound')]
+        if len(confirmed_students) > 100:
             raise ExamError('逐人建议一次最多100名，请先筛选班级，或只发送班级汇总。')
-        students = [{k: deepcopy(s[k]) for k in ('id', 'total', 'scores', 'absent')} for s in report['students']]
+        students = [{**{k: deepcopy(s[k]) for k in ('id', 'total', 'scores', 'absent')},
+                     'attendance_status': s.get('attendance_status','absent' if s['absent'] else 'present')}
+                    for s in confirmed_students]
     payload = {'statistics_revision': PROMPT_REVISION, 'maximum': report['maximum'],
                'pass_score': report['pass_score'], 'excellent_score': report['excellent_score'],
                'overall': report['overall'], 'distribution': report['distribution'],
@@ -174,7 +177,8 @@ def generate_advice(facade, profile_id, revision, payload, pages, *, confirmed, 
         from .intake_imports import PinnedVisualTransport
         from .visual_provider_runtime import build_structured_text_request, build_structured_visual_request, parse_structured_visual_response
         with store.borrow_invocation_context(profile_id, expected_revision=revision) as context:
-            args = dict(prompt=prompt, schema=candidate_schema(), schema_name='shchem_exam_advice_v1', max_output_tokens=8000)
+            args = dict(prompt=prompt, schema=candidate_schema(), schema_name='shchem_exam_advice_v1', max_output_tokens=8000,
+                        task_type='exam_advice')
             if pages:
                 raw_pages = []
                 for p in pages:

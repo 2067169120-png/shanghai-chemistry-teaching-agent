@@ -1,4 +1,4 @@
-"""Durable, window-scoped undo; all input and output are synthetic tmp_path data."""
+"""Durable basket history; all input and output are synthetic tmp_path data."""
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 import json
@@ -13,6 +13,7 @@ from integrations.deeptutor_shchem_v1 import desktop_state as state_module
 from integrations.deeptutor_shchem_v1.desktop_state import (
     BasketConflictError, DesktopStateError, DesktopStateStore, STATE_SCHEMA,
 )
+from integrations.deeptutor_shchem_v1.desktop_paper_history import BASKET_HISTORY_ID
 
 
 def mixed_rows():
@@ -93,8 +94,11 @@ def test_undo_merges_only_basket_into_latest_window_drafts_and_other_metadata(op
     session.undo()
     after = external.snapshot()
     assert after["basket"] == before
-    for field in ("window", "drafts", "studio"):
+    for field in ("window", "studio"):
         assert after[field] == other[field]
+    assert {key: row for key, row in after["drafts"].items() if key != BASKET_HISTORY_ID} == {
+        key: row for key, row in other["drafts"].items() if key != BASKET_HISTORY_ID}
+    assert session.undo_count == 0 and session.redo_count == 1
 
 
 @pytest.mark.parametrize("operation", ["add", "remove", "move", "clear", "bulk", "private_update"])
@@ -178,7 +182,7 @@ def test_legacy_empty_clear_does_not_invalidate_removal_undo(opened):
     assert store.basket() == [mixed_rows()[-1]]
 
 
-def test_two_windows_cannot_use_each_others_history_or_overwrite_stale_selection(opened):
+def test_two_windows_require_reread_before_using_durable_history_or_editing(opened):
     store, first = opened
     second = DesktopStateStore(store.root).open_basket_session()
     second.read()
@@ -191,7 +195,7 @@ def test_two_windows_cannot_use_each_others_history_or_overwrite_stale_selection
     assert store.path.read_bytes() == frozen
     second.read()
     second.change(mixed_rows()[0]["key"], 0)
-    assert first.read().history_reset and first.undo_count == 0
+    assert first.read().history_reset and first.undo_count == 2
 
 
 def test_external_metadata_change_without_revision_is_also_a_conflict(opened):
@@ -208,7 +212,7 @@ def test_external_metadata_change_without_revision_is_also_a_conflict(opened):
 
 @pytest.mark.parametrize("operation", ["change", "undo"])
 @pytest.mark.parametrize("failure", ["before_replace", "after_replace"])
-def test_uncertain_save_never_creates_or_replays_undo_history(opened, monkeypatch, operation, failure):
+def test_uncertain_save_invalidates_session_and_explicit_reread_recovers_bound_history(opened, monkeypatch, operation, failure):
     store, session = opened
     session.change(mixed_rows()[0]["key"], 0)
     before = store.path.read_bytes()
@@ -229,7 +233,9 @@ def test_uncertain_save_never_creates_or_replays_undo_history(opened, monkeypatc
     assert len(calls) == 1
     monkeypatch.setattr(store, "_write_unlocked", original)
     session.read()
-    assert session.undo_count == 0
+    expected = 1 if failure == "before_replace" else (0 if operation == "undo" else 2)
+    assert session.undo_count == expected
+    assert session.redo_count == (1 if failure == "after_replace" and operation == "undo" else 0)
 
 
 def test_failed_os_replace_preserves_bytes_and_cleans_temporary_file(opened, monkeypatch):
@@ -244,7 +250,7 @@ def test_failed_os_replace_preserves_bytes_and_cleans_temporary_file(opened, mon
     assert not list(store.root.glob(".desktop-state-*.tmp"))
 
 
-def test_read_failure_retires_history_even_if_original_bytes_later_return(opened):
+def test_read_failure_invalidates_session_until_valid_signed_state_is_explicitly_reread(opened):
     store, session = opened
     session.change(mixed_rows()[0]["key"], 0)
     valid = store.path.read_bytes()
@@ -254,9 +260,10 @@ def test_read_failure_retires_history_even_if_original_bytes_later_return(opened
     assert session.undo_count == 0 and store.path.read_bytes() == b"{broken"
     store.path.write_bytes(valid)
     session.read()
-    with pytest.raises(DesktopStateError):
-        session.undo()
     assert store.path.read_bytes() == valid
+    assert session.undo_count == 1
+    session.undo()
+    assert store.basket() == mixed_rows()
 
 
 @pytest.mark.parametrize("rows", [[None], [{"key": "same"}, {"key": "same"}], [{"title": "missing-key"}]])
@@ -289,7 +296,7 @@ def test_legacy_read_and_empty_undo_do_not_create_state_or_migrate_on_read(tmp_p
     assert store.basket() == [{"key": "legacy"}]
 
 
-def test_close_and_new_session_never_revive_history_and_views_cannot_mutate_it(opened):
+def test_close_reopens_durable_history_and_views_cannot_mutate_it(opened):
     store, session = opened
     before = store.basket()
     exposed = session.read()
@@ -306,7 +313,9 @@ def test_close_and_new_session_never_revive_history_and_views_cannot_mutate_it(o
         session.undo()
     new = store.open_basket_session()
     new.read()
-    assert new.undo_count == 0 and store.path.read_bytes() == frozen
+    assert new.undo_count == 1 and store.path.read_bytes() == frozen
+    new.undo()
+    assert store.basket() == before
 
 
 def test_history_has_explicit_bound_and_noop_does_not_evict_valid_step(opened):
@@ -420,4 +429,7 @@ def test_restored_visual_theme_keeps_scope_assets_and_exports_from_frozen_previe
         "student_docx", "teacher_docx", "student_pdf", "teacher_pdf"}
     for artifact in result["artifacts"]:
         assert _sha(Path(artifact["path"]).read_bytes()) == artifact["sha256"]
-    assert _protected(context) == protected
+    # The local history trust anchor is new profile state, while every source
+    # asset that was protected before the edit must retain its exact bytes.
+    assert {key: value for key, value in _protected(context).items()
+            if key != ".paper-history-trust.v1.key"} == protected

@@ -1,5 +1,6 @@
 """Explicit new/open entry for saved papers, using the existing mixed editor."""
 from __future__ import annotations
+from copy import deepcopy
 
 from PySide6.QtCore import Signal, QSize
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QComboBox, QPushButton
@@ -20,6 +21,8 @@ class IndependentPaperWorkspace(QWidget):
         self._closed = False
         self._epoch = 0
         self._basket_count = 0
+        self._versions_dialog = None
+        self._reopen_notice = None
         self.setMinimumWidth(0)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 6, 8, 6)
@@ -49,6 +52,11 @@ class IndependentPaperWorkspace(QWidget):
         actions.addWidget(self.open_button, 1)
         actions.addWidget(self.new_button, 1)
         layout.addLayout(actions)
+        self.versions_button = QPushButton("查看当前卷替题版本")
+        self.versions_button.setAccessibleName("读取并核验恢复当前保存卷的完整来源版本")
+        self.versions_button.clicked.connect(self._open_replacement_versions)
+        self.versions_button.setAutoDefault(False)
+        layout.addWidget(self.versions_button)
         self.empty = _label(
             "选择一份保存卷继续，或从公共题篮新建。\n\n"
             "新卷保存本次题目顺序与来源引用。之后增删、调序或清空题篮，都不会改动此卷。\n\n"
@@ -98,6 +106,7 @@ class IndependentPaperWorkspace(QWidget):
             current = "待核对" if panel._restore_failed else f"{len(panel.model.order)} 段"
             text = f"公共题篮 {self._basket_count} 项 · 当前卷 {current}\n此卷独立保存，题篮变化不会增删本卷。"
         self.scope_label.setText(text)
+        self._actions()
 
     def _actions(self, *_args):
         idle = not self._busy and not self._closed
@@ -105,10 +114,18 @@ class IndependentPaperWorkspace(QWidget):
         self.new_button.setEnabled(idle and self._basket_count > 0)
         self.refresh_button.setEnabled(idle)
         self.saved_papers.setEnabled(idle)
+        self.versions_button.setEnabled(idle and self._mixed_panel is not None
+            and bool(getattr(self._mixed_panel.facade, "paper_id", None))
+            and not self._mixed_panel._busy and not self._mixed_panel._saving
+            and not self._mixed_panel._restore_failed
+            and callable(getattr(self.facade, "list_question_replacement_versions", None)))
 
-    def _run(self, operation, *, preview=False):
+    def _run(self, operation, *, preview=False, replacement_result=None):
         if self._busy or self._closed:
             return
+        if not self.prepare_leave():
+            return
+        self._reopen_notice = deepcopy(replacement_result) if replacement_result is not None else None
         self._busy = True
         self._epoch += 1
         epoch = self._epoch
@@ -121,7 +138,9 @@ class IndependentPaperWorkspace(QWidget):
             self._busy = False
             old = self._mixed_panel
             if old is not None:
-                old.close()
+                if not old.prepare_leave() or not old.close():
+                    self._actions()
+                    return
                 self.layout().removeWidget(old)
                 old.deleteLater()
             panel = self.panel_type(session, self.tasks, PaperComposerModel(), self)
@@ -132,6 +151,8 @@ class IndependentPaperWorkspace(QWidget):
             panel.load_finished.connect(lambda success: self._loaded(panel, success, preview))
             panel.scope_changed.connect(self._scope)
             panel.draft_saved.connect(lambda: self._saved_label(panel))
+            panel.replacement_saved.connect(lambda result: self._reopen_replacement(panel, result))
+            panel.action_state_changed.connect(self._actions)
             panel.title.editingFinished.connect(lambda: self.refresh(selected=session.paper_id))
             panel.load()
             self.refresh(selected=session.paper_id)
@@ -140,6 +161,7 @@ class IndependentPaperWorkspace(QWidget):
             if self._closed or epoch != self._epoch:
                 return
             self._busy = False
+            self._reopen_notice = None
             self._message(str(message) or "保存卷未能打开，旧稿保留；请重新读取。")
             self.refresh()
 
@@ -159,6 +181,16 @@ class IndependentPaperWorkspace(QWidget):
         if panel is not self._mixed_panel or self._closed:
             return
         self._scope()
+        self._actions()
+        if success and self._reopen_notice is not None:
+            result = self._reopen_notice
+            self._reopen_notice = None
+            if result.get("paper_id") == panel.facade.paper_id:
+                if result.get("new_key") in panel.model.order:
+                    panel.sections.setCurrentRow(panel.model.order.index(result["new_key"]))
+                panel.status.setText("已重开保存后的完整来源版本；请核对本次配分并重新查看完整学生版与教师版。旧预览确认已失效。")
+        elif not success:
+            self._reopen_notice = None
         if success and preview:
             panel._preview_request()
 
@@ -183,6 +215,36 @@ class IndependentPaperWorkspace(QWidget):
         self._run(lambda: self.library.open(identity) if identity.startswith(PREFIX)
                   else self.library.create(legacy_id=identity))
 
+    def _reopen_replacement(self, panel, result):
+        if panel is not self._mixed_panel or self._closed:
+            return
+        identity = panel.facade.paper_id
+        self._run(lambda: self.library.open(identity),
+                  replacement_result={**dict(result), "paper_id": identity})
+
+    def _open_replacement_versions(self):
+        panel = self._mixed_panel
+        if (panel is None or self._busy or self._closed or panel._busy
+                or not panel.prepare_leave() or panel._restore_failed):
+            return
+        from .question_replacement_dialog import QuestionReplacementVersionsDialog
+        dialog = QuestionReplacementVersionsDialog(self.facade, self.tasks, panel.facade.paper_id, self)
+        self._versions_dialog = dialog
+        dialog.saved.connect(lambda result: self._version_restored(panel, result))
+        dialog.save_unconfirmed.connect(panel._replacement_unconfirmed)
+        dialog.finished.connect(lambda _result: self._versions_closed(dialog))
+        dialog.open()
+
+    def _versions_closed(self, dialog):
+        if self._versions_dialog is dialog:
+            self._versions_dialog = None
+        self._actions()
+        dialog.deleteLater()
+
+    def _version_restored(self, panel, result):
+        if panel is self._mixed_panel:
+            panel._replacement_committed(result)
+
     def update_basket_count(self, _count=None):
         # Basket navigation never reloads or rebuilds an already opened paper.
         try:
@@ -203,9 +265,18 @@ class IndependentPaperWorkspace(QWidget):
         else:
             self._mixed_panel._open_details()
 
+    def prepare_leave(self):
+        if self._versions_dialog is not None:
+            if self._versions_dialog._busy:
+                self._message("正在核验来源版本，请等待结果后再离开当前卷。")
+                return False
+            self._versions_dialog.reject()
+        return self._mixed_panel is None or self._mixed_panel.prepare_leave()
+
     def closeEvent(self, event):
+        if not self.prepare_leave() or (self._mixed_panel is not None and not self._mixed_panel.close()):
+            event.ignore()
+            return
         self._closed = True
         self._epoch += 1
-        if self._mixed_panel is not None:
-            self._mixed_panel.close()
         super().closeEvent(event)

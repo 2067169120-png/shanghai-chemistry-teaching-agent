@@ -15,7 +15,7 @@ from integrations.deeptutor_shchem_v1.desktop_question_explorer import personal_
 
 def test_hidden_page_does_not_read_questions(window, monkeypatch):
     win,app=window; calls=[]
-    monkeypatch.setattr(win.facade,'word_question_catalog',lambda:calls.append('read'))
+    monkeypatch.setattr(win.facade,'word_question_listing',lambda:calls.append('read'))
     tasks=DesktopTaskBridge();page=QuestionExplorerPage(win.facade,tasks)
     try:
         settle(app)
@@ -50,7 +50,7 @@ def test_import_invalidation_drops_old_snapshots_and_sees_new_rows(window,monkey
     from copy import deepcopy
     win,app=window;p=win.library_page
     catalog=deepcopy(p._catalogs['word_native']);catalog['items']=catalog['items'][:1]
-    monkeypatch.setattr(win.facade,'word_question_catalog',lambda:catalog)
+    monkeypatch.setattr(win.facade,'word_question_listing',lambda:catalog)
     p.invalidate_catalogs()
     settle(app,lambda:not p._loading and len(p.cards)==1 and p.cards[0].ready)
     assert p._sessions['word_native'].index.catalog is catalog
@@ -89,7 +89,7 @@ def test_cold_cancelled_search_is_shared_and_latest_result_wins(window,monkeypat
     catalog=p._catalogs['word_native'];calls=[];entered=threading.Event();release=threading.Event()
     def slow():
         calls.append(True);entered.set();assert release.wait(5);return catalog
-    monkeypatch.setattr(win.facade,'word_question_catalog',slow)
+    monkeypatch.setattr(win.facade,'word_question_listing',slow)
     try:
         p.query.clear();p.reload();settle(app,entered.is_set)
         p.query.setText('NO_MATCH_AT_ALL_195');p.search();release.set()

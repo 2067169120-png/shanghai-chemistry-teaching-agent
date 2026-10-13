@@ -1517,6 +1517,17 @@ class SettingsDialog(QDialog):
         self.environment_button.setEnabled(getattr(self.facade, "paths", None) is not None)
         self.environment_button.clicked.connect(self._open_environment)
         actions.addButton(self.environment_button, QDialogButtonBox.ButtonRole.ActionRole)
+        self.model_usage_button = QPushButton("用量与费用")
+        self.model_usage_button.setAutoDefault(False)
+        self.model_usage_button.setAccessibleName("查看本机模型用量、按配置价估算费用和配置价格；不调用模型")
+        self.model_usage_button.clicked.connect(self._open_model_usage)
+        actions.addButton(self.model_usage_button, QDialogButtonBox.ButtonRole.ActionRole)
+        self.cache_maintenance_button = QPushButton("缓存维护")
+        self.cache_maintenance_button.setAutoDefault(False)
+        self.cache_maintenance_button.setAccessibleName("查看与选择清理可重建本机缓存；原资料与个人记录保留")
+        self.cache_maintenance_button.setEnabled(callable(getattr(self.facade, "plan_desktop_cache_cleanup", None)))
+        self.cache_maintenance_button.clicked.connect(self._open_cache_maintenance)
+        actions.addButton(self.cache_maintenance_button, QDialogButtonBox.ButtonRole.ActionRole)
         close_action = actions.button(QDialogButtonBox.StandardButton.Close)
         if close_action is not None:
             close_action.setText("关闭")
@@ -1560,6 +1571,37 @@ class SettingsDialog(QDialog):
             dialog = EnvironmentDialog(paths, self.tasks, self)
             dialog.exec()
             dialog.deleteLater()
+
+    def _open_model_usage(self) -> None:
+        from .model_usage_dialog import ModelUsageDialog
+        dialog = ModelUsageDialog(self.facade, self.tasks, self)
+        dialog.exec()
+        dialog.deleteLater()
+
+    def _open_cache_maintenance(self) -> None:
+        from .cache_maintenance_dialog import CacheMaintenanceDialog
+        dialog = CacheMaintenanceDialog(self.facade, self.tasks, self)
+        dialog.cache_cleared.connect(self._cache_maintenance_finished)
+        dialog.exec()
+        dialog.deleteLater()
+
+    def _cache_maintenance_finished(self, result) -> None:
+        if set(result.get("affected_categories", ())).intersection({"word_previews", "word_catalog"}):
+            from PySide6.QtWidgets import QApplication
+            from .word_question_dialog import WordQuestionDialog
+            from .question_explorer_page import QuestionExplorerPage
+            for page in QApplication.allWidgets():
+                if (isinstance(page, (WordQuestionDialog, QuestionExplorerPage))
+                        and getattr(getattr(page.facade, "paths", None), "state_root", None)
+                        == getattr(getattr(self.facade, "paths", None), "state_root", None)):
+                    page.invalidate_cache_projection()
+        if any(item["category"] == "registry" and item["status"] == "cleared" for item in result["items"]):
+            from .home_page import HomePage
+            from PySide6.QtWidgets import QApplication
+            for page in QApplication.allWidgets():
+                if not isinstance(page, HomePage) or page.facade.paths.state_root != self.facade.paths.state_root:
+                    continue
+                page.invalidate_cache_projection()
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         super().resizeEvent(event)

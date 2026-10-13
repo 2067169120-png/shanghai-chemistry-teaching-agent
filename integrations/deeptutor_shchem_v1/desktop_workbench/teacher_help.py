@@ -134,7 +134,8 @@ class TeacherHelpDialog(QDialog):
                 or not callable(getattr(self.owner, 'navigate', None))):
             return
         try:
-            self.owner.navigate(scenario.route)
+            if self.owner.navigate(scenario.route) is False:
+                return
         except Exception:
             self.status.setText('未能打开工作区。说明仍保留，请返回工作台按入口操作。')
             return

@@ -10,17 +10,16 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QGridLayout, QLabel, QPushB
 from ..desktop_exam_data import ExamError, digest
 from ..desktop_exam_followup import (create_followup, practice_request,
     record_attempt, task_summary, followup_text)
-from ..desktop_question_explorer import personal_options
 from ..desktop_exam_practice import (freeze_selection, selection_items, paper_session,
     request_revision, revise_selection, append_export)
 
 
-def checked_rows(title, rows, parent):
+def checked_rows(title, rows, parent, *, selected=()):
     dialog = QDialog(parent); dialog.setWindowTitle(title); dialog.resize(650,480)
     box = QVBoxLayout(dialog); view = QListWidget(); box.addWidget(view,1)
     for key, text in rows:
         item = QListWidgetItem(text); item.setData(Qt.ItemDataRole.UserRole,key)
-        item.setCheckState(Qt.CheckState.Unchecked); view.addItem(item)
+        item.setCheckState(Qt.CheckState.Checked if key in selected else Qt.CheckState.Unchecked); view.addItem(item)
     buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
     buttons.accepted.connect(dialog.accept); buttons.rejected.connect(dialog.reject); box.addWidget(buttons)
     accepted = dialog.exec() == QDialog.DialogCode.Accepted
@@ -163,31 +162,76 @@ class _ExamFollowupPanelBase(QWidget):
     def find_questions(self):
         task=deepcopy(self.current())
         if not task:return
-        choices=['本地 Word 题库','个人图片题库']
-        choice,ok=QInputDialog.getItem(self,'选择真实题库来源','当前标签来自该来源的有效目录',choices,0,False)
-        if not ok:return
-        lane='word_native' if choice==choices[0] else 'visual_native'
-        def ready(catalog):
-            current = self.current_for(task)
-            options=personal_options(catalog,lane).get('knowledge',{}).get('values',[])
-            options=[option for option in options if option['value']!='unknown']
+        sources=[('master','核心原卷题库'),('wave1','已细分原卷题'),
+                 ('supplemental','公众号补充题'),('word_native','本地 Word 题库'),
+                 ('visual_native','个人图片题库')]
+        previous=task.get('library_filter') or {}
+        selected=previous.get('sources',previous.get('lanes')) or ([previous['lane']] if previous.get('lane') else [key for key,_ in sources])
+        chosen_sources=checked_rows('选择本次复练检索来源（可多选）',sources,self,selected=selected)
+        if chosen_sources is None:return
+        if not chosen_sources:
+            self.d.status.setText('请至少选择一个真实题库来源；任务与题篮未改变。');return
+        def current_task():
+            current=self.current_for(task)
+            if any(current.get(key)!=task.get(key) for key in
+                   ('targets','student_profile_ids','student_profile_id')):
+                raise ExamError('任务学生归属已变化，请重新核对；未改变已有选题条件。')
+            return current
+        # Read the same bounded, unified catalog used by the picker. Formal K
+        # and personal knowledge are mapped by that service, never by labels.
+        def ready(result):
+            current_task()
+            options=result.get('facets',{}).get('knowledge',{}).get('values',[])
+            options=[option for option in options if isinstance(option,dict)
+                     and isinstance(option.get('value'),str) and option['value'].strip()
+                     and option['value'].strip().casefold()!='unknown']
             if not options:
-                self.d.status.setText('此来源没有可筛选的知识点标签，请先导入并核对标签；未生成虚构命中。');return
-            labels=[option['label_zh']+' ['+str(option['value'])+']' for option in options]
-            suggested=[i for i,option in enumerate(options) if task['knowledge'] in (option['value'],option['label_zh'])]
-            chosen,ok=QInputDialog.getItem(self,'核对题库知识点','考试标签与题库标签不自动等同，请选择确切对应',labels,suggested[0] if len(suggested)==1 else 0,False)
+                self.d.status.setText('所选来源没有有效知识条件，请先核对标签；未生成虚构命中。');return
+            source_labels=dict(sources)
+            labels=[option.get('label_zh',option['value'])+' ['+option['value']+'] · '+
+                    '、'.join(source_labels.get(lane,lane) for lane in option.get('sources',chosen_sources))
+                    for option in options]
+            suggested=[i for i,option in enumerate(options) if task['knowledge']==option['value']]
+            chosen,ok=QInputDialog.getItem(self,'核对复练知识条件','考试知识点与题库标签不自动等同；请选择明确对应的有效条件',labels,suggested[0] if len(suggested)==1 else 0,False)
             if not ok:return
             option=options[labels.index(chosen)]
-            revised=deepcopy(current);revised['library_filter']={'lane':lane,'knowledge':option['value'],'label':option['label_zh']}
+            # A modal selection can outlive a score/task or on-disk revision.
+            current=current_task()
+            version=result.get('version_vector')
+            if version is not None:
+                gate=getattr(self.d.facade,'unified_question_search_is_current',None)
+                if not callable(gate) or not gate(version):
+                    raise ExamError('题库目录已变化，请重新核对知识条件；任务与学生归属未改变。')
+            revised=deepcopy(current);revised['library_filter']={
+                'sources':list(chosen_sources),
+                'filters':{'knowledge':[option['value']],'knowledge_mode':'any'},
+                'label':option.get('label_zh',option['value']),
+                'knowledge_mapping':{'value':option['value'],'sources':list(option.get('sources',chosen_sources)),
+                                     'confirmed_by':'teacher'}}
+            if version is not None:revised['library_filter']['knowledge_mapping']['version_vector']=deepcopy(version)
             if not self.store(revised, expected=current):return
-            self.d.pending_handoff={'exam_id':task['exam_id'],'task_id':task['id'],**revised['library_filter']}
+            handoff={'exam_id':task['exam_id'],'task_id':task['id'],
+                     'exam_student_ids':[target['exam_student_id'] for target in revised['targets']],
+                     'student_targets':deepcopy(revised['targets']),**deepcopy(revised['library_filter'])}
+            # Only explicit profile bindings may supply persistent ownership.
+            if 'student_profile_ids' in revised:
+                handoff['student_profile_ids']=deepcopy(revised['student_profile_ids'])
+            else:
+                profile_ids=[]
+                for target in revised['targets']:
+                    binding=target.get('reviewed_identity_binding',target.get('identity_binding'))
+                    identity=binding.get('profile_student_id') if isinstance(binding,dict) else None
+                    if isinstance(identity,str) and identity and identity not in profile_ids:profile_ids.append(identity)
+                handoff['student_profile_ids']=profile_ids
+            if 'student_profile_id' in revised:handoff['student_profile_id']=deepcopy(revised['student_profile_id'])
+            self.d.pending_handoff=handoff
             from PySide6.QtCore import QTimer
             def leave():
                 if self.d._task:QTimer.singleShot(30,leave)
                 else:self.d.close()
             QTimer.singleShot(0,leave)
-        loader=self.d.facade.word_question_catalog if lane=='word_native' else self.d.facade.personal_visual_questions
-        self.d.run('读取现有题库标签',lambda report,cancelled:loader(),ready)
+        self.d.run('读取所选来源的有效知识条件',lambda report,cancelled:
+                   self.d.facade.search_unified_questions(lanes=chosen_sources,limit=1,cancelled=cancelled),ready)
 
     def link_questions(self):
         task=deepcopy(self.current())
@@ -295,7 +339,26 @@ class _ExamFollowupPanelBase(QWidget):
         dialog=QDialog(self);dialog.setWindowTitle('记录实际复测（不是预测提分）');dialog.resize(510,380)
         box=QVBoxLayout(dialog);form=QFormLayout();box.addLayout(form)
         student=QComboBox()
-        for target in task['targets']:student.addItem(target['local_label'],target['exam_student_id'])
+        for target in task['targets']:student.addItem(target.get('reviewed_local_alias',target.get('local_alias',target['local_label'])),target['exam_student_id'])
+        submission=QComboBox();submission.addItem('明确不关联复测附件',None)
+        roster_store=None
+        operation=getattr(self.d.facade,'student_roster_store',None)
+        if callable(operation):
+            try:roster_store=operation()
+            except Exception:pass
+        def refresh_submissions():
+            submission.clear();submission.addItem('明确不关联复测附件',None)
+            target=next((t for t in task['targets'] if t['exam_student_id']==student.currentData()),{})
+            binding=target.get('reviewed_identity_binding',target.get('identity_binding')) or {}
+            owner=binding.get('profile_student_id')
+            if not owner or roster_store is None:return
+            try:
+                for work in self.d.facade.student_submissions(student_id=owner,limit=100):
+                    identity=work.get('submission_id') if isinstance(work,dict) else work.submission_id
+                    created=work.get('created_at','') if isinstance(work,dict) else work.created_at
+                    submission.addItem(f'{created} · {identity[:8]}',identity)
+            except Exception:pass
+        student.currentIndexChanged.connect(refresh_submissions);refresh_submissions()
         when=QDateEdit();when.setCalendarPopup(True);when.setDisplayFormat('yyyy-MM-dd');when.setDate(QDate.currentDate())
         status=QComboBox()
         for text,value in [('已作答并评分','completed'),('未作答','not_attempted'),('资料不全','missing')]:status.addItem(text,value)
@@ -303,7 +366,7 @@ class _ExamFollowupPanelBase(QWidget):
         for widget in (score,maximum):widget.setRange(0,10000);widget.setDecimals(2)
         score.lineEdit().clear();maximum.lineEdit().clear()
         note=QLineEdit();note.setPlaceholderText('依据哪次作答/哪些题，哪些地方仍需核对')
-        for label,widget in [('学生',student),('实际日期',when),('情况',status),('本次实得分',score),('实际满分',maximum),('观察依据',note)]:form.addRow(label,widget)
+        for label,widget in [('学生',student),('可选：当前档案复测作答',submission),('实际日期',when),('情况',status),('本次实得分',score),('实际满分',maximum),('观察依据',note)]:form.addRow(label,widget)
         msg=QLabel('未作答/资料不全不记零分；本次题目与原考试不同，不直接计算“提升多少分”。');msg.setWordWrap(True);box.addWidget(msg)
         buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel)
         buttons.rejected.connect(dialog.reject);box.addWidget(buttons)
@@ -311,8 +374,8 @@ class _ExamFollowupPanelBase(QWidget):
             try:
                 if status.currentData()=='completed' and (not score.text().strip() or not maximum.text().strip()):
                     raise ExamError('请明确填写本次实得分和实际满分，空白不按0分保存。')
-                current = self.current_for(task)
-                record=record_attempt(current,student.currentData(),when.date().toString('yyyy-MM-dd'),status.currentData(),score.value(),maximum.value(),note.text())
+                current = self.current_for(task, require_fresh=True)
+                record=record_attempt(current,student.currentData(),when.date().toString('yyyy-MM-dd'),status.currentData(),score.value(),maximum.value(),note.text(),submission_id=submission.currentData(),roster_store=roster_store)
                 if self.store(record, expected=current):dialog.accept()
             except ExamError as error:msg.setText(error.message_zh)
         buttons.accepted.connect(save);dialog.exec();dialog.deleteLater()

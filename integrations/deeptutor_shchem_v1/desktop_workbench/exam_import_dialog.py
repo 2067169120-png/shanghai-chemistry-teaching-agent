@@ -3,18 +3,87 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel,
     QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox, QTabWidget, QTableWidget,
-    QTableWidgetItem, QPushButton, QDialogButtonBox, QHeaderView, QWidget, QScrollArea)
-from ..desktop_exam_data import display, column_name, build_exam, ExamError
+    QTableWidgetItem, QPushButton, QDialogButtonBox, QHeaderView, QWidget, QScrollArea,
+    QInputDialog, QMessageBox, QCheckBox)
+from ..desktop_exam_data import display, column_name, build_exam, ExamError, digest
+from ..desktop_exam_mapping_profiles import review_profile, resolve_profile, profile_from_config, ROLES, QUESTION_FIELDS, LIMITS
+
+
+class MappingProfileReviewDialog(QDialog):
+    """Nothing is applied to the import draft until an explicit teacher confirmation."""
+    def __init__(self, profile, book, current_config, parent=None):
+        super().__init__(parent)
+        self.profile=profile;self.book=book;self.current_config=current_config;self.resolved_config=None
+        self.setWindowTitle('复用映射方案 · 核对本次变化');self.resize(1050,740)
+        root=QVBoxLayout(self)
+        intro=QLabel(f'方案：{profile["name"]}\n按列标题重新匹配本次工作表。请核对改名、重复表头及题号、满分、知识点；必要时在下表明确选择当前列。')
+        intro.setWordWrap(True);root.addWidget(intro)
+        review=review_profile(profile,book,current_config)
+        self.changes=QLabel('\n'.join(review['changes']));self.changes.setWordWrap(True)
+        self.changes.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        scroll=QScrollArea();scroll.setWidgetResizable(True);scroll.setWidget(self.changes);root.addWidget(scroll,1)
+        self.mapping=QTableWidget(len(review['bindings']),4)
+        self.mapping.setHorizontalHeaderLabels(['用途','原方案列标题','本次成绩列（明确选择）','将使用的题目配置'])
+        self.mapping.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.mapping.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.mapping.horizontalHeader().setStretchLastSection(True)
+        self.selectors={}
+        for row,b in enumerate(review['bindings']):
+            self.mapping.setItem(row,0,QTableWidgetItem(b['label']))
+            self.mapping.setItem(row,1,QTableWidgetItem(b['header'] or '不选择'))
+            combo=QComboBox();combo.addItem('尚未明确绑定','unresolved')
+            if b['key']!='student_col':
+                combo.addItem('本次不映射此题' if b['key'].startswith('question:') else '本次不选择',None)
+            for index,label in enumerate(review['headers']):
+                combo.addItem(f'{column_name(index)} · {label or "空表头（不可使用）"}',index)
+            if b['column'] is not None:
+                combo.setCurrentIndex(combo.findData(b['column']))
+            elif b['header'] is None:
+                combo.setCurrentIndex(combo.findData(None))
+            self.mapping.setCellWidget(row,2,combo);self.selectors[b['key']]=combo
+            text=''
+            if b['key'].startswith('question:'):
+                q=profile['questions'][int(b['key'].split(':')[1])]
+                text=f'题号 {q["question"]} · 满分 {q["max_score"]:g}\n{q["knowledge"]} / {q["chapter"]}\n{q["context"]}'
+            self.mapping.setItem(row,3,QTableWidgetItem(text))
+        self.mapping.resizeRowsToContents();root.addWidget(self.mapping,2)
+        self.confirm=QCheckBox('我已核对本次列标题、上述差异和题目配置，确认将方案应用到当前导入草稿')
+        root.addWidget(self.confirm)
+        self.message=QLabel('取消会保留当前草稿；重新绑定或本次排除仅影响本次导入，更新方案需另行确认。')
+        self.message.setWordWrap(True);root.addWidget(self.message)
+        buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Ok|QDialogButtonBox.StandardButton.Cancel)
+        self.apply_button=buttons.button(QDialogButtonBox.StandardButton.Ok)
+        self.apply_button.setText('确认应用方案');self.apply_button.setEnabled(False)
+        self.confirm.toggled.connect(self.apply_button.setEnabled)
+        buttons.accepted.connect(self.accept_mapping);buttons.rejected.connect(self.reject);root.addWidget(buttons)
+
+    def accept_mapping(self):
+        if not self.confirm.isChecked():
+            self.message.setText('请先核对本次变化并勾选确认。');return
+        try:
+            self.resolved_config=resolve_profile(self.profile,self.book,self.current_config,
+                {key:combo.currentData() for key,combo in self.selectors.items()})
+        except ExamError as e:
+            self.message.setText(e.message_zh);return
+        self.accept()
 
 
 class ExamImportDialog(QDialog):
-    def __init__(self, book, parent=None):
+    def __init__(self, book, parent=None, *, mapping_profiles=None):
         super().__init__(parent)
-        self.book=book;self.exam=None
+        self.book=book;self.exam=None;self.mapping_profiles=mapping_profiles;self._selected_profile=None
         self.setWindowTitle('导入成绩 · 核对列与题号');self.resize(1050,780)
         root=QVBoxLayout(self)
         hint=QLabel('一张工作表只放同一场考试；一行一名学生。支持总分或逐题分数，空白/缺考不计0分。')
         hint.setWordWrap(True);root.addWidget(hint)
+        profile_bar=QHBoxLayout();profile_bar.addWidget(QLabel('列映射方案'))
+        self.profile_choice=QComboBox();self.profile_choice.setMinimumWidth(180);profile_bar.addWidget(self.profile_choice,1)
+        self.profile_reuse=QPushButton('选择并核对复用');self.profile_save=QPushButton('命名保存新方案')
+        self.profile_update=QPushButton('更新选中方案');self.profile_delete=QPushButton('删除选中方案')
+        for button in (self.profile_reuse,self.profile_save,self.profile_update,self.profile_delete):profile_bar.addWidget(button)
+        root.addLayout(profile_bar)
+        profile_hint=QLabel('方案仅保存列标题、满分阈值和教师题目配置；不保存学生行、成绩、考试名称或源文件位置。')
+        profile_hint.setWordWrap(True);root.addWidget(profile_hint)
         self.title=QLineEdit(book['source_name'].rsplit('.',1)[0]);self.sheet=QComboBox()
         for s in book['sheets']:self.sheet.addItem(s['name']+('（隐藏表）' if s['hidden'] else ''),s['name'])
         self.header=QSpinBox();self.header.setRange(1,100);self.header.setValue(1)
@@ -42,6 +111,96 @@ class ExamImportDialog(QDialog):
         self.sheet.currentIndexChanged.connect(self.populate);self.header.valueChanged.connect(self.populate)
         for w in (self.student,self.class_col,self.total,self.status_col):w.currentIndexChanged.connect(self.choices_changed)
         self.populate()
+        self.profile_choice.currentIndexChanged.connect(self.profile_selected)
+        self.profile_save.clicked.connect(self.save_profile);self.profile_update.clicked.connect(self.update_profile)
+        self.profile_delete.clicked.connect(self.delete_profile);self.profile_reuse.clicked.connect(self.review_mapping_profile)
+        self.refresh_profiles()
+
+    def refresh_profiles(self, identity=None):
+        self.profile_choice.blockSignals(True);self.profile_choice.clear()
+        self.profile_choice.addItem('选择已保存方案',None)
+        if self.mapping_profiles is not None:
+            for key,name in self.mapping_profiles.entries():self.profile_choice.addItem(name,key)
+        if identity is not None:self.profile_choice.setCurrentIndex(self.profile_choice.findData(identity))
+        self.profile_choice.blockSignals(False);self.profile_selected()
+        self.profile_save.setEnabled(self.mapping_profiles is not None)
+        if self.mapping_profiles is None:self.profile_save.setToolTip('此窗口未配置本地方案存储；可继续完成本次成绩导入。')
+
+    def profile_selected(self):
+        self._selected_profile=None
+        if self.mapping_profiles is not None and self.profile_choice.currentData() is not None:
+            try:self._selected_profile=self.mapping_profiles.load(self.profile_choice.currentData())
+            except ExamError as e:self.message.setText(e.message_zh)
+        for button in (self.profile_reuse,self.profile_update,self.profile_delete):button.setEnabled(self._selected_profile is not None)
+
+    def save_profile(self):
+        if self.mapping_profiles is None:return
+        name,ok=QInputDialog.getText(self,'保存列映射方案','方案名称（按表格格式或教学用途命名）')
+        if not ok:return
+        try:profile=self.mapping_profiles.save(name,self.book,self.config())
+        except ExamError as e:self.message.setText(e.message_zh);return
+        self.refresh_profiles(profile['id']);self.message.setText(f'已保存方案“{profile["name"]}”；学生行与成绩未写入方案。')
+
+    def update_profile(self):
+        profile=self._selected_profile
+        if profile is None:return
+        try:candidate=profile_from_config(profile['name'],self.book,self.config(),identity=profile['id'])
+        except ExamError as e:self.message.setText(e.message_zh);return
+        changes=[]
+        if profile['headers']!=candidate['headers']:
+            changes.append('表头及顺序：\n原：'+' / '.join(profile['headers'])+'\n新：'+' / '.join(candidate['headers']))
+        for key,label in ROLES.items():
+            if profile['roles'][key]!=candidate['roles'][key]:
+                changes.append(f'{label}：{profile["roles"][key] or "不选择"} → {candidate["roles"][key] or "不选择"}')
+        for key,label in zip(LIMITS,('试卷满分','达标线','高分线')):
+            if profile[key]!=candidate[key]:changes.append(f'{label}：{profile[key]} → {candidate[key]}')
+        old_questions={q['header']:q for q in profile['questions']};new_questions={q['header']:q for q in candidate['questions']}
+        for header in dict.fromkeys([*old_questions,*new_questions]):
+            old=old_questions.get(header);new=new_questions.get(header)
+            if old!=new:
+                def describe(q):
+                    if q is None:return '不映射'
+                    return f'题号 {q["question"]} / 满分 {q["max_score"]:g} / {q["knowledge"]} / {q["chapter"]} / {q["context"]}'
+                changes.append(f'题目列 {header}\n原：{describe(old)}\n新：{describe(new)}')
+        summary='\n\n'.join(changes) if changes else '结构与题目配置没有变化。'
+        if QMessageBox.question(self,'更新列映射方案',f'将当前配置替换方案“{profile["name"]}”？\n学生行及成绩不会写入方案。\n\n'+summary,
+            QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
+        try:profile=self.mapping_profiles.save(profile['name'],self.book,self.config(),profile['id'],expected_revision=digest(profile))
+        except ExamError as e:self.message.setText(e.message_zh);return
+        self.refresh_profiles(profile['id']);self.message.setText(f'已更新方案“{profile["name"]}”。')
+
+    def delete_profile(self):
+        profile=self._selected_profile
+        if profile is None:return
+        if QMessageBox.question(self,'删除列映射方案',f'删除方案“{profile["name"]}”？\n当前导入草稿将保留。',
+            QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
+        try:self.mapping_profiles.delete(profile['id'],expected_revision=digest(profile))
+        except ExamError as e:self.message.setText(e.message_zh);return
+        self.refresh_profiles();self.message.setText('已删除选中方案；当前导入草稿保留。')
+
+    def review_mapping_profile(self):
+        if self._selected_profile is None:return
+        try:dialog=MappingProfileReviewDialog(self._selected_profile,self.book,self.config(),self)
+        except ExamError as e:self.message.setText(e.message_zh);return
+        if dialog.exec()==QDialog.DialogCode.Accepted:
+            self.apply_config(dialog.resolved_config)
+            self.message.setText('已按本次明确选择应用方案；请继续核对原表与本卷题目，再生成本地面板。')
+        dialog.deleteLater()
+
+    def apply_config(self, config):
+        """Apply only the review's validated result, preserving the current exam title."""
+        self.sheet.blockSignals(True);self.header.blockSignals(True)
+        self.sheet.setCurrentIndex(self.sheet.findData(config['sheet']));self.header.setValue(config['header_row'])
+        self.sheet.blockSignals(False);self.header.blockSignals(False);self.populate()
+        for key,combo in (('student_col',self.student),('class_col',self.class_col),('total_col',self.total),('status_col',self.status_col)):
+            combo.blockSignals(True);combo.setCurrentIndex(combo.findData(config[key]));combo.blockSignals(False)
+        for key,spin in (('max_score',self.maximum),('pass_score',self.passing),('excellent_score',self.high)):
+            spin.setValue(config[key])
+        for row in range(self.mapping.rowCount()):self.mapping.item(row,0).setCheckState(Qt.CheckState.Unchecked)
+        for q in config['questions']:
+            row=q['column'];self.mapping.item(row,0).setCheckState(Qt.CheckState.Checked)
+            for column,key in enumerate(QUESTION_FIELDS,2):self.mapping.item(row,column).setText(str(q.get(key,'')))
+        self.choices_changed()
 
     def populate(self):
         sheet=next(s for s in self.book['sheets'] if s['name']==self.sheet.currentData())

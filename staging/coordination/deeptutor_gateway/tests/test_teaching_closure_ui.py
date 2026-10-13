@@ -56,6 +56,8 @@ def test_handoff_uses_existing_filtered_catalogue_and_keeps_current_basket(windo
     page.cards[0].add.click();settle(app,lambda:not page._adding and len(win.facade.basket())==1)
     before=win.facade.basket()
     win.open_exam_practice({'exam_id':'a'*32,'task_id':'b'*32,'lane':'word_native','knowledge':'K09','label':'化学平衡'})
+    settle(app,lambda:not page._loading and bool(page.cards))
+    page.cards[0].open.click()
     settle(app,lambda:not page._loading and page.cards and page.cards[0].ready)
     assert page.filters=={'knowledge':{'K09'}} and len(page.cards)==4
     assert page.exam_context.isVisible() and page.exam_context_back.text()=='返回复练任务'

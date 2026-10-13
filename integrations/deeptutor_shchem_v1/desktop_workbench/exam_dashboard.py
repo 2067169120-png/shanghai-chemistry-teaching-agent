@@ -10,9 +10,14 @@ from PySide6.QtWidgets import (QDialog, QWidget, QVBoxLayout, QHBoxLayout, QGrid
     QLabel, QPushButton, QComboBox, QTabWidget, QTableView, QPlainTextEdit, QFileDialog,
     QMessageBox, QCheckBox, QScrollArea, QSplitter, QDialogButtonBox, QInputDialog)
 from ..desktop_exam_data import (read_xlsx, analyse, local_student_advice, ExamStore, ExamError, digest)
+from ..desktop_exam_mapping_profiles import ExamMappingProfileStore
 from ..desktop_exam_ai import load_paper, model_payload, generate_advice, advice_text
 from ..desktop_exam_report import number, percent, brief, html_report
 from .exam_import_dialog import ExamImportDialog
+from ..desktop_student_roster import (attach_roster, set_exam_status,
+    empty_roster_exam, exam_status, STATUS_LABELS)
+from ..desktop_student_roster_identity_actions import bind_exam_identity, unbind_exam_identity, undo_identity_action
+from .student_roster_dialog import StudentRosterDialog, ExamRosterBindingDialog, ExamAttendanceDialog, ExamIdentityActionDialog
 
 
 class ExamTable(QAbstractTableModel):
@@ -86,6 +91,12 @@ class _ExamDashboardBase(QDialog):
         for i,b in enumerate((self.import_button,self.history_button,self.template_button,self.save_button,self.export_button)):bar.addWidget(b,i//3,i%3)
         root.addWidget(toolbar);self.toolbar=toolbar;self.toolbar_layout=bar
         self._toolbar_buttons=(self.import_button,self.history_button,self.template_button,self.save_button,self.export_button);self._toolbar_columns=3
+        self.roster_button=QPushButton('本地班级名册');self.empty_roster_button=QPushButton('从名册建立待录入考试')
+        bar.addWidget(self.roster_button,1,2);bar.addWidget(self.empty_roster_button,2,0)
+        self._toolbar_buttons += (self.roster_button,self.empty_roster_button)
+        roster_available=callable(getattr(facade,'student_roster_store',None))
+        self.roster_button.setEnabled(roster_available);self.empty_roster_button.setEnabled(roster_available)
+        self.roster_button.clicked.connect(self.open_local_roster);self.empty_roster_button.clicked.connect(self.new_empty_roster_exam)
         self.import_button.clicked.connect(self.import_excel);self.history_button.clicked.connect(self.open_history)
         self.template_button.clicked.connect(self.template);self.save_button.clicked.connect(self.save_current);self.export_button.clicked.connect(self.export)
         filters=QHBoxLayout();filters.addWidget(QLabel('统计范围'));self.classes=QComboBox();self.classes.addItem('全部导入班级',None)
@@ -106,6 +117,17 @@ class _ExamDashboardBase(QDialog):
         self.knowledge_chart=BarChart('主知识点 · 按有效作答分值加权');it.addWidget(self.knowledge_chart)
         self.tabs.addTab(scroll_widget(items),'题目与知识点')
         students=QWidget();sv=QVBoxLayout(students);notice=QLabel('点击学生行查看复核建议；表格颜色仅辅助阅读。空白为缺失，0分是明确成绩；S编号仅本次导入有效。');notice.setWordWrap(True);sv.addWidget(notice)
+        self.identity_tools=QWidget();identity_bar=QGridLayout(self.identity_tools);identity_bar.setContentsMargins(0,0,0,0)
+        self.attach_roster_button=QPushButton('确认本次班级名册');self.bind_student_button=QPushButton('绑定成绩行与原档案');self.attendance_button=QPushButton('核对学生／整班状态')
+        self.identity_history_button=QPushButton('查看身份与状态核对记录')
+        self.unbind_student_button=QPushButton('独立解除本行身份');self.undo_identity_button=QPushButton('核对并撤销身份动作')
+        for i,button in enumerate((self.attach_roster_button,self.bind_student_button,self.unbind_student_button,self.undo_identity_button,self.attendance_button,self.identity_history_button)):
+            identity_bar.addWidget(button,i//2,i%2);button.setAutoDefault(False)
+        self.attach_roster_button.clicked.connect(self.attach_local_roster);self.bind_student_button.clicked.connect(self.open_identity_binding);self.attendance_button.clicked.connect(self.open_attendance)
+        self.identity_history_button.clicked.connect(self.show_identity_history)
+        self.unbind_student_button.clicked.connect(lambda:self.open_identity_action('unbind'))
+        self.undo_identity_button.clicked.connect(lambda:self.open_identity_action('undo'))
+        sv.addWidget(self.identity_tools)
         self.student_table=QTableView();self.student_table.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows);self.student_table.setSelectionMode(QTableView.SelectionMode.SingleSelection)
         self.student_table.clicked.connect(self.select_student);sv.addWidget(self.student_table,1)
         self.student_note=QPlainTextEdit();self.student_note.setReadOnly(True);self.student_note.setMaximumHeight(170);sv.addWidget(self.student_note)
@@ -232,7 +254,7 @@ class _ExamDashboardBase(QDialog):
         self.run('读取成绩Excel',lambda report,cancelled:read_xlsx(path),self.map_excel)
 
     def map_excel(self,book):
-        dialog=ExamImportDialog(book,self)
+        dialog=ExamImportDialog(book,self,mapping_profiles=ExamMappingProfileStore(self.facade.paths.state_root))
         if dialog.exec()==QDialog.DialogCode.Accepted:self.accept_exam(dialog.exam)
         dialog.deleteLater()
 
@@ -257,24 +279,30 @@ class _ExamDashboardBase(QDialog):
 
     def render(self):
         ready=self.exam is not None
+        if hasattr(self,'identity_tools'):
+            roster_available=callable(getattr(self.facade,'student_roster_store',None))
+            self.identity_tools.setEnabled(ready and not self._task and roster_available)
+            self.roster_button.setEnabled(roster_available and not self._task);self.empty_roster_button.setEnabled(roster_available and not self._task)
         for w in (self.save_button,self.export_button,self.paper_button,self.ai_button,self.to_prep_button):w.setEnabled(ready and not self._task)
         if not ready:
             self.ai_result.setPlainText(advice_text(None));return
         self.report=analyse(self.exam,self.classes.currentData());s=self.report['overall'];n=s['n']
         self.summary_label.setText(f"{self.exam['title']} · {self.report['scope']}")
+        self.summary_label.setToolTip(f"应到{s['expected']}，实到{s['present']}，缺考{s['absent']}，免考{s['exempt']}，未录入{s['not_entered']}；未绑定导入行{s['unbound']}。")
         values=[f"{n} / {s['enrolled']}",f"{number(s['mean'])} / {number(self.exam['maximum'])}",f"{number(s['median'])} / {number(s['sd'])}",
                 f"{s['pass_n']} / {n} · {percent(s['pass_rate'])}",f"{s['high_n']} / {n} · {percent(s['high_rate'])}",f"{s['absent']} / {s['unavailable']}"]
         for label,v in zip(self.kpis,values):label.setText(v)
         self.distribution.set_rows([(r['label'],r['n']) for r in self.report['distribution']],max((r['n'] for r in self.report['distribution']),default=1),'人')
         self.set_table(self.class_table,['班级','有效总分人数','均分','中位数','最低分','最高分'],[(c['class'],c['n'],number(c['mean']),number(c['median']),number(c['min']),number(c['max'])) for c in self.report['classes']])
-        self.overview_note.setText(f"达标线{number(self.exam['pass_score'])}，高分线{number(self.exam['excellent_score'])}，均为导入时自定阈值。分布区间左闭右开，最后一区间含满分。\n统计排除缺考及无有效总分者；仅同一考试内比较，单次数据不代表已进步。")
+        self.overview_note.setText(f"应到{s['expected']}人，实到{s['present']}人，缺考{s['absent']}人，免考{s['exempt']}人，未录入{s['not_entered']}人；未绑定导入行{s['unbound']}条。\n达标线{number(self.exam['pass_score'])}，高分线{number(self.exam['excellent_score'])}，均为导入时自定阈值。分布区间左闭右开，最后一区间含满分。\n统计排除缺考、免考、未录入及无有效总分者；附名册后未绑定导入行保留原分数但须先确认身份。单次数据不代表已进步。")
         qs=self.report['items'];ordered=sorted(qs,key=lambda q:(q['rate'] is None,q['rate'] or 0))
         self.item_chart.set_rows([(q['question'],None if q['rate'] is None else q['rate']*100) for q in ordered[:20]],100,'%')
         self.set_table(self.items_table,['题号','满分','有效人数','缺失','均分','得分率','主知识点','章节'],[(q['question'],number(q['max_score']),q['n'],q['missing'],number(q['mean']),percent(q['rate']),q['knowledge'] or '待映射',q['chapter'] or '待映射') for q in qs])
         self.knowledge_chart.set_rows([(k['label'],None if k['rate'] is None else k['rate']*100) for k in self.report['knowledge']],100,'%')
         rows=[];rates={}
         for i,st in enumerate(self.report['students']):
-            rows.append([st['local_label'],st['id'],st['class'],number(st['total']),'缺考' if st['absent'] else '待核对' if st['total'] is None else '有总分']+[number(st['scores'].get(q['question'])) for q in qs])
+            rows.append([st.get('local_alias',st['local_label']),st['id'],st['class'],number(st['total']),
+                '未绑定名册' if st.get('excluded_unbound') else STATUS_LABELS[exam_status(st)] + ('／总分待核对' if exam_status(st)=='present' and st['total'] is None else '')]+[number(st['scores'].get(q['question'])) for q in qs])
             for j,q in enumerate(qs,5):
                 val=st['scores'].get(q['question']);rates[(i,j)]=val/q['max_score'] if val is not None else None
         self.set_table(self.student_table,['学生（本机）','API代号','班级','总分','状态']+[q['question'] for q in qs],rows,rates)
@@ -286,7 +314,118 @@ class _ExamDashboardBase(QDialog):
 
     def select_student(self,index):
         if self.report and 0<=index.row()<len(self.report['students']):
-            s=self.report['students'][index.row()];self.student_note.setPlainText(s['local_label']+' · '+s['id']+'\n'+local_student_advice(s,self.report))
+            s=self.report['students'][index.row()]
+            binding=s.get('identity_binding') or {}
+            detail=(f"\n本地成员：{binding['member_id']}；原档案：{binding.get('profile_student_id') or '未绑定'}；原作答：{binding.get('submission_id') or '未关联'}" if binding else '\n尚未明确绑定本地名册与原档案。')
+            original=next(r for r in self.exam['students'] if r['id']==s['id'])
+            self.student_note.setPlainText(s.get('local_alias',s['local_label'])+' · '+s['id']+detail+
+                f"\n原导入标识：{original['local_label']}；原记录总分：{number(original['total'])}\n"+local_student_advice(s,self.report))
+
+    def open_local_roster(self):
+        if self._task:return
+        try:
+            dialog=StudentRosterDialog(self.facade,self);dialog.exec();dialog.deleteLater()
+            self.status.setText('本地名册仅用于教师识别；已保存考试快照与旧绑定不会自动替换。')
+        except Exception as error:self.status.setText(getattr(error,'message_zh','本地名册暂时无法读取。'))
+
+    def _choose_roster(self):
+        rosters=self.facade.student_roster_store().entries()
+        if not rosters:raise ExamError('请先在“本地班级名册”创建成员、明确绑定匿名档案并保存。')
+        choices=[f"{r['label']} · {len(r['members'])}人 · {r['id'][:8]}" for r in rosters]
+        value,ok=QInputDialog.getItem(self,'明确选择本地名册','本次采用的名册（不按班级名匹配）',choices,0,False)
+        return rosters[choices.index(value)] if ok else None
+
+    def attach_local_roster(self):
+        if not self.exam or self._task:return
+        try:
+            expected=digest(self.bundle());roster=self._choose_roster()
+            if roster is None:return
+            choices=sorted({s['class'] for s in self.exam['students']})
+            exam_class,ok=QInputDialog.getItem(self,'确认名册对应范围','明确选择本次Excel班级',choices,0,False)
+            if not ok:return
+            reason,ok=QInputDialog.getText(self,'确认本次名册','核对名册版本与本次考试班级的依据')
+            if not ok:return
+            proposed=attach_roster(self.exam,roster,exam_class=exam_class,reason=reason)
+            self.commit_identity_change(proposed,expected=expected)
+        except Exception as error:self.status.setText(getattr(error,'message_zh','名册未附入考试，请核对当前输入。'))
+
+    def new_empty_roster_exam(self):
+        if self._task or not self.flush_or_discard():return
+        try:
+            roster=self._choose_roster()
+            if roster is None:return
+            dialog=QDialog(self);dialog.setWindowTitle('建立整班待录入考试');box=QVBoxLayout(dialog)
+            from PySide6.QtWidgets import QFormLayout,QLineEdit,QDoubleSpinBox
+            form=QFormLayout();title=QLineEdit();maximum=QDoubleSpinBox();passed=QDoubleSpinBox();high=QDoubleSpinBox();reason=QLineEdit()
+            for widget,value in ((maximum,100),(passed,60),(high,85)):widget.setRange(0,10000);widget.setValue(value)
+            for label,widget in [('考试名称',title),('试卷满分',maximum),('自定达标线',passed),('自定高分线',high),('确认名册依据',reason)]:form.addRow(label,widget)
+            box.addLayout(form);message=QLabel('全班初始为未录入；尚无Excel来源或成绩，不记零分。');message.setWordWrap(True);box.addWidget(message)
+            buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel);box.addWidget(buttons);buttons.rejected.connect(dialog.reject)
+            buttons.button(QDialogButtonBox.StandardButton.Save).setText('建立并保存本次考试');buttons.button(QDialogButtonBox.StandardButton.Cancel).setText('取消')
+            def create():
+                try:
+                    exam=empty_roster_exam(roster,title=title.text(),maximum=maximum.value(),pass_score=passed.value(),excellent_score=high.value(),reason=reason.text())
+                    bundle={'exam':exam,'paper':{'text':'','pages':[],'warnings':[]},'notes':'','advice':None,'advice_scope':None,'followups':[],'advice_history':[]}
+                    self.store.save(bundle,expected_revision=None);self.open_saved(exam['id']);dialog.accept()
+                except ExamError as error:message.setText(error.message_zh)
+            buttons.accepted.connect(create);self._empty_roster_dialog=dialog;dialog.open()
+        except Exception as error:self.status.setText(getattr(error,'message_zh','待录入考试未能创建。'))
+
+    def open_identity_binding(self):
+        if not self.exam or self._task:return
+        try:
+            if not self.exam.get('roster_snapshots'):raise ExamError('请先明确确认本次班级名册。')
+            self.check_disk_current();self._identity_dialog=ExamRosterBindingDialog(self);self._identity_dialog.open()
+        except ExamError as error:self.status.setText(error.message_zh)
+
+    def open_attendance(self):
+        if not self.exam or self._task:return
+        try:self.check_disk_current();self._attendance_dialog=ExamAttendanceDialog(self);self._attendance_dialog.open()
+        except ExamError as error:self.status.setText(error.message_zh)
+
+    def open_identity_action(self,mode):
+        if not self.exam or self._task:return
+        try:
+            self.check_disk_current();self._identity_action_dialog=ExamIdentityActionDialog(self,mode);self._identity_action_dialog.open()
+        except ExamError as error:self.status.setText(error.message_zh)
+
+    def show_identity_history(self):
+        if not self.exam:return
+        dialog=QDialog(self);dialog.setWindowTitle('本机身份与状态核对记录');dialog.resize(760,560)
+        box=QVBoxLayout(dialog);notice=QLabel('包含本机身份信息，仅供教师追溯；不是匿名导出。原Excel、原分数与历史复测不改写。');notice.setWordWrap(True);box.addWidget(notice)
+        view=QPlainTextEdit();view.setReadOnly(True)
+        view.setPlainText(json.dumps({'roster_snapshots':self.exam.get('roster_snapshots',[]),'identity_history':self.exam.get('identity_history',[])},ensure_ascii=False,indent=2))
+        box.addWidget(view,1);close=QPushButton('返回');close.clicked.connect(dialog.accept);box.addWidget(close)
+        self._identity_history_dialog=dialog;dialog.open()
+
+    def commit_identity_change(self, proposed, *, expected):
+        if not self.exam or self._task or self._closed:raise ExamError('当前窗口不能修改学生身份或状态。')
+        if digest(self.bundle())!=expected:raise ExamError('确认期间考试数据已变化，请重新读取后核对；输入未写入。')
+        self.check_disk_current();bundle=self.bundle();bundle['exam']=proposed
+        self.store.save(bundle,expected_revision=self._saved_revision)
+        self.exam=proposed;self._saved_revision=digest(bundle);self.dirty=False
+        if hasattr(self,'followup_panel'):self.followup_panel.preview=None;self.followup_panel.approved=False
+        self.render();self.status.setText('身份／状态核对已保存，原分数与历史复测保留；旧建议和受影响复练须按新依据核对。')
+
+    def apply_identity_binding(self, student_id, member_id, submission_id, reason, *, expected):
+        proposed=bind_exam_identity(self.exam,student_id,member_id,store=self.facade.student_roster_store(),submission_id=submission_id,reason=reason)
+        self.commit_identity_change(proposed,expected=expected)
+
+    def apply_identity_unbinding(self,student_id,reason,*,expected,expected_binding_sha256):
+        proposed=unbind_exam_identity(self.exam,student_id,expected_binding_sha256=expected_binding_sha256,reason=reason,store=self.facade.student_roster_store())
+        self.commit_identity_change(proposed,expected=expected)
+
+    def apply_identity_undo(self,action_id,reason,*,expected,expected_action_sha256,expected_binding_sha256):
+        proposed=undo_identity_action(self.exam,action_id,expected_action_sha256=expected_action_sha256,
+            expected_binding_sha256=expected_binding_sha256,reason=reason,store=self.facade.student_roster_store())
+        self.commit_identity_change(proposed,expected=expected)
+
+    def apply_attendance_status(self, target, status, reason, *, expected):
+        rows=[target] if target is not None else [r['id'] for r in self.report['students'] if r.get('identity_binding')]
+        if not rows:raise ExamError('当前范围没有已确认的名册成员，请先附名册并核对。')
+        proposed=self.exam
+        for identity in rows:proposed=set_exam_status(proposed,identity,status,reason=reason)
+        self.commit_identity_change(proposed,expected=expected)
 
     def input_changed(self):
         if self._rendering:return

@@ -210,11 +210,14 @@ def test_saved_template_brief_is_found_by_my_work(window):
 def test_model_controls_and_timer_reset(window):
     win, app = window
     panel = win.classroom_page.equilibrium
-    panel.initial.setValue(70)
-    assert panel.canvas.a == 70 and panel.canvas.b == 30
+    panel.initial.setValue(.7)
+    panel.initial_b.setValue(.3)
+    assert panel.canvas.a == pytest.approx(.7) and panel.canvas.b == pytest.approx(.3)
     panel.toggle()
     settle(app, lambda: panel.elapsed > .1)
-    assert panel.canvas.a + panel.canvas.b == pytest.approx(100)
+    assert panel.canvas.a + panel.canvas.b == pytest.approx(1)
+    assert panel.canvas.trace[-1].t == pytest.approx(panel.elapsed)
+    assert "mol·L⁻¹" in panel.summary.text() and " s" in panel.summary.text()
     panel.reset()
     assert not panel.running and len(panel.canvas.trace) == 1
     timer = win.classroom_page.timer_panel

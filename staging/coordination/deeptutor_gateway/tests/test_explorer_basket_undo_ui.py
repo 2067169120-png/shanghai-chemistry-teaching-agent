@@ -38,7 +38,9 @@ def dialog(app, tmp_path):
         row.setdefault("source_zh", "自编界面验收来源，题目身份与原顺序必须保留")
     store.add_many_to_basket(rows)
     facade = SimpleNamespace(_state=store)
-    facade.open_basket_session = lambda: DesktopWorkbenchFacade.open_basket_session(facade)
+    # These rows are UI-only synthetic identities. Production facade source
+    # verification is covered by test_persistent_paper_history.
+    facade.open_basket_session = store.open_basket_session
     value = ExplorerBasketDialog(facade)
     value.resize(360, 520)
     value.show()
@@ -169,19 +171,19 @@ def test_conflict_never_emits_success_or_overwrites_and_retry_starts_fresh(dialo
     assert value.list.count() == 3
 
 
-def test_read_error_clears_history_and_raw_error_never_becomes_label_markup(dialog, monkeypatch):
+def test_read_error_pauses_history_and_raw_error_never_becomes_label_markup(dialog, monkeypatch):
     value, store = dialog
     value.remove.click()
-    original = store.basket_snapshot
+    original = store.snapshot
     def failure():
         raise OSError('<img src="private-path">private-token')
-    monkeypatch.setattr(store, "basket_snapshot", failure)
+    monkeypatch.setattr(store, "snapshot", failure)
     value.refresh()
     assert not value.undo_button.isEnabled() and value.retry.isVisible()
     assert "private-token" not in value.status.text() and "private-path" not in value.status.text()
-    monkeypatch.setattr(store, "basket_snapshot", original)
+    monkeypatch.setattr(store, "snapshot", original)
     value.retry.click()
-    assert not value.undo_button.isEnabled()
+    assert value.undo_button.isEnabled()
 
 
 def test_busy_reentry_cannot_double_submit_close_or_emit_two_successes(dialog, monkeypatch):
@@ -202,7 +204,7 @@ def test_busy_reentry_cannot_double_submit_close_or_emit_two_successes(dialog, m
     assert len(calls) == 1 and events == [2] and len(store.basket()) == 2
 
 
-def test_close_discards_history_and_preview_edit_recheck_without_new_basket_write(dialog, app):
+def test_close_restores_history_and_preview_edit_recheck_without_new_basket_write(dialog, app):
     value, store = dialog
     value.down.click()
     original_session = value._session
@@ -211,7 +213,7 @@ def test_close_discards_history_and_preview_edit_recheck_without_new_basket_writ
     second = ExplorerBasketDialog(value.facade)
     second.show()
     try:
-        assert not second.undo_button.isEnabled()
+        assert second.undo_button.isEnabled()
         events = []
         second.preview_requested.connect(lambda: events.append("preview"))
         frozen = store.path.read_bytes()
@@ -232,7 +234,7 @@ def test_postcommit_read_failure_keeps_saved_receipt_but_does_not_claim_undo_rea
         result = original(key, delta)
         def failed():
             raise OSError("synthetic read failure")
-        monkeypatch.setattr(store, "basket_snapshot", failed)
+        monkeypatch.setattr(store, "snapshot", failed)
         return result
     monkeypatch.setattr(value._session, "change", change_then_unreadable)
     value.remove.click()
