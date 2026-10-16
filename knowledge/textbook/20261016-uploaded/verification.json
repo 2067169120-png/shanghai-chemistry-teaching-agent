@@ -1,0 +1,30 @@
+{
+  "batch": "20261016",
+  "branch": "data/shanghai-textbooks-20261016",
+  "verification_scope": "Local resource pack and helper scripts; not GitHub binary upload or desktop integration",
+  "original_pdf_count": 5,
+  "original_pdf_page_total": 648,
+  "all_original_sha256_matches": true,
+  "section_count": 60,
+  "textbook_excerpt_count": 18,
+  "all_18_crops_reproduced_byte_identically": true,
+  "unit_tests": {"run": 12, "passed": 12, "failed": 0, "skipped": 0},
+  "tool_git_blob_sha": "d26b7b049c57a76b38172c63e8f2bb2027593730",
+  "test_git_blob_sha": "e604f273281e303291d757babfa5f34b653a4c17",
+  "cli_smoke_checks": ["verify five originals", "install and catalog", "search 溶度积", "render xb1 printed75/PDF82", "render q37-ksp"],
+  "handout": {
+    "page_count": 14,
+    "question_numbers": [1,4,8,10,11,14,15,20,22,30,33,36,37,38],
+    "textbook_excerpt_count": 18,
+    "original_source_image_count": 44,
+    "image_appearances_total": 62,
+    "render_checks": ["PyMuPDF all 14 pages", "Poppler A4 page5", "Poppler A3 page13"],
+    "student_work_uploaded_to_github": false
+  },
+  "github_original_pdf_status": "pending_upload",
+  "github_png_status": "not_uploaded",
+  "main_merged": false,
+  "release_changed": false,
+  "full_project_ci_run": false,
+  "desktop_database_modified": false
+}
